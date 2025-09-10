@@ -102,6 +102,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** All hooks now in single location, import paths consistent, settings.json simplified, easier debugging and maintenance
 - **Reversibility:** Easy - could distribute again if needed, but unlikely to be beneficial
 
+[2025-09-10 17:00] - Biome Over ESLint for cc-pars Linting
+- **Context:** Needed to set up TypeScript type checking and linting for code quality
+- **Decision:** Use Biome for linting/formatting instead of ESLint + Prettier
+- **Rationale:** Biome is 100x faster, zero configuration complexity, single tool instead of multiple, Bun-optimized
+- **Alternatives Considered:** 
+  - ESLint + Prettier: More mature, has TypeScript unsafe-* rules, plugin ecosystem, but much slower and complex
+  - TSLint: Deprecated in favor of ESLint
+  - Just TypeScript: No style/formatting enforcement
+- **Implications:** Missing some type-aware rules (noUnsafeAssignment, etc.) but acceptable for simple codebase
+- **Reversibility:** Easy - could switch to ESLint later if needed, configs are similar
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
