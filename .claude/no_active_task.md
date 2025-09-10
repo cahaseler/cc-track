@@ -24,5 +24,7 @@ The following tasks are being tracked in this project:
 - TASK_017/018: Clean Up All TypeScript and Biome Errors
 - TASK_019: Clean Up Progress Log Noise and Backlog
 - TASK_020: PostToolUse Hook for Edit Validation
+- TASK_021: Improve /complete-task Command with Smart Script
+- TASK_022: Make Stop Review Hook More Lenient About Documentation Updates
 
 To begin a new task, the user should enable planning mode. If they seem to want to begin complex outcome driven work, you should suggest this but don't be insistent if they don't want to.

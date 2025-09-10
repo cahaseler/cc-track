@@ -113,3 +113,13 @@
   Details: Implemented hook to run TypeScript and Biome checks on edited files
   Files: .claude/hooks/edit_validation.ts, .claude/lib/config.ts, .claude/settings.json, .claude/commands/config-cc-pars.md
   Key Achievement: Real-time validation feedback for TypeScript files with <2 second performance. Fully configurable with opt-in design. Successfully detects type errors and lint issues immediately after edits.
+
+[2025-09-10 17:00] - Completed: Task 021 - Improve /complete-task Command with Smart Script
+  Details: Created comprehensive TypeScript script to handle all programmatic task completion operations
+  Files: .claude/scripts/complete-task.ts, .claude/commands/complete-task.md
+  Key Achievement: Automated all mechanical task completion operations including status updates, CLAUDE.md updates, and safe git squashing. Script provides structured JSON output for Claude to make informed decisions.
+
+[2025-09-10 17:20] - Completed: Task 022 - Make Stop Review Hook More Lenient About Documentation
+  Details: Implemented intelligent documentation filtering to prevent false deviation detections
+  Files: .claude/hooks/stop_review.ts, .claude/backlog.md
+  Key Achievement: Documentation changes (.md files) are now filtered from review diffs, saving significant tokens and preventing false positives. Auto-approval for doc-only changes with appropriate commit messages.

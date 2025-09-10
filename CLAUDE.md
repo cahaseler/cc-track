@@ -1,7 +1,7 @@
 # Project: [Your Project Name]
 
 ## Active Task
-@.claude/tasks/TASK_022.md
+@.claude/no_active_task.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
@@ -25,4 +25,6 @@ Additional information can be found in the following files. Reference them as ne
 .claude/decision_log.md - project architectural decisions
 .claude/tasks/TASK_XXX.md - Detailed task descriptions and outcomes
 
-
+NOTE:
+- You never need to commit your work, even at the end of a task. This is taken care of you automatically by hooks and commands.
+- When you have completed a task, let the user know and they will perform any needed checks or discussion and then invoke the /complete-task command.

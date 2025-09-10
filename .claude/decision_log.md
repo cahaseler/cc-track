@@ -12,6 +12,17 @@
 
 ## Log Entries
 
+[2025-09-10 17:20] - Filter Documentation from Stop Review Diffs Instead of Prompt Changes
+- **Context:** Stop review hook was flagging documentation updates as deviations, wasting tokens on large .md files
+- **Decision:** Parse and filter git diff to exclude .md files before sending to Claude for review
+- **Rationale:** Filtering at diff level saves tokens AND prevents false positives more reliably than prompt instructions
+- **Alternatives Considered:**
+  - Just update prompt to tell Claude to ignore .md files: Still wastes tokens, less reliable
+  - Exclude .md files from git diff command: Complex, loses tracking of what changed
+  - Disable review for all documentation: Too broad, might miss actual issues
+- **Implications:** Significant token savings, cleaner review process, auto-approval for doc-only changes
+- **Reversibility:** Easy - could remove filtering logic and revert to sending full diffs
+
 [2025-09-09 19:30] - Pivot from General Context Extraction to Error Pattern Learning
 - **Context:** Initial pre_compact hook using regex parsing extracted nothing useful from transcripts
 - **Decision:** Focus exclusively on extracting error patterns and their resolutions
