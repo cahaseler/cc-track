@@ -389,7 +389,8 @@ Output ONLY the bulleted list of new lessons, nothing else.`;
       { 
         encoding: 'utf-8',
         timeout: 15000, // Give more time for analyzing multiple sequences
-        shell: '/bin/bash'
+        shell: '/bin/bash',
+        cwd: '/tmp'  // Run in /tmp to avoid triggering Stop hook recursion
       }
     ).trim();
     

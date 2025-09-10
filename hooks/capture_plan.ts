@@ -126,7 +126,7 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
         `claude --output-format text < "${tempPromptPath}"`,
         { 
           encoding: 'utf-8',
-          cwd: projectRoot,
+          cwd: '/tmp',  // Run in /tmp to avoid triggering Stop hook recursion
           maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
           shell: '/bin/bash'
         }
