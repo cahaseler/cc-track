@@ -12,5 +12,5 @@
 
 ## Items
 
-<!-- Items will be added below -->- 
+<!-- Items will be added below -->
 - investigate why post plan hook is failing to create tasks at all. This seems to have been introduced when we swapped the model to sonnet.
