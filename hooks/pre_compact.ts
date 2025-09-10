@@ -6,6 +6,7 @@ import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { execSync } from 'child_process';
 import { isHookEnabled } from '../.claude/lib/config';
+import { createLogger } from '../.claude/lib/logger';
 
 interface CompactInput {
   session_id: string;
@@ -45,6 +46,11 @@ class ErrorPatternExtractor {
   private entries: Map<string, TranscriptEntry> = new Map();
   private errorSequences: ErrorSequence[] = [];
   private timeout: NodeJS.Timeout | null = null;
+  private logger;
+  
+  constructor(logger: any) {
+    this.logger = logger;
+  }
   
   async extractFromTranscript(transcriptPath: string): Promise<ErrorSequence[]> {
     // First pass: Load all entries into memory with UUID index
@@ -60,7 +66,7 @@ class ErrorPatternExtractor {
     return new Promise((resolve, reject) => {
       // Set 20 second timeout for loading
       this.timeout = setTimeout(() => {
-        console.error('Loading timeout - proceeding with partial data');
+        this.logger.warn('Loading timeout - proceeding with partial data');
         resolve();
       }, 20000);
       
@@ -89,7 +95,7 @@ class ErrorPatternExtractor {
       });
       
       rl.on('error', (error) => {
-        console.error('Error reading transcript:', error);
+        this.logger.error('Error reading transcript:', { error: error.message });
         if (this.timeout) {
           clearTimeout(this.timeout);
         }
@@ -109,7 +115,7 @@ class ErrorPatternExtractor {
         this.errorSequences.push(sequence);
       }
     }
-    console.error(`Found ${errorCount} error entries, created ${this.errorSequences.length} sequences`);
+    this.logger.info(`Found ${errorCount} error entries, created ${this.errorSequences.length} sequences`);
   }
   
   private isErrorEntry(entry: TranscriptEntry): boolean {
@@ -316,7 +322,7 @@ class ErrorPatternExtractor {
   }
 }
 
-async function analyzeErrorPatterns(sequences: ErrorSequence[], projectRoot: string): Promise<string[]> {
+async function analyzeErrorPatterns(sequences: ErrorSequence[], projectRoot: string, logger: any): Promise<string[]> {
   // Only analyze sequences that actually found a resolution after multiple attempts
   const interestingSequences = sequences.filter(seq => 
     seq.subsequentAttempts.length >= 2 && 
@@ -324,11 +330,11 @@ async function analyzeErrorPatterns(sequences: ErrorSequence[], projectRoot: str
   );
   
   if (interestingSequences.length === 0) {
-    console.error('No interesting error sequences to analyze');
+    logger.info('No interesting error sequences to analyze');
     return [];
   }
   
-  console.error(`Analyzing ${interestingSequences.length} interesting sequences out of ${sequences.length} total`);
+  logger.info(`Analyzing ${interestingSequences.length} interesting sequences out of ${sequences.length} total`);
   
   // Read existing lessons to merge with
   const mistakesPath = join(projectRoot, '.claude', 'learned_mistakes.md');
@@ -416,7 +422,7 @@ Output ONLY the bulleted list of new lessons, nothing else.`;
     return newLessons;
     
   } catch (e) {
-    console.error('Claude CLI analysis failed:', e);
+    logger.error('Claude CLI analysis failed:', { error: e });
     return [];
   }
 }
@@ -453,6 +459,8 @@ async function updateLearnedMistakes(projectRoot: string, patterns: string[]) {
 }
 
 async function main() {
+  const logger = createLogger('pre_compact');
+  
   try {
     // Check if hook is enabled
     if (!isHookEnabled('pre_compact')) {
@@ -460,6 +468,8 @@ async function main() {
       console.log(JSON.stringify({ success: true }));
       process.exit(0);
     }
+    
+    logger.info('Pre-compact hook started');
     
     const input = await Bun.stdin.text();
     const data: CompactInput = JSON.parse(input);
@@ -470,7 +480,7 @@ async function main() {
     }
     
     // Extract error patterns
-    const extractor = new ErrorPatternExtractor();
+    const extractor = new ErrorPatternExtractor(logger);
     const sequences = await extractor.extractFromTranscript(data.transcript_path);
     
     // Get project root - use cwd from hook data if available
@@ -478,7 +488,7 @@ async function main() {
     
     // Analyze patterns and update learned mistakes
     if (sequences.length > 0) {
-      const patterns = await analyzeErrorPatterns(sequences, projectRoot);
+      const patterns = await analyzeErrorPatterns(sequences, projectRoot, logger);
       await updateLearnedMistakes(projectRoot, patterns);
       
       console.log(JSON.stringify({ 
@@ -495,7 +505,7 @@ async function main() {
     process.exit(0);
     
   } catch (error) {
-    console.error(`Error in pre_compact_focused hook: ${error}`);
+    logger.exception('Error in pre_compact hook', error as Error);
     console.log(JSON.stringify({ success: false, message: `Error: ${error}` }));
     process.exit(0);
   }

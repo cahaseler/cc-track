@@ -80,6 +80,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Simpler implementation, no state management needed, always accurate
 - **Reversibility:** Easy - could add tracking later if more complex logic needed
 
+[2025-09-10 14:10] - Built-in Logger Over External Dependencies for Centralized Logging
+- **Context:** Needed centralized logging system to debug hooks and improve monitoring, user suggested adze library
+- **Decision:** Implemented built-in logger module without external dependencies
+- **Rationale:** Keep cc-pars lightweight, avoid dependency management complexity, full control over features
+- **Alternatives Considered:** 
+  - adze library: Adds external dependency, not significantly better than built-in solution
+  - winston or pino: Too heavy for this use case, adds complexity
+  - Simple console.log: Not structured, no file persistence, no level control
+- **Implications:** Zero runtime dependencies, complete control over logging behavior, easier debugging
+- **Reversibility:** Easy - could swap in external library later if needed, interface is compatible
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

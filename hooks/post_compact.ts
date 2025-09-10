@@ -3,6 +3,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { isHookEnabled } from '../.claude/lib/config';
+import { createLogger } from '../.claude/lib/logger';
 
 interface SessionStartInput {
   session_id: string;
@@ -18,6 +19,8 @@ interface HookOutput {
 }
 
 async function main() {
+  const logger = createLogger('post_compact');
+  
   try {
     // Check if hook is enabled
     if (!isHookEnabled('post_compact')) {
@@ -29,18 +32,17 @@ async function main() {
     const input = await Bun.stdin.text();
     const data: SessionStartInput = JSON.parse(input);
     
-    // Log for debugging
-    const logFile = '/tmp/post_compact_debug.log';
-    const fs = require('fs');
-    fs.appendFileSync(logFile, `[${new Date().toISOString()}] SessionStart hook called with full data: ${JSON.stringify(data)}\n`);
+    logger.debug('SessionStart hook called', { data });
     
     // Only run after compaction (both manual and auto)
     // According to docs: "compact" - Invoked from auto or manual compact
     if (data.source !== 'compact') {
-      fs.appendFileSync(logFile, `[${new Date().toISOString()}] Skipping - source is not 'compact' (got: ${data.source})\n`);
+      logger.debug(`Skipping - source is not 'compact' (got: ${data.source})`);
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
+    
+    logger.info('Post-compaction context restoration starting');
     
     // Get project root
     const projectRoot = data.cwd;
