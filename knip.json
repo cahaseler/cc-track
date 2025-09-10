@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    ".claude/hooks/*.ts",
+    ".claude/scripts/*.ts",
+    ".claude/lib/*.ts"
+  ],
+  "project": [
+    ".claude/**/*.ts"
+  ],
+  "ignore": [
+    "**/*.md",
+    ".claude/tasks/**",
+    ".claude/plans/**",
+    "templates/**",
+    "docs/**"
+  ],
+  "ignoreDependencies": [
+    "@types/bun"
+  ],
+  "ignoreExportsUsedInFile": true
+}

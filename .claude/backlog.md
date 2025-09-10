@@ -14,7 +14,6 @@
 
 <!-- Items will be added below -->
 - optional full github support with automatic issue creation for tasks, connection of issue branches to said issues, and PRs instead of merges during task completion.
-- preparation for push functionality. Possibly this is simply an optional part of task completion. Basically, cleanup with knip, lint, format, typecheck, etc, enforced by pre-push hooks.
 - tutorial mode for cc-pars. Possibly extra prompt content, possibly an entirely new 'output style'. Basically, when this is enabled, Claude has additional context on the intended cc-pars workflow and nudges the user more explicitly with reminders of commands, using tasks, what the next step is, etc.
 - packaging and distribution, installer, initial installation flow.
 - [2025-09-10] post edit hook that runs things like single-file typecheck, linting, maybe unit tests (if quick)

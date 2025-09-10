@@ -16,6 +16,7 @@ interface CompletionResult {
   validation: {
     typescript?: string;
     biome?: string;
+    knip?: string;
   };
   git: {
     squashed?: boolean;
@@ -132,27 +133,78 @@ async function main() {
       result.warnings.push('no_active_task.md not found');
     }
 
-    // 5. Run validation checks
-    try {
-      execSync('bunx tsc --noEmit', { encoding: 'utf-8', cwd: projectRoot });
-      result.validation.typescript = 'No errors';
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
-      const errorCount = (output.match(/error TS/g) || []).length;
-      result.validation.typescript = `${errorCount} error${errorCount !== 1 ? 's' : ''}`;
-      result.warnings.push(`TypeScript validation found ${errorCount} errors`);
+    // 5. Run validation checks (read config to see what's enabled)
+    const configPath = join(claudeDir, 'cc-pars.config.json');
+    let validationConfig: any = {
+      typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
+      lint: { enabled: true, command: 'bunx biome check' },
+      knip: { enabled: true, command: 'bunx knip' }
+    };
+    
+    if (existsSync(configPath)) {
+      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      // Check if validation config exists in edit_validation hook config
+      if (config.hooks?.edit_validation) {
+        validationConfig = {
+          typecheck: config.hooks.edit_validation.typecheck || validationConfig.typecheck,
+          lint: config.hooks.edit_validation.lint || validationConfig.lint,
+          knip: config.hooks.edit_validation.knip || validationConfig.knip
+        };
+      }
     }
 
-    try {
-      execSync('bunx biome check', { encoding: 'utf-8', cwd: projectRoot });
-      result.validation.biome = 'No issues';
-    } catch (error: any) {
-      const output = error.stdout || error.stderr || '';
-      // Try to extract error count from Biome output
-      const match = output.match(/Found (\d+) error/);
-      const errorCount = match ? parseInt(match[1], 10) : 'unknown';
-      result.validation.biome = `${errorCount} issue${errorCount !== 1 ? 's' : ''}`;
-      result.warnings.push(`Biome validation found ${errorCount} issues`);
+    // Run TypeScript check if enabled
+    if (validationConfig.typecheck?.enabled) {
+      try {
+        execSync(validationConfig.typecheck.command, { encoding: 'utf-8', cwd: projectRoot });
+        result.validation.typescript = 'No errors';
+      } catch (error: any) {
+        const output = error.stdout || error.stderr || '';
+        const errorCount = (output.match(/error TS/g) || []).length;
+        result.validation.typescript = `${errorCount} error${errorCount !== 1 ? 's' : ''}`;
+        result.warnings.push(`TypeScript validation found ${errorCount} errors`);
+      }
+    }
+
+    // Run Biome check if enabled
+    if (validationConfig.lint?.enabled) {
+      try {
+        execSync(validationConfig.lint.command, { encoding: 'utf-8', cwd: projectRoot });
+        result.validation.biome = 'No issues';
+      } catch (error: any) {
+        const output = error.stdout || error.stderr || '';
+        // Try to extract error count from Biome output
+        const match = output.match(/Found (\d+) error/);
+        const errorCount = match ? parseInt(match[1], 10) : 'unknown';
+        result.validation.biome = `${errorCount} issue${errorCount !== 1 ? 's' : ''}`;
+        result.warnings.push(`Biome validation found ${errorCount} issues`);
+      }
+    }
+
+    // Run knip check if enabled
+    if (validationConfig.knip?.enabled) {
+      try {
+        execSync(validationConfig.knip.command, { encoding: 'utf-8', cwd: projectRoot });
+        result.validation.knip = 'No unused code';
+      } catch (error: any) {
+        const output = error.stdout || error.stderr || '';
+        // Parse knip output to extract counts
+        const filesMatch = output.match(/Unused files\s+(\d+)/);
+        const exportsMatch = output.match(/Unused exports\s+(\d+)/);
+        const depsMatch = output.match(/Unused dependencies\s+(\d+)/);
+        
+        const issues = [];
+        if (filesMatch && filesMatch[1] !== '0') issues.push(`${filesMatch[1]} unused file${filesMatch[1] !== '1' ? 's' : ''}`);
+        if (exportsMatch && exportsMatch[1] !== '0') issues.push(`${exportsMatch[1]} unused export${exportsMatch[1] !== '1' ? 's' : ''}`);
+        if (depsMatch && depsMatch[1] !== '0') issues.push(`${depsMatch[1]} unused dep${depsMatch[1] !== '1' ? 's' : ''}`);
+        
+        if (issues.length > 0) {
+          result.validation.knip = issues.join(', ');
+          result.warnings.push(`Knip found: ${issues.join(', ')}`);
+        } else {
+          result.validation.knip = 'Check completed';
+        }
+      }
     }
 
     // 6. Git operations

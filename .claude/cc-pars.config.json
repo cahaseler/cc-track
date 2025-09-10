@@ -26,6 +26,10 @@
       "lint": {
         "enabled": true,
         "command": "bunx biome check"
+      },
+      "knip": {
+        "enabled": true,
+        "command": "bunx knip"
       }
     }
   },
