@@ -4,11 +4,18 @@
   "description": "Claude Code - Plan, Analyze, Refine, Succeed: Context management system for Claude Code",
   "type": "module",
   "scripts": {
-    "init": "bun run scripts/init-templates.ts"
+    "init": "bun run scripts/init-templates.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "fix": "biome check --write .",
+    "check": "bun run typecheck && bun run lint"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^20.0.0"
+    "@biomejs/biome": "^2.2.4",
+    "@types/bun": "^1.2.21",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "ccusage": "latest"

@@ -13,10 +13,8 @@
 ## Items
 
 <!-- Items will be added below -->
-- investigate why post plan hook is failing to create tasks at all. This seems to have been introduced when we swapped the model to sonnet.
 - optional full github support with automatic issue creation for tasks, connection of issue branches to said issues, and PRs instead of merges during task completion.
 - preparation for push functionality. Possibly this is simply an optional part of task completion. Basically, cleanup with knip, lint, format, typecheck, etc, enforced by pre-push hooks.
-- centralized logging. right now various hooks log to various places. having a centralized system to log all relevant hook, command, etc activity to .claude/logs/ would make things easier to manage and make code cleaner.
 - tutorial mode for cc-pars. Possibly extra prompt content, possibly an entirely new 'output style'. Basically, when this is enabled, Claude has additional context on the intended cc-pars workflow and nudges the user more explicitly with reminders of commands, using tasks, what the next step is, etc.
 - packaging and distribution, installer, initial installation flow.
 - [2025-09-10] post edit hook that runs things like single-file typecheck, linting, maybe unit tests (if quick)
