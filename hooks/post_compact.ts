@@ -2,13 +2,14 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { isHookEnabled } from '../.claude/lib/config';
 
 interface SessionStartInput {
   session_id: string;
   transcript_path?: string;
   cwd: string;
   hook_event_name: string;
-  matcher?: string; // 'startup' | 'resume' | 'clear' | 'compact'
+  source?: string; // 'startup' | 'resume' | 'clear' | 'compact'
 }
 
 interface HookOutput {
@@ -18,11 +19,25 @@ interface HookOutput {
 
 async function main() {
   try {
+    // Check if hook is enabled
+    if (!isHookEnabled('post_compact')) {
+      // Silent exit
+      console.log(JSON.stringify({ continue: true }));
+      process.exit(0);
+    }
+    
     const input = await Bun.stdin.text();
     const data: SessionStartInput = JSON.parse(input);
     
-    // Only run after compaction
-    if (data.matcher !== 'compact') {
+    // Log for debugging
+    const logFile = '/tmp/post_compact_debug.log';
+    const fs = require('fs');
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] SessionStart hook called with full data: ${JSON.stringify(data)}\n`);
+    
+    // Only run after compaction (both manual and auto)
+    // According to docs: "compact" - Invoked from auto or manual compact
+    if (data.source !== 'compact') {
+      fs.appendFileSync(logFile, `[${new Date().toISOString()}] Skipping - source is not 'compact' (got: ${data.source})\n`);
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
@@ -112,9 +127,14 @@ Now that you can see the current state of the project documentation:
 
 Please do this now before proceeding with any new work.`;
     
-    const output: HookOutput = {
+    // SessionStart hooks should use hookSpecificOutput for additional context
+    const output = {
       continue: true,
-      systemMessage: instructions
+      systemMessage: instructions,
+      hookSpecificOutput: {
+        hookEventName: "SessionStart",
+        additionalContext: instructions
+      }
     };
     
     console.log(JSON.stringify(output));

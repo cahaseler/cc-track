@@ -11,126 +11,68 @@
 ## Directory Structure
 
 ```
-project-root/
-├── src/
-│   ├── 
-│   └── 
-├── tests/
-│   ├── 
-│   └── 
-├── docs/
-└── config/
+/home/ubuntu/projects/cc-pars/
+├── .claude/           # Project context and state
+│   ├── plans/         # Captured plans from planning mode
+│   ├── tasks/         # Active and completed tasks
+│   └── *.md           # Context files (imported by CLAUDE.md)
+├── commands/          # Slash commands for Claude Code
+├── docs/              # Research and documentation
+├── hooks/             # Claude Code event hooks
+├── scripts/           # Utility scripts
+├── templates/         # Templates for initialization
+└── old_roopars_documents/  # Legacy documentation
 ```
 
 ## Key Files & Purpose
 
-| File | Purpose | Key Exports |
-|------|---------|-------------|
-| | | |
+### Hooks (Event Handlers)
+| File | Purpose |
+|------|---------|
+| hooks/capture_plan.ts | Captures plans from ExitPlanMode, creates task files |
+| hooks/pre_compact.ts | Extracts error patterns before compaction |
+| hooks/post_compact.ts | Restores context after compaction via SessionStart |
+| hooks/stop_review.ts | Reviews changes at Stop event, auto-commits with [wip] |
 
-## Core Functions & Classes
+### Scripts & Utilities
+| File | Purpose |
+|------|---------|
+| scripts/init-templates.ts | Initializes cc-pars in a project |
+| scripts/git-session.ts | Git utilities for managing WIP commits |
 
+### Commands
+| File | Purpose |
+|------|---------|
+| commands/init-cc-pars.md | Slash command to initialize cc-pars |
+| commands/complete-task.md | Mark active task as complete |
+| commands/config-cc-pars.md | Configure cc-pars hooks and features |
 
-### API Endpoints
-- **File:** 
-- **Endpoints:** 
+### Templates
+| File | Purpose |
+|------|---------|
+| templates/CLAUDE.md | Main context file with @ imports |
+| templates/settings.json | Claude Code hooks configuration |
+| templates/settings_with_stop.json | Settings with Stop hook enabled |
+| templates/statusline.sh | Custom status line script |
 
-## Database Schema
+### Context Files (.claude/)
+| File | Purpose |
+|------|---------|
+| .claude/product_context.md | Project vision and goals |
+| .claude/system_patterns.md | Technical patterns and conventions |
+| .claude/decision_log.md | Immutable record of decisions |
+| .claude/progress_log.md | Task status tracking |
+| .claude/learned_mistakes.md | Auto-generated error patterns |
+| .claude/user_context.md | User preferences and working style |
+| .claude/cc-pars.config.json | Configuration for enabling/disabling hooks |
 
+### Libraries (.claude/lib/)
+| File | Purpose |
+|------|---------|
+| lib/config.ts | Configuration management helpers |
 
+---
 
 ## Update Log
 
-*(Timestamps of significant structure changes)*
-
-## Key Files (Updated 2025-09-09 17:45)
-| File | Purpose |
-|------|---------|
-| hooks/test.ts | Test file |
-| src/main.ts | Modified file |
-
-## Directory Structure (Updated 2025-09-09 17:59)
-```
-/home/ubuntu/projects/cc-pars
-/home/ubuntu/projects/cc-pars/old_roopars_documents
-/home/ubuntu/projects/cc-pars/templates
-/home/ubuntu/projects/cc-pars/docs
-/home/ubuntu/projects/cc-pars/hooks
-/home/ubuntu/projects/cc-pars/.claude/plans
-```
-
-## Key Files (Updated 2025-09-09 17:59)
-| File | Purpose |
-|------|---------|
-| /home/ubuntu/projects/cc-pars/project-scope-questions.md | Modified file |
-| /home/ubuntu/projects/cc-pars/research-plan.md | Modified file |
-| /home/ubuntu/projects/cc-pars/claude-code-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/research-plan-answered.md | Modified file |
-| /home/ubuntu/projects/cc-pars/compact-analysis.md | Modified file |
-| /home/ubuntu/projects/cc-pars/planning-mode-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/headless-cli-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/statusline-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/test-statusline.sh | Test file |
-| /home/ubuntu/projects/cc-pars/ccusage-integration.md | Modified file |
-| /home/ubuntu/projects/cc-pars/ARCHITECTURE.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/active_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/product_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/system_patterns.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/decision_log.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/progress_log.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/code_index.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/CLAUDE.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/settings.json | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/statusline.sh | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/no_active_task.md | Modified file |
-| /home/ubuntu/projects/cc-pars/commands/init-cc-pars.md | Modified file |
-| /home/ubuntu/projects/cc-pars/scripts/init-templates.ts | Modified file |
-| /home/ubuntu/projects/cc-pars/package.json | Modified file |
-| /home/ubuntu/projects/cc-pars/.claude/product_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/.claude/system_patterns.md | Modified file |
-| /home/ubuntu/projects/cc-pars/hooks/capture_plan.ts | Hook implementation |
-| /home/ubuntu/projects/cc-pars/.claude/settings.json | Modified file |
-| /home/ubuntu/projects/cc-pars/test_hook_input.json | Test file |
-
-## Directory Structure (Updated 2025-09-09 18:02)
-```
-/home/ubuntu/projects/cc-pars
-/home/ubuntu/projects/cc-pars/old_roopars_documents
-/home/ubuntu/projects/cc-pars/templates
-/home/ubuntu/projects/cc-pars/docs
-/home/ubuntu/projects/cc-pars/hooks
-/home/ubuntu/projects/cc-pars/.claude/plans
-```
-
-## Key Files (Updated 2025-09-09 18:02)
-| File | Purpose |
-|------|---------|
-| /home/ubuntu/projects/cc-pars/project-scope-questions.md | Modified file |
-| /home/ubuntu/projects/cc-pars/research-plan.md | Modified file |
-| /home/ubuntu/projects/cc-pars/claude-code-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/research-plan-answered.md | Modified file |
-| /home/ubuntu/projects/cc-pars/compact-analysis.md | Modified file |
-| /home/ubuntu/projects/cc-pars/planning-mode-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/headless-cli-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/statusline-findings.md | Modified file |
-| /home/ubuntu/projects/cc-pars/test-statusline.sh | Test file |
-| /home/ubuntu/projects/cc-pars/ccusage-integration.md | Modified file |
-| /home/ubuntu/projects/cc-pars/ARCHITECTURE.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/active_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/product_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/system_patterns.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/decision_log.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/progress_log.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/code_index.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/CLAUDE.md | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/settings.json | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/statusline.sh | Modified file |
-| /home/ubuntu/projects/cc-pars/templates/no_active_task.md | Modified file |
-| /home/ubuntu/projects/cc-pars/commands/init-cc-pars.md | Modified file |
-| /home/ubuntu/projects/cc-pars/scripts/init-templates.ts | Modified file |
-| /home/ubuntu/projects/cc-pars/package.json | Modified file |
-| /home/ubuntu/projects/cc-pars/.claude/product_context.md | Modified file |
-| /home/ubuntu/projects/cc-pars/.claude/system_patterns.md | Modified file |
-| /home/ubuntu/projects/cc-pars/hooks/capture_plan.ts | Hook implementation |
-| /home/ubuntu/projects/cc-pars/.claude/settings.json | Modified file |
-| /home/ubuntu/projects/cc-pars/test_hook_input.json | Test file |
+[2025-09-10 03:05] - Complete restructure with accurate project layout

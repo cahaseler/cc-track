@@ -5,12 +5,15 @@ import { join } from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { execSync } from 'child_process';
+import { isHookEnabled } from '../.claude/lib/config';
 
 interface CompactInput {
-  messageId: string;
-  threadId: string;
-  conversationStats: any;
-  transcript: string;
+  session_id: string;
+  transcript_path: string;
+  hook_event_name: string;
+  trigger: string;  // 'manual' or 'auto'
+  custom_instructions?: string;
+  cwd?: string;
 }
 
 interface TranscriptEntry {
@@ -451,28 +454,27 @@ async function updateLearnedMistakes(projectRoot: string, patterns: string[]) {
 
 async function main() {
   try {
+    // Check if hook is enabled
+    if (!isHookEnabled('pre_compact')) {
+      // Silent exit
+      console.log(JSON.stringify({ success: true }));
+      process.exit(0);
+    }
+    
     const input = await Bun.stdin.text();
     const data: CompactInput = JSON.parse(input);
     
-    if (!data.transcript || !existsSync(data.transcript)) {
+    if (!data.transcript_path || !existsSync(data.transcript_path)) {
       console.log(JSON.stringify({ success: false, message: 'No transcript found' }));
       process.exit(0);
     }
     
     // Extract error patterns
     const extractor = new ErrorPatternExtractor();
-    const sequences = await extractor.extractFromTranscript(data.transcript);
+    const sequences = await extractor.extractFromTranscript(data.transcript_path);
     
-    // Get project root
-    const scriptPath = process.argv[1];
-    let projectRoot: string;
-    if (scriptPath.includes('/.claude/hooks/')) {
-      projectRoot = scriptPath.substring(0, scriptPath.indexOf('/.claude/hooks/'));
-    } else if (scriptPath.includes('/hooks/')) {
-      projectRoot = scriptPath.substring(0, scriptPath.indexOf('/hooks/'));
-    } else {
-      projectRoot = process.cwd();
-    }
+    // Get project root - use cwd from hook data if available
+    const projectRoot = data.cwd || process.cwd();
     
     // Analyze patterns and update learned mistakes
     if (sequences.length > 0) {

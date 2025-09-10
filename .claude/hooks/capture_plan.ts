@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
+import { isHookEnabled } from '../lib/config';
 
 interface HookInput {
   session_id: string;
@@ -23,6 +24,13 @@ interface HookOutput {
 
 async function main() {
   try {
+    // Check if hook is enabled
+    if (!isHookEnabled('capture_plan')) {
+      // Silent exit
+      console.log(JSON.stringify({ continue: true }));
+      process.exit(0);
+    }
+    
     // Read input from stdin
     const input = await Bun.stdin.text();
     const data: HookInput = JSON.parse(input);
@@ -115,9 +123,9 @@ Create the content for TASK_${taskId}.md following this structure:
 
 Respond with ONLY the markdown content for the task file, no explanations.`;
 
-    // Use Claude CLI to enrich the plan
+    // Use Claude CLI to enrich the plan (using Sonnet for reliable task structure generation)
     const taskContent = execSync(
-      `claude -p "${enrichmentPrompt.replace(/"/g, '\\"')}" --output-format text 2>/dev/null`,
+      `claude -p "${enrichmentPrompt.replace(/"/g, '\\"')}" --model sonnet --output-format text 2>/dev/null`,
       { 
         encoding: 'utf-8',
         cwd: projectRoot,

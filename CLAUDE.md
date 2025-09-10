@@ -1,7 +1,7 @@
 # Project: [Your Project Name]
 
 ## Active Task
-@.claude/tasks/TASK_003.md
+@.claude/no_active_task.md
 
 ## Product Vision
 @.claude/product_context.md

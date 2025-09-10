@@ -62,18 +62,42 @@ switch (command) {
     const baseCommit = getLastUserCommit();
     const taskId = getCurrentTaskId();
     
-    console.log(`Squashing WIP commits since ${baseCommit}`);
+    // Get a list of what was done from the WIP commits
+    const wipMessages = execSync(`git log --oneline ${baseCommit}..HEAD`, { encoding: 'utf-8' })
+      .split('\n')
+      .filter(line => line.includes('[wip]'))
+      .map(line => line.replace(/^[a-f0-9]+ \[wip\] /, '- '))
+      .join('\n');
+    
+    console.log(`\nSquashing WIP commits since ${baseCommit}\n`);
+    if (wipMessages) {
+      console.log('Work included:');
+      console.log(wipMessages);
+    }
+    
+    // Check if a message was provided as argument
+    const providedMessage = process.argv[3];
+    
+    if (!providedMessage) {
+      // Fail immediately - this tool is for non-interactive use
+      console.error('❌ ERROR: Commit message required');
+      console.error(`\nUsage: bun run scripts/git-session.ts squash-session "<commit message>"`);
+      console.error(`Example: bun run scripts/git-session.ts squash-session "${taskId}: Implement feature X"`);
+      if (wipMessages) {
+        console.error('\nWork to be squashed:');
+        console.error(wipMessages);
+      }
+      process.exit(1);
+    }
+    
+    // Squash with provided message
     try {
-      // Reset to the base commit keeping changes
       execSync(`git reset --soft ${baseCommit}`);
-      
-      // Create a new commit with all the changes
-      const message = `${taskId}: Session work completed`;
-      execSync(`git commit -m "${message}"`);
-      
-      console.log(`✅ Squashed into: ${message}`);
+      execSync(`git commit -m "${providedMessage}"`);
+      console.log(`\n✅ Squashed with message: ${providedMessage}`);
     } catch (e) {
       console.error('❌ Squash failed:', e);
+      process.exit(1);
     }
     break;
     
@@ -103,9 +127,19 @@ switch (command) {
     // Prepare for pushing: squash WIPs and run checks
     console.log('Preparing for push...');
     
+    // Get commit message from argument if provided
+    const commitMsg = process.argv[3];
+    
     // 1. Squash WIP commits
     console.log('\n1. Squashing WIP commits...');
-    execSync(`bun run ${__filename} squash-session`, { stdio: 'inherit' });
+    if (!commitMsg) {
+      console.error('❌ ERROR: Commit message required for prepare-push');
+      console.error('\nUsage: bun run scripts/git-session.ts prepare-push "<commit message>"');
+      console.error('Example: bun run scripts/git-session.ts prepare-push "TASK_XXX: Implement feature Y"');
+      process.exit(1);
+    }
+    
+    execSync(`bun run ${__filename} squash-session "${commitMsg}"`, { stdio: 'inherit' });
     
     // 2. Run lint if available
     if (existsSync(join(projectRoot, 'package.json'))) {

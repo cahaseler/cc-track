@@ -13,6 +13,10 @@ interface HookInput {
   tool_input: {
     plan: string;
   };
+  tool_response?: {
+    success?: boolean;
+    [key: string]: any;
+  };
 }
 
 interface HookOutput {
@@ -26,6 +30,16 @@ async function main() {
     // Read input from stdin
     const input = await Bun.stdin.text();
     const data: HookInput = JSON.parse(input);
+    
+    // PostToolUse hook - check if the plan was approved
+    if (data.hook_event_name === 'PostToolUse') {
+      // Check if the tool execution was successful (plan approved)
+      if (!data.tool_response?.success) {
+        // Plan was rejected - don't create task
+        console.error('Plan was not approved, skipping task creation');
+        process.exit(0);
+      }
+    }
     
     const plan = data.tool_input.plan;
     if (!plan) {

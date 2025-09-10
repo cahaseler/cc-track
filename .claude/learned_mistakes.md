@@ -20,3 +20,7 @@
 - When grep operations are blocked by user hooks, consider that the pattern or command may trigger security filters - simplify the search or use different filtering approaches
 - File counting operations like `grep -c` are more reliable than complex jq parsing when determining the number of matching entries in JSONL files
 - When working with Claude CLI enrichment features, always implement proper error handling and fallback mechanisms since CLI operations can fail silently
+- When executing external commands from within a hook, always set cwd to a neutral directory like '/tmp' to avoid triggering recursive hooks in the project directory
+- Claude CLI ignores the --output-format json flag - to get JSON responses, must explicitly instruct in the prompt with "ONLY JSON" repeated multiple times and examples
+- When parsing Claude CLI responses, expect wrapper format {"type":"result","result":"actual content"} and extract the inner content
+- Set generous timeouts (2+ minutes) for Claude CLI calls as complex prompts take time to process

@@ -5,6 +5,7 @@ import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
+import { isHookEnabled } from '../.claude/lib/config';
 
 interface StopInput {
   session_id: string;
@@ -244,7 +245,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       writeFileSync(tempFile, prompt);
       
       const response = execSync(
-        `claude --output-format json < "${tempFile}"`,
+        `claude --model sonnet --output-format json < "${tempFile}"`,
         { 
           encoding: 'utf-8',
           timeout: 120000,  // 2 minutes - plenty of time for Claude to think
@@ -330,6 +331,13 @@ async function main() {
   const logFile = '/tmp/stop_review_debug.log';
   
   try {
+    // Check if hook is enabled
+    if (!isHookEnabled('stop_review')) {
+      // Silent exit
+      console.log(JSON.stringify({ continue: true }));
+      process.exit(0);
+    }
+    
     appendFileSync(logFile, `[${new Date().toISOString()}] === HOOK STARTED ===\n`);
     
     const input = await Bun.stdin.text();

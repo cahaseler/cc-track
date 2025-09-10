@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "capture_plan": {
+      "enabled": true,
+      "description": "Captures plans from ExitPlanMode and creates task files"
+    },
+    "pre_compact": {
+      "enabled": true,
+      "description": "Extracts error patterns before compaction"
+    },
+    "post_compact": {
+      "enabled": true,
+      "description": "Restores context after compaction"
+    },
+    "stop_review": {
+      "enabled": true,
+      "description": "Reviews changes and auto-commits with [wip]"
+    }
+  },
+  "features": {
+    "statusline": {
+      "enabled": true,
+      "description": "Custom status line showing costs and task info"
+    }
+  }
+}
