@@ -39,6 +39,7 @@
 |------|---------|
 | scripts/init-templates.ts | Initializes cc-pars in a project |
 | scripts/git-session.ts | Git utilities for managing WIP commits |
+| scripts/add-to-backlog.ts | Appends items to backlog with date stamps |
 
 ### Commands
 | File | Purpose |
@@ -46,6 +47,7 @@
 | commands/init-cc-pars.md | Slash command to initialize cc-pars |
 | commands/complete-task.md | Mark active task as complete |
 | commands/config-cc-pars.md | Configure cc-pars hooks and features |
+| commands/add-to-backlog.md | Quickly add items to backlog without disruption |
 
 ### Templates
 | File | Purpose |
@@ -65,6 +67,7 @@
 | .claude/learned_mistakes.md | Auto-generated error patterns |
 | .claude/user_context.md | User preferences and working style |
 | .claude/cc-pars.config.json | Configuration for enabling/disabling hooks |
+| .claude/backlog.md | List of future ideas and improvements |
 
 ### Libraries (.claude/lib/)
 | File | Purpose |
@@ -77,3 +80,4 @@
 ## Update Log
 
 [2025-09-10 03:05] - Complete restructure with accurate project layout
+[2025-09-10 09:00] - Added backlog system files
