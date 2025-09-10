@@ -21,3 +21,4 @@
 - tutorial mode for cc-pars. Possibly extra prompt content, possibly an entirely new 'output style'. Basically, when this is enabled, Claude has additional context on the intended cc-pars workflow and nudges the user more explicitly with reminders of commands, using tasks, what the next step is, etc.
 - packaging and distribution, installer, initial installation flow.
 - 
+- [2025-09-10] test direct call
