@@ -1,0 +1,12 @@
+{
+  "messageId": "test-message-002",
+  "threadId": "test-thread-002",
+  "conversationStats": {
+    "turns": 50,
+    "inputTokens": 50000,
+    "outputTokens": 80000,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 10000
+  },
+  "transcript": "/home/ubuntu/.claude/projects/-home-ubuntu-projects-cc-pars/b920b0d0-0408-4e31-a182-6a4791da6489.jsonl"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "cc-pars",
+  "version": "1.0.0",
+  "description": "Claude Code - Plan, Analyze, Refine, Succeed: Context management system for Claude Code",
+  "type": "module",
+  "scripts": {
+    "init": "bun run scripts/init-templates.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "ccusage": "latest"
+  }
+}

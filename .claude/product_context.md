@@ -1,0 +1,88 @@
+# Product Context
+
+**Purpose:** High-level overview of the project's goals, target audience, core features, and vision. Stable reference for understanding the "why" behind the project.
+
+**Instructions:**
+- Maintain concise summary of project purpose and scope
+- Define primary users and their needs
+- List key features and functionalities
+- Update only when significant shifts in direction
+- Append updates with: `[YYYY-MM-DD HH:MM] - [Summary of Change]`
+
+---
+
+## Project Vision & Goals
+
+**cc-pars (Claude Code - Plan, Analyze, Refine, Succeed)** is a comprehensive context management and workflow optimization system for Claude Code.
+
+### Vision
+Solve the fundamental problem of context loss in Claude Code sessions through intelligent preservation, task tracking, and quality assurance.
+
+### Goals
+- Preserve critical context through compaction cycles
+- Enforce completion of tasks rather than "close enough" declarations
+- Provide continuous awareness of task status and context usage
+- Guide development through planning and validation
+
+## Target Audience
+
+**Primary Users:** Software developers using Claude Code for:
+- Complex multi-file projects
+- Long-running development sessions
+- Projects requiring consistent patterns and conventions
+- Teams needing reproducible AI-assisted workflows
+
+**User Needs:**
+- Avoid re-explaining project context after compaction
+- Track multiple tasks and their status
+- Ensure AI follows established patterns
+- Validate work meets requirements before declaring complete
+
+## Core Features & Functionality
+
+### Context Management
+- Dynamic CLAUDE.md with file imports
+- Automatic context extraction before compaction
+- Persistent storage of project patterns and decisions
+- Smart categorization (persistent/cached/dynamic)
+
+### Task Tracking
+- Plan capture from planning mode
+- Active task management with requirements
+- Progress logging and decision tracking
+- Task status visibility in status line
+
+### Quality Assurance
+- Batched edit validation (every 3 edits)
+- Completion blocking when requirements unmet
+- Automated review capabilities
+- TDD-inspired workflow without strictness
+
+### Developer Experience
+- Custom status line with ccusage integration
+- Warnings for context limits and API blocks
+- One-command initialization (`/init-cc-pars`)
+- Safe file handling (no overwrites, backups)
+
+## Non-Goals / Out of Scope
+
+- Strict TDD enforcement (offers guidance, not enforcement)
+- Replacing Claude Code's native features
+- Managing multiple Claude Code instances
+- Version control operations
+- External API integrations (except ccusage)
+
+## Technical Stack
+
+- **Language:** TypeScript
+- **Runtime:** Bun
+- **Dependencies:** ccusage (for token tracking)
+- **Integration:** Claude Code hooks system
+- **File Format:** Markdown for context, JSON for config
+- **Shell:** Bash for status line and simple hooks
+
+---
+
+## Update Log
+
+[2025-01-09 16:30] - Initial product context documented based on project analysis
