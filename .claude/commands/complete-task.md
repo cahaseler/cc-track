@@ -56,6 +56,27 @@ When the user runs `/complete-task`, guide them through completing the current a
    ```
    Create a proper commit message summarizing the entire task.
 
+9.5. **Merge Task Branch** (if git_branching enabled):
+   ```typescript
+   import { isHookEnabled } from '.claude/lib/config';
+   import { getDefaultBranch, mergeTaskBranch } from '.claude/lib/git-helpers';
+   
+   if (isHookEnabled('git_branching')) {
+     // Extract branch name from task file
+     const taskContent = readFileSync(taskFilePath, 'utf-8');
+     const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
+     
+     if (branchMatch) {
+       const branchName = branchMatch[1];
+       const defaultBranch = getDefaultBranch(projectRoot);
+       mergeTaskBranch(branchName, defaultBranch, projectRoot);
+       console.log(`Merged ${branchName} into ${defaultBranch} (branch kept for reference)`);
+     }
+   }
+   ```
+   - Note: Branch is kept for reference (not deleted)
+   - Command to list task branches: `git branch | grep -E "feature/|bug/"`
+
 10. **Update CLAUDE.md**:
     - Change active task to `@.claude/no_active_task.md`
     - Or set to next task if one is ready

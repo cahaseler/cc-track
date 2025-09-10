@@ -2,6 +2,7 @@
 
 ## Active Task
 @.claude/no_active_task.md
+<!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
 @.claude/product_context.md

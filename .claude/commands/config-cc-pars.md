@@ -19,6 +19,7 @@ If the user provides parameters like `/config-cc-pars disable task creation` or 
    - "post compact", "context restore" → `post_compact` hook
    - "stop review", "auto commit", "deviation detection" → `stop_review` hook
    - "status line", "statusline" → `statusline` feature
+   - "git branching", "feature branches", "task branches" → `git_branching` feature
 3. Update the configuration file at `.claude/cc-pars.config.json`
 4. Confirm the change to the user
 
@@ -58,6 +59,10 @@ The configuration file is located at `.claude/cc-pars.config.json` with this str
     "statusline": {
       "enabled": true,
       "description": "Custom status line showing costs and task info"
+    },
+    "git_branching": {
+      "enabled": false,
+      "description": "Create feature branches for tasks and merge on completion"
     }
   }
 }
@@ -77,7 +82,13 @@ Claude:
 1. Updates the config file to set `hooks.capture_plan.enabled` to `true`
 2. Confirms: "I've enabled the task creation hook. Plans will now be captured when you exit planning mode."
 
-### Example 3: Show configuration
+### Example 3: Enable git branching
+User: `/config-cc-pars enable git branching`
+Claude:
+1. Updates the config file to set `features.git_branching.enabled` to `true`
+2. Confirms: "I've enabled git branching. New tasks will now create feature branches and merge them back on completion."
+
+### Example 4: Show configuration
 User: `/config-cc-pars`
 Claude:
 1. Reads the current configuration
@@ -87,6 +98,7 @@ Claude:
    - **Context Restore** (post_compact): ✅ Enabled
    - **Stop Review** (stop_review): ❌ Disabled
    - **Status Line**: ✅ Enabled
+   - **Git Branching**: ❌ Disabled
    
    What would you like to configure?"
 

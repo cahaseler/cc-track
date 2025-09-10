@@ -38,6 +38,10 @@ const DEFAULT_CONFIG: Config = {
     statusline: {
       enabled: true,
       description: "Custom status line showing costs and task info"
+    },
+    git_branching: {
+      enabled: false,
+      description: "Create feature branches for tasks and merge on completion"
     }
   }
 };

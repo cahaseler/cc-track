@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { isHookEnabled } from '../lib/config';
+import { hasUncommittedChanges, generateCommitMessage, generateBranchName, createTaskBranch } from '../lib/git-helpers';
 
 interface HookInput {
   session_id: string;
@@ -135,7 +136,36 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     
     // Save the enriched task file in tasks directory
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
-    writeFileSync(taskPath, taskContent);
+    let finalTaskContent = taskContent;
+    
+    // Handle git branching if enabled
+    if (isHookEnabled('git_branching')) {
+      try {
+        // Check if we're in a git repo
+        execSync('git rev-parse --git-dir', { cwd: projectRoot });
+        
+        // Commit any uncommitted work
+        if (hasUncommittedChanges(projectRoot)) {
+          const diff = execSync('git diff HEAD', { encoding: 'utf-8', cwd: projectRoot });
+          const commitMsg = await generateCommitMessage(diff, projectRoot);
+          execSync(`git add -A && git commit -m "${commitMsg}"`, { cwd: projectRoot });
+          console.error(`Committed uncommitted changes: ${commitMsg}`);
+        }
+        
+        // Create and switch to task branch
+        const branchName = await generateBranchName(plan, taskId, projectRoot);
+        createTaskBranch(branchName, projectRoot);
+        
+        // Store branch name in task file for later reference
+        finalTaskContent += `\n\n<!-- branch: ${branchName} -->`;
+        console.error(`Created and switched to branch: ${branchName}`);
+      } catch (error) {
+        console.error('Git branching failed (not a git repo or other error):', error);
+        // Continue without branching
+      }
+    }
+    
+    writeFileSync(taskPath, finalTaskContent);
     
     // Update CLAUDE.md to point to the new task
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
