@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
+import { createLogger } from '../.claude/lib/logger';
 
 interface HookInput {
   session_id: string;
@@ -26,26 +27,41 @@ interface HookOutput {
 }
 
 async function main() {
+  const logger = createLogger('capture_plan');
+  
   try {
     // Read input from stdin
     const input = await Bun.stdin.text();
     const data: HookInput = JSON.parse(input);
+    
+    logger.debug('Hook triggered', { 
+      session_id: data.session_id,
+      hook_event: data.hook_event_name,
+      tool_name: data.tool_name,
+      has_tool_response: !!data.tool_response,
+      tool_response: data.tool_response
+    });
     
     // PostToolUse hook - check if the plan was approved
     if (data.hook_event_name === 'PostToolUse') {
       // Check if the tool execution was successful (plan approved)
       if (!data.tool_response?.success) {
         // Plan was rejected - don't create task
-        console.error('Plan was not approved, skipping task creation');
+        logger.info('Plan was not approved, skipping task creation', {
+          tool_response: data.tool_response
+        });
         process.exit(0);
       }
+      logger.info('Plan was approved, creating task');
     }
     
     const plan = data.tool_input.plan;
     if (!plan) {
-      console.error('No plan found in tool input');
+      logger.warn('No plan found in tool input', { tool_input: data.tool_input });
       process.exit(0);
     }
+    
+    logger.debug('Plan content', { plan_length: plan.length, plan_preview: plan.substring(0, 200) });
     
     // Ensure directories exist
     const projectRoot = data.cwd;
@@ -137,7 +153,7 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     let taskContent: string;
     try {
       taskContent = execSync(
-        `claude --output-format text < "${tempPromptPath}"`,
+        `claude --model sonnet --output-format text < "${tempPromptPath}"`,
         { 
           encoding: 'utf-8',
           cwd: '/tmp',  // Run in /tmp to avoid triggering Stop hook recursion
@@ -146,7 +162,11 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
         }
       ).trim();
     } catch (cmdError: any) {
-      console.error('Claude CLI error:', cmdError.message);
+      logger.error('Claude CLI failed', { 
+        error: cmdError.message,
+        command: 'claude --model sonnet --output-format text',
+        cwd: '/tmp'
+      });
       throw cmdError;
     } finally {
       // Clean up temp file
@@ -158,6 +178,8 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     // Save the enriched task file in tasks directory
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
     writeFileSync(taskPath, taskContent);
+    
+    logger.info('Task file created', { taskId, taskPath });
     
     // Update CLAUDE.md to point to the new task
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
@@ -199,7 +221,7 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     process.exit(0);
     
   } catch (error) {
-    console.error(`Error in capture_plan hook: ${error}`);
+    logger.exception('Fatal error in capture_plan hook', error as Error);
     // Don't block on error
     process.exit(0);
   }

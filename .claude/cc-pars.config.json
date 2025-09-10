@@ -26,5 +26,12 @@
       "enabled": false,
       "description": "Create feature branches for tasks and merge on completion"
     }
+  },
+  "logging": {
+    "enabled": true,
+    "level": "DEBUG",
+    "retentionDays": 7,
+    "prettyPrint": false,
+    "description": "Centralized logging system for debugging and monitoring"
   }
 }

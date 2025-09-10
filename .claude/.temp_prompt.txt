@@ -1,0 +1,43 @@
+
+Based on the following plan, create a comprehensive task file following the active_task template format.
+
+## The Plan:
+Test plan for logging
+
+## Instructions:
+1. Extract the task name/title from the plan
+2. Set status to "planning"
+3. List all requirements as checkboxes
+4. Define clear success criteria
+5. Identify next steps
+6. Note any potential blockers or questions
+
+Create the content for TASK_012.md following this structure:
+
+# [Task Title]
+
+**Purpose:** [Clear description of what this task accomplishes]
+
+**Status:** planning
+**Started:** 2025-09-10 09:36
+**Task ID:** 012
+
+## Requirements
+[Extract all requirements from the plan as checkboxes]
+
+## Success Criteria
+[Define what "done" looks like]
+
+## Technical Approach
+[Summary of the technical approach from the plan]
+
+## Current Focus
+[What to work on first]
+
+## Open Questions & Blockers
+[Any unknowns or blockers]
+
+## Next Steps
+[Clear next actions]
+
+Respond with ONLY the markdown content for the task file, no explanations.

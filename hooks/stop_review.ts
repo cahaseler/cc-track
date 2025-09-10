@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 
-import { readFileSync, existsSync, writeFileSync, unlinkSync, appendFileSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'fs';
 import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
 import { isHookEnabled } from '../.claude/lib/config';
 import { generateCommitMessage } from '../.claude/lib/git-helpers';
+import { createLogger } from '../.claude/lib/logger';
 
 interface StopInput {
   session_id: string;
@@ -33,10 +34,12 @@ interface ReviewResult {
 class SessionReviewer {
   private projectRoot: string;
   private claudeDir: string;
+  private logger;
   
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, logger: any) {
     this.projectRoot = projectRoot;
     this.claudeDir = join(projectRoot, '.claude');
+    this.logger = logger;
   }
   
   async review(transcriptPath: string): Promise<ReviewResult> {
@@ -190,19 +193,17 @@ class SessionReviewer {
   
   private buildReviewPrompt(task: string, messages: string, diff: string): string {
     // Log prompt size for debugging
-    const logFile = '/tmp/stop_review_debug.log';
     const sizes = {
       task: task.length,
       messages: messages.length,
       diff: diff.length,
       total: task.length + messages.length + diff.length
     };
-    const logMsg = `[${new Date().toISOString()}] Prompt sizes: task=${sizes.task}, messages=${sizes.messages}, diff=${sizes.diff}, total=${sizes.total}\n`;
-    appendFileSync(logFile, logMsg);
+    this.logger.debug('Building review prompt', sizes);
     
     // If diff is too large, don't even try
     if (diff.length > 50000) {
-      appendFileSync(logFile, `[${new Date().toISOString()}] Diff too large (${diff.length} chars), skipping review\n`);
+      this.logger.warn(`Diff too large for review: ${diff.length} characters`);
       throw new Error(`Diff too large for review: ${diff.length} characters`);
     }
     
@@ -248,20 +249,19 @@ Example valid response:
 Be strict about deviations - if the changes don't directly address the task requirements, it's a deviation.
 REMEMBER: Output ONLY the JSON object, nothing else!`;
     
-    appendFileSync(logFile, `[${new Date().toISOString()}] Final prompt length: ${prompt.length} characters\n`);
+    this.logger.debug(`Final prompt length: ${prompt.length} characters`);
     
     // Also save the full prompt for inspection if it's huge
     if (prompt.length > 20000) {
       const debugFile = `/tmp/stop_review_prompt_${Date.now()}.txt`;
       writeFileSync(debugFile, prompt);
-      appendFileSync(logFile, `[${new Date().toISOString()}] Large prompt saved to: ${debugFile}\n`);
+      this.logger.info(`Large prompt saved to: ${debugFile}`);
     }
     
     return prompt;
   }
   
   private async callClaudeForReview(prompt: string): Promise<ReviewResult> {
-    const logFile = '/tmp/stop_review_debug.log';
     try {
       const tempFile = `/tmp/stop_review_${Date.now()}.txt`;
       writeFileSync(tempFile, prompt);
@@ -282,14 +282,14 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       }
       
       // Log the raw response for debugging
-      appendFileSync(logFile, `[${new Date().toISOString()}] Claude raw response: ${response.substring(0, 500)}\n`);
+      this.logger.debug(`Claude raw response: ${response.substring(0, 500)}`);
       
       let result = JSON.parse(response);
       
       // Handle Claude CLI wrapper format
       if (result.type === 'result' && result.result) {
         // The actual content is in result.result, need to parse that too
-        appendFileSync(logFile, `[${new Date().toISOString()}] Unwrapping Claude CLI result field\n`);
+        this.logger.debug('Unwrapping Claude CLI result field');
         
         // The result field contains the actual JSON response as a string
         const innerContent = result.result;
@@ -299,20 +299,20 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
         if (jsonMatch) {
           try {
             result = JSON.parse(jsonMatch[0]);
-            appendFileSync(logFile, `[${new Date().toISOString()}] Successfully extracted JSON from response\n`);
+            this.logger.debug('Successfully extracted JSON from response');
           } catch (e) {
-            appendFileSync(logFile, `[${new Date().toISOString()}] ERROR: Failed to parse extracted JSON: ${jsonMatch[0].substring(0, 200)}\n`);
+            this.logger.error(`Failed to parse extracted JSON: ${jsonMatch[0].substring(0, 200)}`);
             throw new Error('Could not parse JSON from Claude response');
           }
         } else {
-          appendFileSync(logFile, `[${new Date().toISOString()}] ERROR: No JSON found in response: ${innerContent.substring(0, 200)}\n`);
+          this.logger.error(`No JSON found in response: ${innerContent.substring(0, 200)}`);
           throw new Error('Claude did not return JSON despite explicit instructions');
         }
       }
       
       // Check if the response has the expected structure
       if (!result.status || !result.message) {
-        appendFileSync(logFile, `[${new Date().toISOString()}] WARNING: Invalid response structure: ${JSON.stringify(result).substring(0, 200)}\n`);
+        this.logger.warn(`Invalid response structure: ${JSON.stringify(result).substring(0, 200)}`);
       }
       
       return result as ReviewResult;
@@ -373,7 +373,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
 }
 
 async function main() {
-  const logFile = '/tmp/stop_review_debug.log';
+  const logger = createLogger('stop_review');
   
   try {
     // Check if hook is enabled
@@ -383,12 +383,15 @@ async function main() {
       process.exit(0);
     }
     
-    appendFileSync(logFile, `[${new Date().toISOString()}] === HOOK STARTED ===\n`);
+    logger.info('=== HOOK STARTED ===');
     
     const input = await Bun.stdin.text();
     const data: StopInput = JSON.parse(input);
     
-    appendFileSync(logFile, `[${new Date().toISOString()}] Session: ${data.session_id}, stop_hook_active: ${data.stop_hook_active}\n`);
+    logger.debug('Session info', { 
+      session_id: data.session_id, 
+      stop_hook_active: data.stop_hook_active 
+    });
     
     // If already in a stop hook, still do review/commit but always allow stop
     const inStopHook = data.stop_hook_active;
@@ -417,12 +420,12 @@ async function main() {
       
       if (!status.trim()) {
         // No changes, skip everything
-        appendFileSync(logFile, `[${new Date().toISOString()}] No changes detected, exiting early\n`);
+        logger.info('No changes detected, exiting early');
         const output = { 
           continue: true,
           systemMessage: '✅ No changes to commit' 
         };
-        appendFileSync(logFile, `[${new Date().toISOString()}] Sending output: ${JSON.stringify(output)}\n`);
+        logger.debug('Sending output', output);
         console.log(JSON.stringify(output));
         process.exit(0);
       }
@@ -431,7 +434,7 @@ async function main() {
     }
     
     // Review the session
-    const reviewer = new SessionReviewer(projectRoot);
+    const reviewer = new SessionReviewer(projectRoot, logger);
     const review = await reviewer.review(data.transcript_path);
     
     // Handle based on review status
@@ -470,7 +473,7 @@ async function main() {
     }
     
     // Provide feedback based on status
-    appendFileSync(logFile, `[${new Date().toISOString()}] Review status: ${review.status}, message: ${review.message}\n`);
+    logger.info('Review complete', { status: review.status, message: review.message });
     switch (review.status) {
       case 'on_track':
         // Allow stop - work is good
@@ -524,19 +527,18 @@ async function main() {
         
       default:
         // Unexpected status - log it and allow stop
-        appendFileSync(logFile, `[${new Date().toISOString()}] WARNING: Unexpected review status: ${review.status}\n`);
+        logger.warn(`Unexpected review status: ${review.status}`);
         output.continue = true;
         output.systemMessage = `⚠️ Unexpected review status: ${review.status} - ${review.message}`;
         break;
     }
     
-    appendFileSync(logFile, `[${new Date().toISOString()}] Sending output: ${JSON.stringify(output).substring(0, 100)}\n`);
+    logger.debug('Sending output', { output_preview: JSON.stringify(output).substring(0, 100) });
     console.log(JSON.stringify(output));
     process.exit(0);
     
   } catch (error) {
-    appendFileSync(logFile, `[${new Date().toISOString()}] ERROR: ${error}\n`);
-    console.error(`Error in stop_review hook: ${error}`);
+    logger.exception('Error in stop_review hook', error as Error);
     // Don't block on errors
     console.log(JSON.stringify({ success: true }));
     process.exit(0);
