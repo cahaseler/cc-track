@@ -258,13 +258,8 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
       writeFileSync(claudeMdPath, claudeMd);
     }
 
-    // Log to progress log
-    const progressLogPath = join(claudeDir, 'progress_log.md');
-    if (existsSync(progressLogPath)) {
-      const logEntry = `\n[${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}] - Started: Task ${taskId} created from plan\n  Details: Plan captured and enriched\n  Files: ${planPath}, ${taskPath}\n`;
-      const currentLog = readFileSync(progressLogPath, 'utf-8');
-      writeFileSync(progressLogPath, currentLog + logEntry);
-    }
+    // No longer logging task creation to progress log - it's just noise
+    // Task files themselves track when tasks are created
 
     // Return success with a message
     const output: HookOutput = {
