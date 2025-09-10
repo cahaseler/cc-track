@@ -6,6 +6,7 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
 import { isHookEnabled } from '../.claude/lib/config';
+import { generateCommitMessage } from '../.claude/lib/git-helpers';
 
 interface StopInput {
   session_id: string;
@@ -28,6 +29,7 @@ interface ReviewResult {
   details?: string;
 }
 
+
 class SessionReviewer {
   private projectRoot: string;
   private claudeDir: string;
@@ -41,10 +43,30 @@ class SessionReviewer {
     // Get active task
     const activeTask = this.getActiveTask();
     if (!activeTask) {
+      // Get git diff for generating a meaningful commit message
+      const gitDiff = this.getGitDiff();
+      
+      if (!gitDiff || gitDiff.trim().length === 0) {
+        return {
+          status: 'on_track',
+          message: 'No changes to commit',
+          commitMessage: ''
+        };
+      }
+      
+      // Generate a meaningful commit message using Haiku
+      let commitMessage: string;
+      try {
+        commitMessage = await generateCommitMessage(gitDiff, this.projectRoot);
+      } catch {
+        // Fallback to generic message if generation fails
+        commitMessage = 'chore: exploratory work and improvements';
+      }
+      
       return {
         status: 'on_track',
         message: 'No active task - exploratory work',
-        commitMessage: '[wip] Exploratory work'
+        commitMessage
       };
     }
     
@@ -325,6 +347,29 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       return false;
     }
   }
+  
+  private checkRecentNonTaskCommits(): number {
+    try {
+      // Get last 10 commits
+      const commits = execSync('git log --oneline -10', { 
+        encoding: 'utf-8',
+        cwd: this.projectRoot 
+      }).split('\n').filter(line => line.trim());
+      
+      // Count consecutive commits without task reference from most recent
+      let nonTaskCount = 0;
+      for (const commit of commits) {
+        if (commit.includes('TASK_')) {
+          break; // Found a task commit, stop counting
+        }
+        nonTaskCount++;
+      }
+      
+      return nonTaskCount;
+    } catch {
+      return 0;
+    }
+  }
 }
 
 async function main() {
@@ -391,12 +436,22 @@ async function main() {
     
     // Handle based on review status
     let output: any = {};
+    let nonTaskSuggestion: string | null = null;
     
     if (review.commitMessage) {
       // Commit the changes
       const committed = await reviewer.commitChanges(review.commitMessage);
       if (committed) {
         console.error(`Auto-committed: ${review.commitMessage}`);
+        
+        // Check if this was a non-task commit and check recent history
+        if (!review.commitMessage.includes('TASK_')) {
+          const nonTaskCount = reviewer.checkRecentNonTaskCommits();
+          // We just made a commit, so if there were 2+ before, we now have 3+
+          if (nonTaskCount >= 2) {
+            nonTaskSuggestion = `💡 I notice you've made ${nonTaskCount + 1} commits without an active task. Consider using planning mode (shift-tab) to create a task for better tracking.`;
+          }
+        }
       }
     }
     
@@ -406,6 +461,9 @@ async function main() {
       output.systemMessage = `📝 Review: ${review.message}`;
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
+      }
+      if (nonTaskSuggestion) {
+        output.systemMessage += `\n\n${nonTaskSuggestion}`;
       }
       console.log(JSON.stringify(output));
       process.exit(0);
@@ -420,6 +478,9 @@ async function main() {
         output.systemMessage = `✅ Work appears on track. ${review.message}`;
         if (review.details) {
           output.systemMessage += `\n\nDetails: ${review.details}`;
+        }
+        if (nonTaskSuggestion) {
+          output.systemMessage += `\n\n${nonTaskSuggestion}`;
         }
         break;
         
