@@ -69,17 +69,6 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Task branches accumulate over time, user can manually clean up old ones
 - **Reversibility:** Easy - can delete branches manually anytime
 
-[2025-09-10 09:25] - Use Git Log Instead of Tracker File for Non-Task Commits
-- **Context:** Needed to track consecutive non-task commits to suggest task creation
-- **Decision:** Use git log directly to count commits without TASK_ references
-- **Rationale:** Git history is the source of truth - no need to duplicate state in a tracker file
-- **Alternatives Considered:** 
-  - JSON tracker file: Adds complexity, can get out of sync with reality
-  - Database/SQLite: Overkill for simple counting
-  - Environment variable: Would lose state between sessions
-- **Implications:** Simpler implementation, no state management needed, always accurate
-- **Reversibility:** Easy - could add tracking later if more complex logic needed
-
 [2025-09-10 14:10] - Built-in Logger Over External Dependencies for Centralized Logging
 - **Context:** Needed centralized logging system to debug hooks and improve monitoring, user suggested adze library
 - **Decision:** Implemented built-in logger module without external dependencies
@@ -101,17 +90,6 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
   - Use symlinks: Added complexity without solving the fundamental organization issue
 - **Implications:** All hooks now in single location, import paths consistent, settings.json simplified, easier debugging and maintenance
 - **Reversibility:** Easy - could distribute again if needed, but unlikely to be beneficial
-
-[2025-09-10 17:00] - Biome Over ESLint for cc-pars Linting
-- **Context:** Needed to set up TypeScript type checking and linting for code quality
-- **Decision:** Use Biome for linting/formatting instead of ESLint + Prettier
-- **Rationale:** Biome is 100x faster, zero configuration complexity, single tool instead of multiple, Bun-optimized
-- **Alternatives Considered:** 
-  - ESLint + Prettier: More mature, has TypeScript unsafe-* rules, plugin ecosystem, but much slower and complex
-  - TSLint: Deprecated in favor of ESLint
-  - Just TypeScript: No style/formatting enforcement
-- **Implications:** Missing some type-aware rules (noUnsafeAssignment, etc.) but acceptable for simple codebase
-- **Reversibility:** Easy - could switch to ESLint later if needed, configs are similar
 
 ### Template Entry
 ```
