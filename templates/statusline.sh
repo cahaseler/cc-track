@@ -1,60 +1,89 @@
 #!/bin/bash
-# cc-track status line - displays context usage, task info, and warnings
+# cc-track status line - displays essential info without clutter
 
 input=$(cat)
 
-# Get ccusage info (handles token counting and costs)
-USAGE=$(echo "$input" | bunx ccusage statusline --visual-burn-rate emoji 2>/dev/null || echo "")
+# Get model name from input
+MODEL=$(echo "$input" | jq -r '.model.display_name' 2>/dev/null || echo "Unknown")
+MODEL="🚅 $MODEL"
 
-# Extract metrics for logic
-CONTEXT=$(echo "$USAGE" | grep -oP '🧠 \K\d+' || echo "0")
-BLOCK_TIME=$(echo "$USAGE" | grep -oP '\(\K[^)]+(?= left\))' || echo "")
+# Get today's actual cost from ccusage daily JSON (more accurate than statusline)
+TODAY=$(date +%Y-%m-%d)
+TODAY_COST=$(echo "$input" | bunx ccusage daily --json 2>/dev/null | jq -r --arg date "$TODAY" '.daily[] | select(.date == $date) | .totalCost // 0' | xargs printf "%.2f")
 
-# Task status from active_task.md
+# Get ccusage statusline for other info (hourly rate and tokens)
+USAGE_RAW=$(echo "$input" | bunx ccusage statusline 2>/dev/null || echo "")
+
+# Extract hourly rate and tokens from statusline (these are accurate)
+HOURLY_RATE_RAW=$(echo "$USAGE_RAW" | grep -oP '\$[\d.]+/hr' || echo "")
+if [ -n "$HOURLY_RATE_RAW" ]; then
+    RATE_NUM=$(echo "$HOURLY_RATE_RAW" | grep -oP '[\d.]+')
+    if (( $(echo "$RATE_NUM > 20" | bc -l) )); then
+        HOURLY_RATE="🔥 $HOURLY_RATE_RAW"
+    else
+        HOURLY_RATE="$HOURLY_RATE_RAW"
+    fi
+fi
+TOKENS_INFO=$(echo "$USAGE_RAW" | grep -oP '🧠 [\d,]+ \(\d+%\)' | sed 's/🧠 //' || echo "")
+
+# Get current git branch
+BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+if [ -n "$BRANCH" ]; then
+    BRANCH=" | $BRANCH"
+fi
+
+# Get active task from CLAUDE.md
 TASK=""
-if [ -f ".claude/active_task.md" ]; then
-    # Extract task name from first heading
-    TASK_NAME=$(grep "^## Current Task" -A 2 .claude/active_task.md | grep -v "^#" | grep -v "^$" | head -1 || echo "")
-    if [ -n "$TASK_NAME" ]; then
-        # Extract status if it exists
-        STATUS=$(grep "^- \*\*Status:\*\*" .claude/active_task.md | sed 's/.*Status:\*\* //' || echo "")
-        if [ -n "$STATUS" ]; then
-            TASK=" | 📋 ${TASK_NAME} (${STATUS})"
-        else
-            TASK=" | 📋 ${TASK_NAME}"
+if [ -f "CLAUDE.md" ]; then
+    TASK_FILE=$(grep "^@.claude/tasks/TASK_" CLAUDE.md | sed 's/@//' | head -1)
+    if [ -n "$TASK_FILE" ] && [ -f "$TASK_FILE" ]; then
+        # Read first line (title) from task file
+        TASK_TITLE=$(head -1 "$TASK_FILE" | sed 's/^# //')
+        if [ -n "$TASK_TITLE" ]; then
+            TASK=" | $TASK_TITLE"
         fi
+    elif grep -q "@.claude/no_active_task.md" CLAUDE.md; then
+        TASK=" | 🛤️ Project is on track"
     fi
 fi
 
-# Build warnings
-WARNINGS=""
+# Build the statusline dynamically, only including fields with data
+OUTPUT="$MODEL"
 
-# Context warning
-if [ "$CONTEXT" -gt 80 ]; then
-    WARNINGS="$WARNINGS ⚠️ COMPACT SOON"
-elif [ "$CONTEXT" -gt 60 ]; then
-    WARNINGS="$WARNINGS ⚡ Context: ${CONTEXT}%"
-fi
-
-# Block reset warning
-if [[ "$BLOCK_TIME" =~ ^([0-9]+)m$ ]]; then
-    MINUTES="${BASH_REMATCH[1]}"
-    if [ "$MINUTES" -lt 30 ]; then
-        WARNINGS="$WARNINGS ⏰ RESET IN ${MINUTES}m"
-    fi
-elif [[ "$BLOCK_TIME" =~ ^([0-9]+)h[[:space:]]([0-9]+)m$ ]]; then
-    HOURS="${BASH_REMATCH[1]}"
-    MINUTES="${BASH_REMATCH[2]}"
-    if [ "$HOURS" -eq 0 ] && [ "$MINUTES" -lt 30 ]; then
-        WARNINGS="$WARNINGS ⏰ RESET IN ${MINUTES}m"
+# Add cost if available with emoji based on amount
+if [ "$TODAY_COST" != "0.00" ] && [ -n "$TODAY_COST" ]; then
+    COST_NUM=$(echo "$TODAY_COST" | bc)
+    if (( $(echo "$COST_NUM >= 300" | bc -l) )); then
+        OUTPUT="$OUTPUT | 🤑 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 200" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💰 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 100" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💸 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 50" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💵 \$$TODAY_COST today"
+    else
+        OUTPUT="$OUTPUT | 🪙 \$$TODAY_COST today"
     fi
 fi
 
-# Check for planning mode indicator
-PLANNING=""
-if [ -f ".claude/planning_active" ]; then
-    PLANNING=" | 🎯 PLANNING"
+# Add hourly rate if available
+if [ -n "$HOURLY_RATE" ]; then
+    OUTPUT="$OUTPUT | $HOURLY_RATE"
 fi
 
-# Combine everything
-echo "${USAGE}${TASK}${PLANNING}${WARNINGS}"
+# Add tokens if available
+if [ -n "$TOKENS_INFO" ]; then
+    OUTPUT="$OUTPUT | $TOKENS_INFO"
+fi
+
+# Add branch if available
+if [ -n "$BRANCH" ]; then
+    OUTPUT="$OUTPUT$BRANCH"
+fi
+
+# Add task if available
+if [ -n "$TASK" ]; then
+    OUTPUT="$OUTPUT$TASK"
+fi
+
+echo "$OUTPUT"

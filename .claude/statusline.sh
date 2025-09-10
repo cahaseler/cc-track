@@ -5,6 +5,7 @@ input=$(cat)
 
 # Get model name from input
 MODEL=$(echo "$input" | jq -r '.model.display_name' 2>/dev/null || echo "Unknown")
+MODEL="🚅 $MODEL"
 
 # Get today's actual cost from ccusage daily JSON (more accurate than statusline)
 TODAY=$(date +%Y-%m-%d)
@@ -14,7 +15,15 @@ TODAY_COST=$(echo "$input" | bunx ccusage daily --json 2>/dev/null | jq -r --arg
 USAGE_RAW=$(echo "$input" | bunx ccusage statusline 2>/dev/null || echo "")
 
 # Extract hourly rate and tokens from statusline (these are accurate)
-HOURLY_RATE=$(echo "$USAGE_RAW" | grep -oP '🔥 \$[\d.]+/hr' | sed 's/🔥 //' || echo "")
+HOURLY_RATE_RAW=$(echo "$USAGE_RAW" | grep -oP '\$[\d.]+/hr' || echo "")
+if [ -n "$HOURLY_RATE_RAW" ]; then
+    RATE_NUM=$(echo "$HOURLY_RATE_RAW" | grep -oP '[\d.]+')
+    if (( $(echo "$RATE_NUM > 20" | bc -l) )); then
+        HOURLY_RATE="🔥 $HOURLY_RATE_RAW"
+    else
+        HOURLY_RATE="$HOURLY_RATE_RAW"
+    fi
+fi
 TOKENS_INFO=$(echo "$USAGE_RAW" | grep -oP '🧠 [\d,]+ \(\d+%\)' | sed 's/🧠 //' || echo "")
 
 # Get current git branch
@@ -31,19 +40,30 @@ if [ -f "CLAUDE.md" ]; then
         # Read first line (title) from task file
         TASK_TITLE=$(head -1 "$TASK_FILE" | sed 's/^# //')
         if [ -n "$TASK_TITLE" ]; then
-            TASK=" | 🚂 $TASK_TITLE"
+            TASK=" | $TASK_TITLE"
         fi
     elif grep -q "@.claude/no_active_task.md" CLAUDE.md; then
-        TASK=" | 🚂 No active task"
+        TASK=" | 🛤️ Project is on track"
     fi
 fi
 
 # Build the statusline dynamically, only including fields with data
 OUTPUT="$MODEL"
 
-# Add cost if available
+# Add cost if available with emoji based on amount
 if [ "$TODAY_COST" != "0.00" ] && [ -n "$TODAY_COST" ]; then
-    OUTPUT="$OUTPUT | \$$TODAY_COST today"
+    COST_NUM=$(echo "$TODAY_COST" | bc)
+    if (( $(echo "$COST_NUM >= 300" | bc -l) )); then
+        OUTPUT="$OUTPUT | 🤑 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 200" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💰 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 100" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💸 \$$TODAY_COST today"
+    elif (( $(echo "$COST_NUM >= 50" | bc -l) )); then
+        OUTPUT="$OUTPUT | 💵 \$$TODAY_COST today"
+    else
+        OUTPUT="$OUTPUT | 🪙 \$$TODAY_COST today"
+    fi
 fi
 
 # Add hourly rate if available
