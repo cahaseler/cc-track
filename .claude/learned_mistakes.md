@@ -12,6 +12,15 @@
 ## Error Patterns
 
 *(Entries will be added here by the pre_compact hook)*
+### Session: 2025-09-10 11:29
+- When grep operations are consistently blocked by user hooks, avoid further grep attempts and switch to alternative approaches like updating todo lists or using different tools
+- When multiple Edit operations fail with "File has not been read yet" errors, the issue persists across different files in the same session - this indicates a context problem rather than a file-specific issue
+- After Edit operations are rejected with "user doesn't want to proceed", the underlying issue is typically a hook blocking the action rather than the edit content itself
+- When debugging hooks that aren't firing, check the hook's file path in settings.json - mismatched paths between actual hook location and configuration are a common cause
+- Emergency debug logging to /tmp files can fail silently if the hook never executes - verify hook execution first before relying on debug output
+- When tail/grep commands on log files return truncated JSON, the output is being cut off mid-entry - use more specific time ranges or line limits to get complete entries
+- File copy operations may be blocked by hooks even when the destination directory exists - this indicates a policy restriction rather than a filesystem issue
+
 ### Session: 2025-09-10 08:55
 - When attempting git interactive operations (git rebase -i), these require terminal interaction and will fail in automated contexts - use non-interactive alternatives
 - When Edit tool fails repeatedly on the same file, verify the file has been read into context first before attempting further edits

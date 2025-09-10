@@ -91,6 +91,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Zero runtime dependencies, complete control over logging behavior, easier debugging
 - **Reversibility:** Easy - could swap in external library later if needed, interface is compatible
 
+[2025-09-10 15:40] - Consolidate Hook Files to Single Location Over Distributed Architecture
+- **Context:** Discovered duplicate hook files in both `hooks/` and `.claude/hooks/` directories with different features scattered across copies, causing configuration and execution issues
+- **Decision:** Consolidate all hook files into `.claude/hooks/` directory and update all import paths and settings references
+- **Rationale:** Single source of truth prevents version conflicts, simplifies maintenance, ensures consistent feature availability, and resolves configuration inheritance issues
+- **Alternatives Considered:** 
+  - Keep distributed approach: Would require complex synchronization and duplicate maintenance effort
+  - Merge selectively: Too error-prone to track which features were where
+  - Use symlinks: Added complexity without solving the fundamental organization issue
+- **Implications:** All hooks now in single location, import paths consistent, settings.json simplified, easier debugging and maintenance
+- **Reversibility:** Easy - could distribute again if needed, but unlikely to be beneficial
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

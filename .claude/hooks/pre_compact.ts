@@ -5,8 +5,8 @@ import { join } from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { execSync } from 'child_process';
-import { isHookEnabled } from '../.claude/lib/config';
-import { createLogger } from '../.claude/lib/logger';
+import { isHookEnabled } from '../lib/config';
+import { createLogger } from '../lib/logger';
 
 interface CompactInput {
   session_id: string;

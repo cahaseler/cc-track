@@ -5,6 +5,7 @@ import { join } from 'path';
 import { execSync } from 'child_process';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
+import { hasUncommittedChanges, generateCommitMessage, generateBranchName, createTaskBranch } from '../lib/git-helpers';
 
 interface HookInput {
   session_id: string;
@@ -70,17 +71,17 @@ async function main() {
     // PostToolUse hook - check if the plan was approved
     if (data.hook_event_name === 'PostToolUse') {
       debugLog(`PostToolUse detected, tool_response: ${JSON.stringify(data.tool_response)}`);
-      // Check if the tool execution was successful (plan approved)
-      if (!data.tool_response?.success) {
-        // Plan was rejected - don't create task
-        debugLog('Plan not approved, calling logger.info...');
+      // Check if the plan was approved (tool_response contains plan field when approved)
+      if (!data.tool_response?.plan) {
+        // Plan was rejected or tool_response is malformed - don't create task
+        debugLog('Plan not approved or missing plan field, calling logger.info...');
         logger.info('Plan was not approved, skipping task creation', {
           tool_response: data.tool_response
         });
         debugLog('Logger.info called, exiting');
         process.exit(0);
       }
-      debugLog('Plan approved, calling logger.info...');
+      debugLog('Plan approved (plan field present), calling logger.info...');
       logger.info('Plan was approved, creating task');
       debugLog('Logger.info for approval called');
     }
@@ -177,15 +178,35 @@ Create the content for TASK_${taskId}.md following this structure:
 
 Respond with ONLY the markdown content for the task file, no explanations.`;
 
-    // Use Claude CLI to enrich the plan (using Sonnet for reliable task structure generation)
-    const taskContent = execSync(
-      `claude -p "${enrichmentPrompt.replace(/"/g, '\\"')}" --model sonnet --output-format text 2>/dev/null`,
-      { 
-        encoding: 'utf-8',
-        cwd: projectRoot,
-        stdio: ['ignore', 'pipe', 'ignore'] // Suppress stderr
+    // Use Claude CLI to enrich the plan
+    // Write prompt to temp file to avoid shell escaping issues
+    const tempPromptPath = join(claudeDir, '.temp_prompt.txt');
+    writeFileSync(tempPromptPath, enrichmentPrompt);
+    
+    let taskContent: string;
+    try {
+      taskContent = execSync(
+        `claude --model sonnet --output-format text < "${tempPromptPath}"`,
+        { 
+          encoding: 'utf-8',
+          cwd: '/tmp',  // Run in /tmp to avoid triggering Stop hook recursion
+          maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
+          shell: '/bin/bash'
+        }
+      ).trim();
+    } catch (cmdError: any) {
+      logger.error('Claude CLI failed', { 
+        error: cmdError.message,
+        command: 'claude --model sonnet --output-format text',
+        cwd: '/tmp'
+      });
+      throw cmdError;
+    } finally {
+      // Clean up temp file
+      if (existsSync(tempPromptPath)) {
+        unlinkSync(tempPromptPath);
       }
-    ).trim();
+    }
     
     // Save the enriched task file in tasks directory
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
@@ -260,7 +281,8 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     process.exit(0);
     
   } catch (error) {
-    console.error(`Error in capture_plan hook: ${error}`);
+    debugLog(`Fatal error: ${error}`);
+    logger.exception('Fatal error in capture_plan hook', error as Error);
     // Don't block on error
     process.exit(0);
   }

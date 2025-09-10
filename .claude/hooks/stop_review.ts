@@ -5,9 +5,9 @@ import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
-import { isHookEnabled } from '../.claude/lib/config';
-import { generateCommitMessage } from '../.claude/lib/git-helpers';
-import { createLogger } from '../.claude/lib/logger';
+import { isHookEnabled } from '../lib/config';
+import { generateCommitMessage } from '../lib/git-helpers';
+import { createLogger } from '../lib/logger';
 
 interface StopInput {
   session_id: string;

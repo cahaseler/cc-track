@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run hooks/pre_compact.ts",
+            "command": "bun run .claude/hooks/pre_compact.ts",
             "timeout": 30000
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run hooks/post_compact.ts",
+            "command": "bun run .claude/hooks/post_compact.ts",
             "timeout": 5000
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run hooks/stop_review.ts",
+            "command": "bun run .claude/hooks/stop_review.ts",
             "timeout": 20000
           }
         ]

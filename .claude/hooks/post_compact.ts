@@ -2,8 +2,8 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { isHookEnabled } from '../.claude/lib/config';
-import { createLogger } from '../.claude/lib/logger';
+import { isHookEnabled } from '../lib/config';
+import { createLogger } from '../lib/logger';
 
 interface SessionStartInput {
   session_id: string;
