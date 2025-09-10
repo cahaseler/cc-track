@@ -10,6 +10,16 @@
             "timeout": 10000
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run .claude/hooks/edit_validation.ts",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "PreCompact": [

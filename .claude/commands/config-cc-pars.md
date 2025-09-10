@@ -18,6 +18,7 @@ If the user provides parameters like `/config-cc-pars disable task creation` or 
    - "error extraction", "pre compact", "learned mistakes" → `pre_compact` hook  
    - "post compact", "context restore" → `post_compact` hook
    - "stop review", "auto commit", "deviation detection" → `stop_review` hook
+   - "edit validation", "typecheck", "linting" → `edit_validation` hook
    - "status line", "statusline" → `statusline` feature
    - "git branching", "feature branches", "task branches" → `git_branching` feature
 3. Update the configuration file at `.claude/cc-pars.config.json`
@@ -53,6 +54,18 @@ The configuration file is located at `.claude/cc-pars.config.json` with this str
     "stop_review": {
       "enabled": true,
       "description": "Reviews changes and auto-commits with [wip]"
+    },
+    "edit_validation": {
+      "enabled": false,
+      "description": "Runs TypeScript and Biome checks on edited files",
+      "typecheck": {
+        "enabled": true,
+        "command": "bunx tsc --noEmit"
+      },
+      "lint": {
+        "enabled": true,
+        "command": "bunx biome check"
+      }
     }
   },
   "features": {
@@ -88,7 +101,13 @@ Claude:
 1. Updates the config file to set `features.git_branching.enabled` to `true`
 2. Confirms: "I've enabled git branching. New tasks will now create feature branches and merge them back on completion."
 
-### Example 4: Show configuration
+### Example 4: Enable edit validation
+User: `/config-cc-pars enable edit validation`
+Claude:
+1. Updates the config file to set `hooks.edit_validation.enabled` to `true`
+2. Confirms: "I've enabled edit validation. TypeScript and Biome checks will now run automatically after editing .ts/.tsx files, providing immediate feedback on any errors."
+
+### Example 5: Show configuration
 User: `/config-cc-pars`
 Claude:
 1. Reads the current configuration
@@ -97,6 +116,7 @@ Claude:
    - **Error Extraction** (pre_compact): ✅ Enabled
    - **Context Restore** (post_compact): ✅ Enabled
    - **Stop Review** (stop_review): ❌ Disabled
+   - **Edit Validation** (edit_validation): ❌ Disabled
    - **Status Line**: ✅ Enabled
    - **Git Branching**: ❌ Disabled
    
@@ -108,3 +128,36 @@ Claude:
 - Disabling a hook makes it exit silently without performing any actions
 - The configuration file persists across sessions
 - If the config file doesn't exist, hooks default to enabled
+
+## Edit Validation Configuration
+
+The `edit_validation` hook has additional configuration options:
+
+- **typecheck.enabled**: Enable/disable TypeScript type checking
+- **typecheck.command**: Command to run for type checking (default: `bunx tsc --noEmit`)
+- **lint.enabled**: Enable/disable Biome linting
+- **lint.command**: Command to run for linting (default: `bunx biome check`)
+
+You can customize these by directly editing `.claude/cc-pars.config.json`. For example, to use a different linter:
+
+```json
+"edit_validation": {
+  "enabled": true,
+  "description": "Runs TypeScript and Biome checks on edited files",
+  "typecheck": {
+    "enabled": true,
+    "command": "npx tsc --noEmit"
+  },
+  "lint": {
+    "enabled": true,
+    "command": "npx eslint"
+  }
+}
+```
+
+Performance notes:
+- TypeScript checking takes ~1.3-1.4 seconds per file
+- Biome checking takes ~60-160ms per file
+- Only .ts/.tsx/.mts/.cts files are validated
+- Checks run in parallel for speed
+- 5 second timeout for the entire hook execution

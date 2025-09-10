@@ -4,6 +4,14 @@ import { join } from 'node:path';
 interface HookConfig {
   enabled: boolean;
   description: string;
+  typecheck?: {
+    enabled: boolean;
+    command: string;
+  };
+  lint?: {
+    enabled: boolean;
+    command: string;
+  };
 }
 
 interface Config {
@@ -32,6 +40,18 @@ const DEFAULT_CONFIG: Config = {
     stop_review: {
       enabled: true,
       description: 'Reviews changes and auto-commits with [wip]',
+    },
+    edit_validation: {
+      enabled: false,
+      description: 'Runs TypeScript and Biome checks on edited files',
+      typecheck: {
+        enabled: true,
+        command: 'bunx tsc --noEmit',
+      },
+      lint: {
+        enabled: true,
+        command: 'bunx biome check',
+      },
     },
   },
   features: {

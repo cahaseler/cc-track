@@ -1,7 +1,7 @@
 # Project: [Your Project Name]
 
 ## Active Task
-@.claude/no_active_task.md
+@.claude/tasks/TASK_020.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
@@ -21,7 +21,8 @@
 
 Additional information can be found in the following files. Reference them as needed during research or planning.
 
-.claude/progress_log.md
-.claude/decision_log.md
+.claude/progress_log.md - project progress and updates over time
+.claude/decision_log.md - project architectural decisions
+.claude/tasks/TASK_XXX.md - Detailed task descriptions and outcomes
 
 
