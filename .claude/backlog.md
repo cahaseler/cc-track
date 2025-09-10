@@ -21,5 +21,4 @@
 - [2025-09-10] revise review_stop hook to have a claude instance review recent chat messages for AI bullshit excuses like functional enough or not critical functionality when it's trying to avoid completing a task properly
 - [2025-09-10] investigate supressing file change notifications to certain folders like logs to avoid noise injection into context.
 - [2025-09-10] add current api window time remaining to statusbar when model is Sonnet 4, since that's the countdown until Opus is allowed again.
-- [2025-09-10] make /complete-task command more resilient - should update CLAUDE.md active task field when closing out a task
 - [2025-09-10] make deviation detection in stop_review hook more tolerant of documentation updates (updating learned_mistakes.md should never be considered a deviation)

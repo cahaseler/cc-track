@@ -1,121 +1,87 @@
 ---
-shortname: complete-task
+allowed-tools: Bash(bun run:*), TodoWrite, mcp__private-journal__process_thoughts, Edit, Read
+description: Complete the current active task with reflection and documentation
 ---
 
 # Complete Task Command
 
-When the user runs `/complete-task`, guide them through completing the current active task with proper reflection and documentation.
+## Automated Completion Results
+!`bun run .claude/scripts/complete-task.ts`
 
-## Instructions for Claude
+## Your Task
 
-1. **Reflect in Journal** - Start by writing journal entries about:
+Based on the completion results above:
+
+1. **Reflect in Journal** about the task:
    - Technical insights learned during this task
-   - Challenges faced and how they were overcome
-   - Any patterns or mistakes to remember
-   - Project-specific notes about the implementation
-   - User context insights from the collaboration
+   - Challenges faced and how they were overcome  
+   - Any patterns or mistakes discovered
+   - Project-specific implementation notes
+   - User collaboration insights
 
-2. **Review Git History** - Look at the WIP commits since task started:
-   ```bash
-   git log --oneline | grep -E "TASK_[0-9]{3}"
-   ```
+2. **Handle Any Issues from the Report:**
+   - If validation errors exist: Assess if they need immediate fixing
+   - If git operations failed: Handle manually using git commands if needed
+   - If warnings present: Document any technical debt identified
+   - If task status wasn't "in_progress": Verify completion is appropriate
 
-3. **Update Task File**:
-   - Change status from "in_progress" to "completed"
-   - Add a "## Completion Summary" section with:
-     - What was actually delivered
-     - Key implementation details
-     - Any deviations from original requirements
-     - Lessons learned
-   - Update "## Current Focus" to "Task completed on [date]"
-
-4. **Update Progress Log** (`/.claude/progress_log.md`):
-   - Add completion entry with timestamp
-   - List key files created/modified
-   - Note any follow-up tasks identified
-
-5. **Update Decision Log** (`/.claude/decision_log.md`):
-   - Add any significant architectural or implementation decisions made
-   - Include alternatives considered and why they were rejected
-   - Note reversibility of decisions
-
-6. **Update Code Index** if needed (`/.claude/code_index.md`):
-   - Add new files or modules created
-   - Update key functions/classes section
-   - Note any new patterns introduced
-
-7. **Update System Patterns** if applicable (`/.claude/system_patterns.md`):
-   - Document any new patterns established
-   - Update tool preferences if any were discovered
-
-8. **Extract Learned Mistakes** - Review if any error patterns should be added to `/.claude/learned_mistakes.md`
-
-9. **Squash WIP Commits**:
-   ```bash
-   bun run scripts/git-session.ts squash-session
-   ```
-   Create a proper commit message summarizing the entire task.
-
-9.5. **Merge Task Branch** (if git_branching enabled):
-   ```typescript
-   import { isHookEnabled } from '.claude/lib/config';
-   import { getDefaultBranch, mergeTaskBranch } from '.claude/lib/git-helpers';
+3. **Update Key Documentation:**
    
-   if (isHookEnabled('git_branching')) {
-     // Extract branch name from task file
-     const taskContent = readFileSync(taskFilePath, 'utf-8');
-     const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
-     
-     if (branchMatch) {
-       const branchName = branchMatch[1];
-       const defaultBranch = getDefaultBranch(projectRoot);
-       mergeTaskBranch(branchName, defaultBranch, projectRoot);
-       console.log(`Merged ${branchName} into ${defaultBranch} (branch kept for reference)`);
-     }
-   }
-   ```
-   - Note: Branch is kept for reference (not deleted)
-   - Command to list task branches: `git branch | grep -E "feature/|bug/"`
+   a) **Task File** - Add a "## Completion Summary" section with:
+      - What was actually delivered
+      - Key implementation details  
+      - Any deviations from original requirements
+      - Testing results
+   
+   b) **Progress Log** (`.claude/progress_log.md`):
+      - Add completion entry with timestamp
+      - List key files created/modified (from filesChanged in report)
+      - Note any follow-up tasks identified
+   
+   c) **Decision Log** (`.claude/decision_log.md`) if applicable:
+      - Add any significant architectural decisions made
+      - Include alternatives considered and rationale
+   
+   d) **System Patterns** (`.claude/system_patterns.md`) if applicable:
+      - Document any new patterns established
+      - Update tool preferences if discovered
 
-10. **Update CLAUDE.md**:
-    - Change active task to `@.claude/no_active_task.md`
-    - Or set to next task if one is ready
-
-11. **Final Summary** - Provide the user with:
-    - Task completion confirmation
-    - Summary of what was delivered
-    - Any follow-up tasks or issues identified
-    - Suggested next steps
+4. **Provide Summary to User:**
+   - Task completion confirmation with ID and title
+   - What was delivered (bullet points)
+   - Key achievements or breakthroughs
+   - Any issues, warnings, or follow-up items from the report
+   - Git status (was it squashed? any manual steps needed?)
+   - Validation status (TypeScript/Biome results)
+   - Next steps recommendation
 
 ## Example Output
 
 ```
-📝 Task 003 Completed: Git-Based Deviation Detection System
+📝 Task 021 Completed: Improve /complete-task Command with Smart Script
 
 ✅ Delivered:
-- Stop hook with auto-commit functionality
-- Claude CLI integration for deviation detection
-- Git session utilities for managing WIP commits
-- Pre-push migration guide
+- Created comprehensive task completion script
+- Automated all mechanical update operations
+- Safe git squashing with intelligent edge case handling
+- Structured JSON reporting for decision support
 
-📊 Key Achievements:
-- Solved infinite recursion issue with Claude CLI calls
-- Implemented robust JSON parsing for Claude responses
-- Created checkpoint system for easy recovery
+📊 Automated Results:
+- Task status: Updated to completed ✓
+- CLAUDE.md: Updated to no_active_task ✓
+- Git: 5 WIP commits squashed successfully
+- Validation: TypeScript (0 errors), Biome (0 issues)
 
 🔍 Follow-up Items:
-- Consider adding knip integration for orphan code detection
-- Monitor performance impact of Stop hooks
-- Add more review categories as patterns emerge
+- Consider adding progress percentage tracking
+- Monitor script performance with large task files
 
-Git history squashed into: "TASK_003: Implemented Git-based deviation detection with auto-commit and review"
-
-Next: Would you like to start a new task or review the completed work?
+Next: Ready for a new task? Use planning mode to get started.
 ```
 
 ## Important Notes
 
-- Use mcp__private-journal__process_thoughts to capture reflections
-- Be thorough in documenting decisions and patterns
-- Ensure all context files are updated before marking complete
-- Always squash WIP commits for clean history
+- The script handles all mechanical updates automatically
+- Focus on reflection, analysis, and high-level documentation
+- Review warnings in the JSON report carefully
+- If git squashing failed, you may need to handle it manually

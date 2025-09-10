@@ -1,0 +1,292 @@
+#!/usr/bin/env bun
+
+import { execSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface CompletionResult {
+  success: boolean;
+  taskId?: string;
+  taskTitle?: string;
+  updates: {
+    taskFile?: string;
+    claudeMd?: string;
+    noActiveTask?: string;
+  };
+  validation: {
+    typescript?: string;
+    biome?: string;
+  };
+  git: {
+    squashed?: boolean;
+    commitMessage?: string;
+    branchMerged?: boolean;
+    notes?: string;
+  };
+  warnings: string[];
+  filesChanged?: string[];
+  error?: string;
+}
+
+const projectRoot = process.cwd();
+const claudeDir = join(projectRoot, '.claude');
+
+async function main() {
+  const result: CompletionResult = {
+    success: false,
+    updates: {},
+    validation: {},
+    git: {},
+    warnings: [],
+  };
+
+  try {
+    // 1. Validate prerequisites
+    const claudeMdPath = join(projectRoot, 'CLAUDE.md');
+    if (!existsSync(claudeMdPath)) {
+      result.error = 'CLAUDE.md not found';
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    const claudeMdContent = readFileSync(claudeMdPath, 'utf-8');
+    const taskMatch = claudeMdContent.match(/@\.claude\/tasks\/(TASK_\d+)\.md/);
+    
+    if (!taskMatch) {
+      result.error = 'No active task found in CLAUDE.md';
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    result.taskId = taskMatch[1];
+    const taskFilePath = join(claudeDir, 'tasks', `${result.taskId}.md`);
+
+    if (!existsSync(taskFilePath)) {
+      result.error = `Task file not found: ${taskFilePath}`;
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    // 2. Update task status
+    let taskContent = readFileSync(taskFilePath, 'utf-8');
+    
+    // Extract task title from first line
+    const titleMatch = taskContent.match(/^# (.+)$/m);
+    result.taskTitle = titleMatch ? titleMatch[1] : result.taskId;
+
+    // Check if task is in_progress
+    if (!taskContent.includes('**Status:** in_progress')) {
+      result.warnings.push('Task is not marked as in_progress, but continuing anyway');
+    }
+
+    // Update status to completed
+    taskContent = taskContent.replace(
+      /\*\*Status:\*\* .+/,
+      '**Status:** completed'
+    );
+
+    // Update current focus with completion date
+    const today = new Date().toISOString().split('T')[0];
+    taskContent = taskContent.replace(
+      /## Current Focus\n+.*/,
+      `## Current Focus\n\nTask completed on ${today}`
+    );
+
+    writeFileSync(taskFilePath, taskContent);
+    result.updates.taskFile = 'updated';
+
+    // 3. Update CLAUDE.md
+    const updatedClaudeMd = claudeMdContent.replace(
+      /@\.claude\/tasks\/TASK_\d+\.md/,
+      '@.claude/no_active_task.md'
+    );
+    writeFileSync(claudeMdPath, updatedClaudeMd);
+    result.updates.claudeMd = 'updated';
+
+    // 4. Update no_active_task.md
+    const noActiveTaskPath = join(claudeDir, 'no_active_task.md');
+    if (existsSync(noActiveTaskPath)) {
+      let noActiveContent = readFileSync(noActiveTaskPath, 'utf-8');
+      
+      // Add the completed task to the list
+      const taskEntry = `- ${result.taskId}: ${result.taskTitle}`;
+      
+      // Check if there's already a completed tasks section
+      if (noActiveContent.includes('## Completed Tasks:')) {
+        // Add to the end of the completed tasks list
+        noActiveContent = noActiveContent.replace(
+          /(## Completed Tasks:[\s\S]*?)(\n\n|\n$)/,
+          `$1\n${taskEntry}$2`
+        );
+      } else {
+        // Create the completed tasks section
+        noActiveContent = noActiveContent.replace(
+          'The following tasks are being tracked in this project:',
+          `The following tasks are being tracked in this project:\n\n## Completed Tasks:\n${taskEntry}`
+        );
+      }
+      
+      writeFileSync(noActiveTaskPath, noActiveContent);
+      result.updates.noActiveTask = 'updated';
+    } else {
+      result.warnings.push('no_active_task.md not found');
+    }
+
+    // 5. Run validation checks
+    try {
+      execSync('bunx tsc --noEmit', { encoding: 'utf-8', cwd: projectRoot });
+      result.validation.typescript = 'No errors';
+    } catch (error: any) {
+      const output = error.stdout || error.stderr || '';
+      const errorCount = (output.match(/error TS/g) || []).length;
+      result.validation.typescript = `${errorCount} error${errorCount !== 1 ? 's' : ''}`;
+      result.warnings.push(`TypeScript validation found ${errorCount} errors`);
+    }
+
+    try {
+      execSync('bunx biome check', { encoding: 'utf-8', cwd: projectRoot });
+      result.validation.biome = 'No issues';
+    } catch (error: any) {
+      const output = error.stdout || error.stderr || '';
+      // Try to extract error count from Biome output
+      const match = output.match(/Found (\d+) error/);
+      const errorCount = match ? parseInt(match[1], 10) : 'unknown';
+      result.validation.biome = `${errorCount} issue${errorCount !== 1 ? 's' : ''}`;
+      result.warnings.push(`Biome validation found ${errorCount} issues`);
+    }
+
+    // 6. Git operations
+    try {
+      // Check for uncommitted changes
+      const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
+      if (gitStatus) {
+        result.warnings.push('Uncommitted changes present - commit these before squashing');
+      }
+
+      // Look for WIP commits
+      const gitLog = execSync('git log --oneline -20', { encoding: 'utf-8', cwd: projectRoot });
+      const lines = gitLog.split('\n').filter(line => line.trim());
+      
+      let wipCount = 0;
+      let lastNonWipIndex = -1;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('[wip]')) {
+          wipCount++;
+        } else if (lastNonWipIndex === -1) {
+          lastNonWipIndex = i;
+          break;
+        }
+      }
+
+      if (wipCount > 0 && lastNonWipIndex > 0) {
+        // We have WIP commits that can be squashed
+        const lastNonWipHash = lines[lastNonWipIndex].split(' ')[0];
+        
+        // Check if all commits between HEAD and lastNonWip are WIPs
+        const recentCommits = lines.slice(0, lastNonWipIndex);
+        const allWips = recentCommits.every(line => line.includes('[wip]'));
+        
+        if (allWips && !gitStatus) {
+          // Safe to squash
+          const commitMessage = `${result.taskId}: ${result.taskTitle}`;
+          
+          try {
+            execSync(`git reset --soft ${lastNonWipHash}`, { cwd: projectRoot });
+            execSync(`git commit -m "${commitMessage}"`, { cwd: projectRoot });
+            result.git.squashed = true;
+            result.git.commitMessage = commitMessage;
+          } catch (squashError) {
+            result.warnings.push('Failed to squash commits: ' + squashError);
+            result.git.notes = 'Squash attempted but failed';
+          }
+        } else if (!allWips) {
+          result.git.notes = `Found ${wipCount} WIP commits mixed with regular commits - manual review needed`;
+        } else {
+          result.git.notes = 'Uncommitted changes prevent automatic squashing';
+        }
+      } else if (wipCount === 0) {
+        result.git.notes = 'No WIP commits found';
+      } else {
+        result.git.notes = 'All recent commits are WIPs - nothing to squash to';
+      }
+
+      // Get list of changed files
+      try {
+        const diffFiles = execSync(`git diff --name-only ${lastNonWipIndex >= 0 ? lines[lastNonWipIndex].split(' ')[0] : 'HEAD~1'}..HEAD`, {
+          encoding: 'utf-8',
+          cwd: projectRoot
+        }).trim().split('\n').filter(f => f);
+        result.filesChanged = diffFiles;
+      } catch {
+        // Ignore if we can't get the file list
+      }
+    } catch (gitError: any) {
+      result.warnings.push('Git operations failed: ' + gitError.message);
+    }
+
+    // 7. Handle branching if enabled
+    try {
+      // Check if git_branching is enabled
+      const configPath = join(claudeDir, 'cc-pars.config.json');
+      if (existsSync(configPath)) {
+        const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+        
+        if (config.hooks?.git_branching?.enabled) {
+          // Look for branch info in task file
+          const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
+          
+          if (branchMatch) {
+            const branchName = branchMatch[1];
+            const currentBranch = execSync('git branch --show-current', { encoding: 'utf-8', cwd: projectRoot }).trim();
+            
+            if (currentBranch === branchName) {
+              // Get default branch
+              let defaultBranch = 'main';
+              try {
+                execSync('git show-ref --verify --quiet refs/heads/main', { cwd: projectRoot });
+              } catch {
+                try {
+                  execSync('git show-ref --verify --quiet refs/heads/master', { cwd: projectRoot });
+                  defaultBranch = 'master';
+                } catch {
+                  result.warnings.push('Could not determine default branch');
+                }
+              }
+              
+              // Attempt to merge
+              try {
+                execSync(`git checkout ${defaultBranch}`, { cwd: projectRoot });
+                execSync(`git merge ${branchName} --no-ff -m "Merge branch '${branchName}'"`, { cwd: projectRoot });
+                result.git.branchMerged = true;
+                result.git.notes = `Merged ${branchName} into ${defaultBranch}`;
+              } catch (mergeError: any) {
+                result.warnings.push(`Failed to merge branch: ${mergeError.message}`);
+                result.git.branchMerged = false;
+                // Try to switch back to task branch
+                try {
+                  execSync(`git checkout ${branchName}`, { cwd: projectRoot });
+                } catch {}
+              }
+            } else {
+              result.git.notes = `Task branch ${branchName} not currently checked out`;
+            }
+          } else {
+            result.git.notes = 'No branch information in task file';
+          }
+        }
+      }
+    } catch (branchError: any) {
+      result.warnings.push('Branch operations failed: ' + branchError.message);
+    }
+
+    result.success = true;
+  } catch (error: any) {
+    result.error = error.message;
+  }
+
+  // Output the result
+  console.log(JSON.stringify(result, null, 2));
+}
+
+main();
