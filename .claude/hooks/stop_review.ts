@@ -38,10 +38,10 @@ class SessionReviewer {
     // Get active task
     const activeTask = this.getActiveTask();
     if (!activeTask) {
-      // Get git diff for generating a meaningful commit message
-      const gitDiff = this.getGitDiff();
+      // Get filtered git diff for generating a meaningful commit message
+      const { fullDiff, filteredDiff, docOnlyChanges } = this.getFilteredGitDiff();
 
-      if (!gitDiff || gitDiff.trim().length === 0) {
+      if (!fullDiff || fullDiff.trim().length === 0) {
         return {
           status: 'on_track',
           message: 'No changes to commit',
@@ -49,10 +49,19 @@ class SessionReviewer {
         };
       }
 
-      // Generate a meaningful commit message using Haiku
+      // Handle documentation-only changes
+      if (docOnlyChanges) {
+        return {
+          status: 'on_track',
+          message: 'Documentation updates only',
+          commitMessage: 'docs: update project documentation',
+        };
+      }
+
+      // Generate a meaningful commit message using Haiku (use filtered diff to focus on code)
       let commitMessage: string;
       try {
-        commitMessage = await generateCommitMessage(gitDiff, this.projectRoot);
+        commitMessage = await generateCommitMessage(filteredDiff || fullDiff, this.projectRoot);
       } catch {
         // Fallback to generic message if generation fails
         commitMessage = 'chore: exploratory work and improvements';
@@ -68,11 +77,11 @@ class SessionReviewer {
     // Get recent messages from transcript
     const recentMessages = await this.getRecentMessages(transcriptPath);
 
-    // Get git diff since last commit
-    const gitDiff = this.getGitDiff();
+    // Get filtered git diff
+    const { fullDiff, filteredDiff, hasDocChanges, docOnlyChanges } = this.getFilteredGitDiff();
 
     // If no changes, no need to commit
-    if (!gitDiff || gitDiff.trim().length === 0) {
+    if (!fullDiff || fullDiff.trim().length === 0) {
       return {
         status: 'on_track',
         message: 'No changes to commit',
@@ -80,8 +89,32 @@ class SessionReviewer {
       };
     }
 
-    // Prepare review prompt
-    const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, gitDiff);
+    // If documentation-only changes with an active task, auto-approve
+    if (docOnlyChanges) {
+      // Extract task ID for commit message
+      const taskIdMatch = activeTask.match(/Task ID:\*\* (\d+)/);
+      const taskId = taskIdMatch ? `TASK_${taskIdMatch[1]}` : 'TASK';
+      
+      return {
+        status: 'on_track',
+        message: 'Documentation updates only - auto-approved',
+        commitMessage: `[wip] ${taskId}: Update documentation`,
+      };
+    }
+
+    // If we have code changes (with or without doc changes), review them
+    if (!filteredDiff || filteredDiff.trim().length === 0) {
+      // This shouldn't happen if docOnlyChanges is false, but handle it anyway
+      this.logger.warn('No code changes to review despite docOnlyChanges being false');
+      return {
+        status: 'on_track',
+        message: 'No code changes to review',
+        commitMessage: '[wip] Work in progress',
+      };
+    }
+
+    // Prepare review prompt with filtered diff (code changes only)
+    const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, filteredDiff, hasDocChanges);
 
     // Use Claude CLI to review
     const review = await this.callClaudeForReview(reviewPrompt);
@@ -183,7 +216,72 @@ class SessionReviewer {
     }
   }
 
-  private buildReviewPrompt(task: string, messages: string, diff: string): string {
+  private getFilteredGitDiff(): { fullDiff: string; filteredDiff: string; hasDocChanges: boolean; docOnlyChanges: boolean } {
+    const fullDiff = this.getGitDiff();
+    
+    if (!fullDiff) {
+      return { fullDiff: '', filteredDiff: '', hasDocChanges: false, docOnlyChanges: false };
+    }
+    
+    // Parse diff to filter out .md files
+    const lines = fullDiff.split('\n');
+    const filteredLines: string[] = [];
+    let currentFile = '';
+    let skipCurrentFile = false;
+    let hasDocChanges = false;
+    let hasCodeChanges = false;
+    
+    for (const line of lines) {
+      // Detect file headers in diff format: diff --git a/file b/file
+      if (line.startsWith('diff --git')) {
+        const fileMatch = line.match(/b\/(.+)$/);
+        currentFile = fileMatch ? fileMatch[1] : '';
+        
+        // Check if this is a documentation file
+        skipCurrentFile = currentFile.endsWith('.md') || 
+                         currentFile.endsWith('.markdown') ||
+                         currentFile.endsWith('.rst') ||
+                         currentFile.endsWith('.txt') ||
+                         currentFile.includes('/docs/') ||
+                         currentFile.includes('README');
+        
+        if (skipCurrentFile) {
+          hasDocChanges = true;
+          this.logger.debug(`Filtering out documentation file: ${currentFile}`);
+        } else {
+          hasCodeChanges = true;
+        }
+        
+        // Don't include the diff header for filtered files
+        if (skipCurrentFile) {
+          continue;
+        }
+      }
+      
+      // Skip all lines for filtered files
+      if (!skipCurrentFile) {
+        filteredLines.push(line);
+      }
+    }
+    
+    const result = {
+      fullDiff,
+      filteredDiff: filteredLines.join('\n'),
+      hasDocChanges,
+      docOnlyChanges: hasDocChanges && !hasCodeChanges
+    };
+    
+    this.logger.debug('Diff filtering results', {
+      fullDiffLength: fullDiff.length,
+      filteredDiffLength: result.filteredDiff.length,
+      hasDocChanges: result.hasDocChanges,
+      docOnlyChanges: result.docOnlyChanges
+    });
+    
+    return result;
+  }
+
+  private buildReviewPrompt(task: string, messages: string, diff: string, hasDocChanges: boolean = false): string {
     // Log prompt size for debugging
     const sizes = {
       task: task.length,
@@ -199,7 +297,12 @@ class SessionReviewer {
       throw new Error(`Diff too large for review: ${diff.length} characters`);
     }
 
+    const docNote = hasDocChanges 
+      ? '\n\n## Important Note:\nChanges to .md (markdown) documentation files have been filtered out from the diff below and are always acceptable. Focus only on the code changes shown.'
+      : '';
+
     const prompt = `You are reviewing an AI assistant's work on a coding task. Analyze if the work is on track or has deviated.
+${docNote}
 
 ## Active Task Requirements:
 ${task.substring(0, 2000)}
@@ -207,7 +310,7 @@ ${task.substring(0, 2000)}
 ## Recent Conversation (last 10 messages):
 ${messages.substring(0, 2000)}
 
-## Git Diff (changes made):
+## Git Diff (code changes only, documentation excluded):
 \`\`\`diff
 ${diff.substring(0, 10000)}
 \`\`\`
@@ -223,6 +326,11 @@ ${diff.substring(0, 10000)}
 - Claiming things work without testing
 - Making changes unrelated to the current task
 - Deleting or overwriting important files
+
+## IMPORTANT:
+- Documentation updates (.md files) are ALWAYS acceptable and have been filtered out
+- Focus only on code changes when determining if work is on track
+- Updates to files like learned_mistakes.md, progress_log.md, etc. are normal and expected
 
 CRITICAL: You MUST respond with ONLY a valid JSON object. No other text before or after.
 The response MUST be valid JSON that can be parsed with JSON.parse().
