@@ -108,3 +108,8 @@
   Details: Successfully removed noise from progress tracking system
   Files: .claude/hooks/capture_plan.ts, .claude/progress_log.md, .claude/backlog.md
   Key Achievement: Removed 17 "Started" entries and stopped creation of new ones. Progress log reduced from ~174 to 104 lines while improving utility. Only meaningful status changes (Completed, Abandoned, Blocked) now tracked.
+
+[2025-09-10 16:00] - Completed: Task 020 - PostToolUse Hook for Edit Validation
+  Details: Implemented hook to run TypeScript and Biome checks on edited files
+  Files: .claude/hooks/edit_validation.ts, .claude/lib/config.ts, .claude/settings.json, .claude/commands/config-cc-pars.md
+  Key Achievement: Real-time validation feedback for TypeScript files with <2 second performance. Fully configurable with opt-in design. Successfully detects type errors and lint issues immediately after edits.
