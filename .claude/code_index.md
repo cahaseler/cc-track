@@ -70,6 +70,7 @@
 | File | Purpose |
 |------|---------|
 | lib/config.ts | Configuration management helpers |
+| lib/git-helpers.ts | Git operations for branch management |
 
 ---
 

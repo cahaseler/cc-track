@@ -50,14 +50,24 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 
 [2025-09-10 07:40] - Use Sonnet for Task Enrichment Instead of Haiku
 - **Context:** Initial attempt to use Haiku for task enrichment to save costs resulted in broken task files
-- **Decision:** Use Sonnet for task enrichment, keep Sonnet for code review, remove model param from other uses
+- **Decision:** Use Sonnet for task enrichment, keep Sonnet for code review, use Haiku for simple text generation
 - **Rationale:** Task enrichment requires complex structured output generation that Haiku cannot reliably produce
 - **Alternatives Considered:** 
   - Haiku for all CLI calls: Too limited for complex tasks
   - Opus for everything: Too expensive for simple operations
-  - Mixed approach (Haiku for simple, Sonnet for complex): Good balance but task enrichment proved too complex for Haiku
+  - Mixed approach (Haiku for simple, Sonnet for complex): Adopted - Haiku works well for branch/commit names
 - **Implications:** Slightly higher cost for task creation but ensures reliable task structure
 - **Reversibility:** Easy - just change the model parameter in capture_plan.ts
+
+[2025-09-10 08:00] - Keep Task Branches After Merge
+- **Context:** User feedback during git branching feature implementation
+- **Decision:** Keep task branches after merging rather than deleting them
+- **Rationale:** Branches serve as backup and reference for completed work
+- **Alternatives Considered:** 
+  - Delete branches after merge: Cleaner but loses reference
+  - Archive branches: More complex, unnecessary
+- **Implications:** Task branches accumulate over time, user can manually clean up old ones
+- **Reversibility:** Easy - can delete branches manually anytime
 
 ### Template Entry
 ```

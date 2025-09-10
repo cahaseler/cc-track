@@ -25,8 +25,6 @@
 ```
 
 ## Log Entries
-
-*(Task status updates will be appended here chronologically)*
 [2025-09-09 17:18] - Started: Task 001 created from plan
   Details: Plan captured and enriched
   Files: /home/ubuntu/projects/cc-pars/.claude/plans/001.md, /home/ubuntu/projects/cc-pars/.claude/tasks/TASK_001.md
@@ -79,3 +77,12 @@
   Details: Implemented configuration system with enable/disable functionality for all hooks
   Files: .claude/cc-pars.config.json, .claude/lib/config.ts, .claude/commands/config-cc-pars.md, all hook files
   Key Achievement: Users can now configure cc-pars behavior via slash command or direct file editing
+
+[2025-09-10 07:38] - Started: Task 008 created from plan
+  Details: Plan captured for git branching feature
+  Files: /home/ubuntu/projects/cc-pars/.claude/plans/008.md, /home/ubuntu/projects/cc-pars/.claude/tasks/TASK_008.md
+
+[2025-09-10 08:15] - Completed: Task 008 - Add Git Branch Support to cc-pars
+  Details: Implemented optional git branching for task management
+  Files: .claude/lib/git-helpers.ts, .claude/hooks/capture_plan.ts, .claude/commands/complete-task.md, config files
+  Key Achievement: Tasks can now optionally create feature branches and merge on completion
