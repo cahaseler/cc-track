@@ -16,3 +16,4 @@
 - investigate why post plan hook is failing to create tasks at all. This seems to have been introduced when we swapped the model to sonnet.
 - improve handling for commits not associated with a task. Instead of marking them as generic wip commits, give them a real commit message based on the content (use haiku). Programattically detect 3 or more non-task associated commits in a row, and add a gentle suggestion that the user might want to create a new task by turning on planning mode.
 - 
+- 
