@@ -7,10 +7,8 @@ import { join } from 'path';
 const backlogFile = join(process.cwd(), '.claude', 'backlog.md');
 
 // Get all arguments passed to the script
-// First check environment variable (for slash command), then fall back to CLI args
-const envArgs = process.env.COMMAND_ARGS || '';
-const cliArgs = process.argv.slice(2).join(' ');
-const item = (envArgs || cliArgs).trim();
+const args = process.argv.slice(2);
+const item = args.join(' ').trim();
 
 // Check if an item was provided
 if (!item) {
