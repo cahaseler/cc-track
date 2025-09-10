@@ -1,7 +1,7 @@
 # Project: [Your Project Name]
 
 ## Active Task
-@.claude/tasks/TASK_020.md
+None - awaiting next task assignment
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
