@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import { writeFileSync, unlinkSync } from 'fs';
+import { execSync } from 'node:child_process';
+import { unlinkSync, writeFileSync } from 'node:fs';
 
 /**
  * Get the default branch name (main or master)
@@ -7,19 +7,22 @@ import { writeFileSync, unlinkSync } from 'fs';
 export function getDefaultBranch(cwd: string): string {
   try {
     // Try to get the default branch from git config
-    const defaultBranch = execSync('git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@"', {
-      encoding: 'utf-8',
-      cwd,
-      shell: '/bin/bash'
-    }).trim();
-    
+    const defaultBranch = execSync(
+      'git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@"',
+      {
+        encoding: 'utf-8',
+        cwd,
+        shell: '/bin/bash',
+      },
+    ).trim();
+
     if (defaultBranch) {
       return defaultBranch;
     }
   } catch {
     // Fall through to check local branches
   }
-  
+
   try {
     // Check if main exists
     execSync('git show-ref --verify --quiet refs/heads/main', { cwd });
@@ -27,7 +30,7 @@ export function getDefaultBranch(cwd: string): string {
   } catch {
     // Fall through to master
   }
-  
+
   try {
     // Check if master exists
     execSync('git show-ref --verify --quiet refs/heads/master', { cwd });
@@ -45,9 +48,9 @@ export function hasUncommittedChanges(cwd: string): boolean {
   try {
     const status = execSync('git status --porcelain', {
       encoding: 'utf-8',
-      cwd
+      cwd,
     }).trim();
-    
+
     return status.length > 0;
   } catch {
     return false;
@@ -57,10 +60,10 @@ export function hasUncommittedChanges(cwd: string): boolean {
 /**
  * Generate a commit message using Claude CLI Haiku
  */
-export async function generateCommitMessage(diff: string, cwd: string): Promise<string> {
+export async function generateCommitMessage(diff: string, _cwd: string): Promise<string> {
   // Truncate diff if too long (Haiku has smaller context)
   const truncatedDiff = diff.substring(0, 3000);
-  
+
   const prompt = `CRITICAL: Return ONLY a git commit message, nothing else. No explanation, no markdown, just the message.
 Based on these changes, write a concise commit message (max 50 chars first line):
 
@@ -75,19 +78,16 @@ RETURN ONLY THE COMMIT MESSAGE`;
     // Write prompt to temp file to avoid shell escaping issues
     const tempFile = `/tmp/commit_prompt_${Date.now()}.txt`;
     writeFileSync(tempFile, prompt);
-    
-    const message = execSync(
-      `claude --model haiku --output-format text < "${tempFile}"`,
-      {
-        encoding: 'utf-8',
-        timeout: 30000,
-        cwd: '/tmp' // Run from /tmp to avoid triggering hooks
-      }
-    ).trim();
-    
+
+    const message = execSync(`claude --model haiku --output-format text < "${tempFile}"`, {
+      encoding: 'utf-8',
+      timeout: 30000,
+      cwd: '/tmp', // Run from /tmp to avoid triggering hooks
+    }).trim();
+
     // Clean up temp file
     unlinkSync(tempFile);
-    
+
     // Extract just the commit message if Claude added any wrapper text
     // Look for a line that starts with a commit type
     const lines = message.split('\n');
@@ -96,10 +96,9 @@ RETURN ONLY THE COMMIT MESSAGE`;
         return line;
       }
     }
-    
+
     // If no proper format found, use a fallback
     return 'chore: save work in progress';
-    
   } catch (error) {
     console.error('Failed to generate commit message:', error);
     return 'chore: save work in progress';
@@ -109,10 +108,10 @@ RETURN ONLY THE COMMIT MESSAGE`;
 /**
  * Generate a branch name using Claude CLI Haiku
  */
-export async function generateBranchName(plan: string, taskId: string, cwd: string): Promise<string> {
+export async function generateBranchName(plan: string, taskId: string, _cwd: string): Promise<string> {
   // Extract key parts of the plan
   const planSummary = plan.substring(0, 1500);
-  
+
   const prompt = `CRITICAL: Return ONLY a git branch name, nothing else. No explanation, no markdown, just the name.
 Based on this plan, generate a git branch name:
 
@@ -129,19 +128,16 @@ RETURN ONLY THE BRANCH NAME`;
     // Write prompt to temp file to avoid shell escaping issues
     const tempFile = `/tmp/branch_prompt_${Date.now()}.txt`;
     writeFileSync(tempFile, prompt);
-    
-    const branchName = execSync(
-      `claude --model haiku --output-format text < "${tempFile}"`,
-      {
-        encoding: 'utf-8',
-        timeout: 30000,
-        cwd: '/tmp' // Run from /tmp to avoid triggering hooks
-      }
-    ).trim();
-    
+
+    const branchName = execSync(`claude --model haiku --output-format text < "${tempFile}"`, {
+      encoding: 'utf-8',
+      timeout: 30000,
+      cwd: '/tmp', // Run from /tmp to avoid triggering hooks
+    }).trim();
+
     // Clean up temp file
     unlinkSync(tempFile);
-    
+
     // Extract just the branch name if Claude added any wrapper text
     const lines = branchName.split('\n');
     for (const line of lines) {
@@ -150,10 +146,9 @@ RETURN ONLY THE BRANCH NAME`;
         return `${line}-${taskId.toLowerCase()}`;
       }
     }
-    
+
     // Fallback to a generic name with task ID
     return `feature/task-${taskId.toLowerCase()}`;
-    
   } catch (error) {
     console.error('Failed to generate branch name:', error);
     // Fallback to a generic name with task ID
@@ -169,9 +164,9 @@ export function createTaskBranch(branchName: string, cwd: string): void {
     // Create and switch to the new branch
     execSync(`git checkout -b ${branchName}`, {
       encoding: 'utf-8',
-      cwd
+      cwd,
     });
-    
+
     console.log(`Created and switched to branch: ${branchName}`);
   } catch (error) {
     console.error(`Failed to create branch ${branchName}:`, error);
@@ -187,18 +182,17 @@ export function mergeTaskBranch(branchName: string, defaultBranch: string, cwd: 
     // Switch to default branch
     execSync(`git checkout ${defaultBranch}`, {
       encoding: 'utf-8',
-      cwd
+      cwd,
     });
-    
+
     // Merge the task branch
     execSync(`git merge ${branchName} --no-ff -m "Merge branch '${branchName}'"`, {
       encoding: 'utf-8',
-      cwd
+      cwd,
     });
-    
+
     console.log(`Merged ${branchName} into ${defaultBranch}`);
     // Note: Not deleting the branch per user request
-    
   } catch (error) {
     console.error(`Failed to merge branch ${branchName}:`, error);
     throw error;
@@ -212,7 +206,7 @@ export function getCurrentBranch(cwd: string): string {
   try {
     return execSync('git branch --show-current', {
       encoding: 'utf-8',
-      cwd
+      cwd,
     }).trim();
   } catch {
     return '';

@@ -20,16 +20,17 @@
         "noUselessTypeConstraint": "error"
       },
       "correctness": {
-        "noUnusedVariables": "warn"
+        "noUnusedVariables": "error"
       },
       "suspicious": {
         "noExplicitAny": "error",
         "noImplicitAnyLet": "error"
       },
       "style": {
-        "noNonNullAssertion": "warn",
+        "noNonNullAssertion": "error",
         "useConst": "error",
-        "useTemplate": "error"
+        "useTemplate": "error",
+        "useNodejsImportProtocol": "error"
       }
     }
   },
@@ -42,10 +43,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "**/*.ts",
-      "**/*.js"
-    ],
+    "includes": ["**/*.ts", "**/*.js"],
     "experimentalScannerIgnores": [
       "node_modules/**",
       "dist/**",

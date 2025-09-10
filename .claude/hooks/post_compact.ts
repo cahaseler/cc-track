@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 
@@ -13,14 +13,9 @@ interface SessionStartInput {
   source?: string; // 'startup' | 'resume' | 'clear' | 'compact'
 }
 
-interface HookOutput {
-  continue?: boolean;
-  systemMessage?: string;
-}
-
 async function main() {
   const logger = createLogger('post_compact');
-  
+
   try {
     // Check if hook is enabled
     if (!isHookEnabled('post_compact')) {
@@ -28,12 +23,12 @@ async function main() {
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
-    
+
     const input = await Bun.stdin.text();
     const data: SessionStartInput = JSON.parse(input);
-    
+
     logger.debug('SessionStart hook called', { data });
-    
+
     // Only run after compaction (both manual and auto)
     // According to docs: "compact" - Invoked from auto or manual compact
     if (data.source !== 'compact') {
@@ -41,17 +36,16 @@ async function main() {
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
-    
+
     logger.info('Post-compaction context restoration starting');
-    
+
     // Get project root
     const projectRoot = data.cwd;
-    const claudeDir = join(projectRoot, '.claude');
-    
+
     // Check if there's an active task
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     let activeTaskFile = '';
-    
+
     if (existsSync(claudeMdPath)) {
       const claudeMd = readFileSync(claudeMdPath, 'utf-8');
       const taskMatch = claudeMd.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
@@ -59,17 +53,17 @@ async function main() {
         activeTaskFile = taskMatch[1];
       }
     }
-    
+
     // First, inject the current CLAUDE.md content so Claude knows what exists
     let claudeMdContent = '';
     if (existsSync(claudeMdPath)) {
       claudeMdContent = readFileSync(claudeMdPath, 'utf-8');
     }
-    
+
     // Parse CLAUDE.md to find all @imports and read them
     const importPattern = /@(\.claude\/[^\s]+)/g;
     const imports = [...claudeMdContent.matchAll(importPattern)];
-    
+
     // Read all imported files
     let importedContent = '';
     for (const match of imports) {
@@ -80,7 +74,7 @@ async function main() {
         importedContent += `\n## ${fileName}:\n\`\`\`markdown\n${content}\n\`\`\`\n`;
       }
     }
-    
+
     // Construct instructions for Claude
     let instructions = `📋 POST-COMPACTION CONTEXT RESTORATION
 
@@ -128,20 +122,19 @@ Now that you can see the current state of the project documentation:
    - Any unresolved issues or concerns noted in your journal
 
 Please do this now before proceeding with any new work.`;
-    
+
     // SessionStart hooks should use hookSpecificOutput for additional context
     const output = {
       continue: true,
       systemMessage: instructions,
       hookSpecificOutput: {
-        hookEventName: "SessionStart",
-        additionalContext: instructions
-      }
+        hookEventName: 'SessionStart',
+        additionalContext: instructions,
+      },
     };
-    
+
     console.log(JSON.stringify(output));
     process.exit(0);
-    
   } catch (error) {
     console.error(`Error in post_compact hook: ${error}`);
     // Don't block session start on errors

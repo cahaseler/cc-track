@@ -1,10 +1,9 @@
 #!/usr/bin/env bun
 
-import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'fs';
-import { join, basename } from 'path';
-import { execSync } from 'child_process';
-import { createInterface } from 'readline';
-import { createReadStream } from 'fs';
+import { execSync } from 'node:child_process';
+import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import { isHookEnabled } from '../lib/config';
 import { generateCommitMessage } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
@@ -17,12 +16,6 @@ interface StopInput {
   stop_hook_active?: boolean;
 }
 
-interface HookOutput {
-  success: boolean;
-  message?: string;
-  systemMessage?: string;
-}
-
 interface ReviewResult {
   status: 'on_track' | 'deviation' | 'needs_verification' | 'critical_failure' | 'review_failed';
   message: string;
@@ -30,33 +23,32 @@ interface ReviewResult {
   details?: string;
 }
 
-
 class SessionReviewer {
   private projectRoot: string;
   private claudeDir: string;
   private logger;
-  
-  constructor(projectRoot: string, logger: any) {
+
+  constructor(projectRoot: string, logger: ReturnType<typeof createLogger>) {
     this.projectRoot = projectRoot;
     this.claudeDir = join(projectRoot, '.claude');
     this.logger = logger;
   }
-  
+
   async review(transcriptPath: string): Promise<ReviewResult> {
     // Get active task
     const activeTask = this.getActiveTask();
     if (!activeTask) {
       // Get git diff for generating a meaningful commit message
       const gitDiff = this.getGitDiff();
-      
+
       if (!gitDiff || gitDiff.trim().length === 0) {
         return {
           status: 'on_track',
           message: 'No changes to commit',
-          commitMessage: ''
+          commitMessage: '',
         };
       }
-      
+
       // Generate a meaningful commit message using Haiku
       let commitMessage: string;
       try {
@@ -65,95 +57,95 @@ class SessionReviewer {
         // Fallback to generic message if generation fails
         commitMessage = 'chore: exploratory work and improvements';
       }
-      
+
       return {
         status: 'on_track',
         message: 'No active task - exploratory work',
-        commitMessage
+        commitMessage,
       };
     }
-    
+
     // Get recent messages from transcript
     const recentMessages = await this.getRecentMessages(transcriptPath);
-    
+
     // Get git diff since last commit
     const gitDiff = this.getGitDiff();
-    
+
     // If no changes, no need to commit
     if (!gitDiff || gitDiff.trim().length === 0) {
       return {
         status: 'on_track',
         message: 'No changes to commit',
-        commitMessage: ''
+        commitMessage: '',
       };
     }
-    
+
     // Prepare review prompt
     const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, gitDiff);
-    
+
     // Use Claude CLI to review
     const review = await this.callClaudeForReview(reviewPrompt);
-    
+
     return review;
   }
-  
+
   private getActiveTask(): string | null {
     const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
     if (!existsSync(claudeMdPath)) return null;
-    
+
     const content = readFileSync(claudeMdPath, 'utf-8');
     const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
     if (!taskMatch) return null;
-    
+
     const taskPath = join(this.claudeDir, 'tasks', taskMatch[1]);
     if (!existsSync(taskPath)) return null;
-    
+
     return readFileSync(taskPath, 'utf-8');
   }
-  
+
   private async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
     const messages: string[] = [];
-    
+
     return new Promise((resolve) => {
       const fileStream = createReadStream(transcriptPath);
       const rl = createInterface({
         input: fileStream,
-        crlfDelay: Infinity
+        crlfDelay: Infinity,
       });
-      
-      const allMessages: any[] = [];
-      
+
+      const allMessages: Array<{ message?: { role?: string; content?: unknown } }> = [];
+
       rl.on('line', (line) => {
         try {
           const entry = JSON.parse(line);
-          if (entry.message && entry.message.role) {
+          if (entry.message?.role) {
             allMessages.push(entry);
           }
-        } catch (e) {
+        } catch (_e) {
           // Skip malformed lines
         }
       });
-      
+
       rl.on('close', () => {
         // Get last N messages
         const recent = allMessages.slice(-limit);
         for (const entry of recent) {
-          if (entry.message.role === 'user') {
+          if (entry.message?.role === 'user') {
             messages.push(`User: ${this.extractMessageContent(entry.message.content)}`);
-          } else if (entry.message.role === 'assistant') {
+          } else if (entry.message?.role === 'assistant') {
             messages.push(`Assistant: ${this.extractMessageContent(entry.message.content)}`);
           }
         }
         resolve(messages.join('\n'));
       });
-      
+
       rl.on('error', () => {
         resolve('');
       });
     });
   }
-  
-  private extractMessageContent(content: any): string {
+
+  private extractMessageContent(content: unknown): string {
     if (typeof content === 'string') return content.substring(0, 200);
     if (Array.isArray(content)) {
       for (const item of content) {
@@ -164,49 +156,49 @@ class SessionReviewer {
     }
     return '[complex content]';
   }
-  
+
   private getGitDiff(): string {
     try {
       // Check for uncommitted changes
-      const status = execSync('git status --porcelain', { 
+      const status = execSync('git status --porcelain', {
         encoding: 'utf-8',
-        cwd: this.projectRoot 
+        cwd: this.projectRoot,
       });
-      
+
       if (!status.trim()) {
         return '';
       }
-      
+
       // Get diff of staged and unstaged changes
-      const diff = execSync('git diff HEAD', { 
+      const diff = execSync('git diff HEAD', {
         encoding: 'utf-8',
         cwd: this.projectRoot,
-        maxBuffer: 1024 * 1024 * 5 // 5MB
+        maxBuffer: 1024 * 1024 * 5, // 5MB
       });
-      
+
       return diff;
     } catch (e) {
       console.error('Error getting git diff:', e);
       return '';
     }
   }
-  
+
   private buildReviewPrompt(task: string, messages: string, diff: string): string {
     // Log prompt size for debugging
     const sizes = {
       task: task.length,
       messages: messages.length,
       diff: diff.length,
-      total: task.length + messages.length + diff.length
+      total: task.length + messages.length + diff.length,
     };
     this.logger.debug('Building review prompt', sizes);
-    
+
     // If diff is too large, don't even try
     if (diff.length > 50000) {
       this.logger.warn(`Diff too large for review: ${diff.length} characters`);
       throw new Error(`Diff too large for review: ${diff.length} characters`);
     }
-    
+
     const prompt = `You are reviewing an AI assistant's work on a coding task. Analyze if the work is on track or has deviated.
 
 ## Active Task Requirements:
@@ -248,59 +240,56 @@ Example valid response:
 
 Be strict about deviations - if the changes don't directly address the task requirements, it's a deviation.
 REMEMBER: Output ONLY the JSON object, nothing else!`;
-    
+
     this.logger.debug(`Final prompt length: ${prompt.length} characters`);
-    
+
     // Also save the full prompt for inspection if it's huge
     if (prompt.length > 20000) {
       const debugFile = `/tmp/stop_review_prompt_${Date.now()}.txt`;
       writeFileSync(debugFile, prompt);
       this.logger.info(`Large prompt saved to: ${debugFile}`);
     }
-    
+
     return prompt;
   }
-  
+
   private async callClaudeForReview(prompt: string): Promise<ReviewResult> {
     try {
       const tempFile = `/tmp/stop_review_${Date.now()}.txt`;
       writeFileSync(tempFile, prompt);
-      
-      const response = execSync(
-        `claude --model sonnet --output-format json < "${tempFile}"`,
-        { 
-          encoding: 'utf-8',
-          timeout: 120000,  // 2 minutes - plenty of time for Claude to think
-          shell: '/bin/bash',
-          cwd: '/tmp'  // Run in /tmp to avoid triggering our own Stop hook!
-        }
-      ).trim();
-      
+
+      const response = execSync(`claude --model sonnet --output-format json < "${tempFile}"`, {
+        encoding: 'utf-8',
+        timeout: 120000, // 2 minutes - plenty of time for Claude to think
+        shell: '/bin/bash',
+        cwd: '/tmp', // Run in /tmp to avoid triggering our own Stop hook!
+      }).trim();
+
       // Clean up temp file
       if (existsSync(tempFile)) {
         unlinkSync(tempFile);
       }
-      
+
       // Log the raw response for debugging
       this.logger.debug(`Claude raw response: ${response.substring(0, 500)}`);
-      
+
       let result = JSON.parse(response);
-      
+
       // Handle Claude CLI wrapper format
       if (result.type === 'result' && result.result) {
         // The actual content is in result.result, need to parse that too
         this.logger.debug('Unwrapping Claude CLI result field');
-        
+
         // The result field contains the actual JSON response as a string
         const innerContent = result.result;
-        
+
         // Try to extract JSON from the response (in case there's extra text)
         const jsonMatch = innerContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
             result = JSON.parse(jsonMatch[0]);
             this.logger.debug('Successfully extracted JSON from response');
-          } catch (e) {
+          } catch (_e) {
             this.logger.error(`Failed to parse extracted JSON: ${jsonMatch[0].substring(0, 200)}`);
             throw new Error('Could not parse JSON from Claude response');
           }
@@ -309,14 +298,13 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
           throw new Error('Claude did not return JSON despite explicit instructions');
         }
       }
-      
+
       // Check if the response has the expected structure
       if (!result.status || !result.message) {
         this.logger.warn(`Invalid response structure: ${JSON.stringify(result).substring(0, 200)}`);
       }
-      
+
       return result as ReviewResult;
-      
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error('Claude review failed:', errorMsg);
@@ -325,47 +313,53 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
         status: 'review_failed',
         message: 'Could not review changes',
         commitMessage: '[wip] Work in progress - review failed',
-        details: `Claude CLI error: ${errorMsg}`
+        details: `Claude CLI error: ${errorMsg}`,
       };
     }
   }
-  
+
   async commitChanges(message: string): Promise<boolean> {
     try {
       // Stage all changes
       execSync('git add -A', { cwd: this.projectRoot });
-      
+
       // Commit with the message
-      execSync(`git commit -m "${message}"`, { 
+      execSync(`git commit -m "${message}"`, {
         cwd: this.projectRoot,
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       });
-      
+
       return true;
     } catch (e) {
       console.error('Git commit failed:', e);
       return false;
     }
   }
-  
-  private checkRecentNonTaskCommits(): number {
+
+  checkRecentNonTaskCommits(): number {
     try {
-      // Get last 10 commits
-      const commits = execSync('git log --oneline -10', { 
+      // Get recent commit messages (last 10)
+      const recentCommits = execSync('git log --oneline -10', {
+        cwd: this.projectRoot,
         encoding: 'utf-8',
-        cwd: this.projectRoot 
-      }).split('\n').filter(line => line.trim());
-      
-      // Count consecutive commits without task reference from most recent
-      let nonTaskCount = 0;
+      }).trim();
+
+      if (!recentCommits) return 0;
+
+      // Count consecutive non-task commits from most recent
+      const commits = recentCommits.split('\n');
+      let count = 0;
+
       for (const commit of commits) {
-        if (commit.includes('TASK_')) {
-          break; // Found a task commit, stop counting
+        if (!commit.includes('TASK_')) {
+          count++;
+        } else {
+          // Stop counting when we hit a task commit
+          break;
         }
-        nonTaskCount++;
       }
-      
-      return nonTaskCount;
+
+      return count;
     } catch {
       return 0;
     }
@@ -374,7 +368,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
 
 async function main() {
   const logger = createLogger('stop_review');
-  
+
   try {
     // Check if hook is enabled
     if (!isHookEnabled('stop_review')) {
@@ -382,48 +376,50 @@ async function main() {
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
-    
+
     logger.info('=== HOOK STARTED ===');
-    
+
     const input = await Bun.stdin.text();
     const data: StopInput = JSON.parse(input);
-    
-    logger.debug('Session info', { 
-      session_id: data.session_id, 
-      stop_hook_active: data.stop_hook_active 
+
+    logger.debug('Session info', {
+      session_id: data.session_id,
+      stop_hook_active: data.stop_hook_active,
     });
-    
+
     // If already in a stop hook, still do review/commit but always allow stop
     const inStopHook = data.stop_hook_active;
-    
+
     // Get project root
     const projectRoot = data.cwd;
-    
+
     // Check if git repo
     try {
       execSync('git rev-parse --git-dir', { cwd: projectRoot });
     } catch {
       // Not a git repo, skip
-      console.log(JSON.stringify({ 
-        success: true, 
-        message: 'Not a git repository - skipping auto-commit' 
-      }));
+      console.log(
+        JSON.stringify({
+          success: true,
+          message: 'Not a git repository - skipping auto-commit',
+        }),
+      );
       process.exit(0);
     }
-    
+
     // Quick check for changes before doing any review
     try {
-      const status = execSync('git status --porcelain', { 
+      const status = execSync('git status --porcelain', {
         encoding: 'utf-8',
-        cwd: projectRoot 
+        cwd: projectRoot,
       });
-      
+
       if (!status.trim()) {
         // No changes, skip everything
         logger.info('No changes detected, exiting early');
-        const output = { 
+        const output = {
           continue: true,
-          systemMessage: '✅ No changes to commit' 
+          systemMessage: '✅ No changes to commit',
         };
         logger.debug('Sending output', output);
         console.log(JSON.stringify(output));
@@ -432,21 +428,21 @@ async function main() {
     } catch {
       // If git status fails, continue with review
     }
-    
+
     // Review the session
     const reviewer = new SessionReviewer(projectRoot, logger);
     const review = await reviewer.review(data.transcript_path);
-    
+
     // Handle based on review status
-    let output: any = {};
+    const output: { continue?: boolean; decision?: string; reason?: string; systemMessage?: string } = {};
     let nonTaskSuggestion: string | null = null;
-    
+
     if (review.commitMessage) {
       // Commit the changes
       const committed = await reviewer.commitChanges(review.commitMessage);
       if (committed) {
         console.error(`Auto-committed: ${review.commitMessage}`);
-        
+
         // Check if this was a non-task commit and check recent history
         if (!review.commitMessage.includes('TASK_')) {
           const nonTaskCount = reviewer.checkRecentNonTaskCommits();
@@ -457,7 +453,7 @@ async function main() {
         }
       }
     }
-    
+
     // If already in a stop hook, always allow stop regardless of review
     if (inStopHook) {
       output.continue = true;
@@ -471,7 +467,7 @@ async function main() {
       console.log(JSON.stringify(output));
       process.exit(0);
     }
-    
+
     // Provide feedback based on status
     logger.info('Review complete', { status: review.status, message: review.message });
     switch (review.status) {
@@ -486,27 +482,27 @@ async function main() {
           output.systemMessage += `\n\n${nonTaskSuggestion}`;
         }
         break;
-        
+
       case 'deviation':
         // Block stop - needs correction
-        output.decision = "block";
+        output.decision = 'block';
         output.reason = `Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
         output.systemMessage = `⚠️ DEVIATION DETECTED: ${review.message}`;
         if (review.details) {
           output.systemMessage += `\n\nDetails: ${review.details}`;
         }
         break;
-        
+
       case 'needs_verification':
         // Block stop - needs testing
-        output.decision = "block";
+        output.decision = 'block';
         output.reason = `Verification needed: ${review.message}. Please test your changes before proceeding.`;
         output.systemMessage = `🔍 VERIFICATION NEEDED: ${review.message}`;
         if (review.details) {
           output.systemMessage += `\n\nDetails: ${review.details}`;
         }
         break;
-        
+
       case 'critical_failure':
         // Allow stop - too dangerous to continue
         output.continue = true;
@@ -515,7 +511,7 @@ async function main() {
           output.systemMessage += `\n\nDetails: ${review.details}`;
         }
         break;
-        
+
       case 'review_failed':
         // Allow stop but indicate review system failure
         output.continue = true;
@@ -524,7 +520,7 @@ async function main() {
           output.systemMessage += `\n\n${review.details}`;
         }
         break;
-        
+
       default:
         // Unexpected status - log it and allow stop
         logger.warn(`Unexpected review status: ${review.status}`);
@@ -532,11 +528,10 @@ async function main() {
         output.systemMessage = `⚠️ Unexpected review status: ${review.status} - ${review.message}`;
         break;
     }
-    
+
     logger.debug('Sending output', { output_preview: JSON.stringify(output).substring(0, 100) });
     console.log(JSON.stringify(output));
     process.exit(0);
-    
   } catch (error) {
     logger.exception('Error in stop_review hook', error as Error);
     // Don't block on errors

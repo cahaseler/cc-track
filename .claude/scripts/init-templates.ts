@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,7 +25,7 @@ const TEMPLATE_FILES = [
   'user_context.md',
   'CLAUDE.md',
   'settings.json',
-  'statusline.sh'
+  'statusline.sh',
 ];
 
 function ensureDirectoryExists(dir: string) {
@@ -37,7 +37,7 @@ function ensureDirectoryExists(dir: string) {
 function copyTemplate(templateName: string, targetPath?: string) {
   const sourcePath = join(TEMPLATES_DIR, templateName);
   const destPath = targetPath || join(CLAUDE_DIR, templateName);
-  
+
   if (!existsSync(sourcePath)) {
     console.error(`Template not found: ${sourcePath}`);
     return false;
@@ -54,20 +54,20 @@ function copyTemplate(templateName: string, targetPath?: string) {
 
   copyFileSync(sourcePath, destPath);
   console.log(`✓ Created ${destPath.replace(PROJECT_ROOT, '.')}`);
-  
+
   // Make statusline.sh executable
   if (templateName === 'statusline.sh') {
-    const fs = require('fs');
+    const fs = require('node:fs');
     fs.chmodSync(destPath, '755');
   }
-  
+
   return true;
 }
 
 function updateClaudeMd() {
   const claudeMdPath = join(PROJECT_ROOT, 'CLAUDE.md');
   const templatePath = join(TEMPLATES_DIR, 'CLAUDE.md');
-  
+
   if (existsSync(claudeMdPath)) {
     // Check if it already has cc-pars imports
     const content = readFileSync(claudeMdPath, 'utf-8');
@@ -75,17 +75,17 @@ function updateClaudeMd() {
       console.log('CLAUDE.md already has cc-pars imports');
       return;
     }
-    
+
     // Backup existing CLAUDE.md
     const backupPath = join(PROJECT_ROOT, 'CLAUDE.md.backup');
     copyFileSync(claudeMdPath, backupPath);
     console.log(`✓ Backed up existing CLAUDE.md to CLAUDE.md.backup`);
-    
+
     // Prepend cc-pars imports to existing content
     const templateContent = readFileSync(templatePath, 'utf-8');
-    const ccParsSection = templateContent.split('---')[0] + '---\n\n';
+    const ccParsSection = `${templateContent.split('---')[0]}---\n\n`;
     const updatedContent = ccParsSection + content;
-    
+
     writeFileSync(claudeMdPath, updatedContent);
     console.log('✓ Updated CLAUDE.md with cc-pars imports');
   } else {
@@ -104,13 +104,13 @@ function createNoActiveTask() {
 
 function main() {
   console.log('Initializing cc-pars context management system...\n');
-  
+
   // Ensure .claude directory exists
   ensureDirectoryExists(CLAUDE_DIR);
   ensureDirectoryExists(join(CLAUDE_DIR, 'hooks'));
   ensureDirectoryExists(join(CLAUDE_DIR, 'plans'));
   ensureDirectoryExists(join(CLAUDE_DIR, 'utils'));
-  
+
   // Copy template files
   console.log('Creating context files:');
   for (const file of TEMPLATE_FILES) {
@@ -122,13 +122,13 @@ function main() {
     }
     copyTemplate(file);
   }
-  
+
   // Create no_active_task.md (not active_task.md)
   createNoActiveTask();
-  
+
   // Handle CLAUDE.md specially
   updateClaudeMd();
-  
+
   console.log('\n✅ cc-pars initialization complete!');
   console.log('\nNext steps:');
   console.log('1. Review and populate .claude/product_context.md');

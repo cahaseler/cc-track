@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { isHookEnabled } from '../lib/config';
+import { createTaskBranch, generateBranchName, generateCommitMessage, hasUncommittedChanges } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
-import { hasUncommittedChanges, generateCommitMessage, generateBranchName, createTaskBranch } from '../lib/git-helpers';
 
 interface HookInput {
   session_id: string;
@@ -18,7 +18,8 @@ interface HookInput {
   };
   tool_response?: {
     success?: boolean;
-    [key: string]: any;
+    plan?: string;
+    [key: string]: unknown;
   };
 }
 
@@ -32,9 +33,9 @@ async function main() {
   // Add emergency debug logging to diagnose logger issues
   const debugLog = (msg: string) => {
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       fs.appendFileSync('/tmp/capture_plan_debug.log', `${new Date().toISOString()} - ${msg}\n`);
-    } catch (e) {
+    } catch (_e) {
       // Ignore debug log errors
     }
   };
@@ -42,7 +43,7 @@ async function main() {
   debugLog('Hook starting, creating logger...');
   const logger = createLogger('capture_plan');
   debugLog('Logger created, checking if enabled...');
-  
+
   try {
     // Check if hook is enabled
     if (!isHookEnabled('capture_plan')) {
@@ -52,19 +53,19 @@ async function main() {
       process.exit(0);
     }
     debugLog('Hook enabled, proceeding...');
-    
+
     // Read input from stdin
     const input = await Bun.stdin.text();
     const data: HookInput = JSON.parse(input);
     debugLog(`Parsed input: ${data.hook_event_name}, tool: ${data.tool_name}`);
-    
+
     debugLog('Calling logger.debug...');
-    logger.debug('Hook triggered', { 
+    logger.debug('Hook triggered', {
       session_id: data.session_id,
       hook_event: data.hook_event_name,
       tool_name: data.tool_name,
       has_tool_response: !!data.tool_response,
-      tool_response: data.tool_response
+      tool_response: data.tool_response,
     });
     debugLog('Logger.debug called successfully');
 
@@ -76,7 +77,7 @@ async function main() {
         // Plan was rejected or tool_response is malformed - don't create task
         debugLog('Plan not approved or missing plan field, calling logger.info...');
         logger.info('Plan was not approved, skipping task creation', {
-          tool_response: data.tool_response
+          tool_response: data.tool_response,
         });
         debugLog('Logger.info called, exiting');
         process.exit(0);
@@ -85,54 +86,57 @@ async function main() {
       logger.info('Plan was approved, creating task');
       debugLog('Logger.info for approval called');
     }
-    
+
     const plan = data.tool_input.plan;
     if (!plan) {
       debugLog('No plan found in tool input');
       logger.warn('No plan found in tool input', { tool_input: data.tool_input });
       process.exit(0);
     }
-    
+
     debugLog(`Plan found: ${plan.length} characters`);
     logger.debug('Plan content', { plan_length: plan.length, plan_preview: plan.substring(0, 200) });
-    
+
     // Ensure directories exist
     const projectRoot = data.cwd;
     const claudeDir = join(projectRoot, '.claude');
     const plansDir = join(claudeDir, 'plans');
     const tasksDir = join(claudeDir, 'tasks');
-    
+
     if (!existsSync(plansDir)) {
       mkdirSync(plansDir, { recursive: true });
     }
     if (!existsSync(tasksDir)) {
       mkdirSync(tasksDir, { recursive: true });
     }
-    
+
     // Find the next task number
     const now = new Date();
     let nextNumber = 1;
-    
+
     // Look for existing task files to find the highest number
     if (existsSync(tasksDir)) {
       const files = readdirSync(tasksDir);
       const taskNumbers = files
-        .filter(f => f.match(/^TASK_(\d{3})\.md$/))
-        .map(f => parseInt(f.match(/^TASK_(\d{3})\.md$/)![1], 10))
-        .filter(n => !isNaN(n));
-      
+        .filter((f) => f.match(/^TASK_(\d{3})\.md$/))
+        .map((f) => {
+          const match = f.match(/^TASK_(\d{3})\.md$/);
+          return match ? parseInt(match[1], 10) : NaN;
+        })
+        .filter((n) => !Number.isNaN(n));
+
       if (taskNumbers.length > 0) {
         nextNumber = Math.max(...taskNumbers) + 1;
       }
     }
-    
+
     // Format as 3-digit padded number
     const taskId = String(nextNumber).padStart(3, '0');
-    
+
     // Save raw plan to plans directory
     const planPath = join(plansDir, `${taskId}.md`);
     writeFileSync(planPath, `# Plan: ${taskId}\n\nCaptured: ${now.toISOString()}\n\n${plan}`);
-    
+
     // Create prompt for Claude to generate the task file
     const enrichmentPrompt = `
 Based on the following plan, create a comprehensive task file following the active_task template format.
@@ -182,23 +186,20 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
     // Write prompt to temp file to avoid shell escaping issues
     const tempPromptPath = join(claudeDir, '.temp_prompt.txt');
     writeFileSync(tempPromptPath, enrichmentPrompt);
-    
+
     let taskContent: string;
     try {
-      taskContent = execSync(
-        `claude --model sonnet --output-format text < "${tempPromptPath}"`,
-        { 
-          encoding: 'utf-8',
-          cwd: '/tmp',  // Run in /tmp to avoid triggering Stop hook recursion
-          maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
-          shell: '/bin/bash'
-        }
-      ).trim();
-    } catch (cmdError: any) {
-      logger.error('Claude CLI failed', { 
-        error: cmdError.message,
+      taskContent = execSync(`claude --model sonnet --output-format text < "${tempPromptPath}"`, {
+        encoding: 'utf-8',
+        cwd: '/tmp', // Run in /tmp to avoid triggering Stop hook recursion
+        maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
+        shell: '/bin/bash',
+      }).trim();
+    } catch (cmdError) {
+      logger.error('Claude CLI failed', {
+        error: cmdError instanceof Error ? cmdError.message : String(cmdError),
         command: 'claude --model sonnet --output-format text',
-        cwd: '/tmp'
+        cwd: '/tmp',
       });
       throw cmdError;
     } finally {
@@ -207,17 +208,17 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
         unlinkSync(tempPromptPath);
       }
     }
-    
+
     // Save the enriched task file in tasks directory
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
     let finalTaskContent = taskContent;
-    
+
     // Handle git branching if enabled
     if (isHookEnabled('git_branching')) {
       try {
         // Check if we're in a git repo
         execSync('git rev-parse --git-dir', { cwd: projectRoot });
-        
+
         // Commit any uncommitted work
         if (hasUncommittedChanges(projectRoot)) {
           const diff = execSync('git diff HEAD', { encoding: 'utf-8', cwd: projectRoot });
@@ -225,11 +226,11 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
           execSync(`git add -A && git commit -m "${commitMsg}"`, { cwd: projectRoot });
           console.error(`Committed uncommitted changes: ${commitMsg}`);
         }
-        
+
         // Create and switch to task branch
         const branchName = await generateBranchName(plan, taskId, projectRoot);
         createTaskBranch(branchName, projectRoot);
-        
+
         // Store branch name in task file for later reference
         finalTaskContent += `\n\n<!-- branch: ${branchName} -->`;
         console.error(`Created and switched to branch: ${branchName}`);
@@ -238,31 +239,25 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
         // Continue without branching
       }
     }
-    
+
     writeFileSync(taskPath, finalTaskContent);
-    
+
     // Update CLAUDE.md to point to the new task
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     if (existsSync(claudeMdPath)) {
       let claudeMd = readFileSync(claudeMdPath, 'utf-8');
-      
+
       // Replace the active task import
       if (claudeMd.includes('@.claude/no_active_task.md')) {
-        claudeMd = claudeMd.replace(
-          '@.claude/no_active_task.md',
-          `@.claude/tasks/TASK_${taskId}.md`
-        );
+        claudeMd = claudeMd.replace('@.claude/no_active_task.md', `@.claude/tasks/TASK_${taskId}.md`);
       } else if (claudeMd.match(/@\.claude\/tasks\/TASK_.*?\.md/)) {
         // Replace existing task
-        claudeMd = claudeMd.replace(
-          /@\.claude\/tasks\/TASK_.*?\.md/,
-          `@.claude/tasks/TASK_${taskId}.md`
-        );
+        claudeMd = claudeMd.replace(/@\.claude\/tasks\/TASK_.*?\.md/, `@.claude/tasks/TASK_${taskId}.md`);
       }
-      
+
       writeFileSync(claudeMdPath, claudeMd);
     }
-    
+
     // Log to progress log
     const progressLogPath = join(claudeDir, 'progress_log.md');
     if (existsSync(progressLogPath)) {
@@ -270,16 +265,15 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
       const currentLog = readFileSync(progressLogPath, 'utf-8');
       writeFileSync(progressLogPath, currentLog + logEntry);
     }
-    
+
     // Return success with a message
     const output: HookOutput = {
       continue: true,
-      systemMessage: `✅ Plan captured as task ${taskId}. Task file created and set as active.`
+      systemMessage: `✅ Plan captured as task ${taskId}. Task file created and set as active.`,
     };
-    
+
     console.log(JSON.stringify(output));
     process.exit(0);
-    
   } catch (error) {
     debugLog(`Fatal error: ${error}`);
     logger.exception('Fatal error in capture_plan hook', error as Error);
