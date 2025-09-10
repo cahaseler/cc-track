@@ -12,6 +12,14 @@
 ## Error Patterns
 
 *(Entries will be added here by the pre_compact hook)*
+### Session: 2025-09-10 15:47
+- When bash commands with complex syntax like `$(date +%Y-%m-%d)` fail with "syntax error near unexpected token", the shell is likely escaping special characters incorrectly - use simpler commands or store intermediate results
+- Multiple consecutive Edit failures on the same file followed by successful resolution indicates the file needed to be read first - always Read before Edit on files not in context
+- When validation tests with intentional errors (like TypeScript type mismatches) are created but validation doesn't trigger, check if the validation hook is actually enabled in the configuration
+- Git commit messages with newlines may need special handling - use single-line messages or proper quoting/escaping for multi-line commits
+- When Biome check with --reporter=json flag produces output that jq can't parse, the output likely isn't valid JSON - check Biome's actual output format first
+- Sequences of failed edits to config files that suddenly succeed suggest the file structure changed between attempts - always re-read configuration files after external modifications
+
 ### Session: 2025-09-10 14:39
 - When encountering "File has not been read yet" errors from Edit tool, always use Read tool first before attempting any edits
 - When tail/grep on JSONL files return truncated output, the JSON is being cut off mid-entry - use more specific filters or line limits
