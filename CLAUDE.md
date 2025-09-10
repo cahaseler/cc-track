@@ -1,4 +1,4 @@
-# Project: [Your Project Name]
+# Project: cc-pars
 
 ## Active Task
 @.claude/no_active_task.md
