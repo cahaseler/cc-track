@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
+import { isHookEnabled } from '../.claude/lib/config';
 import { createLogger } from '../.claude/lib/logger';
 
 interface HookInput {
@@ -27,13 +28,36 @@ interface HookOutput {
 }
 
 async function main() {
+  // Add emergency debug logging to diagnose logger issues
+  const debugLog = (msg: string) => {
+    try {
+      const fs = require('fs');
+      fs.appendFileSync('/tmp/capture_plan_debug.log', `${new Date().toISOString()} - ${msg}\n`);
+    } catch (e) {
+      // Ignore debug log errors
+    }
+  };
+
+  debugLog('Hook starting, creating logger...');
   const logger = createLogger('capture_plan');
+  debugLog('Logger created, checking if enabled...');
   
   try {
+    // Check if hook is enabled
+    if (!isHookEnabled('capture_plan')) {
+      debugLog('Hook disabled, exiting');
+      // Silent exit
+      console.log(JSON.stringify({ continue: true }));
+      process.exit(0);
+    }
+    debugLog('Hook enabled, proceeding...');
+    
     // Read input from stdin
     const input = await Bun.stdin.text();
     const data: HookInput = JSON.parse(input);
+    debugLog(`Parsed input: ${data.hook_event_name}, tool: ${data.tool_name}`);
     
+    debugLog('Calling logger.debug...');
     logger.debug('Hook triggered', { 
       session_id: data.session_id,
       hook_event: data.hook_event_name,
@@ -41,18 +65,24 @@ async function main() {
       has_tool_response: !!data.tool_response,
       tool_response: data.tool_response
     });
+    debugLog('Logger.debug called successfully');
     
     // PostToolUse hook - check if the plan was approved
     if (data.hook_event_name === 'PostToolUse') {
+      debugLog(`PostToolUse detected, tool_response: ${JSON.stringify(data.tool_response)}`);
       // Check if the tool execution was successful (plan approved)
       if (!data.tool_response?.success) {
         // Plan was rejected - don't create task
+        debugLog('Plan not approved, calling logger.info...');
         logger.info('Plan was not approved, skipping task creation', {
           tool_response: data.tool_response
         });
+        debugLog('Logger.info called, exiting');
         process.exit(0);
       }
+      debugLog('Plan approved, calling logger.info...');
       logger.info('Plan was approved, creating task');
+      debugLog('Logger.info for approval called');
     }
     
     const plan = data.tool_input.plan;
