@@ -1,18 +1,20 @@
-# cc-pars
+# cc-track
 
-Claude Code - Plan, Analyze, Refine, Succeed: A comprehensive context management and workflow optimization system for Claude Code.
+**Keep your vibe coding on track**
+
+cc-track (Task Review And Context Keeper) is a comprehensive context management and workflow optimization system for Claude Code. It provides flexible guardrails that keep AI-assisted development fast and focused without being prescriptive.
 
 ## Installation
 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd cc-pars
+cd cc-track
 
 # Install dependencies
 bun install
 
-# Initialize cc-pars in your project
+# Initialize cc-track in your project
 bun run init
 ```
 
@@ -64,7 +66,7 @@ See `biome.json` for linting rules.
 ### Project Structure
 
 ```
-cc-pars/
+cc-track/
 ├── .claude/          # Project context and state
 │   ├── hooks/        # Claude Code event handlers
 │   ├── lib/          # Shared utilities

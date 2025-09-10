@@ -11,7 +11,7 @@
 ## Directory Structure
 
 ```
-/home/ubuntu/projects/cc-pars/
+/home/ubuntu/projects/cc-track/
 ├── .claude/           # Project context and state
 │   ├── plans/         # Captured plans from planning mode
 │   ├── tasks/         # Active and completed tasks
@@ -37,16 +37,16 @@
 ### Scripts & Utilities
 | File | Purpose |
 |------|---------|
-| scripts/init-templates.ts | Initializes cc-pars in a project |
+| scripts/init-templates.ts | Initializes cc-track in a project |
 | scripts/git-session.ts | Git utilities for managing WIP commits |
 | scripts/add-to-backlog.ts | Appends items to backlog with date stamps |
 
 ### Commands
 | File | Purpose |
 |------|---------|
-| commands/init-cc-pars.md | Slash command to initialize cc-pars |
+| commands/init-track.md | Slash command to initialize cc-track |
 | commands/complete-task.md | Mark active task as complete |
-| commands/config-cc-pars.md | Configure cc-pars hooks and features |
+| commands/config-track.md | Configure cc-track hooks and features |
 | commands/add-to-backlog.md | Quickly add items to backlog without disruption |
 
 ### Templates
@@ -66,7 +66,7 @@
 | .claude/progress_log.md | Task status tracking |
 | .claude/learned_mistakes.md | Auto-generated error patterns |
 | .claude/user_context.md | User preferences and working style |
-| .claude/cc-pars.config.json | Configuration for enabling/disabling hooks |
+| .claude/track.config.json | Configuration for enabling/disabling hooks |
 | .claude/backlog.md | List of future ideas and improvements |
 
 ### Libraries (.claude/lib/)

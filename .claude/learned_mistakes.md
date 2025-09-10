@@ -12,6 +12,12 @@
 ## Error Patterns
 
 *(Entries will be added here by the pre_compact hook)*
+### Session: 2025-09-10 19:41
+- When Edit operations fail with "user doesn't want to proceed", this typically indicates a validation hook rejection - check if the edit violates project-specific rules or patterns before retrying
+- After getting "File has not been read yet" errors, subsequent Read operations may appear to fail in logs but the file context is actually loaded - proceed with the Edit operation
+- When using replace_all with Edit tool and getting "String to replace not found", the file content may have already been modified - always Read current content before bulk replacements
+- Edit rejections followed by successful edits on different files suggest the hook is selectively blocking certain file types or paths - identify the pattern to avoid further rejections
+
 ### Session: 2025-09-10 15:47
 - When bash commands with complex syntax like `$(date +%Y-%m-%d)` fail with "syntax error near unexpected token", the shell is likely escaping special characters incorrectly - use simpler commands or store intermediate results
 - Multiple consecutive Edit failures on the same file followed by successful resolution indicates the file needed to be read first - always Read before Edit on files not in context

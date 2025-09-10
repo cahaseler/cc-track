@@ -1,19 +1,19 @@
 ---
 allowed-tools: Bash, Write, Read, Grep, Glob
-description: Initialize cc-pars context management system for this project
+description: Initialize cc-track context management system for this project
 ---
 
-## Initialize cc-pars Context Management System
+## Initialize cc-track Context Management System
 
 ### Step 1: Create Directory Structure
 !`mkdir -p .claude/hooks .claude/plans .claude/utils`
 
 ### Step 2: Copy Template Files
-!`bun run /home/ubuntu/projects/cc-pars/scripts/init-templates.ts`
+!`bun run /home/ubuntu/projects/cc-track/scripts/init-templates.ts`
 
 ## What Just Happened
 
-The cc-pars (Plan, Analyze, Refine, Succeed) context management system has been initialized. The following files were created in `.claude/`:
+The cc-track (Task Review And Context Keeper) system has been initialized. The following files were created in `.claude/`:
 
 - **product_context.md** - Project vision, goals, and features
 - **system_patterns.md** - Technical patterns and conventions

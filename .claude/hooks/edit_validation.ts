@@ -92,7 +92,7 @@ async function main() {
     // Get configuration
     const fs = require('node:fs');
     const path = require('node:path');
-    const configPath = path.join(data.cwd, '.claude', 'cc-pars.config.json');
+    const configPath = path.join(data.cwd, '.claude', 'track.config.json');
     
     let config: EditValidationConfig = {
       enabled: false,
@@ -141,7 +141,7 @@ async function main() {
           if (error.stderr || error.stdout) {
             const output = error.stderr || error.stdout;
             // Parse TypeScript errors (format: file(line,col): error TSxxxx: message)
-            const lines = output.split('\n').filter(line => line.includes('error TS'));
+            const lines = output.split('\n').filter((line: string) => line.includes('error TS'));
             for (const line of lines) {
               const match = line.match(/\((\d+),\d+\): error TS\d+: (.+)/);
               if (match) {
@@ -166,7 +166,7 @@ async function main() {
         } catch (error: any) {
           if (error.stdout) {
             // Parse Biome compact output (format: file:line:col lint/rule message)
-            const lines = error.stdout.split('\n').filter(line => line.includes(filePath));
+            const lines = error.stdout.split('\n').filter((line: string) => line.includes(filePath));
             for (const line of lines) {
               const match = line.match(/:(\d+):\d+ \S+ (.+)/);
               if (match) {

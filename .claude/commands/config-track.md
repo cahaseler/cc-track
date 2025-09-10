@@ -1,16 +1,16 @@
 ---
-shortname: config-cc-pars
+shortname: config-track
 ---
 
-# Config CC-PARS Command
+# Config cc-track Command
 
-When the user runs `/config-cc-pars`, help them configure the cc-pars system settings.
+When the user runs `/config-track`, help them configure the cc-track system settings.
 
 ## Instructions for Claude
 
 ### When called with parameters
 
-If the user provides parameters like `/config-cc-pars disable task creation` or `/config-cc-pars enable stop review`:
+If the user provides parameters like `/config-track disable task creation` or `/config-track enable stop review`:
 
 1. Parse the user's intent from the parameters
 2. Map keywords to config settings:
@@ -21,7 +21,7 @@ If the user provides parameters like `/config-cc-pars disable task creation` or 
    - "edit validation", "typecheck", "linting" → `edit_validation` hook
    - "status line", "statusline" → `statusline` feature
    - "git branching", "feature branches", "task branches" → `git_branching` feature
-3. Update the configuration file at `.claude/cc-pars.config.json`
+3. Update the configuration file at `.claude/track.config.json`
 4. Confirm the change to the user
 
 ### When called without parameters

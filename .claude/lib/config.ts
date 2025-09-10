@@ -73,7 +73,7 @@ function getConfigPath(): string {
   let currentPath = process.cwd();
 
   while (currentPath !== '/') {
-    const configPath = join(currentPath, '.claude', 'cc-pars.config.json');
+    const configPath = join(currentPath, '.claude', 'track.config.json');
     if (existsSync(configPath)) {
       return configPath;
     }
@@ -82,7 +82,7 @@ function getConfigPath(): string {
   }
 
   // Default to current working directory
-  return join(process.cwd(), '.claude', 'cc-pars.config.json');
+  return join(process.cwd(), '.claude', 'track.config.json');
 }
 
 export function getConfig(): Config {

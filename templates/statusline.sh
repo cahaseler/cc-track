@@ -1,5 +1,5 @@
 #!/bin/bash
-# cc-pars status line - displays context usage, task info, and warnings
+# cc-track status line - displays context usage, task info, and warnings
 
 input=$(cat)
 

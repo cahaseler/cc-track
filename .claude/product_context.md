@@ -13,7 +13,7 @@
 
 ## Project Vision & Goals
 
-**cc-pars (Claude Code - Plan, Analyze, Refine, Succeed)** is a comprehensive context management and workflow optimization system for Claude Code.
+**cc-track (Task Review And Context Keeper)** is a comprehensive context management and workflow optimization system for Claude Code that keeps your vibe coding on track.
 
 ### Vision
 Solve the fundamental problem of context loss in Claude Code sessions through intelligent preservation, task tracking, and quality assurance.
@@ -61,7 +61,7 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 ### Developer Experience
 - Custom status line with ccusage integration
 - Warnings for context limits and API blocks
-- One-command initialization (`/init-cc-pars`)
+- One-command initialization (`/init-track`)
 - Safe file handling (no overwrites, backups)
 
 ## Non-Goals / Out of Scope
@@ -86,3 +86,4 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 ## Update Log
 
 [2025-01-09 16:30] - Initial product context documented based on project analysis
+[2025-01-10] - Renamed project from cc-pars to cc-track with new branding

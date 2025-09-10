@@ -1,4 +1,4 @@
-# ccusage Integration for cc-pars
+# ccusage Integration for cc-track
 
 ## What ccusage Provides
 
@@ -16,7 +16,7 @@ Components:
 - Burn rate per hour
 - Context usage percentage (when transcript available)
 
-### Key Features for cc-pars
+### Key Features for cc-track
 1. **No parsing needed** - ccusage handles transcript parsing
 2. **Cached output** - 1-second refresh by default
 3. **Context thresholds** - Green <50%, Yellow <80%, Red >80%
@@ -95,7 +95,7 @@ export CCUSAGE_OFFLINE=true  # Use cached pricing
 export FORCE_COLOR=1          # Enable colors
 ```
 
-## Benefits for cc-pars
+## Benefits for cc-track
 
 1. **Accurate token counting** - No need to parse transcripts
 2. **Real-time monitoring** - See context usage live

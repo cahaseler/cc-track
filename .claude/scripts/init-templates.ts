@@ -72,7 +72,7 @@ function updateClaudeMd() {
     // Check if it already has cc-pars imports
     const content = readFileSync(claudeMdPath, 'utf-8');
     if (content.includes('@.claude/product_context.md')) {
-      console.log('CLAUDE.md already has cc-pars imports');
+      console.log('CLAUDE.md already has cc-track imports');
       return;
     }
 
@@ -81,13 +81,13 @@ function updateClaudeMd() {
     copyFileSync(claudeMdPath, backupPath);
     console.log(`✓ Backed up existing CLAUDE.md to CLAUDE.md.backup`);
 
-    // Prepend cc-pars imports to existing content
+    // Prepend cc-track imports to existing content
     const templateContent = readFileSync(templatePath, 'utf-8');
-    const ccParsSection = `${templateContent.split('---')[0]}---\n\n`;
-    const updatedContent = ccParsSection + content;
+    const ccTrackSection = `${templateContent.split('---')[0]}---\n\n`;
+    const updatedContent = ccTrackSection + content;
 
     writeFileSync(claudeMdPath, updatedContent);
-    console.log('✓ Updated CLAUDE.md with cc-pars imports');
+    console.log('✓ Updated CLAUDE.md with cc-track imports');
   } else {
     // Create new CLAUDE.md from template
     copyTemplate('CLAUDE.md', claudeMdPath);
@@ -103,7 +103,7 @@ function createNoActiveTask() {
 }
 
 function main() {
-  console.log('Initializing cc-pars context management system...\n');
+  console.log('Initializing cc-track context management system...\n');
 
   // Ensure .claude directory exists
   ensureDirectoryExists(CLAUDE_DIR);
@@ -129,7 +129,7 @@ function main() {
   // Handle CLAUDE.md specially
   updateClaudeMd();
 
-  console.log('\n✅ cc-pars initialization complete!');
+  console.log('\n✅ cc-track initialization complete!');
   console.log('\nNext steps:');
   console.log('1. Review and populate .claude/product_context.md');
   console.log('2. Document patterns in .claude/system_patterns.md');

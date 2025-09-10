@@ -1,5 +1,5 @@
 #!/bin/bash
-# cc-pars status line - displays essential info without clutter
+# cc-track status line - displays essential info without clutter
 
 input=$(cat)
 
@@ -31,10 +31,10 @@ if [ -f "CLAUDE.md" ]; then
         # Read first line (title) from task file
         TASK_TITLE=$(head -1 "$TASK_FILE" | sed 's/^# //')
         if [ -n "$TASK_TITLE" ]; then
-            TASK=" | $TASK_TITLE"
+            TASK=" | 🚂 $TASK_TITLE"
         fi
     elif grep -q "@.claude/no_active_task.md" CLAUDE.md; then
-        TASK=" | No active task"
+        TASK=" | 🚂 No active task"
     fi
 fi
 

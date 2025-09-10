@@ -134,7 +134,7 @@ async function main() {
     }
 
     // 5. Run validation checks (read config to see what's enabled)
-    const configPath = join(claudeDir, 'cc-pars.config.json');
+    const configPath = join(claudeDir, 'track.config.json');
     let validationConfig: any = {
       typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
       lint: { enabled: true, command: 'bunx biome check' },
@@ -280,7 +280,7 @@ async function main() {
     // 7. Handle branching if enabled
     try {
       // Check if git_branching is enabled
-      const configPath = join(claudeDir, 'cc-pars.config.json');
+      const configPath = join(claudeDir, 'track.config.json');
       if (existsSync(configPath)) {
         const config = JSON.parse(readFileSync(configPath, 'utf-8'));
         
