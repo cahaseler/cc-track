@@ -69,6 +69,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Task branches accumulate over time, user can manually clean up old ones
 - **Reversibility:** Easy - can delete branches manually anytime
 
+[2025-09-10 09:25] - Use Git Log Instead of Tracker File for Non-Task Commits
+- **Context:** Needed to track consecutive non-task commits to suggest task creation
+- **Decision:** Use git log directly to count commits without TASK_ references
+- **Rationale:** Git history is the source of truth - no need to duplicate state in a tracker file
+- **Alternatives Considered:** 
+  - JSON tracker file: Adds complexity, can get out of sync with reality
+  - Database/SQLite: Overkill for simple counting
+  - Environment variable: Would lose state between sessions
+- **Implications:** Simpler implementation, no state management needed, always accurate
+- **Reversibility:** Easy - could add tracking later if more complex logic needed
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
