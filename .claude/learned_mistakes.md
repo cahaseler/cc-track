@@ -42,3 +42,10 @@
 - Claude CLI ignores the --output-format json flag - to get JSON responses, must explicitly instruct in the prompt with "ONLY JSON" repeated multiple times and examples
 - When parsing Claude CLI responses, expect wrapper format {"type":"result","result":"actual content"} and extract the inner content
 - Set generous timeouts (2+ minutes) for Claude CLI calls as complex prompts take time to process
+
+### Manual Entry: 2025-09-10 14:30 (Task 017/018)
+- When TypeScript reports a method doesn't exist on a class, check if the visibility modifier was changed before assuming the method was deleted
+- Autofix tools generally make safe changes - removing 'private' from a method called externally is correct behavior
+- Always read the full file context before claiming code was deleted - grep/search alone can be misleading
+- If autofix tools appear to have made destructive changes, audit systematically rather than panicking
+- Changing 'any' to 'unknown' requires type guards or type assertions to access properties
