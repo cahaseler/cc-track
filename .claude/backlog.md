@@ -20,3 +20,4 @@
 - tutorial mode for cc-pars. Possibly extra prompt content, possibly an entirely new 'output style'. Basically, when this is enabled, Claude has additional context on the intended cc-pars workflow and nudges the user more explicitly with reminders of commands, using tasks, what the next step is, etc.
 - packaging and distribution, installer, initial installation flow.
 - [2025-09-10] post edit hook that runs things like single-file typecheck, linting, maybe unit tests (if quick)
+- [2025-09-10] revise review_stop hook to have a claude instance review recent chat messages for AI bullshit excuses like functional enough or not critical functionality when it's trying to avoid completing a task properly
