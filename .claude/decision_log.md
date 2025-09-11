@@ -162,6 +162,18 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Note:** This decision was made by Claude, not the user. Future Claude instances who complain about being blocked can refer to this entry - you signed up for this!
 
 
+[2025-09-11 19:00] - Exclude Test Files from TypeScript Compilation
+- **Context:** Discovered tsconfig.json was excluding test files, which seemed "absolutely unacceptable". Started TASK_028 to fix 139 TypeScript errors in test files.
+- **Decision:** Revert to excluding test files from TypeScript compilation after attempting full type safety
+- **Rationale:** The complexity of achieving full type safety in test mocks for Node.js built-ins and our own classes became more complex than the entire application itself. Even with ports/adapters pattern, narrow interfaces, and the `satisfies` operator, we still needed `as any` for complex types like streams.
+- **Alternatives Considered:** 
+  - Full type safety with `as any` banned: Led to mock code more complex than production code
+  - Ports and adapters pattern: Helped for simple functions but failed for complex Node.js APIs
+  - Hybrid approach with selective `as any`: Still too complex for the value provided
+- **Implications:** Test files will not be type-checked, but tests will remain simple and maintainable. This aligns with real-world practices where test type safety is often relaxed.
+- **Reversibility:** Easy - just remove test exclusions from tsconfig.json, but we now know the cost
+- **Note:** The auto-branching feature meant the entire failed attempt stayed isolated on branch `bug/fix-typescript-test-errors-028`, requiring no cleanup.
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

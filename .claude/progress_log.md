@@ -143,3 +143,8 @@
   Details: Implemented complete semantic-release workflow with GitHub Actions and cross-platform binary distribution
   Files: .releaserc.json, .github/workflows/release.yml, package.json, src/lib/git-helpers.ts, src/hooks/stop-review.ts, src/commands/complete-task.ts, .gitignore, .claude/system_patterns.md
   Key Achievement: Automated versioning, changelog generation, and cross-platform binary releases (Linux/Windows) triggered by conventional commits. Preserved task IDs in commit messages while adopting conventional format. Ready for first automated release on next master push.
+
+[2025-09-11 19:16] - Completed: Task 028 - Remove Legacy .claude Scripts After CLI Migration
+  Details: Successfully cleaned up 14 legacy files after full migration to new CLI structure
+  Files: Deleted files from .claude/hooks/, .claude/scripts/, .claude/lib/, and .claude/statusline.sh; Updated knip.json and .claude/code_index.md
+  Key Achievement: Removed all legacy code while preserving functionality in src/ directory. Auto-branching feature made cleanup risk-free with isolated changes.
