@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from "bun:test";
+import { describe, expect, test, beforeEach, mock } from "bun:test";
 import { 
   getConfig, 
   getConfigPath, 
@@ -10,6 +10,7 @@ import {
 
 describe("config", () => {
   beforeEach(() => {
+    mock.restore();
     clearConfigCache();
   });
 
