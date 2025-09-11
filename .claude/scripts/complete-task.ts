@@ -217,7 +217,7 @@ async function main() {
           execSync('git add -A', { cwd: projectRoot });
           execSync(`git commit -m "[wip] ${result.taskId}: Final documentation updates"`, { cwd: projectRoot });
           result.git.notes = 'Committed final changes before squashing';
-        } catch (commitError) {
+        } catch (_commitError) {
           result.warnings.push('Failed to commit final changes');
         }
       }
