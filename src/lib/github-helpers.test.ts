@@ -1,0 +1,269 @@
+import { describe, expect, test, beforeEach, mock } from "bun:test";
+import { GitHubHelpers } from "./github-helpers";
+import type { ExecFunction } from "./github-helpers";
+
+describe("GitHubHelpers", () => {
+  let mockExec: ExecFunction;
+  let gitHubHelpers: GitHubHelpers;
+
+  beforeEach(() => {
+    mockExec = mock(() => "");
+    gitHubHelpers = new GitHubHelpers(mockExec);
+  });
+
+  describe("isGitHubCLIAvailable", () => {
+    test("returns true when gh is available", () => {
+      mockExec = mock(() => "gh version 2.34.0");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.isGitHubCLIAvailable()).toBe(true);
+    });
+
+    test("returns false when gh is not available", () => {
+      mockExec = mock(() => {
+        throw new Error("command not found");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.isGitHubCLIAvailable()).toBe(false);
+    });
+  });
+
+  describe("isGitHubRepoConnected", () => {
+    test("returns true when repo is connected", () => {
+      mockExec = mock(() => "repo info");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.isGitHubRepoConnected("/test")).toBe(true);
+    });
+
+    test("returns false when repo is not connected", () => {
+      mockExec = mock(() => {
+        throw new Error("no remote");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.isGitHubRepoConnected("/test")).toBe(false);
+    });
+  });
+
+  describe("getGitHubRepoInfo", () => {
+    test("returns repo info when available", () => {
+      mockExec = mock(() => JSON.stringify({
+        owner: { login: "testuser" },
+        name: "testrepo"
+      }));
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const info = gitHubHelpers.getGitHubRepoInfo("/test");
+      expect(info).toEqual({
+        owner: "testuser",
+        repo: "testrepo"
+      });
+    });
+
+    test("returns null on error", () => {
+      mockExec = mock(() => {
+        throw new Error("not a repo");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const info = gitHubHelpers.getGitHubRepoInfo("/test");
+      expect(info).toBeNull();
+    });
+  });
+
+  describe("createGitHubIssue", () => {
+    test("creates issue and returns data", () => {
+      mockExec = mock(() => "https://github.com/user/repo/issues/123\n");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const issue = gitHubHelpers.createGitHubIssue("Test Issue", "Body", "/test", ["bug"]);
+      
+      expect(issue).toEqual({
+        number: 123,
+        title: "Test Issue",
+        url: "https://github.com/user/repo/issues/123",
+        state: "open"
+      });
+    });
+
+    test("returns null when URL extraction fails", () => {
+      mockExec = mock(() => "invalid output");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const issue = gitHubHelpers.createGitHubIssue("Test", "Body", "/test");
+      expect(issue).toBeNull();
+    });
+
+    test("returns null on error", () => {
+      mockExec = mock(() => {
+        throw new Error("API error");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const issue = gitHubHelpers.createGitHubIssue("Test", "Body", "/test");
+      expect(issue).toBeNull();
+    });
+  });
+
+  describe("createIssueBranch", () => {
+    test("creates branch and returns name", () => {
+      let callCount = 0;
+      mockExec = mock(() => {
+        callCount++;
+        if (callCount === 1) return ""; // gh issue develop
+        return "feature/issue-123\n"; // git branch --show-current
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const branch = gitHubHelpers.createIssueBranch(123, "/test");
+      expect(branch).toBe("feature/issue-123");
+    });
+
+    test("returns null on error", () => {
+      mockExec = mock(() => {
+        throw new Error("Issue not found");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const branch = gitHubHelpers.createIssueBranch(123, "/test");
+      expect(branch).toBeNull();
+    });
+  });
+
+  describe("createPullRequest", () => {
+    test("creates PR and returns data", () => {
+      mockExec = mock(() => "https://github.com/user/repo/pull/456\n");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const pr = gitHubHelpers.createPullRequest("Test PR", "Body", "/test");
+      
+      expect(pr).toEqual({
+        number: 456,
+        title: "Test PR",
+        url: "https://github.com/user/repo/pull/456",
+        body: "Body"
+      });
+    });
+
+    test("includes draft flag when specified", () => {
+      let capturedCommand = "";
+      mockExec = mock((command: string) => {
+        capturedCommand = command;
+        return "https://github.com/user/repo/pull/789\n";
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      gitHubHelpers.createPullRequest("Draft PR", "Body", "/test", true);
+      expect(capturedCommand).toContain("--draft");
+    });
+
+    test("returns null on error", () => {
+      mockExec = mock(() => {
+        throw new Error("PR creation failed");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const pr = gitHubHelpers.createPullRequest("Test", "Body", "/test");
+      expect(pr).toBeNull();
+    });
+  });
+
+  describe("pushCurrentBranch", () => {
+    test("returns true on success", () => {
+      mockExec = mock(() => "");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.pushCurrentBranch("/test")).toBe(true);
+    });
+
+    test("returns false on error", () => {
+      mockExec = mock(() => {
+        throw new Error("Push failed");
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      expect(gitHubHelpers.pushCurrentBranch("/test")).toBe(false);
+    });
+  });
+
+  describe("validateGitHubIntegration", () => {
+    test("returns valid when all checks pass", () => {
+      mockExec = mock(() => "success");
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const result = gitHubHelpers.validateGitHubIntegration("/test");
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    test("reports missing gh CLI", () => {
+      let callCount = 0;
+      mockExec = mock((command: string) => {
+        callCount++;
+        if (callCount === 1 && command.includes("--version")) {
+          throw new Error("not found");
+        }
+        return "";
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const result = gitHubHelpers.validateGitHubIntegration("/test");
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("GitHub CLI (gh) is not installed or not available in PATH");
+    });
+
+    test("reports auth issues", () => {
+      let callCount = 0;
+      mockExec = mock((command: string) => {
+        if (command.includes("auth status")) {
+          throw new Error("not authenticated");
+        }
+        return "";
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const result = gitHubHelpers.validateGitHubIntegration("/test");
+      expect(result.errors).toContain("GitHub CLI is not authenticated. Run: gh auth login");
+    });
+
+    test("reports disconnected repo", () => {
+      mockExec = mock((command: string) => {
+        if (command.includes("repo view")) {
+          throw new Error("no remote");
+        }
+        return "";
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+      
+      const result = gitHubHelpers.validateGitHubIntegration("/test");
+      expect(result.errors).toContain("Repository is not connected to GitHub");
+    });
+  });
+
+  describe("formatTaskForGitHub", () => {
+    test("extracts title from heading", () => {
+      const content = "# Task Title\n\nTask description\nMore details";
+      const result = gitHubHelpers.formatTaskForGitHub(content);
+      
+      expect(result.title).toBe("Task Title");
+      expect(result.body).toBe("Task description\nMore details");
+    });
+
+    test("uses first line as title when no heading", () => {
+      const content = "Task Title\n\nTask description";
+      const result = gitHubHelpers.formatTaskForGitHub(content);
+      
+      expect(result.title).toBe("Task Title");
+      expect(result.body).toBe("Task description");
+    });
+
+    test("handles empty content", () => {
+      const result = gitHubHelpers.formatTaskForGitHub("");
+      
+      expect(result.title).toBe("New Task");
+      expect(result.body).toBe("");
+    });
+  });
+});

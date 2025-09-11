@@ -1,0 +1,203 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Config, ConfigFeatures } from '../types';
+
+interface HookConfig {
+  enabled: boolean;
+  description: string;
+  typecheck?: {
+    enabled: boolean;
+    command: string;
+  };
+  lint?: {
+    enabled: boolean;
+    command: string;
+  };
+  display?: string;
+  auto_create_issues?: boolean;
+  use_issue_branches?: boolean;
+  auto_create_prs?: boolean;
+  repository_url?: string;
+}
+
+interface InternalConfig {
+  hooks: {
+    [key: string]: HookConfig;
+  };
+  features: {
+    [key: string]: HookConfig;
+  };
+}
+
+const DEFAULT_CONFIG: InternalConfig = {
+  hooks: {
+    capture_plan: {
+      enabled: true,
+      description: 'Captures plans from ExitPlanMode and creates task files',
+    },
+    pre_compact: {
+      enabled: true,
+      description: 'Extracts error patterns before compaction',
+    },
+    post_compact: {
+      enabled: true,
+      description: 'Restores context after compaction',
+    },
+    stop_review: {
+      enabled: true,
+      description: 'Reviews changes and auto-commits with [wip]',
+    },
+    edit_validation: {
+      enabled: false,
+      description: 'Runs TypeScript and Biome checks on edited files',
+      typecheck: {
+        enabled: true,
+        command: 'bunx tsc --noEmit',
+      },
+      lint: {
+        enabled: true,
+        command: 'bunx biome check',
+      },
+    },
+  },
+  features: {
+    statusline: {
+      enabled: true,
+      description: 'Custom status line showing costs and task info',
+    },
+    git_branching: {
+      enabled: false,
+      description: 'Create feature branches for tasks and merge on completion',
+    },
+    api_timer: {
+      enabled: true,
+      description: 'Display API window reset timer in statusline',
+      display: 'sonnet-only',
+    },
+    github_integration: {
+      enabled: false,
+      description: 'Integrate with GitHub for issue tracking and PR workflow',
+      auto_create_issues: true,
+      use_issue_branches: true,
+      auto_create_prs: true,
+      repository_url: '',
+    },
+  },
+};
+
+let configCache: InternalConfig | null = null;
+
+export function getConfigPath(startPath?: string): string {
+  let currentPath = startPath || process.cwd();
+
+  while (currentPath !== '/') {
+    const configPath = join(currentPath, '.claude', 'track.config.json');
+    if (existsSync(configPath)) {
+      return configPath;
+    }
+    currentPath = join(currentPath, '..');
+  }
+
+  return join(startPath || process.cwd(), '.claude', 'track.config.json');
+}
+
+export function getConfig(configPath?: string): InternalConfig {
+  if (configCache && !configPath) {
+    return configCache;
+  }
+
+  const path = configPath || getConfigPath();
+
+  if (!existsSync(path)) {
+    return DEFAULT_CONFIG;
+  }
+
+  try {
+    const configContent = readFileSync(path, 'utf-8');
+    const config = JSON.parse(configContent);
+    if (!configPath) {
+      configCache = config;
+    }
+    return config || DEFAULT_CONFIG;
+  } catch (error) {
+    console.error('Error reading config file:', error);
+    return DEFAULT_CONFIG;
+  }
+}
+
+export function isHookEnabled(hookName: string, configPath?: string): boolean {
+  const config = getConfig(configPath);
+
+  if (config.hooks?.[hookName]) {
+    return config.hooks[hookName].enabled;
+  }
+
+  if (config.features?.[hookName]) {
+    return config.features[hookName].enabled;
+  }
+
+  return true;
+}
+
+export function updateConfig(updates: Partial<InternalConfig>, configPath?: string): void {
+  const path = configPath || getConfigPath();
+  const currentConfig = getConfig(path);
+
+  const newConfig = {
+    ...currentConfig,
+    hooks: {
+      ...currentConfig.hooks,
+      ...(updates.hooks || {}),
+    },
+    features: {
+      ...currentConfig.features,
+      ...(updates.features || {}),
+    },
+  };
+
+  writeFileSync(path, JSON.stringify(newConfig, null, 2));
+  
+  if (!configPath) {
+    configCache = null;
+  }
+}
+
+export function setHookEnabled(hookName: string, enabled: boolean, configPath?: string): void {
+  const config = getConfig(configPath);
+
+  if (config.hooks?.[hookName]) {
+    updateConfig({
+      hooks: {
+        ...config.hooks,
+        [hookName]: {
+          ...config.hooks[hookName],
+          enabled,
+        },
+      },
+    }, configPath);
+  } else if (config.features?.[hookName]) {
+    updateConfig({
+      features: {
+        ...config.features,
+        [hookName]: {
+          ...config.features[hookName],
+          enabled,
+        },
+      },
+    }, configPath);
+  }
+}
+
+export function getGitHubConfig(configPath?: string): HookConfig | null {
+  const config = getConfig(configPath);
+  return config.features?.github_integration || null;
+}
+
+export function isGitHubIntegrationEnabled(configPath?: string): boolean {
+  const githubConfig = getGitHubConfig(configPath);
+  return githubConfig?.enabled || false;
+}
+
+export function clearConfigCache(): void {
+  configCache = null;
+}
