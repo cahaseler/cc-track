@@ -97,6 +97,28 @@ describe('post-compact', () => {
       expect(result.content).toBe('');
       expect(result.files).toEqual([]);
     });
+
+    test('skips task files from imports', () => {
+      const claudeMd = `# Project\n\n@.claude/tasks/TASK_123.md\n@.claude/product_context.md`;
+      const fileOps = {
+        existsSync: mock((path: string) => {
+          // Only product_context exists, task file doesn't matter
+          return path.includes('product_context');
+        }),
+        readFileSync: mock((path: string) => {
+          if (path.includes('product_context')) return 'Product context content';
+          return '';
+        }),
+      };
+
+      const result = readImportedFiles(claudeMd, '/project', fileOps);
+
+      // Task file should not be included
+      expect(result.content).toContain('## product_context.md:');
+      expect(result.content).toContain('Product context content');
+      expect(result.content).not.toContain('TASK_123');
+      expect(result.files).toEqual(['product_context.md']);
+    });
   });
 
   describe('generatePostCompactionInstructions', () => {
@@ -177,6 +199,21 @@ describe('post-compact', () => {
       expect(result).toContain('• Added 1 context files: config.md');
       expect(result).not.toContain('Active task:');
       expect(result).toContain('• Instructed Claude to:');
+    });
+
+    test('generates summary with 0 imported files and no active task', () => {
+      const files: string[] = [];
+      const activeTask = '';
+
+      const result = generateUserSummary(files, activeTask);
+
+      expect(result).toContain('📋 Post-compaction context restored:');
+      expect(result).not.toContain('Added');
+      expect(result).not.toContain('Active task:');
+      expect(result).toContain('• Instructed Claude to:');
+      expect(result).toContain('Review recent journal entries');
+      expect(result).toContain('Update task documentation');
+      expect(result).toContain('Record any technical decisions');
     });
   });
 

@@ -180,6 +180,26 @@ describe('statusline', () => {
       expect(getCostEmoji(200)).toBe('💰');
       expect(getCostEmoji(300)).toBe('🤑');
     });
+
+    test('boundary values for cost tiers', () => {
+      // Lower boundaries
+      expect(getCostEmoji(0)).toBe('🪙');
+      expect(getCostEmoji(49.99)).toBe('🪙');
+      expect(getCostEmoji(50)).toBe('💵');
+
+      // Mid boundaries
+      expect(getCostEmoji(99.99)).toBe('💵');
+      expect(getCostEmoji(100)).toBe('💸');
+
+      // Upper boundaries
+      expect(getCostEmoji(199.99)).toBe('💸');
+      expect(getCostEmoji(200)).toBe('💰');
+
+      // Highest boundaries
+      expect(getCostEmoji(299.99)).toBe('💰');
+      expect(getCostEmoji(300)).toBe('🤑');
+      expect(getCostEmoji(1000)).toBe('🤑');
+    });
   });
 
   describe('generateStatusLine integration', () => {
