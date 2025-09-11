@@ -132,11 +132,11 @@ export class SessionReviewer {
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       this.logger.warn('Review preparation failed', { error: errorMsg });
-      
+
       // Extract task ID for commit message
       const taskIdMatch = activeTask.match(/Task ID:\*\* (\d+)/);
       const taskId = taskIdMatch ? `TASK_${taskIdMatch[1]}` : 'TASK';
-      
+
       // Return a review_failed status with a commit message so work is preserved
       return {
         status: 'review_failed',

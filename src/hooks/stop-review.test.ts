@@ -173,7 +173,7 @@ describe('stop-review', () => {
         reviewer.getRecentMessages = mock(async () => 'User: test\nAssistant: testing');
 
         const result = await reviewer.review('/path/to/transcript');
-        
+
         // Should return review_failed status with a commit message
         expect(result.status).toBe('review_failed');
         expect(result.message).toContain('diff too large');

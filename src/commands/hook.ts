@@ -46,7 +46,11 @@ async function readStdinJson(): Promise<HookInput> {
  */
 export const hookCommand = new Command('hook')
   .description('Handle Claude Code hook events (reads JSON from stdin)')
-  .option('-t, --type <type>', 'hook type to execute (capture-plan, edit-validation, pre-compact, post-compact, stop-review)', { required: true })
+  .option(
+    '-t, --type <type>',
+    'hook type to execute (capture-plan, edit-validation, pre-compact, post-compact, stop-review)',
+    { required: true },
+  )
   .option('--debug', 'enable debug logging')
   .action(async (options) => {
     try {
@@ -69,9 +73,9 @@ export const hookCommand = new Command('hook')
 
       if (!handler) {
         logger.error('Unknown hook type', { type: options.type });
-        const output: HookOutput = { 
+        const output: HookOutput = {
           continue: false,
-          error: `Unknown hook type: ${options.type}`
+          error: `Unknown hook type: ${options.type}`,
         };
         console.log(JSON.stringify(output));
         process.exit(1);

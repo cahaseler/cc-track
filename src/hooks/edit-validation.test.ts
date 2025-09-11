@@ -169,7 +169,7 @@ describe('edit-validation', () => {
       // Mock execSync to return TypeScript errors
       const mockExec = mock((cmd: string) => {
         if (cmd.includes('tsc')) {
-          const error: any = new Error('Command failed');
+          const error = new Error('Command failed') as Error & { stderr?: string; stdout?: string };
           error.stderr = "test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.";
           throw error;
         }
@@ -206,7 +206,7 @@ describe('edit-validation', () => {
           return ''; // TypeScript passes
         }
         if (cmd.includes('biome')) {
-          const error: any = new Error('Command failed');
+          const error = new Error('Command failed') as Error & { stderr?: string; stdout?: string };
           error.stdout = '/test/test.ts:15:10 lint/suspicious/noExplicitAny Unexpected any. Specify a different type.';
           throw error;
         }
@@ -301,7 +301,7 @@ describe('edit-validation', () => {
       // Mock execSync - one file fails, one passes
       const mockExec = mock((cmd: string) => {
         if (cmd.includes('file1.ts')) {
-          const error: any = new Error('Command failed');
+          const error = new Error('Command failed') as Error & { stderr?: string; stdout?: string };
           error.stderr = "file1.ts(5,3): error TS2304: Cannot find name 'undefinedVar'.";
           throw error;
         }

@@ -13,6 +13,18 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 10:30
+- When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
+- When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read - retry the Edit operation directly
+- When test mocks throw errors, ensure the error object has the correct properties (stderr for TypeScript errors, stdout for Biome errors) that the code expects
+- When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text - verify file state between edits
+- When test output only shows "(pass)" entries before truncation, this indicates all tests passed - the truncation is misleading
+- Directory paths cannot be read with the Read tool - use ls or Bash commands to list directory contents instead
+- When hooks block operations repeatedly, check if the hook is validating something that needs fixing rather than just retrying the same operation
+- Mock functions in tests need proper type signatures (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript errors
+- When grep with complex regex patterns fails, use simpler patterns or switch to line-based searching with sed
+- Timeout errors in validation hooks need special handling - check for error.code === 'ETIMEDOUT' in addition to error messages
+
 ### Session: 2025-09-11 08:49
 - When encountering "File has not been read yet" errors, always use Read tool first even if you've seen the file content recently in the conversation
 - When Edit tool reports "String to replace not found", use Read to get actual file content instead of relying on memory or assumptions about file state

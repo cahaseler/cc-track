@@ -6,7 +6,7 @@ description: Complete the current active task with reflection and documentation
 # Complete Task Command
 
 ## Automated Completion Results
-!`bun run .claude/scripts/complete-task.ts`
+!`/home/ubuntu/projects/cc-pars/dist/cc-track complete-task`
 
 ## Your Task
 
