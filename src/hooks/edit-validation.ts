@@ -89,7 +89,13 @@ export function loadEditValidationConfig(cwd: string): EditValidationConfig {
 /**
  * Run TypeScript validation on a file
  */
-export function runTypeScriptCheck(filePath: string, config: EditValidationConfig, cwd: string): string[] {
+export function runTypeScriptCheck(
+  filePath: string,
+  config: EditValidationConfig,
+  cwd: string,
+  exec: typeof execSync = execSync,
+  log: ReturnType<typeof createLogger> = logger,
+): string[] {
   const errors: string[] = [];
 
   if (!config.typecheck?.enabled) {
@@ -98,15 +104,19 @@ export function runTypeScriptCheck(filePath: string, config: EditValidationConfi
 
   try {
     const command = `${config.typecheck.command} "${filePath}"`;
-    logger.debug('Running TypeScript check', { command });
+    log.debug('Running TypeScript check', { command });
 
-    execSync(command, {
+    exec(command, {
       encoding: 'utf-8',
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
-    const execError = error as { stderr?: string; stdout?: string };
+    const execError = error as { stderr?: string; stdout?: string; code?: string };
+    // Re-throw timeout errors
+    if (execError.code === 'ETIMEDOUT') {
+      throw error;
+    }
     if (execError.stderr || execError.stdout) {
       const output = execError.stderr || execError.stdout || '';
       // Parse TypeScript errors (format: file(line,col): error TSxxxx: message)
@@ -126,7 +136,13 @@ export function runTypeScriptCheck(filePath: string, config: EditValidationConfi
 /**
  * Run Biome validation on a file
  */
-export function runBiomeCheck(filePath: string, config: EditValidationConfig, cwd: string): string[] {
+export function runBiomeCheck(
+  filePath: string,
+  config: EditValidationConfig,
+  cwd: string,
+  exec: typeof execSync = execSync,
+  log: ReturnType<typeof createLogger> = logger,
+): string[] {
   const errors: string[] = [];
 
   if (!config.lint?.enabled) {
@@ -135,15 +151,19 @@ export function runBiomeCheck(filePath: string, config: EditValidationConfig, cw
 
   try {
     const command = `${config.lint.command} "${filePath}" --reporter=compact`;
-    logger.debug('Running Biome check', { command });
+    log.debug('Running Biome check', { command });
 
-    execSync(command, {
+    exec(command, {
       encoding: 'utf-8',
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
-    const execError = error as { stdout?: string };
+    const execError = error as { stdout?: string; code?: string };
+    // Re-throw timeout errors
+    if (execError.code === 'ETIMEDOUT') {
+      throw error;
+    }
     if (execError.stdout) {
       // Parse Biome compact output (format: file:line:col lint/rule message)
       const lines = execError.stdout.split('\n').filter((line: string) => line.includes(filePath));
@@ -250,53 +270,54 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
     // Load configuration
     const config = loadConfig(input.cwd || process.cwd());
 
-    // Validate files - need to update this to use injected exec
+    // Validate files using configured commands
     const results: ValidationResult[] = [];
+    const cwd = input.cwd || process.cwd();
 
     for (const filePath of tsFiles) {
       const fileName = basename(filePath);
       const errors: string[] = [];
-      const cwd = input.cwd || process.cwd();
 
-      // Run TypeScript check
-      if (config.typecheck?.enabled) {
-        try {
-          exec(`npx tsc --noEmit ${filePath}`, {
-            encoding: 'utf-8',
-            cwd,
-            stdio: ['ignore', 'pipe', 'pipe'],
-          });
-        } catch (error) {
-          const err = error as { code?: string; message?: string };
-          if (err.code === 'ETIMEDOUT') {
-            return {
-              decision: 'block',
-              systemMessage: '⏱️ Validation timeout - TypeScript check took too long',
-            };
-          }
-          if (err.code === 'ENOENT') {
-            // File doesn't exist yet (new file), skip validation
-            continue;
-          }
-          if (err.message) {
-            errors.push(...err.message.split('\n').filter((line: string) => line.includes('error TS')));
-          }
+      // Check if file exists (for new files)
+      const fs = deps.existsSync || existsSync;
+      if (!fs(filePath)) {
+        // File doesn't exist yet (new file), skip validation
+        continue;
+      }
+
+      // Run TypeScript check using configured command
+      try {
+        const tsErrors = runTypeScriptCheck(filePath, config, cwd, exec, log);
+        errors.push(...tsErrors);
+      } catch (error) {
+        const err = error as { code?: string };
+        if (err.code === 'ETIMEDOUT') {
+          return {
+            decision: 'block',
+            systemMessage: '⏱️ Validation timeout - TypeScript check took too long',
+          };
+        }
+        // Re-throw other unexpected errors
+        if (err.code !== 'ENOENT') {
+          throw error;
         }
       }
 
-      // Run Biome check
-      if (config.lint?.enabled) {
-        try {
-          exec(`npx biome check --reporter=compact ${filePath}`, {
-            encoding: 'utf-8',
-            cwd,
-            stdio: ['ignore', 'pipe', 'pipe'],
-          });
-        } catch (error) {
-          const err = error as { message?: string };
-          if (err.message) {
-            errors.push(...err.message.split('\n').filter((line: string) => line.includes('lint/')));
-          }
+      // Run Biome check using configured command
+      try {
+        const biomeErrors = runBiomeCheck(filePath, config, cwd, exec, log);
+        errors.push(...biomeErrors);
+      } catch (error) {
+        const err = error as { code?: string };
+        if (err.code === 'ETIMEDOUT') {
+          return {
+            decision: 'block',
+            systemMessage: '⏱️ Validation timeout - Biome check took too long',
+          };
+        }
+        // Re-throw other unexpected errors
+        if (err.code !== 'ENOENT') {
+          throw error;
         }
       }
 

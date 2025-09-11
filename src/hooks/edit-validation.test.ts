@@ -167,8 +167,13 @@ describe('edit-validation', () => {
 
     test('blocks edit when TypeScript validation fails', async () => {
       // Mock execSync to return TypeScript errors
-      const mockExec = mock(() => {
-        throw new Error("test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.");
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes('tsc')) {
+          const error: any = new Error('Command failed');
+          error.stderr = "test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.";
+          throw error;
+        }
+        return '';
       });
 
       const input: HookInput = {
@@ -180,6 +185,7 @@ describe('edit-validation', () => {
 
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -200,7 +206,9 @@ describe('edit-validation', () => {
           return ''; // TypeScript passes
         }
         if (cmd.includes('biome')) {
-          throw new Error('test.ts:15:10 lint/suspicious/noExplicitAny: Unexpected any. Specify a different type.');
+          const error: any = new Error('Command failed');
+          error.stdout = '/test/test.ts:15:10 lint/suspicious/noExplicitAny Unexpected any. Specify a different type.';
+          throw error;
         }
         return '';
       });
@@ -214,6 +222,7 @@ describe('edit-validation', () => {
 
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -242,6 +251,7 @@ describe('edit-validation', () => {
 
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -255,11 +265,45 @@ describe('edit-validation', () => {
       expect(result.systemMessage).toBeUndefined();
     });
 
+    test('uses configured commands from track.config.json', async () => {
+      const executedCommands: string[] = [];
+      const mockExec = mock((cmd: string) => {
+        executedCommands.push(cmd);
+        return ''; // All validation passes
+      });
+
+      const input: HookInput = {
+        tool_name: 'Edit',
+        tool_input: { file_path: '/test/test.ts' },
+        tool_response: { success: true },
+        cwd: '/test',
+      };
+
+      const result = await editValidationHook(input, {
+        execSync: mockExec,
+        existsSync: () => true,
+        isHookEnabled: () => true,
+        loadEditValidationConfig: () => ({
+          enabled: true,
+          description: 'test',
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
+          lint: { enabled: true, command: 'bunx biome check --write' },
+        }),
+      });
+
+      expect(result.continue).toBe(true);
+      // Verify the configured commands were used, not hardcoded ones
+      expect(executedCommands).toContain('bunx tsc --noEmit "/test/test.ts"');
+      expect(executedCommands).toContain('bunx biome check --write "/test/test.ts" --reporter=compact');
+    });
+
     test('handles MultiEdit with multiple files', async () => {
       // Mock execSync - one file fails, one passes
       const mockExec = mock((cmd: string) => {
         if (cmd.includes('file1.ts')) {
-          throw new Error("file1.ts(5,3): error TS2304: Cannot find name 'undefinedVar'.");
+          const error: any = new Error('Command failed');
+          error.stderr = "file1.ts(5,3): error TS2304: Cannot find name 'undefinedVar'.";
+          throw error;
         }
         return '';
       });
@@ -276,6 +320,7 @@ describe('edit-validation', () => {
 
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -290,10 +335,13 @@ describe('edit-validation', () => {
 
     test('handles validation timeout', async () => {
       // Mock execSync to simulate timeout
-      const mockExec = mock(() => {
-        const error = new Error('Command timed out');
-        (error as { code?: string }).code = 'ETIMEDOUT';
-        throw error;
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes('tsc')) {
+          const error = new Error('Command timed out');
+          (error as { code?: string }).code = 'ETIMEDOUT';
+          throw error;
+        }
+        return '';
       });
 
       const input: HookInput = {
@@ -305,6 +353,7 @@ describe('edit-validation', () => {
 
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -335,6 +384,7 @@ describe('edit-validation', () => {
       // For new files, validation should be skipped
       const result = await editValidationHook(input, {
         execSync: mockExec,
+        existsSync: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
