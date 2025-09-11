@@ -46,6 +46,14 @@
       "enabled": true,
       "description": "Display API window reset timer in statusline",
       "display": "sonnet-only"
+    },
+    "github_integration": {
+      "enabled": true,
+      "description": "Integrate with GitHub for issue tracking and PR workflow",
+      "auto_create_issues": true,
+      "use_issue_branches": true,
+      "auto_create_prs": true,
+      "repository_url": "https://github.com/cahaseler/cc-track"
     }
   },
   "logging": {

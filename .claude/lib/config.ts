@@ -13,6 +13,11 @@ interface HookConfig {
     command: string;
   };
   display?: string; // For api_timer feature
+  // GitHub integration settings
+  auto_create_issues?: boolean;
+  use_issue_branches?: boolean;
+  auto_create_prs?: boolean;
+  repository_url?: string;
 }
 
 interface Config {
@@ -68,6 +73,14 @@ const DEFAULT_CONFIG: Config = {
       enabled: true,
       description: 'Display API window reset timer in statusline',
       display: 'sonnet-only',
+    },
+    github_integration: {
+      enabled: false,
+      description: 'Integrate with GitHub for issue tracking and PR workflow',
+      auto_create_issues: true,
+      use_issue_branches: true,
+      auto_create_prs: true,
+      repository_url: '',
     },
   },
 };
@@ -179,4 +192,14 @@ export function setHookEnabled(hookName: string, enabled: boolean): void {
       },
     });
   }
+}
+
+export function getGitHubConfig(): HookConfig | null {
+  const config = getConfig();
+  return config.features?.github_integration || null;
+}
+
+export function isGitHubIntegrationEnabled(): boolean {
+  const githubConfig = getGitHubConfig();
+  return githubConfig?.enabled || false;
 }

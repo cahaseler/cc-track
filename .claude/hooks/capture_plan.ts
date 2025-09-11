@@ -3,8 +3,14 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isHookEnabled } from '../lib/config';
+import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import { createTaskBranch, generateBranchName, generateCommitMessage, hasUncommittedChanges } from '../lib/git-helpers';
+import {
+  createGitHubIssue,
+  createIssueBranch,
+  formatTaskForGitHub,
+  validateGitHubIntegration,
+} from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
 
 interface HookInput {
@@ -240,6 +246,59 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
       }
     }
 
+    // Handle GitHub integration if enabled
+    let githubIssueInfo = '';
+    if (isGitHubIntegrationEnabled()) {
+      try {
+        const githubConfig = getGitHubConfig();
+        const validation = validateGitHubIntegration(projectRoot);
+
+        if (!validation.valid) {
+          logger.warn('GitHub integration is enabled but validation failed', {
+            errors: validation.errors,
+          });
+          console.error(`⚠️  GitHub integration skipped: ${validation.errors.join(', ')}`);
+        } else if (githubConfig?.auto_create_issues) {
+          logger.info('Creating GitHub issue for task', { taskId });
+
+          // Format task content for GitHub
+          const { title, body } = formatTaskForGitHub(finalTaskContent);
+
+          // Create GitHub issue
+          const issue = createGitHubIssue(title, body, projectRoot, ['task', 'cc-track']);
+
+          if (issue) {
+            logger.info('GitHub issue created successfully', {
+              taskId,
+              issueNumber: issue.number,
+              issueUrl: issue.url,
+            });
+
+            // Add issue info to task file
+            githubIssueInfo = `\n\n<!-- github_issue: ${issue.number} -->\n<!-- github_url: ${issue.url} -->`;
+            console.error(`Created GitHub issue #${issue.number}: ${issue.url}`);
+
+            // Create issue branch if enabled and not already using git branching
+            if (githubConfig?.use_issue_branches && !isHookEnabled('git_branching')) {
+              const issueBranch = createIssueBranch(issue.number, projectRoot);
+              if (issueBranch) {
+                githubIssueInfo += `\n<!-- issue_branch: ${issueBranch} -->`;
+                console.error(`Created and switched to issue branch: ${issueBranch}`);
+              }
+            }
+          } else {
+            logger.error('Failed to create GitHub issue', { taskId });
+            console.error('❌ Failed to create GitHub issue');
+          }
+        }
+      } catch (error) {
+        logger.error('GitHub integration failed', { error, taskId });
+        console.error(`❌ GitHub integration failed: ${error}`);
+      }
+    }
+
+    // Add GitHub info to final task content if any
+    finalTaskContent += githubIssueInfo;
     writeFileSync(taskPath, finalTaskContent);
 
     // Update CLAUDE.md to point to the new task
