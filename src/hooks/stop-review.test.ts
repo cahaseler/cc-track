@@ -619,27 +619,59 @@ def456 chore: cleanup`,
         return '';
       });
 
-      // Mock file operations for SessionReviewer
+      // Mock file operations for SessionReviewer - MUST include writeFileSync and unlinkSync for Claude temp file
       const fileOps: MockFileOps = {
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        createReadStream: mock(() => ({
-          on: mock(() => {}),
-        })),
-      };
-
-      const _logger = {
-        debug: mock(() => {}),
-        info: mock(() => {}),
-        error: mock(() => {}),
-        exception: mock(() => {}),
+        existsSync: mock((path: string) => {
+          // Return true for temp files so cleanup works
+          if (path.includes('stop_review')) return true;
+          // Return true for CLAUDE.md and task files to avoid no-task path
+          if (path.includes('CLAUDE.md')) return true;
+          if (path.includes('TASK')) return true;
+          return false;
+        }),
+        readFileSync: mock((path: string) => {
+          // Mock CLAUDE.md to have an active task
+          if (path.includes('CLAUDE.md')) {
+            return '# Project\n@.claude/tasks/TASK_001.md';
+          }
+          // Mock task file content
+          if (path.includes('TASK')) {
+            return '# Task 001\n**Status:** in-progress\n**Task ID:** 001';
+          }
+          return '';
+        }),
+        writeFileSync: mock(() => {}), // Critical: mock temp file write for Claude prompt
+        unlinkSync: mock(() => {}), // Critical: mock temp file cleanup
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: (...args: unknown[]) => void) => {
+              if (event === 'end' || event === 'close') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+            removeListener: mock(() => stream),
+          };
+          return stream;
+        }),
       };
 
       const input: HookInput = {
         hook_event_name: 'Stop',
         cwd: '/project',
         session_id: 'test-session',
-        transcript_path: '/transcript.jsonl',
+        // Don't provide transcript_path to avoid readline issues
+      };
+
+      // Mock GitHelpers to avoid real Claude API calls
+      const mockGitHelpers = {
+        generateCommitMessage: mock(async () => 'chore: update project configuration'),
+        generateBranchName: mock(async () => 'feature/test-branch'),
       };
 
       const deps: StopReviewDependencies = {
@@ -647,6 +679,7 @@ def456 chore: cleanup`,
         fileOps,
         logger: createMockLogger(),
         isHookEnabled: () => true,
+        gitHelpers: mockGitHelpers as any,
       };
 
       const result = await stopReviewHook(input, deps);
@@ -1036,8 +1069,9 @@ def456 chore: cleanup`,
         if (cmd.includes('rev-parse')) return '.git';
         if (cmd.includes('status')) return 'M file.ts';
         if (cmd.includes('diff')) return 'diff content';
+        if (cmd.includes('log')) return ''; // Add missing log mock
         // Mock Claude CLI with invalid JSON
-        if (cmd.includes('claude') && cmd.includes('--model sonnet')) {
+        if (cmd.includes('claude') && cmd.includes('sonnet')) {
           return 'Not valid JSON response';
         }
         return '';
@@ -1057,7 +1091,7 @@ def456 chore: cleanup`,
           // Return a simple mock stream that immediately ends
           const stream = {
             on: mock((event: string, callback: (...args: unknown[]) => void) => {
-              if (event === 'end') {
+              if (event === 'end' || event === 'close') {
                 // Simulate async end
                 setTimeout(() => callback(), 0);
               }
@@ -1078,10 +1112,18 @@ def456 chore: cleanup`,
         // Don't provide transcript_path to avoid readline issues
       };
 
+      // Mock GitHelpers to avoid real Claude API calls  
+      const mockGitHelpers = {
+        generateCommitMessage: mock(async () => 'chore: work in progress'),
+        generateBranchName: mock(async () => 'feature/test-branch'),
+      };
+
       const result = await stopReviewHook(input, {
         execSync: mockExec,
         fileOps,
+        logger: createMockLogger(),
         isHookEnabled: () => true,
+        gitHelpers: mockGitHelpers as any,
       });
 
       expect(result.continue).toBe(true);
