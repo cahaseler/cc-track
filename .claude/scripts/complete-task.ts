@@ -209,10 +209,17 @@ async function main() {
 
     // 6. Git operations
     try {
-      // Check for uncommitted changes
+      // Check for uncommitted changes and commit them first
       const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
       if (gitStatus) {
-        result.warnings.push('Uncommitted changes present - commit these before squashing');
+        // Commit any remaining changes (likely just documentation)
+        try {
+          execSync('git add -A', { cwd: projectRoot });
+          execSync(`git commit -m "[wip] ${result.taskId}: Final documentation updates"`, { cwd: projectRoot });
+          result.git.notes = 'Committed final changes before squashing';
+        } catch (commitError) {
+          result.warnings.push('Failed to commit final changes');
+        }
       }
 
       // Look for WIP commits
