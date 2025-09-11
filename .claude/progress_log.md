@@ -138,3 +138,8 @@
   Details: Implemented comprehensive GitHub integration with automatic issue creation and PR workflow
   Files: .claude/lib/github-helpers.ts, .claude/hooks/capture_plan.ts, .claude/scripts/complete-task.ts, .claude/lib/config.ts, .claude/commands/complete-task.md, .claude/commands/config-track.md
   Key Achievement: Automatic GitHub issue creation for tasks, gh issue develop branch linking, PR workflow instead of direct merges. Successfully created cahaseler/cc-track repository and merged PR #1 with zero Copilot review issues. Dual workflow support maintains backward compatibility.
+
+[2025-09-11 16:15] - Completed: Task 027 - Add Semantic Release with Automatic GitHub Release Publishing
+  Details: Implemented complete semantic-release workflow with GitHub Actions and cross-platform binary distribution
+  Files: .releaserc.json, .github/workflows/release.yml, package.json, src/lib/git-helpers.ts, src/hooks/stop-review.ts, src/commands/complete-task.ts, .gitignore, .claude/system_patterns.md
+  Key Achievement: Automated versioning, changelog generation, and cross-platform binary releases (Linux/Windows) triggered by conventional commits. Preserved task IDs in commit messages while adopting conventional format. Ready for first automated release on next master push.

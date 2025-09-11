@@ -58,10 +58,12 @@ export class SessionReviewer {
 
       // Handle documentation-only changes
       if (docOnlyChanges) {
+        const taskId = this.getActiveTaskId();
+        const commitMessage = taskId ? `docs: update ${taskId} documentation` : 'docs: update project documentation';
         return {
           status: 'on_track',
           message: 'Documentation updates only',
-          commitMessage: 'docs: update project documentation',
+          commitMessage,
         };
       }
 
@@ -69,10 +71,18 @@ export class SessionReviewer {
       let commitMessage: string;
       try {
         const gitHelpers = this.deps.gitHelpers || new GitHelpers();
-        commitMessage = await gitHelpers.generateCommitMessage(filteredDiff || fullDiff, this.projectRoot);
+        const taskId = this.getActiveTaskId();
+        commitMessage = await gitHelpers.generateCommitMessage(
+          filteredDiff || fullDiff,
+          this.projectRoot,
+          taskId || undefined,
+        );
       } catch {
         // Fallback to generic message if generation fails
-        commitMessage = 'chore: exploratory work and improvements';
+        const taskId = this.getActiveTaskId();
+        commitMessage = taskId
+          ? `wip: ${taskId} exploratory work and improvements`
+          : 'chore: exploratory work and improvements';
       }
 
       return {
@@ -106,7 +116,7 @@ export class SessionReviewer {
       return {
         status: 'on_track',
         message: 'Documentation updates only - auto-approved',
-        commitMessage: `[wip] ${taskId}: Update documentation`,
+        commitMessage: `docs: update ${taskId} documentation`,
       };
     }
 
@@ -114,10 +124,12 @@ export class SessionReviewer {
     if (!filteredDiff || filteredDiff.trim().length === 0) {
       // This shouldn't happen if docOnlyChanges is false, but handle it anyway
       this.logger.warn('No code changes to review despite docOnlyChanges being false');
+      const taskId = this.getActiveTaskId();
+      const commitMessage = taskId ? `wip: ${taskId} work in progress` : 'wip: work in progress';
       return {
         status: 'on_track',
         message: 'No code changes to review',
-        commitMessage: '[wip] Work in progress',
+        commitMessage,
       };
     }
 
@@ -141,7 +153,7 @@ export class SessionReviewer {
       return {
         status: 'review_failed',
         message: 'Could not review changes - diff too large or review failed',
-        commitMessage: `[wip] ${taskId}: Work in progress - review skipped`,
+        commitMessage: `wip: ${taskId} work in progress - review skipped`,
         details: errorMsg,
       };
     }
@@ -160,6 +172,16 @@ export class SessionReviewer {
     if (!fs.existsSync(taskPath)) return null;
 
     return fs.readFileSync(taskPath, 'utf-8');
+  }
+
+  private getActiveTaskId(): string | null {
+    const fs = this.deps.fileOps || { existsSync, readFileSync };
+    const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
+    if (!fs.existsSync(claudeMdPath)) return null;
+
+    const content = fs.readFileSync(claudeMdPath, 'utf-8');
+    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+)\.md/);
+    return taskMatch ? taskMatch[1] : null;
   }
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
@@ -373,12 +395,12 @@ Output EXACTLY this format (no markdown, no explanation, just the JSON):
 {
   "status": "on_track|deviation|needs_verification|critical_failure",
   "message": "Brief explanation for the user",
-  "commitMessage": "Git commit message starting with [wip] TASK_XXX:",
+  "commitMessage": "Conventional commit message (e.g., 'wip: TASK_XXX work in progress'):",
   "details": "Optional detailed explanation"
 }
 
 Example valid response:
-{"status":"on_track","message":"Fixed logging bug","commitMessage":"[wip] TASK_003: Fixed undefined logFile variable","details":"Bug fix for stop hook implementation"}
+{"status":"on_track","message":"Fixed logging bug","commitMessage":"fix: resolve undefined logFile variable","details":"Bug fix for stop hook implementation"}
 
 Be strict about deviations - if the changes don't directly address the task requirements, it's a deviation.
 REMEMBER: Output ONLY the JSON object, nothing else!`;
@@ -455,10 +477,14 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       const errorMsg = e instanceof Error ? e.message : String(e);
       this.logger.error('Claude review failed', { error: errorMsg });
       // Return review failure status
+      const taskId = this.getActiveTaskId();
+      const commitMessage = taskId
+        ? `wip: ${taskId} work in progress - review failed`
+        : 'wip: work in progress - review failed';
       return {
         status: 'review_failed',
         message: 'Could not review changes',
-        commitMessage: '[wip] Work in progress - review failed',
+        commitMessage,
         details: `Claude CLI error: ${errorMsg}`,
       };
     }
@@ -731,4 +757,3 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
     return { success: true };
   }
 }
-// Test comment

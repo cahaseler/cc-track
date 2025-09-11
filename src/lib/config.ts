@@ -44,7 +44,7 @@ const DEFAULT_CONFIG: InternalConfig = {
     },
     stop_review: {
       enabled: true,
-      description: 'Reviews changes and auto-commits with [wip]',
+      description: 'Reviews changes and auto-commits with conventional format',
     },
     edit_validation: {
       enabled: false,

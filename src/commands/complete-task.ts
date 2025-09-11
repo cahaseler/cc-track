@@ -228,7 +228,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
           // Commit any remaining changes (likely just documentation)
           try {
             execSync('git add -A', { cwd: projectRoot });
-            const message = options.message || `[wip] ${result.taskId}: Final documentation updates`;
+            const message = options.message || `docs: final ${result.taskId} documentation updates`;
             execSync(`git commit -m "${message}"`, { cwd: projectRoot });
             result.git.notes = 'Committed final changes before squashing';
           } catch (_commitError) {
@@ -243,8 +243,13 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
         let wipCount = 0;
         let lastNonWipIndex = -1;
 
+        // Helper function to check if a commit is a WIP commit
+        const isWipCommit = (commitLine: string): boolean => {
+          return commitLine.includes('[wip]') || Boolean(commitLine.match(/\s+wip:/));
+        };
+
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i].includes('[wip]')) {
+          if (isWipCommit(lines[i])) {
             wipCount++;
           } else if (lastNonWipIndex === -1) {
             lastNonWipIndex = i;
@@ -258,11 +263,11 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
 
           // Check if all commits between HEAD and lastNonWip are WIPs
           const recentCommits = lines.slice(0, lastNonWipIndex);
-          const allWips = recentCommits.every((line) => line.includes('[wip]'));
+          const allWips = recentCommits.every((line) => isWipCommit(line));
 
           if (allWips && !gitStatus) {
             // Safe to squash
-            const commitMessage = options.message || `${result.taskId}: ${result.taskTitle}`;
+            const commitMessage = options.message || `feat: complete ${result.taskId} - ${result.taskTitle}`;
 
             try {
               execSync(`git reset --soft ${lastNonWipHash}`, { cwd: projectRoot });
@@ -353,7 +358,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
             } else {
               result.git.notes = 'No branch information found for GitHub PR workflow';
             }
-          } else if (config.hooks?.git_branching?.enabled) {
+          } else if (config.features?.git_branching?.enabled) {
             // Traditional git branching workflow - merge locally
             const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
 

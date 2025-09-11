@@ -12,12 +12,21 @@
     "check": "bun run typecheck && bun run lint",
     "test": "bun test",
     "build": "bun build src/cli/index.ts --compile --outfile dist/cc-track",
-    "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done"
+    "build:linux": "bun build src/cli/index.ts --compile --target=bun-linux-x64 --outfile dist/cc-track-linux",
+    "build:windows": "bun build src/cli/index.ts --compile --target=bun-windows-x64 --outfile dist/cc-track-windows.exe",
+    "build:cross-platform": "bun run build:linux && bun run build:windows",
+    "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done",
+    "release": "semantic-release"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.6",
     "@types/bun": "^1.2.21",
     "@types/node": "^20.0.0",
+    "semantic-release": "^24.2.8",
     "typescript": "^5.9.2"
   },
   "dependencies": {

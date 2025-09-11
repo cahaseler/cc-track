@@ -82,21 +82,19 @@ export class GitHelpers {
   }
 
   /**
-   * Generate a commit message using Claude CLI Haiku
+   * Generate a commit message using Claude CLI Haiku with conventional commit format
    */
-  async generateCommitMessage(diff: string, _cwd: string): Promise<string> {
+  async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
     // Truncate diff if too long (Haiku has smaller context)
     const truncatedDiff = diff.substring(0, 3000);
 
-    const prompt = `CRITICAL: Return ONLY a git commit message, nothing else. No explanation, no markdown, just the message.
-Based on these changes, write a concise commit message (max 50 chars first line):
+    const taskContext = taskId ? `\nActive task: ${taskId}` : '';
+    const prompt = `Write a conventional commit message for these changes. Return only the commit message, nothing else.${taskContext}
 
 ${truncatedDiff}
 
-Format: type: description
-Types: feat, fix, docs, style, refactor, test, chore
-Example: feat: add user authentication
-RETURN ONLY THE COMMIT MESSAGE`;
+Use format: type: description${taskId ? ` or type: ${taskId} description` : ''}
+Examples: ${taskId ? `feat: ${taskId} add user auth, fix: ${taskId} resolve parsing bug, docs: ${taskId} update readme` : 'feat: add user auth, fix: resolve parsing bug, docs: update readme'}`;
 
     try {
       // Write prompt to temp file to avoid shell escaping issues
@@ -112,15 +110,15 @@ RETURN ONLY THE COMMIT MESSAGE`;
       this.fileOps.unlinkSync(tempFile);
 
       // Extract just the commit message if Claude added any wrapper text
-      // Look for a line that starts with a commit type
+      // Look for a line that matches conventional commit format
       const lines = message.split('\n');
       for (const line of lines) {
-        if (line.match(/^(feat|fix|docs|style|refactor|test|chore):/)) {
+        if (line.match(/^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\([^)]+\))?:/)) {
           return line;
         }
       }
 
-      // If no proper format found, use a fallback
+      // If no proper format found, use a conventional commit fallback
       return 'chore: save work in progress';
     } catch (error) {
       console.error('Failed to generate commit message:', error);
@@ -248,8 +246,8 @@ export function hasUncommittedChanges(cwd: string): boolean {
   return defaultGitHelpers.hasUncommittedChanges(cwd);
 }
 
-export async function generateCommitMessage(diff: string, cwd: string): Promise<string> {
-  return defaultGitHelpers.generateCommitMessage(diff, cwd);
+export async function generateCommitMessage(diff: string, cwd: string, taskId?: string): Promise<string> {
+  return defaultGitHelpers.generateCommitMessage(diff, cwd, taskId);
 }
 
 export async function generateBranchName(plan: string, taskId: string, cwd: string): Promise<string> {

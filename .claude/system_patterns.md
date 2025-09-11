@@ -56,9 +56,10 @@
 - Comments: Minimal in code, extensive in markdown docs
 
 ### Git Conventions
-- Branch naming: Not specified (not a git repo currently)
-- Commit messages: Would follow conventional commits
-- PR process: N/A
+- Branch naming: feature/description-taskid, bug/description-taskid
+- Commit messages: Conventional commits format (feat:, fix:, docs:, chore:, etc.)
+- Automated releases: Semantic-release with GitHub Actions
+- PR process: GitHub integration with automated workflows
 
 ## Testing Patterns
 
@@ -119,8 +120,27 @@
 
 ---
 
+## Release Management
+
+### Semantic Release Process
+- Automated versioning based on conventional commit messages
+- GitHub Actions workflow builds cross-platform binaries (Linux x64, Windows x64)
+- Releases triggered on push to master branch
+- Binary assets automatically attached to GitHub releases
+- Changelog generation from commit history
+- Version bumps: feat (minor), fix (patch), BREAKING CHANGE (major)
+
+### Commit Message Generation
+- All automated commits use conventional format
+- GitHelpers.generateCommitMessage() generates conventional commits via Claude CLI
+- Stop-review hook: `wip:` for work in progress, `docs:` for documentation
+- Complete-task command: `feat:` for task completion, `docs:` for final updates
+- Backward compatibility: Code recognizes both `[wip]` and `wip:` formats
+
 ## Update Log
 
 [2025-01-09 16:35] - Initial patterns documented based on codebase analysis
 
 [2025-09-09 17:45] - Detected patterns: microservice
+
+[2025-09-11 16:00] - Added semantic release process and conventional commit patterns
