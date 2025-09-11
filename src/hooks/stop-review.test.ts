@@ -138,6 +138,50 @@ describe('stop-review', () => {
   });
 
   describe('SessionReviewer', () => {
+    describe('review', () => {
+      test('handles large diff by returning review_failed with commit message', async () => {
+        const hugeDiff = 'x'.repeat(60000); // Over 50KB limit
+        const mockExec = mock((cmd: string) => {
+          if (cmd.includes('status')) return 'M file.ts';
+          if (cmd.includes('diff')) return hugeDiff;
+          return '';
+        });
+
+        const fileOps: MockFileOps = {
+          readFileSync: mock((path: string) => {
+            if (path.includes('CLAUDE.md')) {
+              return '## Active Task\n@.claude/tasks/TASK_026.md';
+            }
+            if (path.includes('TASK_026.md')) {
+              return '# Task\n**Task ID:** 026\n**Status:** in-progress\nSome task content';
+            }
+            return '';
+          }),
+          existsSync: mock((path: string) => {
+            return path.includes('CLAUDE.md') || path.includes('TASK_026.md');
+          }),
+        };
+
+        const logger = createMockLogger();
+
+        const reviewer = new SessionReviewer('/project', logger, {
+          execSync: mockExec,
+          fileOps,
+        });
+
+        // Mock getRecentMessages to return something
+        reviewer.getRecentMessages = mock(async () => 'User: test\nAssistant: testing');
+
+        const result = await reviewer.review('/path/to/transcript');
+        
+        // Should return review_failed status with a commit message
+        expect(result.status).toBe('review_failed');
+        expect(result.message).toContain('diff too large');
+        expect(result.commitMessage).toContain('[wip]');
+        expect(result.commitMessage).toContain('TASK_026');
+      });
+    });
+
     describe('callClaudeForReview', () => {
       test('returns deviation status from Claude', async () => {
         const mockExec = mock((cmd: string) => {
