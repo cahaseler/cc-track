@@ -13,6 +13,18 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 19:41
+- When encountering "Found X matches but replace_all is false" errors, use MultiEdit with replace_all:true for bulk replacements across multiple occurrences
+- When MultiEdit fails with "String to replace not found" on later edits, earlier edits in the sequence may have already modified the target text - split into separate Edit operations
+- Test output can be truncated mid-suite showing only partial results - use specific test patterns with `-t "<pattern>"` to focus on failing tests
+- When TypeScript reports type errors after adding mocks, use type assertions like `as any` on mock objects rather than trying to match complex type signatures
+- Create helper functions like `createMockLogger()` to avoid repetitive mock definitions across multiple test cases
+- Directory listings with `ls` fail on non-existent paths - verify parent directory exists before attempting to list subdirectories
+- When git checkout fails due to uncommitted changes, either commit the changes or use `git stash` before switching branches
+- File paths in error messages may be truncated - use grep with specific patterns to find the full context
+- When updating documentation files that track progress, use `tail` to check the current end state before attempting edits
+- TypeScript mock functions require explicit parameter types in their signatures to avoid implicit 'any' errors
+
 ### Session: 2025-09-11 15:43
 - **Git checkout conflicts**: When git checkout fails due to uncommitted changes, use `git stash` first to save local changes, then checkout and `git stash pop` to restore them
 - **Git pull with divergent branches**: When git pull shows "divergent branches" hint, use `git pull --rebase origin <branch>` to avoid merge commits, or `git pull --merge` if merge is preferred
