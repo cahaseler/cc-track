@@ -43,3 +43,4 @@
 4. Consider adding a specific test:typecheck script
 
 **Priority:** CRITICAL - This is a fundamental quality issue. If we're using TypeScript, ALL our code should be type-checked, especially tests.
+- [2025-09-11] improve review system's ability to validate extremely large diffs via multi-tiered summary or other approaches
