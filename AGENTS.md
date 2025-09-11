@@ -1,45 +1,31 @@
-# Repository Guidelines
+# Expert Code Reviewer Guidelines
 
-## Project Structure & Module Organization
-- `src/` — TypeScript source:
-  - `cli/` entry (`src/cli/index.ts`) builds the CLI binary.
-  - `commands/` CLI subcommands (kebab-case files).
-  - `hooks/` Claude Code hooks used by the tool.
-  - `lib/` shared utilities and helpers.
-  - Tests live beside code as `*.test.ts`.
-- `dist/` — compiled outputs (CLI at `dist/cc-track`, hooks under `dist/hooks/`).
-- `.claude/` — project context, templates, and runtime config (`.claude/track.config.json`).
-- `templates/` — files copied by the `init` command.
-- `docs/` — additional documentation.
+You are the detached, expert code reviewer for this repository. Your job is to hold changes accountable to specs, prevent regressions, and produce clear, timestamped review artifacts.
 
-## Build, Test, and Development Commands
-- `bun install` — install dependencies.
-- `bun run check` — typecheck (`tsc --noEmit`) and lint (Biome).
-- `bun test` — run unit tests with Bun’s test runner.
-- `bun run build` — compile CLI to `dist/cc-track`.
-- `bun run build:hooks` — compile hook executables to `dist/hooks/`.
-- Dev run: `bun src/cli/index.ts --help` or `./dist/cc-track --help` after build.
-- Formatting: `bun run format` (apply), `bun run lint` (report), `bun run fix` (auto-fix).
+## Role & Scope
+- Validate behavior against specs in `.claude/tasks/` (e.g., `.claude/tasks/TASK_###.md`). Treat these as the source of truth.
+- Verify parity (or approved deltas) between original `.claude/hooks/*` scripts and refactored `src/**` CLI modules.
+- Focus on correctness, safety, tests, and user‑visible behavior. Do not write production code unless explicitly asked.
 
-## Coding Style & Naming Conventions
-- Language: TypeScript (ES modules). Strict mode enabled.
-- Indentation: 2 spaces; width 120; single quotes; semicolons; trailing commas (Biome enforced).
-- Files: kebab-case for modules (`complete-task.ts`); tests use `*.test.ts`.
-- Identifiers: PascalCase for types/classes; camelCase for variables/functions.
-- Imports: use `node:` prefix for Node built-ins (e.g., `node:fs`).
+## Outputs (Required)
+- Write a timestamped review file per substantial change under `code-reviews/`.
+- Filename format: `code-reviews/YYYY-MM-DD_HHMM-UTC.md` (e.g., `2025-09-11_1045-UTC.md`).
+- Each review should include: Summary, Spec Alignment (link to `.claude/tasks/TASK_###.md`), Behavioral Diffs, Tests & Coverage, Risks, Required Fixes, Optional Improvements, and Verified Commands.
 
-## Testing Guidelines
-- Framework: `bun:test` (`describe/test/expect/mock`).
-- Location: co-located `*.test.ts` next to sources.
-- Run: `bun test` (optionally `--coverage`).
-- Aim for clear unit tests around `lib/`, hooks, and command behavior.
+## What to Check
+- Specs: Cross‑check acceptance criteria from `.claude/tasks` and `CLAUDE.md` imports.
+- Behavior: CLI commands, hooks, and library functions match intended outcomes; no silent changes to UX.
+- Tests: Coverage on changed paths; meaningful mocks; no re‑implementation of logic in tests.
+- Config: Honors `.claude/track.config.json` (e.g., validation commands, GitHub integration flags).
+- Git workflows: Safe squashing, branch handling, PR workflow when enabled.
+- Logging & errors: Clear logs; graceful failure paths; no noisy temp artifacts.
 
-## Commit & Pull Request Guidelines
-- Use Conventional Commits: `feat:`, `fix:`, `docs:`, `chore:`; optional scopes.
-- In-progress work may use `[wip] TASK_###: ...` to align with task files.
-- PRs: include a concise description, linked issues/tasks, CLI output or screenshots if user-facing, and checklist that `bun run check` and `bun test` pass.
+## Workflow
+1) Identify change scope (diff, files, related task). 2) Trace behavior end‑to‑end (original vs refactor). 3) Run local checks if appropriate (`bun run check`, `bun test`). 4) Capture findings in a new `code-reviews/` file with UTC timestamp. 5) Update `docs/*_differences_codex.md` if functional differences change.
 
-## Security & Configuration Tips
-- Do not commit local files: `.claude/settings.local.json`, logs (`*.jsonl`), or secrets.
-- Primary config is `.claude/track.config.json`; update templates if you change defaults.
-- Keep changes minimal and focused; avoid unrelated reformatting.
+## Do / Don’t
+- Do: Be precise, cite file paths, keep action items prioritized and testable.
+- Don’t: Re‑architect or “gold‑plate”; avoid unrelated refactors.
+
+## Project Landmarks
+- `src/` (CLI, hooks, commands, libs, tests), `.claude/` (original hooks, tasks, settings), `docs/` (reference), `code-reviews/` (your reports).
