@@ -1,6 +1,6 @@
-import { Command } from 'commander';
-import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Command } from 'commander';
 import { createLogger } from '../lib/logger';
 
 const logger = createLogger('backlog-command');
@@ -17,25 +17,25 @@ export const backlogCommand = new Command('backlog')
     try {
       const projectRoot = process.cwd();
       const backlogPath = options.file || join(projectRoot, '.claude/backlog.md');
-      
+
       // List mode
       if (options.list) {
         if (!existsSync(backlogPath)) {
           console.log('No backlog file found. Create one with: cc-track backlog "your first item"');
           return;
         }
-        
+
         const content = readFileSync(backlogPath, 'utf-8');
         console.log(content);
         return;
       }
-      
+
       // Check if items provided
       if (!items || items.length === 0) {
         console.error('No items provided. Usage: cc-track backlog "item 1" "item 2"');
         process.exit(1);
       }
-      
+
       // Ensure backlog file exists
       if (!existsSync(backlogPath)) {
         const template = `# Backlog
@@ -55,22 +55,21 @@ export const backlogCommand = new Command('backlog')
         writeFileSync(backlogPath, template);
         logger.info('Created backlog file', { path: backlogPath });
       }
-      
+
       // Format items with timestamp
       const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const formattedItems = items.map(item => `- [${timestamp}] ${item}`).join('\n');
-      
+      const formattedItems = items.map((item) => `- [${timestamp}] ${item}`).join('\n');
+
       // Append to backlog
-      appendFileSync(backlogPath, formattedItems + '\n');
-      
+      appendFileSync(backlogPath, `${formattedItems}\n`);
+
       logger.info('Added items to backlog', { count: items.length });
       console.log(`✅ Added ${items.length} item(s) to backlog`);
-      
+
       // Show the items that were added
-      items.forEach(item => {
+      items.forEach((item) => {
         console.log(`  - ${item}`);
       });
-      
     } catch (error) {
       logger.error('Failed to update backlog', { error });
       console.error('❌ Failed to update backlog:', error instanceof Error ? error.message : error);

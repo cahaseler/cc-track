@@ -1,10 +1,10 @@
-import { createReadStream, existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import type { HookInput, HookOutput } from '../types';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
+import type { HookInput, HookOutput } from '../types';
 
 const logger = createLogger('pre_compact');
 
@@ -458,61 +458,68 @@ export async function updateLearnedMistakes(projectRoot: string, patterns: strin
   }
 }
 
+export interface PreCompactDependencies {
+  isHookEnabled?: typeof isHookEnabled;
+  logger?: ReturnType<typeof createLogger>;
+}
+
 /**
  * Main pre-compact hook function
  */
-export async function preCompactHook(input: HookInput): Promise<HookOutput> {
+export async function preCompactHook(input: HookInput, deps: PreCompactDependencies = {}): Promise<HookOutput> {
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
+  const log = deps.logger || logger;
+
   try {
     // Check if hook is enabled
-    if (!isHookEnabled('pre_compact')) {
-      return { 
+    if (!checkEnabled('pre_compact')) {
+      return {
         continue: true,
         success: true,
-        message: 'Hook disabled'
+        message: 'Hook disabled',
       };
     }
 
-    logger.info('Pre-compact hook started');
+    log.info('Pre-compact hook started');
 
     const transcriptPath = input.transcript_path;
     const projectRoot = input.cwd || process.cwd();
 
     if (!transcriptPath || !existsSync(transcriptPath)) {
-      return { 
+      return {
         continue: true,
         success: false,
-        message: 'No transcript found'
+        message: 'No transcript found',
       };
     }
 
     // Extract error patterns
-    const extractor = new ErrorPatternExtractor(logger);
+    const extractor = new ErrorPatternExtractor(log);
     const sequences = await extractor.extractFromTranscript(transcriptPath);
 
     // Analyze patterns and update learned mistakes
     if (sequences.length > 0) {
-      const patterns = await analyzeErrorPatterns(sequences, projectRoot, logger);
+      const patterns = await analyzeErrorPatterns(sequences, projectRoot, log);
       await updateLearnedMistakes(projectRoot, patterns);
 
       return {
         continue: true,
         success: true,
-        message: `Extracted ${sequences.length} error sequences, learned ${patterns.length} patterns`
+        message: `Extracted ${sequences.length} error sequences, learned ${patterns.length} patterns`,
       };
     }
 
     return {
       continue: true,
       success: true,
-      message: 'No error patterns found in this session'
+      message: 'No error patterns found in this session',
     };
-
   } catch (error) {
-    logger.exception('Error in pre_compact hook', error as Error);
-    return { 
+    log.exception('Error in pre_compact hook', error as Error);
+    return {
       continue: true,
       success: false,
-      message: `Error: ${error}`
+      message: `Error: ${error}`,
     };
   }
 }

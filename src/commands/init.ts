@@ -1,7 +1,7 @@
-import { Command } from 'commander';
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { Command } from 'commander';
 import { createLogger } from '../lib/logger';
 
 const logger = createLogger('init-command');
@@ -18,19 +18,19 @@ export const initCommand = new Command('init')
     try {
       const projectRoot = process.cwd();
       logger.info('Initializing cc-track', { projectRoot });
-      
+
       // Create .claude directory structure
       const directories = [
         '.claude',
         '.claude/commands',
-        '.claude/hooks', 
+        '.claude/hooks',
         '.claude/lib',
         '.claude/scripts',
         '.claude/plans',
         '.claude/tasks',
         '.claude/logs',
       ];
-      
+
       for (const dir of directories) {
         const dirPath = join(projectRoot, dir);
         if (!existsSync(dirPath)) {
@@ -38,10 +38,10 @@ export const initCommand = new Command('init')
           logger.debug(`Created directory: ${dir}`);
         }
       }
-      
+
       // Get cc-track installation path
       const ccTrackRoot = join(import.meta.dir, '../..');
-      
+
       // Copy template files
       const templateFiles = [
         { src: 'templates/CLAUDE.md', dest: 'CLAUDE.md' },
@@ -57,28 +57,28 @@ export const initCommand = new Command('init')
         { src: 'templates/track.config.json', dest: '.claude/track.config.json' },
         { src: 'templates/statusline.sh', dest: '.claude/scripts/statusline.sh' },
       ];
-      
+
       for (const { src, dest } of templateFiles) {
         const srcPath = join(ccTrackRoot, src);
         const destPath = join(projectRoot, dest);
-        
+
         if (existsSync(destPath) && !options.force) {
           logger.info(`Skipping existing file: ${dest}`);
           continue;
         }
-        
+
         // Backup existing file if requested
         if (existsSync(destPath) && options.backup !== false) {
           const backupPath = `${destPath}.backup.${Date.now()}`;
           copyFileSync(destPath, backupPath);
           logger.info(`Backed up: ${dest} -> ${backupPath}`);
         }
-        
+
         // Copy template
         copyFileSync(srcPath, destPath);
         logger.info(`Created: ${dest}`);
       }
-      
+
       // Copy command files
       const commandFiles = [
         'init-track.md',
@@ -87,44 +87,44 @@ export const initCommand = new Command('init')
         'add-to-backlog.md',
         'view-logs.md',
       ];
-      
+
       for (const cmdFile of commandFiles) {
         const srcPath = join(ccTrackRoot, 'commands', cmdFile);
         const destPath = join(projectRoot, '.claude/commands', cmdFile);
-        
+
         if (!existsSync(srcPath)) {
           logger.warn(`Command template not found: ${cmdFile}`);
           continue;
         }
-        
+
         copyFileSync(srcPath, destPath);
         logger.debug(`Copied command: ${cmdFile}`);
       }
-      
+
       // Update settings.json
       const settingsPath = join(projectRoot, '.claude/claude_code_settings.json');
-      const settingsTemplatePath = options.withStop 
+      const settingsTemplatePath = options.withStop
         ? join(ccTrackRoot, 'templates/settings_with_stop.json')
         : join(ccTrackRoot, 'templates/settings.json');
-      
+
       if (existsSync(settingsPath) && !options.force) {
         logger.info('Settings file exists, merging hooks...');
-        
+
         // Merge existing settings with our hooks
         const existing = JSON.parse(readFileSync(settingsPath, 'utf-8'));
         const template = JSON.parse(readFileSync(settingsTemplatePath, 'utf-8'));
-        
+
         // Merge hooks
         existing.hooks = {
           ...existing.hooks,
           ...template.hooks,
         };
-        
+
         // Update statusline if not custom
         if (!existing.statusline || existing.statusline.includes('statusline.sh')) {
           existing.statusline = template.statusline;
         }
-        
+
         writeFileSync(settingsPath, JSON.stringify(existing, null, 2));
         logger.info('Updated settings.json with cc-track hooks');
       } else {
@@ -134,18 +134,18 @@ export const initCommand = new Command('init')
           copyFileSync(settingsPath, backupPath);
           logger.info(`Backed up settings.json -> ${backupPath}`);
         }
-        
+
         copyFileSync(settingsTemplatePath, settingsPath);
         logger.info('Created settings.json');
       }
-      
+
       // Make statusline executable
       const statuslinePath = join(projectRoot, '.claude/scripts/statusline.sh');
       if (existsSync(statuslinePath)) {
         execSync(`chmod +x "${statuslinePath}"`);
         logger.debug('Made statusline.sh executable');
       }
-      
+
       // Initialize git if not already a repo
       const gitPath = join(projectRoot, '.git');
       if (!existsSync(gitPath)) {
@@ -153,14 +153,13 @@ export const initCommand = new Command('init')
         execSync('git init', { cwd: projectRoot });
         logger.info('Git repository initialized');
       }
-      
+
       console.log('\n✅ cc-track initialized successfully!');
       console.log('\n🚅 Next steps:');
       console.log('  1. Review and customize .claude/track.config.json');
       console.log('  2. Update CLAUDE.md with your project context');
       console.log('  3. Restart Claude Code to load the new settings');
       console.log('\nHappy tracking! 🛤️');
-      
     } catch (error) {
       logger.error('Initialization failed', { error });
       console.error('❌ Initialization failed:', error instanceof Error ? error.message : error);

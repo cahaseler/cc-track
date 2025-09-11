@@ -13,6 +13,18 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 08:49
+- When encountering "File has not been read yet" errors, always use Read tool first even if you've seen the file content recently in the conversation
+- When Edit tool reports "String to replace not found", use Read to get actual file content instead of relying on memory or assumptions about file state
+- When MultiEdit gets "Found X matches but replace_all is false", either set replace_all:true or provide more unique context strings for single replacements
+- Use sed with line ranges (e.g., `sed -n '760,770p'`) to quickly inspect specific sections of files when debugging test failures
+- When test output shows "(pass)" for all visible tests before truncation, assume the full test suite passed rather than investigating truncation
+- Use grep with specific patterns like `grep -n "as any"` to quickly locate TypeScript type issues that need fixing
+- When fixing TypeScript 'any' types, use type assertions like `error as { code?: string }` or create proper type definitions
+- For complex mock objects in tests, define a helper function like `createMockLogger()` to avoid repetitive mock definitions
+- When bun test doesn't support a reporter flag (like --reporter=minimal), just run without it rather than trying alternatives
+- Use `grep -oE "pattern" | sort | uniq -c | sort -rn` to get frequency counts of specific error patterns in output
+
 ### Session: 2025-09-11 23:48
 - When test output appears truncated but shows multiple passing tests, assume the full test suite passed - the truncation is at character limit not test boundary
 - When copying files from one directory structure to another, if Read fails multiple times, skip to Write/copy directly rather than retrying Read

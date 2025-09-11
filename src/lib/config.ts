@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Config, ConfigFeatures } from '../types';
 
 interface HookConfig {
   enabled: boolean;
@@ -156,7 +155,7 @@ export function updateConfig(updates: Partial<InternalConfig>, configPath?: stri
   };
 
   writeFileSync(path, JSON.stringify(newConfig, null, 2));
-  
+
   if (!configPath) {
     configCache = null;
   }
@@ -166,25 +165,31 @@ export function setHookEnabled(hookName: string, enabled: boolean, configPath?: 
   const config = getConfig(configPath);
 
   if (config.hooks?.[hookName]) {
-    updateConfig({
-      hooks: {
-        ...config.hooks,
-        [hookName]: {
-          ...config.hooks[hookName],
-          enabled,
+    updateConfig(
+      {
+        hooks: {
+          ...config.hooks,
+          [hookName]: {
+            ...config.hooks[hookName],
+            enabled,
+          },
         },
       },
-    }, configPath);
+      configPath,
+    );
   } else if (config.features?.[hookName]) {
-    updateConfig({
-      features: {
-        ...config.features,
-        [hookName]: {
-          ...config.features[hookName],
-          enabled,
+    updateConfig(
+      {
+        features: {
+          ...config.features,
+          [hookName]: {
+            ...config.features[hookName],
+            enabled,
+          },
         },
       },
-    }, configPath);
+      configPath,
+    );
   }
 }
 

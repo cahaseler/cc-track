@@ -2,9 +2,10 @@ import { execSync as nodeExecSync } from 'node:child_process';
 import { unlinkSync, writeFileSync } from 'node:fs';
 
 // Interface for dependency injection
-export interface ExecFunction {
-  (command: string, options?: any): string;
-}
+export type ExecFunction = (
+  command: string,
+  options?: { cwd?: string; encoding?: string; timeout?: number; shell?: string },
+) => string;
 
 export interface FileOps {
   writeFileSync: typeof writeFileSync;
@@ -256,11 +257,11 @@ export async function generateBranchName(plan: string, taskId: string, cwd: stri
 }
 
 export function createTaskBranch(branchName: string, cwd: string): void {
-  return defaultGitHelpers.createTaskBranch(branchName, cwd);
+  defaultGitHelpers.createTaskBranch(branchName, cwd);
 }
 
 export function mergeTaskBranch(branchName: string, defaultBranch: string, cwd: string): void {
-  return defaultGitHelpers.mergeTaskBranch(branchName, defaultBranch, cwd);
+  defaultGitHelpers.mergeTaskBranch(branchName, defaultBranch, cwd);
 }
 
 export function getCurrentBranch(cwd: string): string {
@@ -268,7 +269,7 @@ export function getCurrentBranch(cwd: string): string {
 }
 
 export function switchToBranch(branchName: string, cwd: string): void {
-  return defaultGitHelpers.switchToBranch(branchName, cwd);
+  defaultGitHelpers.switchToBranch(branchName, cwd);
 }
 
 export function isGitRepository(cwd: string): boolean {

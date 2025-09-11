@@ -6,8 +6,8 @@ export interface HookInput {
   cwd?: string;
   hook_event_name?: string;
   tool_name?: string;
-  tool_input?: any;
-  tool_response?: any;
+  tool_input?: unknown;
+  tool_response?: unknown;
   tool_use_error?: string;
   user_message?: string;
   assistant_message?: string;

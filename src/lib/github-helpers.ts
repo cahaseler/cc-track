@@ -1,6 +1,6 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import { createLogger } from './logger';
 import type { GitHubIssue } from '../types';
+import { createLogger } from './logger';
 
 const logger = createLogger('github-helpers');
 
@@ -12,9 +12,10 @@ export interface GitHubPR {
 }
 
 // Interface for dependency injection
-export interface ExecFunction {
-  (command: string, options?: any): string;
-}
+export type ExecFunction = (
+  command: string,
+  options?: { cwd?: string; encoding?: string; timeout?: number; shell?: string },
+) => string;
 
 const defaultExec: ExecFunction = (command, options) => {
   return nodeExecSync(command, { encoding: 'utf-8', ...options });

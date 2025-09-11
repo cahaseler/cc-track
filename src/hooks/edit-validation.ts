@@ -1,9 +1,9 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import type { HookInput, HookOutput } from '../types';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
+import type { HookInput, HookOutput } from '../types';
 
 const logger = createLogger('edit_validation');
 
@@ -28,13 +28,14 @@ export interface ValidationResult {
 /**
  * Extract file paths from tool input based on tool type
  */
-export function extractFilePaths(toolName: string, toolInput: any): string[] {
+export function extractFilePaths(toolName: string, toolInput: unknown): string[] {
   const filePaths: string[] = [];
 
-  if (toolName === 'MultiEdit' && toolInput.file_path) {
-    filePaths.push(toolInput.file_path as string);
-  } else if ((toolName === 'Edit' || toolName === 'Write') && toolInput.file_path) {
-    filePaths.push(toolInput.file_path as string);
+  const input = toolInput as { file_path?: string };
+  if (toolName === 'MultiEdit' && input.file_path) {
+    filePaths.push(input.file_path);
+  } else if ((toolName === 'Edit' || toolName === 'Write') && input.file_path) {
+    filePaths.push(input.file_path);
   }
 
   return filePaths;
@@ -67,7 +68,7 @@ export function loadEditValidationConfig(cwd: string): EditValidationConfig {
   };
 
   const configPath = join(cwd, '.claude', 'track.config.json');
-  
+
   if (!existsSync(configPath)) {
     return defaultConfig;
   }
@@ -90,7 +91,7 @@ export function loadEditValidationConfig(cwd: string): EditValidationConfig {
  */
 export function runTypeScriptCheck(filePath: string, config: EditValidationConfig, cwd: string): string[] {
   const errors: string[] = [];
-  
+
   if (!config.typecheck?.enabled) {
     return errors;
   }
@@ -127,7 +128,7 @@ export function runTypeScriptCheck(filePath: string, config: EditValidationConfi
  */
 export function runBiomeCheck(filePath: string, config: EditValidationConfig, cwd: string): string[] {
   const errors: string[] = [];
-  
+
   if (!config.lint?.enabled) {
     return errors;
   }
@@ -191,7 +192,7 @@ export function formatValidationResults(results: ValidationResult[]): string {
   }
 
   const lines: string[] = [];
-  
+
   for (const result of results) {
     lines.push(`Issues in ${result.fileName}:`);
     lines.push(...result.errors.map((e) => `  - ${e}`));
@@ -206,21 +207,22 @@ export interface EditValidationDependencies {
   existsSync?: typeof existsSync;
   readFileSync?: typeof readFileSync;
   logger?: ReturnType<typeof createLogger>;
+  isHookEnabled?: typeof isHookEnabled;
+  loadEditValidationConfig?: typeof loadEditValidationConfig;
 }
 
 /**
  * Main edit validation hook function
  */
-export async function editValidationHook(
-  input: HookInput, 
-  deps: EditValidationDependencies = {}
-): Promise<HookOutput> {
+export async function editValidationHook(input: HookInput, deps: EditValidationDependencies = {}): Promise<HookOutput> {
   const exec = deps.execSync || execSync;
   const log = deps.logger || logger;
-  
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
+  const loadConfig = deps.loadEditValidationConfig || loadEditValidationConfig;
+
   try {
     // Check if hook is enabled
-    if (!isHookEnabled('edit_validation')) {
+    if (!checkEnabled('edit_validation')) {
       return { continue: true };
     }
 
@@ -236,7 +238,7 @@ export async function editValidationHook(
 
     // Extract file paths
     const filePaths = extractFilePaths(input.tool_name || '', input.tool_input || {});
-    
+
     // Filter to TypeScript files
     const tsFiles = filterTypeScriptFiles(filePaths);
 
@@ -246,11 +248,11 @@ export async function editValidationHook(
     }
 
     // Load configuration
-    const config = loadEditValidationConfig(input.cwd || process.cwd());
+    const config = loadConfig(input.cwd || process.cwd());
 
     // Validate files - need to update this to use injected exec
     const results: ValidationResult[] = [];
-    
+
     for (const filePath of tsFiles) {
       const fileName = basename(filePath);
       const errors: string[] = [];
@@ -264,19 +266,20 @@ export async function editValidationHook(
             cwd,
             stdio: ['ignore', 'pipe', 'pipe'],
           });
-        } catch (error: any) {
-          if (error.code === 'ETIMEDOUT') {
+        } catch (error) {
+          const err = error as { code?: string; message?: string };
+          if (err.code === 'ETIMEDOUT') {
             return {
               decision: 'block',
               systemMessage: '⏱️ Validation timeout - TypeScript check took too long',
             };
           }
-          if (error.code === 'ENOENT') {
+          if (err.code === 'ENOENT') {
             // File doesn't exist yet (new file), skip validation
             continue;
           }
-          if (error.message) {
-            errors.push(...error.message.split('\n').filter((line: string) => line.includes('error TS')));
+          if (err.message) {
+            errors.push(...err.message.split('\n').filter((line: string) => line.includes('error TS')));
           }
         }
       }
@@ -289,9 +292,10 @@ export async function editValidationHook(
             cwd,
             stdio: ['ignore', 'pipe', 'pipe'],
           });
-        } catch (error: any) {
-          if (error.message) {
-            errors.push(...error.message.split('\n').filter((line: string) => line.includes('lint/')));
+        } catch (error) {
+          const err = error as { message?: string };
+          if (err.message) {
+            errors.push(...err.message.split('\n').filter((line: string) => line.includes('lint/')));
           }
         }
       }
@@ -304,7 +308,7 @@ export async function editValidationHook(
     // Format and return results
     if (results.length > 0) {
       const message = formatValidationResults(results);
-      
+
       log.info('Validation issues found', {
         file_count: tsFiles.length,
         error_count: results.reduce((sum, r) => sum + r.errors.length, 0),
@@ -318,7 +322,6 @@ export async function editValidationHook(
 
     log.debug('No validation issues found');
     return { continue: true };
-
   } catch (error) {
     log.exception('Fatal error in edit_validation hook', error as Error);
     // Don't block on error

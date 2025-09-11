@@ -2,10 +2,10 @@ import { execSync } from 'node:child_process';
 import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import type { HookInput, HookOutput } from '../types';
 import { isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
+import type { HookInput, HookOutput } from '../types';
 
 export interface StopReviewDependencies {
   execSync?: typeof execSync;
@@ -18,6 +18,7 @@ export interface StopReviewDependencies {
   };
   gitHelpers?: GitHelpers;
   logger?: ReturnType<typeof createLogger>;
+  isHookEnabled?: typeof isHookEnabled;
 }
 
 export interface ReviewResult {
@@ -121,12 +122,29 @@ export class SessionReviewer {
     }
 
     // Prepare review prompt with filtered diff (code changes only)
-    const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, filteredDiff, hasDocChanges);
+    try {
+      const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, filteredDiff, hasDocChanges);
 
-    // Use Claude CLI to review
-    const review = await this.callClaudeForReview(reviewPrompt);
+      // Use Claude CLI to review
+      const review = await this.callClaudeForReview(reviewPrompt);
 
-    return review;
+      return review;
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      this.logger.warn('Review preparation failed', { error: errorMsg });
+      
+      // Extract task ID for commit message
+      const taskIdMatch = activeTask.match(/Task ID:\*\* (\d+)/);
+      const taskId = taskIdMatch ? `TASK_${taskIdMatch[1]}` : 'TASK';
+      
+      // Return a review_failed status with a commit message so work is preserved
+      return {
+        status: 'review_failed',
+        message: 'Could not review changes - diff too large or review failed',
+        commitMessage: `[wip] ${taskId}: Work in progress - review skipped`,
+        details: errorMsg,
+      };
+    }
   }
 
   private getActiveTask(): string | null {
@@ -529,7 +547,7 @@ export function hasUncommittedChanges(projectRoot: string, exec: typeof execSync
 export function generateStopOutput(
   review: ReviewResult,
   inStopHook: boolean,
-  nonTaskSuggestion: string | null
+  nonTaskSuggestion: string | null,
 ): HookOutput {
   const output: HookOutput = {};
 
@@ -611,15 +629,13 @@ export function generateStopOutput(
 /**
  * Main stop review hook function
  */
-export async function stopReviewHook(
-  input: HookInput,
-  deps: StopReviewDependencies = {}
-): Promise<HookOutput> {
+export async function stopReviewHook(input: HookInput, deps: StopReviewDependencies = {}): Promise<HookOutput> {
   const logger = deps.logger || createLogger('stop_review');
   const exec = deps.execSync || execSync;
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
 
   // Check if hook is enabled
-  if (!isHookEnabled('stop_review')) {
+  if (!checkEnabled('stop_review')) {
     return { continue: true };
   }
 
@@ -677,10 +693,10 @@ export async function stopReviewHook(
 
     // Generate output based on review
     const output = generateStopOutput(review, inStopHook, nonTaskSuggestion);
-    
+
     logger.info('Review complete', { status: review.status, message: review.message });
     logger.debug('Sending output', { output_preview: JSON.stringify(output).substring(0, 100) });
-    
+
     return output;
   } catch (error) {
     logger.exception('Error in stop_review hook', error as Error);

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run .claude/hooks/capture_plan.ts",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type capture-plan",
             "timeout": 10000
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run .claude/hooks/edit_validation.ts",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type edit-validation",
             "timeout": 5000
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run .claude/hooks/pre_compact.ts",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type pre-compact",
             "timeout": 30000
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run .claude/hooks/post_compact.ts",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type post-compact",
             "timeout": 5000
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run .claude/hooks/stop_review.ts",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type stop-review",
             "timeout": 20000
           }
         ]

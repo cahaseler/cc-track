@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { HookInput, HookOutput } from '../types';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
+import type { HookInput, HookOutput } from '../types';
 
 export interface PostCompactDependencies {
   fileOps?: {
@@ -10,6 +10,7 @@ export interface PostCompactDependencies {
     readFileSync: typeof readFileSync;
   };
   logger?: ReturnType<typeof createLogger>;
+  isHookEnabled?: typeof isHookEnabled;
 }
 
 /**
@@ -26,7 +27,7 @@ export function extractActiveTaskFile(claudeMdContent: string): string {
 export function readImportedFiles(
   claudeMdContent: string,
   projectRoot: string,
-  fileOps: PostCompactDependencies['fileOps']
+  fileOps: PostCompactDependencies['fileOps'],
 ): string {
   const fs = fileOps || { existsSync, readFileSync };
   const importPattern = /@(\.claude\/[^\s]+)/g;
@@ -41,7 +42,7 @@ export function readImportedFiles(
       importedContent += `\n## ${fileName}:\n\`\`\`markdown\n${content}\n\`\`\`\n`;
     }
   }
-  
+
   return importedContent;
 }
 
@@ -51,7 +52,7 @@ export function readImportedFiles(
 export function generatePostCompactionInstructions(
   claudeMdContent: string,
   importedContent: string,
-  activeTaskFile: string
+  activeTaskFile: string,
 ): string {
   let instructions = `📋 POST-COMPACTION CONTEXT RESTORATION
 
@@ -106,15 +107,13 @@ Please do this now before proceeding with any new work.`;
 /**
  * Main post-compact hook function
  */
-export async function postCompactHook(
-  input: HookInput,
-  deps: PostCompactDependencies = {}
-): Promise<HookOutput> {
+export async function postCompactHook(input: HookInput, deps: PostCompactDependencies = {}): Promise<HookOutput> {
   const fileOps = deps.fileOps || { existsSync, readFileSync };
   const logger = deps.logger || createLogger('post_compact');
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
 
   // Check if hook is enabled
-  if (!isHookEnabled('post_compact')) {
+  if (!checkEnabled('post_compact')) {
     return { continue: true };
   }
 
@@ -147,11 +146,7 @@ export async function postCompactHook(
     const importedContent = readImportedFiles(claudeMdContent, projectRoot, fileOps);
 
     // Generate instructions
-    const instructions = generatePostCompactionInstructions(
-      claudeMdContent,
-      importedContent,
-      activeTaskFile
-    );
+    const instructions = generatePostCompactionInstructions(claudeMdContent, importedContent, activeTaskFile);
 
     // SessionStart hooks should use both systemMessage and hookSpecificOutput
     return {

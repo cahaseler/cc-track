@@ -1,11 +1,10 @@
 #!/usr/bin/env bun
 import { Command } from 'commander';
-
+import { backlogCommand } from '../commands/backlog';
+import { completeTaskCommand } from '../commands/complete-task';
 // Import commands
 import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
-import { backlogCommand } from '../commands/backlog';
-import { completeTaskCommand } from '../commands/complete-task';
 
 // Version is hardcoded for compiled binary
 const VERSION = '1.0.0';

@@ -1,11 +1,11 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { HookInput, HookOutput } from '../types';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
+import type { HookInput, HookOutput } from '../types';
 
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
@@ -21,6 +21,8 @@ export interface CapturePlanDependencies {
   githubHelpers?: GitHubHelpers;
   logger?: ReturnType<typeof createLogger>;
   debugLog?: (msg: string) => void;
+  isHookEnabled?: typeof isHookEnabled;
+  isGitHubIntegrationEnabled?: typeof isGitHubIntegrationEnabled;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface CapturePlanDependencies {
  */
 export function findNextTaskNumber(tasksDir: string, fileOps: CapturePlanDependencies['fileOps']): number {
   const fs = fileOps || { existsSync, readdirSync };
-  
+
   if (!fs.existsSync(tasksDir)) {
     return 1;
   }
@@ -45,7 +47,7 @@ export function findNextTaskNumber(tasksDir: string, fileOps: CapturePlanDepende
   if (taskNumbers.length > 0) {
     return Math.max(...taskNumbers) + 1;
   }
-  
+
   return 1;
 }
 
@@ -104,7 +106,7 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
 export async function enrichPlanWithClaude(
   prompt: string,
   tempPromptPath: string,
-  deps: CapturePlanDependencies
+  deps: CapturePlanDependencies,
 ): Promise<string> {
   const exec = deps.execSync || execSync;
   const fs = deps.fileOps || { writeFileSync, existsSync, unlinkSync };
@@ -120,7 +122,7 @@ export async function enrichPlanWithClaude(
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
       shell: '/bin/bash',
     }).trim();
-    
+
     return taskContent;
   } catch (cmdError) {
     logger.error('Claude CLI failed', {
@@ -144,13 +146,14 @@ export async function handleGitBranching(
   plan: string,
   taskId: string,
   projectRoot: string,
-  deps: CapturePlanDependencies
+  deps: CapturePlanDependencies,
 ): Promise<string | null> {
   const exec = deps.execSync || execSync;
   const gitHelpers = deps.gitHelpers || new GitHelpers();
   const logger = deps.logger || createLogger('capture_plan');
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
 
-  if (!isHookEnabled('git_branching')) {
+  if (!checkEnabled('git_branching')) {
     return null;
   }
 
@@ -170,7 +173,7 @@ export async function handleGitBranching(
     const branchName = await gitHelpers.generateBranchName(plan, taskId, projectRoot);
     gitHelpers.createTaskBranch(branchName, projectRoot);
     logger.info(`Created and switched to branch: ${branchName}`);
-    
+
     return branchName;
   } catch (error) {
     logger.error('Git branching failed', { error });
@@ -186,12 +189,13 @@ export async function handleGitHubIntegration(
   taskId: string,
   projectRoot: string,
   gitBranchingEnabled: boolean,
-  deps: CapturePlanDependencies
+  deps: CapturePlanDependencies,
 ): Promise<string> {
   const githubHelpers = deps.githubHelpers || new GitHubHelpers();
   const logger = deps.logger || createLogger('capture_plan');
+  const checkGitHub = deps.isGitHubIntegrationEnabled || isGitHubIntegrationEnabled;
 
-  if (!isGitHubIntegrationEnabled()) {
+  if (!checkGitHub()) {
     return '';
   }
 
@@ -205,7 +209,7 @@ export async function handleGitHubIntegration(
       });
       return '';
     }
-    
+
     if (!githubConfig?.auto_create_issues) {
       return '';
     }
@@ -251,14 +255,10 @@ export async function handleGitHubIntegration(
 /**
  * Update CLAUDE.md to point to new task
  */
-export function updateClaudeMd(
-  projectRoot: string,
-  taskId: string,
-  fileOps: CapturePlanDependencies['fileOps']
-): void {
+export function updateClaudeMd(projectRoot: string, taskId: string, fileOps: CapturePlanDependencies['fileOps']): void {
   const fs = fileOps || { existsSync, readFileSync, writeFileSync };
   const claudeMdPath = join(projectRoot, 'CLAUDE.md');
-  
+
   if (!fs.existsSync(claudeMdPath)) {
     return;
   }
@@ -279,10 +279,8 @@ export function updateClaudeMd(
 /**
  * Main capture plan hook function
  */
-export async function capturePlanHook(
-  input: HookInput,
-  deps: CapturePlanDependencies = {}
-): Promise<HookOutput> {
+export async function capturePlanHook(input: HookInput, deps: CapturePlanDependencies = {}): Promise<HookOutput> {
+  const checkEnabled = deps.isHookEnabled || isHookEnabled;
   const fileOps = deps.fileOps || {
     existsSync,
     mkdirSync,
@@ -297,13 +295,13 @@ export async function capturePlanHook(
   debugLog('Hook starting');
 
   // Check if hook is enabled
-  if (!isHookEnabled('capture_plan')) {
+  if (!checkEnabled('capture_plan')) {
     debugLog('Hook disabled');
     return { continue: true };
   }
 
   debugLog(`Parsed input: ${input.hook_event_name}, tool: ${input.tool_name}`);
-  
+
   logger.debug('Hook triggered', {
     session_id: input.session_id,
     hook_event: input.hook_event_name,
@@ -379,13 +377,7 @@ export async function capturePlanHook(
     }
 
     // Handle GitHub integration if enabled
-    const githubIssueInfo = await handleGitHubIntegration(
-      finalTaskContent,
-      taskId,
-      projectRoot,
-      !!branchName,
-      deps
-    );
+    const githubIssueInfo = await handleGitHubIntegration(finalTaskContent, taskId, projectRoot, !!branchName, deps);
     finalTaskContent += githubIssueInfo;
 
     // Write final task file

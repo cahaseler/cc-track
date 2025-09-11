@@ -1,8 +1,8 @@
-import { describe, expect, test, beforeEach, mock } from "bun:test";
-import { Logger, LogLevel, createLogger } from "./logger";
-import type { LogEntry, LogConfig, FileSystemOps } from "./logger";
+import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import type { FileSystemOps, LogConfig, LogEntry } from './logger';
+import { createLogger, Logger } from './logger';
 
-describe("Logger", () => {
+describe('Logger', () => {
   let mockFs: FileSystemOps;
   let appendedLines: string[] = [];
   let createdDirs: string[] = [];
@@ -10,13 +10,13 @@ describe("Logger", () => {
   beforeEach(() => {
     appendedLines = [];
     createdDirs = [];
-    
+
     mockFs = {
-      existsSync: mock((path: string) => false),
-      mkdirSync: mock((path: string, options?: any) => {
+      existsSync: mock((_path: string) => false),
+      mkdirSync: mock((path: string, _options?: { recursive?: boolean }) => {
         createdDirs.push(path);
       }),
-      appendFileSync: mock((path: string, data: string) => {
+      appendFileSync: mock((_path: string, data: string) => {
         appendedLines.push(data);
       }),
       readdirSync: mock(() => []),
@@ -25,7 +25,7 @@ describe("Logger", () => {
     };
   });
 
-  describe("constructor", () => {
+  describe('constructor', () => {
     test("creates log directory if it doesn't exist", () => {
       const config: LogConfig = {
         enabled: true,
@@ -33,10 +33,10 @@ describe("Logger", () => {
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      new Logger("test", "/tmp/logs", config, mockFs);
-      
-      expect(createdDirs).toContain("/tmp/logs");
+
+      new Logger('test', '/tmp/logs', config, mockFs);
+
+      expect(createdDirs).toContain('/tmp/logs');
     });
 
     test("doesn't create directory when logging disabled", () => {
@@ -46,166 +46,166 @@ describe("Logger", () => {
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      new Logger("test", "/tmp/logs", config, mockFs);
-      
+
+      new Logger('test', '/tmp/logs', config, mockFs);
+
       expect(createdDirs).toHaveLength(0);
     });
   });
 
-  describe("log levels", () => {
-    test("respects log level filtering", () => {
+  describe('log levels', () => {
+    test('respects log level filtering', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'WARN',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test", "/tmp/logs", config, mockFs);
-      
-      logger.debug("debug message");
-      logger.info("info message");
-      logger.warn("warn message");
-      logger.error("error message");
-      
+
+      const logger = new Logger('test', '/tmp/logs', config, mockFs);
+
+      logger.debug('debug message');
+      logger.info('info message');
+      logger.warn('warn message');
+      logger.error('error message');
+
       // Only WARN and ERROR should be logged
       expect(appendedLines).toHaveLength(2);
-      expect(appendedLines[0]).toContain("warn message");
-      expect(appendedLines[1]).toContain("error message");
+      expect(appendedLines[0]).toContain('warn message');
+      expect(appendedLines[1]).toContain('error message');
     });
 
-    test("logs all levels when set to TRACE", () => {
+    test('logs all levels when set to TRACE', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'TRACE',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test", "/tmp/logs", config, mockFs);
-      
-      logger.error("error");
-      logger.warn("warn");
-      logger.info("info");
-      logger.debug("debug");
-      logger.trace("trace");
-      
+
+      const logger = new Logger('test', '/tmp/logs', config, mockFs);
+
+      logger.error('error');
+      logger.warn('warn');
+      logger.info('info');
+      logger.debug('debug');
+      logger.trace('trace');
+
       expect(appendedLines).toHaveLength(5);
     });
   });
 
-  describe("log entry format", () => {
-    test("creates proper log entry structure", () => {
+  describe('log entry format', () => {
+    test('creates proper log entry structure', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'INFO',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test-source", "/tmp/logs", config, mockFs);
-      logger.info("test message", { key: "value" });
-      
+
+      const logger = new Logger('test-source', '/tmp/logs', config, mockFs);
+      logger.info('test message', { key: 'value' });
+
       expect(appendedLines).toHaveLength(1);
       const entry: LogEntry = JSON.parse(appendedLines[0].trim());
-      
-      expect(entry.level).toBe("INFO");
-      expect(entry.source).toBe("test-source");
-      expect(entry.message).toBe("test message");
-      expect(entry.context).toEqual({ key: "value" });
+
+      expect(entry.level).toBe('INFO');
+      expect(entry.source).toBe('test-source');
+      expect(entry.message).toBe('test message');
+      expect(entry.context).toEqual({ key: 'value' });
       expect(entry.timestamp).toBeDefined();
     });
 
-    test("handles error objects properly", () => {
+    test('handles error objects properly', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'ERROR',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test", "/tmp/logs", config, mockFs);
-      const error = new Error("test error");
-      logger.exception("Something went wrong", error);
-      
+
+      const logger = new Logger('test', '/tmp/logs', config, mockFs);
+      const error = new Error('test error');
+      logger.exception('Something went wrong', error);
+
       expect(appendedLines).toHaveLength(1);
       const entry: LogEntry = JSON.parse(appendedLines[0].trim());
-      
-      expect(entry.error).toBe("test error");
+
+      expect(entry.error).toBe('test error');
       expect(entry.stack).toBeDefined();
     });
   });
 
-  describe("getLogFileName", () => {
-    test("generates correct log file name", () => {
+  describe('getLogFileName', () => {
+    test('generates correct log file name', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'INFO',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test", "/tmp/logs", config, mockFs);
+
+      const logger = new Logger('test', '/tmp/logs', config, mockFs);
       const testDate = new Date('2025-01-15T12:00:00Z');
       const fileName = logger.getLogFileName(testDate);
-      
-      expect(fileName).toBe("/tmp/logs/2025-01-15.jsonl");
+
+      expect(fileName).toBe('/tmp/logs/2025-01-15.jsonl');
     });
   });
 
-  describe("log cleanup", () => {
-    test("removes old log files on initialization", () => {
-      const oldFileTime = Date.now() - (8 * 24 * 60 * 60 * 1000); // 8 days old
-      const newFileTime = Date.now() - (1 * 24 * 60 * 60 * 1000); // 1 day old
-      
+  describe('log cleanup', () => {
+    test('removes old log files on initialization', () => {
+      const oldFileTime = Date.now() - 8 * 24 * 60 * 60 * 1000; // 8 days old
+      const newFileTime = Date.now() - 1 * 24 * 60 * 60 * 1000; // 1 day old
+
       const mockFsWithFiles: FileSystemOps = {
         ...mockFs,
-        readdirSync: mock(() => ["2025-01-01.jsonl", "2025-01-10.jsonl"]),
+        readdirSync: mock(() => ['2025-01-01.jsonl', '2025-01-10.jsonl']),
         statSync: mock((path: string) => ({
-          mtimeMs: path.includes("2025-01-01") ? oldFileTime : newFileTime
+          mtimeMs: path.includes('2025-01-01') ? oldFileTime : newFileTime,
         })),
       };
-      
+
       const config: LogConfig = {
         enabled: true,
         level: 'INFO',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
+
       const unlinkedFiles: string[] = [];
       mockFsWithFiles.unlinkSync = mock((path: string) => {
         unlinkedFiles.push(path);
       });
-      
-      new Logger("test", "/tmp/logs", config, mockFsWithFiles);
-      
+
+      new Logger('test', '/tmp/logs', config, mockFsWithFiles);
+
       // Only the old file should be deleted
       expect(unlinkedFiles).toHaveLength(1);
-      expect(unlinkedFiles[0]).toContain("2025-01-01.jsonl");
+      expect(unlinkedFiles[0]).toContain('2025-01-01.jsonl');
     });
   });
 
-  describe("createLogger factory", () => {
-    test("creates logger instance", () => {
+  describe('createLogger factory', () => {
+    test('creates logger instance', () => {
       const config: LogConfig = {
         enabled: true,
         level: 'INFO',
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = createLogger("test", "/tmp/logs", config, mockFs);
-      
+
+      const logger = createLogger('test', '/tmp/logs', config, mockFs);
+
       expect(logger).toBeInstanceOf(Logger);
-      
-      logger.info("test");
+
+      logger.info('test');
       expect(appendedLines).toHaveLength(1);
     });
   });
 
-  describe("disabled logging", () => {
+  describe('disabled logging', () => {
     test("doesn't write logs when disabled", () => {
       const config: LogConfig = {
         enabled: false,
@@ -213,12 +213,12 @@ describe("Logger", () => {
         retentionDays: 7,
         prettyPrint: false,
       };
-      
-      const logger = new Logger("test", "/tmp/logs", config, mockFs);
-      
-      logger.info("test message");
-      logger.error("error message");
-      
+
+      const logger = new Logger('test', '/tmp/logs', config, mockFs);
+
+      logger.info('test message');
+      logger.error('error message');
+
       expect(appendedLines).toHaveLength(0);
     });
   });
