@@ -582,7 +582,7 @@ async function main() {
       case 'on_track':
         // Allow stop - work is good
         output.continue = true;
-        output.systemMessage = `✅ Work appears on track. ${review.message}`;
+        output.systemMessage = `🛤️ Project is on track. ${review.message}`;
         if (review.details) {
           output.systemMessage += `\n\nDetails: ${review.details}`;
         }
