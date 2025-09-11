@@ -102,6 +102,39 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** All hooks now in single location, import paths consistent, settings.json simplified, easier debugging and maintenance
 - **Reversibility:** Easy - could distribute again if needed, but unlikely to be beneficial
 
+[2025-09-10 20:00] - Project Rename from cc-pars to cc-track with Train Branding
+- **Context:** Original "cc-pars" name was unclear and unmemorable, needed better branding that conveyed purpose
+- **Decision:** Rename to "cc-track" (Task Review And Context Keeper) with subtle train theming
+- **Rationale:** "Track" works both for task tracking AND "staying on track" metaphor, clear namespace, practical for CLI usage
+- **Alternatives Considered:** 
+  - "TRACK" (all caps): Too shouty, inconsistent with naming conventions
+  - Just "track": Too generic, conflicts with common commands
+  - Heavy train puns (derailment, all aboard): Would harm clarity and professionalism
+- **Implications:** Complete rebrand across 51 files, new visual identity with 🚅 and 🛤️, cost tier emojis for better UX
+- **Reversibility:** Easy but disruptive - would require another mass rename
+
+[2025-09-10 21:30] - Configurable API Timer Display Over Fixed Implementation  
+- **Context:** API rate limit windows vary by user/usage patterns, some users want to see timer always, others find it cluttering
+- **Decision:** Implement three-mode configuration: "hide", "show", "sonnet-only" (default)
+- **Rationale:** "sonnet-only" is optimal default (most users hit Sonnet limits), but flexibility needed for different workflows
+- **Alternatives Considered:** 
+  - Always show timer: Clutters statusline for users who don't hit limits
+  - Never show timer: Users hitting limits lose valuable feedback
+  - Hard-coded smart logic: Too complex, can't account for all usage patterns
+- **Implications:** More configuration surface area but significantly better user experience for rate limit management
+- **Reversibility:** Easy - could remove configuration and default to any of the three modes
+
+[2025-09-10 21:45] - Two-Line Statusline Format Over Single Line
+- **Context:** Statusline becoming cluttered with model, cost, rate, tokens, branch, and task information
+- **Decision:** Split into two lines: technical info (model/cost/rate/tokens) on line 1, project context (branch/task) on line 2
+- **Rationale:** Improves readability, logical grouping of information types, prevents text overflow issues
+- **Alternatives Considered:** 
+  - Abbreviate information: Loses useful detail
+  - Conditional display: Complex logic, inconsistent appearance
+  - Horizontal scrolling: Poor UX in terminal
+- **Implications:** More vertical space usage but significantly better information hierarchy and readability
+- **Reversibility:** Easy - just change the line break logic in statusline.sh
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

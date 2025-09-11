@@ -1,4 +1,4 @@
-# Project: cc-pars
+# Project: cc-track
 
 ## Active Task
 @.claude/no_active_task.md
@@ -9,6 +9,9 @@
 
 ## System Patterns
 @.claude/system_patterns.md
+
+## Decision Log
+@.claude/decision_log.md
 
 ## Code Index
 @.claude/code_index.md
