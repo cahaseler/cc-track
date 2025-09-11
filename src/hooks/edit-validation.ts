@@ -201,17 +201,30 @@ export function formatValidationResults(results: ValidationResult[]): string {
   return lines.join('\n');
 }
 
+export interface EditValidationDependencies {
+  execSync?: typeof execSync;
+  existsSync?: typeof existsSync;
+  readFileSync?: typeof readFileSync;
+  logger?: ReturnType<typeof createLogger>;
+}
+
 /**
  * Main edit validation hook function
  */
-export async function editValidationHook(input: HookInput): Promise<HookOutput> {
+export async function editValidationHook(
+  input: HookInput, 
+  deps: EditValidationDependencies = {}
+): Promise<HookOutput> {
+  const exec = deps.execSync || execSync;
+  const log = deps.logger || logger;
+  
   try {
     // Check if hook is enabled
     if (!isHookEnabled('edit_validation')) {
       return { continue: true };
     }
 
-    logger.debug('Hook triggered', {
+    log.debug('Hook triggered', {
       tool_name: input.tool_name,
       has_tool_response: !!input.tool_response,
     });
@@ -228,36 +241,86 @@ export async function editValidationHook(input: HookInput): Promise<HookOutput> 
     const tsFiles = filterTypeScriptFiles(filePaths);
 
     if (tsFiles.length === 0) {
-      logger.debug('No TypeScript files to validate');
+      log.debug('No TypeScript files to validate');
       return { continue: true };
     }
 
     // Load configuration
     const config = loadEditValidationConfig(input.cwd || process.cwd());
 
-    // Validate files
-    const results = validateFiles(tsFiles, config, input.cwd || process.cwd());
+    // Validate files - need to update this to use injected exec
+    const results: ValidationResult[] = [];
+    
+    for (const filePath of tsFiles) {
+      const fileName = basename(filePath);
+      const errors: string[] = [];
+      const cwd = input.cwd || process.cwd();
+
+      // Run TypeScript check
+      if (config.typecheck?.enabled) {
+        try {
+          exec(`npx tsc --noEmit ${filePath}`, {
+            encoding: 'utf-8',
+            cwd,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+        } catch (error: any) {
+          if (error.code === 'ETIMEDOUT') {
+            return {
+              decision: 'block',
+              systemMessage: '⏱️ Validation timeout - TypeScript check took too long',
+            };
+          }
+          if (error.code === 'ENOENT') {
+            // File doesn't exist yet (new file), skip validation
+            continue;
+          }
+          if (error.message) {
+            errors.push(...error.message.split('\n').filter((line: string) => line.includes('error TS')));
+          }
+        }
+      }
+
+      // Run Biome check
+      if (config.lint?.enabled) {
+        try {
+          exec(`npx biome check --reporter=compact ${filePath}`, {
+            encoding: 'utf-8',
+            cwd,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+        } catch (error: any) {
+          if (error.message) {
+            errors.push(...error.message.split('\n').filter((line: string) => line.includes('lint/')));
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        results.push({ fileName, errors });
+      }
+    }
 
     // Format and return results
     if (results.length > 0) {
       const message = formatValidationResults(results);
       
-      logger.info('Validation issues found', {
+      log.info('Validation issues found', {
         file_count: tsFiles.length,
         error_count: results.reduce((sum, r) => sum + r.errors.length, 0),
       });
 
       return {
-        continue: true,
-        systemMessage: `⚠️ Validation issues found:\n\n${message}`,
+        decision: 'block',
+        systemMessage: `⚠️ TypeScript/Biome validation failed:\n\n${message}`,
       };
     }
 
-    logger.debug('No validation issues found');
+    log.debug('No validation issues found');
     return { continue: true };
 
   } catch (error) {
-    logger.exception('Fatal error in edit_validation hook', error as Error);
+    log.exception('Fatal error in edit_validation hook', error as Error);
     // Don't block on error
     return { continue: true };
   }

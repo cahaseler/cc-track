@@ -117,6 +117,112 @@ describe("stop-review", () => {
   });
 
   describe("SessionReviewer", () => {
+    describe("callClaudeForReview", () => {
+      test("returns deviation status from Claude", async () => {
+        const mockExec = mock((cmd: string) => {
+          if (cmd.includes("claude") && cmd.includes("sonnet")) {
+            return JSON.stringify({
+              status: "deviation",
+              message: "Breaking changes without tests",
+              commitMessage: ""
+            });
+          }
+          return "";
+        });
+        
+        const fileOps = {
+          writeFileSync: mock(() => {}),
+          existsSync: mock(() => true),
+          unlinkSync: mock(() => {}),
+        };
+        
+        const logger = {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+          warn: mock(() => {}),
+          error: mock(() => {}),
+        };
+        
+        const reviewer = new SessionReviewer("/project", logger as any, { 
+          execSync: mockExec,
+          fileOps: fileOps as any 
+        });
+        
+        const result = await reviewer.callClaudeForReview("Test prompt");
+        expect(result.status).toBe("deviation");
+        expect(result.message).toBe("Breaking changes without tests");
+      });
+
+      test("returns on_track status from Claude", async () => {
+        const mockExec = mock((cmd: string) => {
+          if (cmd.includes("claude") && cmd.includes("sonnet")) {
+            return JSON.stringify({
+              status: "on_track",
+              message: "Changes look good",
+              commitMessage: "[wip] TASK_001: Added feature",
+              details: "Implementation complete"
+            });
+          }
+          return "";
+        });
+        
+        const fileOps = {
+          writeFileSync: mock(() => {}),
+          existsSync: mock(() => true),
+          unlinkSync: mock(() => {}),
+        };
+        
+        const logger = {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+          warn: mock(() => {}),
+          error: mock(() => {}),
+        };
+        
+        const reviewer = new SessionReviewer("/project", logger as any, { 
+          execSync: mockExec,
+          fileOps: fileOps as any 
+        });
+        
+        const result = await reviewer.callClaudeForReview("Test prompt");
+        expect(result.status).toBe("on_track");
+        expect(result.commitMessage).toContain("[wip] TASK_001");
+      });
+
+      test("handles Claude timeout", async () => {
+        const mockExec = mock((cmd: string) => {
+          if (cmd.includes("claude")) {
+            const error = new Error("Command timed out");
+            (error as any).code = "ETIMEDOUT";
+            throw error;
+          }
+          return "";
+        });
+        
+        const fileOps = {
+          writeFileSync: mock(() => {}),
+          existsSync: mock(() => true),
+          unlinkSync: mock(() => {}),
+        };
+        
+        const logger = {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+          warn: mock(() => {}),
+          error: mock(() => {}),
+        };
+        
+        const reviewer = new SessionReviewer("/project", logger as any, { 
+          execSync: mockExec,
+          fileOps: fileOps as any 
+        });
+        
+        const result = await reviewer.callClaudeForReview("Test prompt");
+        expect(result.status).toBe("review_failed");
+        expect(result.message).toBe("Could not review changes");
+      });
+    });
+    
     describe("getGitDiff", () => {
       test("returns diff when changes exist", () => {
         const mockExec = mock((cmd: string) => {
@@ -494,6 +600,404 @@ def456 chore: cleanup`);
 
       const result = await stopReviewHook(input, deps);
       expect(result.continue).toBe(true);
+    });
+
+    test("blocks on deviation detected from AI review", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const commandLog: string[] = [];
+      const mockExec = mock((cmd: string, options?: any) => {
+        commandLog.push(cmd);
+        console.log("Exec called with:", cmd.substring(0, 100));
+        
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status --porcelain")) return "M file.ts\nM another.ts";
+        if (cmd.includes("diff")) return "diff --git a/file.ts b/file.ts\n+breaking change";
+        if (cmd.includes("log")) return "abc123 Previous commit";
+        // Mock Claude CLI response - deviation detected
+        // The command includes shell redirection, so match on 'claude' and 'sonnet'
+        if (cmd.includes("claude") && cmd.includes("sonnet")) {
+          console.log("Returning mock deviation response");
+          // Return the JSON directly as Claude would
+          return JSON.stringify({
+            status: "deviation",
+            message: "Breaking changes detected without tests",
+            commitMessage: ""
+          });
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => {
+          if (path.includes("CLAUDE.md")) return true;
+          if (path.includes("TASK")) return true;
+          if (path.includes("stop_review")) return true; // temp file exists for cleanup
+          return false;
+        }),
+        readFileSync: mock((path: string) => {
+          if (path.includes("CLAUDE.md")) return "# Project\n\n@.claude/tasks/TASK_001.md\n";
+          if (path.includes("TASK")) return "Task: Implement feature X\nRequirements:\n- Add tests";
+          if (path.includes("transcript")) return ""; // empty transcript
+          return "";
+        }),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const logger = {
+        debug: mock((...args: any[]) => console.log("DEBUG:", ...args)),
+        info: mock((...args: any[]) => console.log("INFO:", ...args)),
+        warn: mock((...args: any[]) => console.log("WARN:", ...args)),
+        error: mock((...args: any[]) => console.log("ERROR:", ...args)),
+        exception: mock((msg: string, error: Error) => {
+          console.log("EXCEPTION:", msg, error.message, error.stack);
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        session_id: "test-session",
+        // Don't provide transcript_path to avoid readline issues in test
+        // The review will work without transcript messages
+      };
+
+      const deps: StopReviewDependencies = {
+        execSync: mockExec,
+        fileOps: fileOps as any,
+        logger: logger as any,
+      };
+
+      const result = await stopReviewHook(input, deps);
+      console.log("Commands executed:", commandLog);
+      console.log("Result:", JSON.stringify(result, null, 2));
+      
+      expect(result.decision).toBe("block");
+      expect(result.systemMessage).toContain("⚠️ DEVIATION DETECTED");
+      expect(result.systemMessage).toContain("Breaking changes detected without tests");
+    });
+
+    test("blocks on needs_verification from AI review", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status")) return "M file.ts";
+        if (cmd.includes("diff")) return "diff content";
+        if (cmd.includes("log")) return "";
+        // Mock Claude CLI response - needs verification
+        if (cmd.includes("claude") && cmd.includes("--model sonnet")) {
+          return JSON.stringify({
+            status: "needs_verification",
+            message: "Tests haven't been run to verify changes",
+            commitMessage: ""
+          });
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => {
+          if (path.includes("stop_review")) return true;
+          return false;
+        }),
+        readFileSync: mock(() => ""),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        transcript_path: "/transcript.jsonl",
+      };
+
+      const result = await stopReviewHook(input, { 
+        execSync: mockExec, 
+        fileOps: fileOps as any 
+      });
+      expect(result.decision).toBe("block");
+      expect(result.systemMessage).toContain("🔍 VERIFICATION NEEDED");
+      expect(result.systemMessage).toContain("Tests haven't been run");
+    });
+
+    test("allows stop and commits on on_track status", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const commitCommands: string[] = [];
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("git add") || cmd.includes("git commit")) {
+          commitCommands.push(cmd);
+        }
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status")) return "M file.ts";
+        if (cmd.includes("diff")) return "diff content";
+        if (cmd.includes("log")) return "";
+        // Mock Claude CLI response - on track
+        if (cmd.includes("claude") && cmd.includes("--model sonnet")) {
+          return JSON.stringify({
+            status: "on_track",
+            message: "Changes align with requirements",
+            commitMessage: "[wip] TASK_001: Implement feature",
+            details: "Added validation logic"
+          });
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => {
+          if (path.includes("TASK")) return true;
+          if (path.includes("stop_review")) return true;
+          return false;
+        }),
+        readFileSync: mock((path: string) => {
+          if (path.includes("TASK")) return "Task content";
+          return "";
+        }),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        transcript_path: "/transcript.jsonl",
+      };
+
+      const result = await stopReviewHook(input, { 
+        execSync: mockExec, 
+        fileOps: fileOps as any 
+      });
+      
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toContain("🛤️ Project is on track");
+      expect(commitCommands.some(cmd => cmd.includes("git add"))).toBe(true);
+      expect(commitCommands.some(cmd => cmd.includes("[wip] TASK_001"))).toBe(true);
+    });
+
+    test("handles critical_failure from AI review", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status")) return "M file.ts";
+        if (cmd.includes("diff")) return "diff content";
+        // Mock Claude CLI response - critical failure
+        if (cmd.includes("claude") && cmd.includes("--model sonnet")) {
+          return JSON.stringify({
+            status: "critical_failure",
+            message: "Deleted critical authentication logic",
+            commitMessage: ""
+          });
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => path.includes("stop_review")),
+        readFileSync: mock(() => ""),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        transcript_path: "/transcript.jsonl",
+      };
+
+      const result = await stopReviewHook(input, { 
+        execSync: mockExec, 
+        fileOps: fileOps as any 
+      });
+      
+      expect(result.continue).toBe(true); // Allows stop but with warning
+      expect(result.systemMessage).toContain("🚨 CRITICAL ISSUE");
+      expect(result.systemMessage).toContain("Deleted critical authentication logic");
+    });
+
+    test("handles AI review timeout gracefully", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status")) return "M file.ts";
+        if (cmd.includes("diff")) return "diff content";
+        // Mock Claude CLI timeout
+        if (cmd.includes("claude") && cmd.includes("--model sonnet")) {
+          const error = new Error("Command timed out");
+          (error as any).code = "ETIMEDOUT";
+          throw error;
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => path.includes("stop_review")),
+        readFileSync: mock(() => ""),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        transcript_path: "/transcript.jsonl",
+      };
+
+      const result = await stopReviewHook(input, { 
+        execSync: mockExec, 
+        fileOps: fileOps as any 
+      });
+      
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toContain("Could not review changes");
+    });
+
+    test("handles malformed AI response gracefully", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("rev-parse")) return ".git";
+        if (cmd.includes("status")) return "M file.ts";
+        if (cmd.includes("diff")) return "diff content";
+        // Mock Claude CLI with invalid JSON
+        if (cmd.includes("claude") && cmd.includes("--model sonnet")) {
+          return "Not valid JSON response";
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => path.includes("stop_review")),
+        readFileSync: mock(() => ""),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          // Return a simple mock stream that immediately ends
+          const stream = {
+            on: mock((event: string, callback: Function) => {
+              if (event === 'end') {
+                // Simulate async end
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "Stop",
+        cwd: "/project",
+        transcript_path: "/transcript.jsonl",
+      };
+
+      const result = await stopReviewHook(input, { 
+        execSync: mockExec, 
+        fileOps: fileOps as any 
+      });
+      
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toContain("Could not review changes");
     });
   });
 });
