@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(bun run:*), TodoWrite, mcp__private-journal__process_thoughts, Edit, Read
+allowed-tools: Bash(bun run:*), Bash(/home/ubuntu/projects/cc-pars/dist/cc-track complete-task), TodoWrite, mcp__private-journal__process_thoughts, Edit, Read
 description: Complete the current active task with reflection and documentation
 ---
 

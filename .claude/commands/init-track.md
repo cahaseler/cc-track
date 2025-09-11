@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Write, Read, Grep, Glob
+allowed-tools: Bash(mkdir:*), Bash(/home/ubuntu/projects/cc-pars/dist/cc-track init), Write, Read, Grep, Glob
 description: Initialize cc-track context management system for this project
 ---
 

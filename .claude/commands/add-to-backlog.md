@@ -2,7 +2,7 @@
 shortname: add-to-backlog
 description: Quickly add an item to the backlog without disrupting current work
 usage: /add-to-backlog "Your idea or bug description"
-allowed-tools: Bash
+allowed-tools: Bash(/home/ubuntu/projects/cc-pars/dist/cc-track backlog:*)
 ---
 
 !`/home/ubuntu/projects/cc-pars/dist/cc-track backlog "$ARGUMENTS"`
