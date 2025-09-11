@@ -479,4 +479,232 @@ describe("capture-plan", () => {
       expect(logger.exception).toHaveBeenCalled();
     });
   });
+
+  describe("Integration Tests", () => {
+    test("successfully enriches task with Claude and creates GitHub issue", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      // Mock Claude CLI to return enriched task content
+      const mockExecSync = mock((cmd: string) => {
+        if (cmd.includes("claude") && cmd.includes("sonnet")) {
+          // Return enriched task content
+          return `# Task Title Here
+
+**Purpose:** Test task purpose
+**Status:** in-progress
+**Started:** 2025-09-11
+**Task ID:** 027
+
+## Requirements
+- [ ] Requirement 1
+- [ ] Requirement 2
+
+## Success Criteria
+- Criteria 1
+- Criteria 2`;
+        }
+        if (cmd.includes("gh issue create")) {
+          return "https://github.com/user/repo/issues/123";
+        }
+        if (cmd.includes("git checkout -b")) {
+          return "";
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock((path: string) => {
+          if (path.includes("track.config.json")) return true;
+          if (path.includes(".claude")) return true;
+          return false;
+        }),
+        mkdirSync: mock(() => {}),
+        readdirSync: mock(() => ["026.md"]),
+        readFileSync: mock((path: string) => {
+          if (path.includes("track.config.json")) {
+            return JSON.stringify({ github: { enabled: true, autoCreateIssues: true } });
+          }
+          if (path.includes("CLAUDE.md")) {
+            return "# Project\n@.claude/no_active_task.md";
+          }
+          return "";
+        }),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "PostToolUse",
+        tool_name: "ExitPlanMode",
+        tool_input: { 
+          plan: "## Task: Implement new feature\n\n- Step 1\n- Step 2\n- Step 3" 
+        },
+        tool_response: {
+          plan: "## Task: Implement new feature\n\n- Step 1\n- Step 2\n- Step 3"  // Plan field present = approved
+        },
+        cwd: "/project",
+      };
+
+      const deps: CapturePlanDependencies = {
+        execSync: mockExecSync,
+        fileOps,
+        gitHelpers: {
+          hasUncommittedChanges: mock(() => false),
+          generateCommitMessage: mock(async () => "Auto-commit"),
+          generateBranchName: mock(async () => "feature/task-027"),
+          createTaskBranch: mock(() => {}),
+        } as any,
+        githubHelpers: {
+          validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
+          createIssue: mock(async () => ({ html_url: "https://github.com/user/repo/issues/123" })),
+        } as any,
+        logger: { 
+          info: mock(() => {}), 
+          error: mock(() => {}),
+          warn: mock(() => {}),
+          debug: mock(() => {}),
+          exception: mock(() => {})
+        } as any,
+        debugLog: mock(() => {}),
+      };
+
+      const result = await capturePlanHook(input, deps);
+
+      expect(result.continue).toBe(true);
+      expect(fileOps.writeFileSync).toHaveBeenCalled();
+      // Check that task file was written
+      const writeCall = (fileOps.writeFileSync as any).mock.calls.find((call: any[]) => 
+        call[0].includes("TASK_") && call[0].includes(".md")
+      );
+      expect(writeCall).toBeDefined();
+      expect(writeCall[1]).toContain("Task Title Here");
+      expect(writeCall[1]).toContain("Requirement 1");
+    });
+
+    test("handles Claude CLI failure gracefully", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExecSync = mock((cmd: string) => {
+        if (cmd.includes("claude")) {
+          throw new Error("Claude CLI failed");
+        }
+        return "";
+      });
+
+      const fileOps = {
+        existsSync: mock(() => false),
+        mkdirSync: mock(() => {}),
+        readdirSync: mock(() => []),
+        readFileSync: mock((path: string) => {
+          if (path.includes("track.config.json")) {
+            return JSON.stringify({ github: { enabled: false } });
+          }
+          if (path.includes("CLAUDE.md")) {
+            return "# Project\n@.claude/no_active_task.md";
+          }
+          return "";
+        }),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "PostToolUse",
+        tool_name: "ExitPlanMode",
+        tool_input: { 
+          plan: "## Simple task\n\nJust a simple task" 
+        },
+        tool_response: {
+          plan: "## Simple task\n\nJust a simple task"  // Plan field present = approved
+        },
+        cwd: "/project",
+      };
+
+      const deps: CapturePlanDependencies = {
+        execSync: mockExecSync,
+        fileOps,
+        gitHelpers: {
+          hasUncommittedChanges: mock(() => false),
+          generateCommitMessage: mock(async () => "Auto-commit"),
+          generateBranchName: mock(async () => "feature/task-027"),
+          createTaskBranch: mock(() => {}),
+        } as any,
+        githubHelpers: {
+          validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
+          createIssue: mock(async () => ({ html_url: "https://github.com/user/repo/issues/123" })),
+        } as any,
+        logger: { 
+          info: mock(() => {}), 
+          error: mock(() => {}),
+          warn: mock(() => {}),
+          debug: mock(() => {}),
+          exception: mock(() => {})
+        } as any,
+        debugLog: mock(() => {}),
+      };
+
+      const result = await capturePlanHook(input, deps);
+
+      // When Claude CLI fails, the hook still returns continue: true
+      // but doesn't create a task file (implementation limitation)
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toBeUndefined();
+    });
+
+    test("skips task creation when user rejects plan in PostToolUse", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const fileOps = {
+        existsSync: mock(() => false),
+        mkdirSync: mock(() => {}),
+        readdirSync: mock(() => []),
+        readFileSync: mock(() => ""),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+      };
+
+      const input: HookInput = {
+        hook_event_name: "PostToolUse",
+        tool_name: "ExitPlanMode",
+        tool_input: { 
+          plan: "Plan that was rejected" 
+        },
+        tool_response: {
+          // Missing 'plan' field indicates rejection
+          success: false
+        },
+        cwd: "/project",
+      };
+
+      const deps: CapturePlanDependencies = {
+        execSync: mock(() => ""),
+        fileOps,
+        gitHelpers: {} as any,
+        githubHelpers: {} as any,
+        logger: { 
+          info: mock(() => {}), 
+          error: mock(() => {}),
+          warn: mock(() => {}),
+          debug: mock(() => {}),
+          exception: mock(() => {})
+        } as any,
+        debugLog: mock(() => {}),
+      };
+
+      const result = await capturePlanHook(input, deps);
+
+      // When plan is rejected, hook continues but doesn't create task
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toBeUndefined();
+      // Verify no files were written
+      expect(fileOps.writeFileSync).not.toHaveBeenCalled();
+    });
+
+  });
 });

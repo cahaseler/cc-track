@@ -612,5 +612,153 @@ describe("pre-compact", () => {
       expect(result.success).toBe(true);
       expect(result.message).toContain("error sequences");
     });
+
+    test("extracts and appends error patterns to learned_mistakes.md", async () => {
+      mock.module("../lib/config", () => ({
+        isHookEnabled: () => true,
+      }));
+
+      const mockExec = mock((cmd: string) => {
+        if (cmd.includes("claude")) {
+          // Return extracted patterns as bulleted list
+          return "- TypeScript error: Property 'foo' does not exist, fixed by adding foo property to interface\n- Always check compilation before committing";
+        }
+        return "";
+      });
+
+      let learnedMistakesContent = "# Learned Mistakes\n\n## Error Patterns\n";
+      
+      mock.module("node:fs", () => ({
+        existsSync: (path: string) => true,
+        readFileSync: (path: string) => {
+          if (path.includes("learned_mistakes")) return learnedMistakesContent;
+          return "";
+        },
+        writeFileSync: (path: string, content: string) => {
+          if (path.includes("learned_mistakes")) {
+            learnedMistakesContent = content;
+          }
+        },
+        unlinkSync: () => {}, // Mock unlink for temp file cleanup
+        createReadStream: () => {
+          // Simple mock stream
+          return {
+            on: (event: string, callback: Function) => {
+              if (event === 'end') setTimeout(() => callback(), 0);
+              return { on: () => {} };
+            }
+          };
+        },
+      }));
+
+      mock.module("node:readline", () => ({
+        createInterface: () => ({
+          on: (event: string, callback: Function) => {
+            if (event === 'line') {
+              const now = Date.now();
+              // Emit error entry
+              callback(JSON.stringify({
+                uuid: "error-1",
+                type: "user",
+                timestamp: new Date(now).toISOString(),
+                toolUseResult: "Error: TypeScript compilation failed"
+              }));
+              
+              // First attempt (fails)
+              callback(JSON.stringify({
+                uuid: "attempt-1",
+                type: "assistant",
+                timestamp: new Date(now + 1000).toISOString(),
+                message: {
+                  role: "assistant",
+                  content: [{
+                    type: "tool_use",
+                    id: "tool-1",
+                    name: "Bash",
+                    input: { command: "bunx tsc --noEmit" }
+                  }]
+                }
+              }));
+              callback(JSON.stringify({
+                uuid: "result-1",
+                type: "user",
+                timestamp: new Date(now + 2000).toISOString(),
+                message: {
+                  content: [{
+                    type: "tool_result",
+                    tool_use_id: "tool-1",
+                    is_error: true,
+                    content: "Error: Type errors found"
+                  }]
+                }
+              }));
+              
+              // Second attempt (succeeds)
+              callback(JSON.stringify({
+                uuid: "attempt-2",
+                type: "assistant",
+                timestamp: new Date(now + 3000).toISOString(),
+                message: {
+                  role: "assistant",
+                  content: [{
+                    type: "tool_use",
+                    id: "tool-2",
+                    name: "Edit",
+                    input: { file_path: "test.ts", old_string: "foo", new_string: "bar" }
+                  }]
+                }
+              }));
+              callback(JSON.stringify({
+                uuid: "result-2",
+                type: "user",
+                timestamp: new Date(now + 4000).toISOString(),
+                message: {
+                  content: [{
+                    type: "tool_result",
+                    tool_use_id: "tool-2",
+                    content: "File updated successfully"
+                  }]
+                }
+              }));
+            }
+            if (event === 'close') {
+              setTimeout(() => callback(), 0);
+            }
+            return { on: () => {} };
+          }
+        }),
+      }));
+
+      const { preCompactHook: testHook, analyzeErrorPatterns } = await import("./pre-compact");
+
+      const input: HookInput = {
+        transcript_path: "/transcript.jsonl",
+        cwd: "/project",
+        session_id: "test-123",
+      };
+
+      // Need to pass the mock exec directly to analyzeErrorPatterns
+      // Since preCompactHook doesn't accept deps, we'll test at a slightly lower level
+      const { ErrorPatternExtractor } = await import("./pre-compact");
+      const logger = { 
+        info: mock(() => {}), 
+        warn: mock(() => {}), 
+        error: mock(() => {}),
+        exception: mock(() => {}),
+        debug: mock(() => {})
+      };
+      
+      const extractor = new ErrorPatternExtractor(logger as any);
+      const sequences = await extractor.extractFromTranscript("/transcript.jsonl");
+      
+      if (sequences.length > 0) {
+        const patterns = await analyzeErrorPatterns(sequences, "/project", logger as any, mockExec);
+        const { updateLearnedMistakes } = await import("./pre-compact");
+        await updateLearnedMistakes("/project", patterns);
+      }
+      
+      expect(learnedMistakesContent).toContain("Session:");
+      expect(learnedMistakesContent).toContain("TypeScript error");
+    });
   });
 });
