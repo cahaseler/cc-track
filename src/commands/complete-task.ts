@@ -358,7 +358,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
             } else {
               result.git.notes = 'No branch information found for GitHub PR workflow';
             }
-          } else if (config.hooks?.git_branching?.enabled) {
+          } else if (config.features?.git_branching?.enabled) {
             // Traditional git branching workflow - merge locally
             const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
 
