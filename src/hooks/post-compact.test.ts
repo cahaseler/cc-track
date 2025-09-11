@@ -4,6 +4,7 @@ import type { HookInput } from '../types';
 import {
   extractActiveTaskFile,
   generatePostCompactionInstructions,
+  generateUserSummary,
   type PostCompactDependencies,
   postCompactHook,
   readImportedFiles,
@@ -63,10 +64,11 @@ describe('post-compact', () => {
 
       const result = readImportedFiles(claudeMd, '/project', fileOps);
 
-      expect(result).toContain('## product_context.md:');
-      expect(result).toContain('Product content');
-      expect(result).toContain('## system_patterns.md:');
-      expect(result).toContain('System patterns content');
+      expect(result.content).toContain('## product_context.md:');
+      expect(result.content).toContain('Product content');
+      expect(result.content).toContain('## system_patterns.md:');
+      expect(result.content).toContain('System patterns content');
+      expect(result.files).toEqual(['product_context.md', 'system_patterns.md']);
     });
 
     test('skips non-existent files', () => {
@@ -78,9 +80,10 @@ describe('post-compact', () => {
 
       const result = readImportedFiles(claudeMd, '/project', fileOps);
 
-      expect(result).toContain('## exists.md:');
-      expect(result).toContain('Exists content');
-      expect(result).not.toContain('missing.md');
+      expect(result.content).toContain('## exists.md:');
+      expect(result.content).toContain('Exists content');
+      expect(result.content).not.toContain('missing.md');
+      expect(result.files).toEqual(['exists.md']);
     });
 
     test('handles no imports', () => {
@@ -91,7 +94,8 @@ describe('post-compact', () => {
       };
 
       const result = readImportedFiles(claudeMd, '/project', fileOps);
-      expect(result).toBe('');
+      expect(result.content).toBe('');
+      expect(result.files).toEqual([]);
     });
   });
 
@@ -136,6 +140,46 @@ describe('post-compact', () => {
     });
   });
 
+  describe('generateUserSummary', () => {
+    test('generates summary with files and active task', () => {
+      const files = ['product_context.md', 'system_patterns.md', 'decision_log.md'];
+      const activeTask = 'TASK_026.md';
+
+      const result = generateUserSummary(files, activeTask);
+
+      expect(result).toContain('📋 Post-compaction context restored:');
+      expect(result).toContain('• Added 3 context files: product_context.md, system_patterns.md, decision_log.md');
+      expect(result).toContain('• Active task: TASK_026.md');
+      expect(result).toContain('• Instructed Claude to:');
+      expect(result).toContain('Review recent journal entries');
+      expect(result).toContain('Update task documentation');
+      expect(result).toContain('Record any technical decisions');
+    });
+
+    test('generates summary without files', () => {
+      const files: string[] = [];
+      const activeTask = 'TASK_001.md';
+
+      const result = generateUserSummary(files, activeTask);
+
+      expect(result).toContain('📋 Post-compaction context restored:');
+      expect(result).not.toContain('Added');
+      expect(result).toContain('• Active task: TASK_001.md');
+      expect(result).toContain('• Instructed Claude to:');
+    });
+
+    test('generates summary without active task', () => {
+      const files = ['config.md'];
+      const activeTask = '';
+
+      const result = generateUserSummary(files, activeTask);
+
+      expect(result).toContain('• Added 1 context files: config.md');
+      expect(result).not.toContain('Active task:');
+      expect(result).toContain('• Instructed Claude to:');
+    });
+  });
+
   describe('postCompactHook', () => {
     test('returns early when hook is disabled', async () => {
       const input: HookInput = {
@@ -172,8 +216,18 @@ describe('post-compact', () => {
 
     test('processes compact source and generates instructions', async () => {
       const fileOps = {
-        existsSync: mock((path: string) => path.includes('CLAUDE.md')),
-        readFileSync: mock(() => `# Project\n\n@.claude/tasks/TASK_026.md\n@.claude/product_context.md`),
+        existsSync: mock((path: string) => {
+          // Return true for CLAUDE.md and any imported files
+          return path.includes('CLAUDE.md') || path.includes('.claude/');
+        }),
+        readFileSync: mock((path: string) => {
+          if (path.includes('CLAUDE.md')) {
+            return `# Project\n\n@.claude/tasks/TASK_026.md\n@.claude/product_context.md\n@.claude/system_patterns.md`;
+          }
+          if (path.includes('product_context')) return 'Product context content';
+          if (path.includes('system_patterns')) return 'System patterns content';
+          return '';
+        }),
       };
 
       const logger = createMockLogger();
@@ -196,11 +250,16 @@ describe('post-compact', () => {
       });
 
       expect(result.continue).toBe(true);
-      expect(result.systemMessage).toContain('POST-COMPACTION CONTEXT RESTORATION');
-      expect(result.systemMessage).toContain('TASK_026.md');
+      // systemMessage should be brief summary for user
+      expect(result.systemMessage).toContain('📋 Post-compaction context restored:');
+      expect(result.systemMessage).toContain('Active task: TASK_026.md');
+      expect(result.systemMessage).toContain('• Added 2 context files');
+      // additionalContext should have full instructions for Claude
+      expect(result.hookSpecificOutput?.additionalContext).toContain('POST-COMPACTION CONTEXT RESTORATION');
+      expect(result.hookSpecificOutput?.additionalContext).toContain('review your recent journal entries');
       expect(result.hookSpecificOutput).toEqual({
         hookEventName: 'SessionStart',
-        additionalContext: result.systemMessage,
+        additionalContext: expect.any(String),
       });
       expect(logger.info).toHaveBeenCalledWith('Post-compaction context restoration starting');
     });
@@ -223,8 +282,11 @@ describe('post-compact', () => {
       });
 
       expect(result.continue).toBe(true);
-      expect(result.systemMessage).toContain('POST-COMPACTION CONTEXT RESTORATION');
-      expect(result.systemMessage).not.toContain('Review the active task file');
+      // With no CLAUDE.md, should still have basic summary
+      expect(result.systemMessage).toContain('📋 Post-compaction context restored:');
+      expect(result.systemMessage).toContain('Instructed Claude to:');
+      // additionalContext should still have full instructions
+      expect(result.hookSpecificOutput?.additionalContext).toContain('POST-COMPACTION CONTEXT RESTORATION');
     });
 
     test('handles errors gracefully', async () => {

@@ -28,22 +28,57 @@ export function readImportedFiles(
   claudeMdContent: string,
   projectRoot: string,
   fileOps: PostCompactDependencies['fileOps'],
-): string {
+): { content: string; files: string[] } {
   const fs = fileOps || { existsSync, readFileSync };
   const importPattern = /@(\.claude\/[^\s]+)/g;
   const imports = [...claudeMdContent.matchAll(importPattern)];
 
   let importedContent = '';
+  const importedFiles: string[] = [];
+  
   for (const match of imports) {
     const importPath = join(projectRoot, match[1]);
+    // Skip task files as they're handled separately
+    if (match[1].includes('/tasks/TASK_')) {
+      continue;
+    }
     if (fs.existsSync(importPath)) {
       const content = fs.readFileSync(importPath, 'utf-8');
       const fileName = match[1].split('/').pop();
       importedContent += `\n## ${fileName}:\n\`\`\`markdown\n${content}\n\`\`\`\n`;
+      importedFiles.push(fileName || match[1]);
     }
   }
 
-  return importedContent;
+  return { content: importedContent, files: importedFiles };
+}
+
+/**
+ * Generate brief summary for user about what was restored
+ */
+export function generateUserSummary(
+  importedFiles: string[],
+  activeTaskFile: string,
+): string {
+  let summary = '📋 Post-compaction context restored:\n';
+  
+  // List imported files
+  if (importedFiles.length > 0) {
+    summary += `• Added ${importedFiles.length} context files: ${importedFiles.join(', ')}\n`;
+  }
+  
+  // Note active task
+  if (activeTaskFile) {
+    summary += `• Active task: ${activeTaskFile}\n`;
+  }
+  
+  // Brief explanation of instructions
+  summary += '• Instructed Claude to:\n';
+  summary += '  - Review recent journal entries for context\n';
+  summary += '  - Update task documentation with progress\n';
+  summary += '  - Record any technical decisions or patterns\n';
+  
+  return summary;
 }
 
 /**
@@ -142,16 +177,36 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
       activeTaskFile = extractActiveTaskFile(claudeMdContent);
     }
 
-    // Read all imported files
-    const importedContent = readImportedFiles(claudeMdContent, projectRoot, fileOps);
+    // Read all imported files (excluding task files)
+    const { content: importedContent, files: importedFiles } = readImportedFiles(
+      claudeMdContent,
+      projectRoot,
+      fileOps,
+    );
 
-    // Generate instructions
-    const instructions = generatePostCompactionInstructions(claudeMdContent, importedContent, activeTaskFile);
+    // Read the active task file if it exists
+    let taskContent = '';
+    if (activeTaskFile) {
+      const taskPath = join(projectRoot, '.claude', 'tasks', activeTaskFile);
+      if (fileOps.existsSync(taskPath)) {
+        const content = fileOps.readFileSync(taskPath, 'utf-8');
+        taskContent = `\n## ${activeTaskFile}:\n\`\`\`markdown\n${content}\n\`\`\`\n`;
+      }
+    }
 
-    // SessionStart hooks should use both systemMessage and hookSpecificOutput
+    // Combine imported content with task content for Claude
+    const fullImportedContent = importedContent + taskContent;
+
+    // Generate brief summary for user
+    const userSummary = generateUserSummary(importedFiles, activeTaskFile);
+
+    // Generate full instructions for Claude
+    const instructions = generatePostCompactionInstructions(claudeMdContent, fullImportedContent, activeTaskFile);
+
+    // Return with brief systemMessage for user, full additionalContext for Claude
     return {
       continue: true,
-      systemMessage: instructions,
+      systemMessage: userSummary,
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
         additionalContext: instructions,
