@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { GitHelpers } from '../lib/git-helpers';
 import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';
 import {
@@ -669,17 +670,23 @@ def456 chore: cleanup`,
       };
 
       // Mock GitHelpers to avoid real Claude API calls
-      const mockGitHelpers = {
-        generateCommitMessage: mock(async () => 'chore: update project configuration'),
-        generateBranchName: mock(async () => 'feature/test-branch'),
-      };
+      const mockGitHelpers = new GitHelpers(
+        mock((cmd: string) => {
+          if (cmd.includes('claude')) return 'chore: update project configuration';
+          if (cmd.includes('branch --show-current')) return 'main';
+          if (cmd.includes('status --porcelain')) return '';
+          if (cmd.includes('symbolic-ref')) return 'main';
+          return '';
+        }),
+        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+      );
 
       const deps: StopReviewDependencies = {
         execSync: mockExec,
         fileOps,
         logger: createMockLogger(),
         isHookEnabled: () => true,
-        gitHelpers: mockGitHelpers as any,
+        gitHelpers: mockGitHelpers,
       };
 
       const result = await stopReviewHook(input, deps);
@@ -1112,18 +1119,24 @@ def456 chore: cleanup`,
         // Don't provide transcript_path to avoid readline issues
       };
 
-      // Mock GitHelpers to avoid real Claude API calls  
-      const mockGitHelpers = {
-        generateCommitMessage: mock(async () => 'chore: work in progress'),
-        generateBranchName: mock(async () => 'feature/test-branch'),
-      };
+      // Mock GitHelpers to avoid real Claude API calls
+      const mockGitHelpers = new GitHelpers(
+        mock((cmd: string) => {
+          if (cmd.includes('claude')) return 'chore: work in progress';
+          if (cmd.includes('branch --show-current')) return 'main';
+          if (cmd.includes('status --porcelain')) return '';
+          if (cmd.includes('symbolic-ref')) return 'main';
+          return '';
+        }),
+        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+      );
 
       const result = await stopReviewHook(input, {
         execSync: mockExec,
         fileOps,
         logger: createMockLogger(),
         isHookEnabled: () => true,
-        gitHelpers: mockGitHelpers as any,
+        gitHelpers: mockGitHelpers,
       });
 
       expect(result.continue).toBe(true);

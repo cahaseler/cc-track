@@ -214,7 +214,7 @@ export class GitHubHelpers {
       let command = `gh repo create ${name} --description "${description}"`;
       command += isPublic ? ' --public' : ' --private';
 
-      this.exec(command + ' 2>&1', {
+      this.exec(`${command} 2>&1`, {
         cwd,
       });
 

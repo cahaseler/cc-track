@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { GitHelpers } from '../lib/git-helpers';
+import { GitHelpers } from '../lib/git-helpers';
 import type { GitHubHelpers } from '../lib/github-helpers';
 import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';
@@ -349,16 +349,12 @@ describe('capture-plan', () => {
       };
 
       // Mock GitHelpers to avoid real Claude API calls
-      const mockGitHelpers = {
-        getDefaultBranch: mock(() => 'main'),
-        hasUncommittedChanges: mock(() => false),
-        generateCommitMessage: mock(async () => 'chore: save work in progress'),
-        generateBranchName: mock(async () => 'feature/test-branch-001'),
-        createTaskBranch: mock(() => {}),
-        mergeTaskBranch: mock(() => {}),
-        getCurrentBranch: mock(() => 'feature/test-branch-001'),
-        switchToBranch: mock(() => {}),
-      } as any;
+      const mockExecForGitHelpers = mock((cmd: string) => {
+        if (cmd.includes('claude')) return 'chore: save work in progress';
+        if (cmd.includes('branch --show-current')) return 'feature/test-branch-001';
+        return '';
+      });
+      const mockGitHelpers = new GitHelpers(mockExecForGitHelpers);
 
       const input: HookInput = {
         hook_event_name: 'PostToolUse',
@@ -419,7 +415,7 @@ describe('capture-plan', () => {
         mergeTaskBranch: mock(() => {}),
         getCurrentBranch: mock(() => 'main'),
         switchToBranch: mock(() => {}),
-      } as any;
+      } as unknown as GitHelpers;
 
       const deps: CapturePlanDependencies = {
         execSync: mockExecSync,
@@ -502,16 +498,19 @@ describe('capture-plan', () => {
       const deps: CapturePlanDependencies = {
         execSync: mockExecSync,
         fileOps,
-        gitHelpers: {
-          getDefaultBranch: mock(() => 'main'),
-          hasUncommittedChanges: mock(() => false),
-          generateCommitMessage: mock(async () => 'Auto-commit'),
-          generateBranchName: mock(async () => 'feature/task-027'),
-          createTaskBranch: mock(() => {}),
-          mergeTaskBranch: mock(() => {}),
-          getCurrentBranch: mock(() => 'main'),
-          switchToBranch: mock(() => {}),
-        } as any,
+        gitHelpers: new GitHelpers(
+          mock((cmd: string) => {
+            if (cmd.includes('claude')) {
+              if (cmd.includes('branch')) return 'feature/task-027';
+              return 'Auto-commit';
+            }
+            if (cmd.includes('branch --show-current')) return 'main';
+            if (cmd.includes('status --porcelain')) return '';
+            if (cmd.includes('symbolic-ref')) return 'main';
+            return '';
+          }),
+          { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        ),
         githubHelpers: {
           validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
           createGitHubIssue: mock(() => ({
@@ -579,16 +578,19 @@ describe('capture-plan', () => {
       const deps: CapturePlanDependencies = {
         execSync: mockExecSync,
         fileOps,
-        gitHelpers: {
-          getDefaultBranch: mock(() => 'main'),
-          hasUncommittedChanges: mock(() => false),
-          generateCommitMessage: mock(async () => 'Auto-commit'),
-          generateBranchName: mock(async () => 'feature/task-027'),
-          createTaskBranch: mock(() => {}),
-          mergeTaskBranch: mock(() => {}),
-          getCurrentBranch: mock(() => 'main'),
-          switchToBranch: mock(() => {}),
-        } as any,
+        gitHelpers: new GitHelpers(
+          mock((cmd: string) => {
+            if (cmd.includes('claude')) {
+              if (cmd.includes('branch')) return 'feature/task-027';
+              return 'Auto-commit';
+            }
+            if (cmd.includes('branch --show-current')) return 'main';
+            if (cmd.includes('status --porcelain')) return '';
+            if (cmd.includes('symbolic-ref')) return 'main';
+            return '';
+          }),
+          { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        ),
         githubHelpers: {
           validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
           createGitHubIssue: mock(() => ({
@@ -636,16 +638,19 @@ describe('capture-plan', () => {
       const deps: CapturePlanDependencies = {
         execSync: mock(() => ''),
         fileOps,
-        gitHelpers: {
-          getDefaultBranch: mock(() => 'main'),
-          hasUncommittedChanges: mock(() => false),
-          generateCommitMessage: mock(async () => 'chore: save work in progress'),
-          generateBranchName: mock(async () => 'feature/test-branch'),
-          createTaskBranch: mock(() => {}),
-          mergeTaskBranch: mock(() => {}),
-          getCurrentBranch: mock(() => 'main'),
-          switchToBranch: mock(() => {}),
-        } as any,
+        gitHelpers: new GitHelpers(
+          mock((cmd: string) => {
+            if (cmd.includes('claude')) {
+              if (cmd.includes('branch')) return 'feature/test-branch';
+              return 'chore: save work in progress';
+            }
+            if (cmd.includes('branch --show-current')) return 'main';
+            if (cmd.includes('status --porcelain')) return '';
+            if (cmd.includes('symbolic-ref')) return 'main';
+            return '';
+          }),
+          { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        ),
         githubHelpers: {} as GitHubHelpers,
         logger: createMockLogger(),
         debugLog: mock(() => {}),
