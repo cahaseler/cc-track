@@ -13,6 +13,15 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 21:13
+- When Edit tool reports "File has not been read yet", always use Read tool first even if you believe you've seen the file content recently
+- When hooks reject edits (user doesn't want to proceed), retry the same edit - the hook may have been checking for something specific that's now resolved
+- When "String to replace not found" occurs, use Read to get the actual file content instead of relying on memory or assumptions about file state
+- When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
+- When MultiEdit encounters multiple matches with replace_all:false, either set replace_all:true for all occurrences or provide more unique context strings
+- Type assertions like `error as { stdout?: string; stderr?: string }` are more maintainable than using 'any' type
+- When renaming projects, expect to find references in unexpected places - use grep extensively to find all occurrences
+
 ### Common Patterns (Consolidated)
 - **File has not been read yet**: Always use Read tool before Edit operations on files not in context
 - **String to replace not found**: When this occurs, Read the file first to get current content rather than relying on assumed state
