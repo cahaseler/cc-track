@@ -1,7 +1,7 @@
 # Project: cc-pars
 
 ## Active Task
-@.claude/tasks/TASK_023.md
+@.claude/no_active_task.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
