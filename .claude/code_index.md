@@ -29,25 +29,29 @@
 ### Hooks (Event Handlers)
 | File | Purpose |
 |------|---------|
-| hooks/capture_plan.ts | Captures plans from ExitPlanMode, creates task files |
-| hooks/pre_compact.ts | Extracts error patterns before compaction |
-| hooks/post_compact.ts | Restores context after compaction via SessionStart |
-| hooks/stop_review.ts | Reviews changes at Stop event, auto-commits with [wip] |
+| .claude/hooks/capture_plan.ts | Captures plans from ExitPlanMode, creates task files |
+| .claude/hooks/pre_compact.ts | Extracts error patterns before compaction |
+| .claude/hooks/post_compact.ts | Restores context after compaction via SessionStart |
+| .claude/hooks/stop_review.ts | Reviews changes at Stop event, auto-commits with [wip] |
+| .claude/hooks/edit_validation.ts | Real-time TypeScript and Biome validation on edits |
 
 ### Scripts & Utilities
 | File | Purpose |
 |------|---------|
-| scripts/init-templates.ts | Initializes cc-track in a project |
-| scripts/git-session.ts | Git utilities for managing WIP commits |
-| scripts/add-to-backlog.ts | Appends items to backlog with date stamps |
+| .claude/scripts/init-templates.ts | Initializes cc-track in a project |
+| .claude/scripts/git-session.ts | Git utilities for managing WIP commits |
+| .claude/scripts/add-to-backlog.ts | Appends items to backlog with date stamps |
+| .claude/scripts/complete-task.ts | Automated task completion with git squashing |
 
 ### Commands
 | File | Purpose |
 |------|---------|
-| commands/init-track.md | Slash command to initialize cc-track |
-| commands/complete-task.md | Mark active task as complete |
-| commands/config-track.md | Configure cc-track hooks and features |
-| commands/add-to-backlog.md | Quickly add items to backlog without disruption |
+| .claude/commands/init-track.md | Slash command to initialize cc-track |
+| .claude/commands/complete-task.md | Mark active task as complete |
+| .claude/commands/config-track.md | Configure cc-track hooks and features |
+| .claude/commands/add-to-backlog.md | Quickly add items to backlog without disruption |
+| .claude/commands/view-logs.md | View centralized logs for debugging |
+| .claude/commands/test-args.md | Test command for debugging arguments |
 
 ### Templates
 | File | Purpose |
@@ -72,8 +76,9 @@
 ### Libraries (.claude/lib/)
 | File | Purpose |
 |------|---------|
-| lib/config.ts | Configuration management helpers |
-| lib/git-helpers.ts | Git operations for branch management |
+| .claude/lib/config.ts | Configuration management helpers |
+| .claude/lib/git-helpers.ts | Git operations for branch management |
+| .claude/lib/logger.ts | Centralized logging system with rotation |
 
 ---
 
@@ -81,3 +86,4 @@
 
 [2025-09-10 03:05] - Complete restructure with accurate project layout
 [2025-09-10 09:00] - Added backlog system files
+[2025-09-10 21:00] - Updated paths to reflect actual .claude/ structure, added missing files (edit_validation.ts, complete-task.ts, logger.ts, view-logs.md)

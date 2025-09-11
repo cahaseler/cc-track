@@ -25,7 +25,6 @@
 Additional information can be found in the following files. Reference them as needed during research or planning.
 
 .claude/progress_log.md - project progress and updates over time
-.claude/decision_log.md - project architectural decisions
 .claude/tasks/TASK_XXX.md - Detailed task descriptions and outcomes
 
 NOTE:

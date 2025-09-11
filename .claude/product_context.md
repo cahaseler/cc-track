@@ -53,23 +53,24 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 - Task status visibility in status line
 
 ### Quality Assurance
-- Batched edit validation (every 3 edits)
-- Completion blocking when requirements unmet
-- Automated review capabilities
-- TDD-inspired workflow without strictness
+- Real-time edit validation for TypeScript files (PostToolUse hook)
+- Automated review of changes at stop points
+- Error pattern learning and documentation
+- Task completion validation with smart automation
 
 ### Developer Experience
-- Custom status line with ccusage integration
-- Warnings for context limits and API blocks
+- Custom two-line status line with cost tiers and API timer
+- Train-themed visual feedback (🚅 🛤️) and cost emojis (🪙→🤑)
+- Configurable features via track.config.json
 - One-command initialization (`/init-track`)
-- Safe file handling (no overwrites, backups)
+- Safe file handling with backups and validation
 
 ## Non-Goals / Out of Scope
 
 - Strict TDD enforcement (offers guidance, not enforcement)
 - Replacing Claude Code's native features
 - Managing multiple Claude Code instances
-- Version control operations
+- Primary version control operations (supports optional git branching)
 - External API integrations (except ccusage)
 
 ## Technical Stack
@@ -87,3 +88,4 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 
 [2025-01-09 16:30] - Initial product context documented based on project analysis
 [2025-01-10] - Renamed project from cc-pars to cc-track with new branding
+[2025-09-10] - Updated features to reflect actual implementation: real-time validation, two-line statusline, train theming, configurable API timer

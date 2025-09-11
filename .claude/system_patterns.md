@@ -25,14 +25,14 @@
 - File imports via CLAUDE.md for automatic context inclusion
 
 ### Template-Based Initialization
-- Templates stored in `/templates` directory
+- Templates stored in `templates/` directory
 - Safe copying (no overwrites of existing content)
 - Backup existing files before modification
 
 ## Design Patterns
 
 ### Command Pattern
-- Slash commands in `/commands/*.md`
+- Slash commands in `.claude/commands/*.md`
 - YAML frontmatter for metadata
 - Markdown body contains instructions for Claude
 - Bash execution via `!` prefix
