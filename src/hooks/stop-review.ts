@@ -106,7 +106,7 @@ export class SessionReviewer {
       return {
         status: 'on_track',
         message: 'Documentation updates only - auto-approved',
-        commitMessage: `[wip] ${taskId}: Update documentation`,
+        commitMessage: `docs: update ${taskId} documentation`,
       };
     }
 
@@ -117,7 +117,7 @@ export class SessionReviewer {
       return {
         status: 'on_track',
         message: 'No code changes to review',
-        commitMessage: '[wip] Work in progress',
+        commitMessage: 'wip: work in progress',
       };
     }
 
@@ -141,7 +141,7 @@ export class SessionReviewer {
       return {
         status: 'review_failed',
         message: 'Could not review changes - diff too large or review failed',
-        commitMessage: `[wip] ${taskId}: Work in progress - review skipped`,
+        commitMessage: `wip: ${taskId} work in progress - review skipped`,
         details: errorMsg,
       };
     }
@@ -373,12 +373,12 @@ Output EXACTLY this format (no markdown, no explanation, just the JSON):
 {
   "status": "on_track|deviation|needs_verification|critical_failure",
   "message": "Brief explanation for the user",
-  "commitMessage": "Git commit message starting with [wip] TASK_XXX:",
+  "commitMessage": "Conventional commit message (e.g., 'wip: TASK_XXX work in progress'):",
   "details": "Optional detailed explanation"
 }
 
 Example valid response:
-{"status":"on_track","message":"Fixed logging bug","commitMessage":"[wip] TASK_003: Fixed undefined logFile variable","details":"Bug fix for stop hook implementation"}
+{"status":"on_track","message":"Fixed logging bug","commitMessage":"fix: resolve undefined logFile variable","details":"Bug fix for stop hook implementation"}
 
 Be strict about deviations - if the changes don't directly address the task requirements, it's a deviation.
 REMEMBER: Output ONLY the JSON object, nothing else!`;
@@ -458,7 +458,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       return {
         status: 'review_failed',
         message: 'Could not review changes',
-        commitMessage: '[wip] Work in progress - review failed',
+        commitMessage: 'wip: work in progress - review failed',
         details: `Claude CLI error: ${errorMsg}`,
       };
     }

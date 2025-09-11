@@ -7,7 +7,14 @@ import { createLogger } from '../lib/logger';
 const logger = createLogger('git-session-command');
 
 /**
- * Get the last commit that's NOT a [wip] commit
+ * Check if a commit is a WIP commit (supports both [wip] and wip: formats)
+ */
+function isWipCommit(commitLine: string): boolean {
+  return commitLine.includes('[wip]') || Boolean(commitLine.match(/\s+wip:/));
+}
+
+/**
+ * Get the last commit that's NOT a WIP commit
  */
 function getLastUserCommit(): string {
   try {
@@ -16,7 +23,7 @@ function getLastUserCommit(): string {
       .filter((line) => line.trim());
 
     for (const commit of commits) {
-      if (!commit.includes('[wip]')) {
+      if (!isWipCommit(commit)) {
         return commit.split(' ')[0];
       }
     }
@@ -33,7 +40,7 @@ function getWipCommits(): string[] {
   try {
     const commits = execSync('git log --oneline', { encoding: 'utf-8' })
       .split('\n')
-      .filter((line) => line.includes('[wip]'))
+      .filter((line) => isWipCommit(line))
       .map((line) => line.split(' ')[0]);
 
     return commits;
@@ -78,8 +85,8 @@ function squashSession(message?: string) {
   // Get a list of what was done from the WIP commits
   const wipMessages = execSync(`git log --oneline ${baseCommit}..HEAD`, { encoding: 'utf-8' })
     .split('\n')
-    .filter((line) => line.includes('[wip]'))
-    .map((line) => line.replace(/^[a-f0-9]+ \[wip\] /, '- '))
+    .filter((line) => isWipCommit(line))
+    .map((line) => line.replace(/^[a-f0-9]+ (\[wip\] |wip: )/, '- '))
     .join('\n');
 
   console.log(`\nSquashing WIP commits since ${baseCommit}\n`);

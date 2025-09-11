@@ -178,7 +178,7 @@ describe('stop-review', () => {
         // Should return review_failed status with a commit message
         expect(result.status).toBe('review_failed');
         expect(result.message).toContain('diff too large');
-        expect(result.commitMessage).toContain('[wip]');
+        expect(result.commitMessage).toContain('wip:');
         expect(result.commitMessage).toContain('TASK_026');
       });
     });

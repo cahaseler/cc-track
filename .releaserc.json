@@ -1,0 +1,38 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bun run build:cross-platform"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/cc-track-linux",
+            "name": "cc-track-linux-${nextRelease.version}",
+            "label": "Linux x64 executable"
+          },
+          {
+            "path": "dist/cc-track-windows.exe",
+            "name": "cc-track-windows-${nextRelease.version}.exe",
+            "label": "Windows x64 executable"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json", "CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}
