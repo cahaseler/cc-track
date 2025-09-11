@@ -160,37 +160,14 @@ export class Logger {
       const logFile = this.getLogFileName();
       const logLine = `${JSON.stringify(entry)}\n`;
       this.fs.appendFileSync(logFile, logLine);
-
-      // Also output to console in development or if pretty print is enabled
-      if (this.config.prettyPrint || process.env.NODE_ENV === 'development') {
-        this.prettyPrint(entry);
-      }
+      
+      // NEVER output to console - hooks must only return values, not print
+      // All logging goes to files only
     } catch (_error) {
       // Fail silently - logging should never break the application
     }
   }
 
-  private prettyPrint(entry: LogEntry): void {
-    const prefix = `[${entry.timestamp}] [${entry.level}] [${entry.source}]`;
-    const message = `${prefix} ${entry.message}`;
-
-    // Use appropriate console method based on level
-    switch (entry.level) {
-      case 'ERROR':
-        console.error(message);
-        if (entry.stack) console.error(entry.stack);
-        break;
-      case 'WARN':
-        console.error(message); // Use stderr for warnings too
-        break;
-      default:
-        console.log(message);
-    }
-
-    if (entry.context) {
-      console.log('Context:', JSON.stringify(entry.context, null, 2));
-    }
-  }
 
   error(message: string, context?: Record<string, unknown>): void {
     this.writeLog(LogLevel.ERROR, 'ERROR', message, context);

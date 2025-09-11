@@ -120,13 +120,10 @@ export const hookCommand = new Command('hook')
       logger.debug(`Executing ${hookType} hook`);
       const result = await handler(input);
 
-      // Output the result as JSON
+      // Output the result as JSON to stdout
+      // For JSON output mode, always use exit code 0
+      // The decision field in the JSON controls blocking, not the exit code
       console.log(JSON.stringify(result));
-
-      // Exit with appropriate code
-      if (result.decision === 'block' || result.error) {
-        process.exit(2); // Block the action
-      }
       process.exit(0);
     } catch (error) {
       logger.error('Hook execution failed', { error });

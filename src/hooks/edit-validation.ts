@@ -249,19 +249,35 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
     log.debug('Hook triggered', {
       tool_name: input.tool_name,
       has_tool_response: !!input.tool_response,
+      has_tool_input: !!input.tool_input,
+      tool_input_keys: input.tool_input ? Object.keys(input.tool_input) : [],
     });
 
     // Only run on successful tool executions
-    const toolResponse = input.tool_response as { success?: boolean } | undefined;
-    if (!toolResponse?.success) {
+    // Check if we have a tool_response - its presence indicates success
+    // Write tool returns: { filePath, success }
+    // Edit tool returns: { filePath, oldString, newString, ... }
+    if (!input.tool_response) {
+      log.debug('Skipping validation - no tool response');
       return { continue: true };
+    }
+    
+    // For Write tool specifically, check the success field
+    if (input.tool_name === 'Write') {
+      const writeResponse = input.tool_response as { success?: boolean };
+      if (writeResponse.success === false) {
+        log.debug('Skipping validation - Write tool failed');
+        return { continue: true };
+      }
     }
 
     // Extract file paths
     const filePaths = extractFilePaths(input.tool_name || '', input.tool_input || {});
+    log.debug('Extracted file paths', { filePaths });
 
     // Filter to TypeScript files
     const tsFiles = filterTypeScriptFiles(filePaths);
+    log.debug('TypeScript files to validate', { tsFiles });
 
     if (tsFiles.length === 0) {
       log.debug('No TypeScript files to validate');
