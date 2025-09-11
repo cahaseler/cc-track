@@ -48,7 +48,7 @@
       "display": "sonnet-only"
     },
     "github_integration": {
-      "enabled": false,
+      "enabled": true,
       "description": "Integrate with GitHub for issue tracking and PR workflow",
       "auto_create_issues": true,
       "use_issue_branches": true,
