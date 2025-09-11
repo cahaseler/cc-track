@@ -45,6 +45,10 @@ Based on the completion results above:
    d) **System Patterns** (`.claude/system_patterns.md`) if applicable:
       - Document any new patterns established
       - Update tool preferences if discovered
+   
+   e) **Backlog** (`.claude/backlog.md`):
+      - Check if the completed task was listed in the backlog
+      - Remove it if present (it's now complete, not a future item)
 
 4. **Provide Summary to User:**
    - Task completion confirmation with ID and title
