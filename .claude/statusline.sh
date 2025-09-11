@@ -5,6 +5,7 @@ input=$(cat)
 
 # Get model name from input
 MODEL=$(echo "$input" | jq -r '.model.display_name' 2>/dev/null || echo "Unknown")
+MODEL_RAW="$MODEL"
 MODEL="🚅 $MODEL"
 
 # Get today's actual cost from ccusage daily JSON (more accurate than statusline)
@@ -13,6 +14,15 @@ TODAY_COST=$(echo "$input" | bunx ccusage daily --json 2>/dev/null | jq -r --arg
 
 # Get ccusage statusline for other info (hourly rate and tokens)
 USAGE_RAW=$(echo "$input" | bunx ccusage statusline 2>/dev/null || echo "")
+
+# Extract API window time remaining (format: "X h Y m left" or "Y m left")
+API_WINDOW_TIME=$(echo "$USAGE_RAW" | grep -oP '\([^)]+left\)' | sed 's/[()]//g' | sed 's/ left//' || echo "")
+
+# Get API timer config
+API_TIMER_DISPLAY="sonnet-only"
+if [ -f ".claude/track.config.json" ]; then
+    API_TIMER_DISPLAY=$(jq -r '.features.api_timer.display // "sonnet-only"' .claude/track.config.json 2>/dev/null || echo "sonnet-only")
+fi
 
 # Extract hourly rate and tokens from statusline (these are accurate)
 HOURLY_RATE_RAW=$(echo "$USAGE_RAW" | grep -oP '\$[\d.]+/hr' || echo "")
@@ -47,8 +57,25 @@ if [ -f "CLAUDE.md" ]; then
     fi
 fi
 
+# Handle API timer display based on configuration
+if [ -n "$API_WINDOW_TIME" ]; then
+    if [ "$API_TIMER_DISPLAY" = "sonnet-only" ] && [[ "$MODEL_RAW" == *"Sonnet"* ]]; then
+        # Add timer to model name for Sonnet
+        MODEL="🚅 $MODEL_RAW (reset in $API_WINDOW_TIME)"
+    elif [ "$API_TIMER_DISPLAY" = "show" ]; then
+        # Will add as separate block later
+        API_TIMER_BLOCK=" | ⏰ $API_WINDOW_TIME"
+    fi
+    # If "hide", do nothing
+fi
+
 # Build the statusline dynamically, only including fields with data
 OUTPUT="$MODEL"
+
+# Add API timer if in show mode
+if [ "$API_TIMER_DISPLAY" = "show" ] && [ -n "$API_TIMER_BLOCK" ]; then
+    OUTPUT="$OUTPUT$API_TIMER_BLOCK"
+fi
 
 # Add cost if available with emoji based on amount
 if [ "$TODAY_COST" != "0.00" ] && [ -n "$TODAY_COST" ]; then
