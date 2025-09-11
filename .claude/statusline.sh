@@ -43,7 +43,7 @@ if [ -f "CLAUDE.md" ]; then
             TASK=" | $TASK_TITLE"
         fi
     elif grep -q "@.claude/no_active_task.md" CLAUDE.md; then
-        TASK=" | 🛤️ Project is on track"
+        TASK=" | No active task"
     fi
 fi
 
