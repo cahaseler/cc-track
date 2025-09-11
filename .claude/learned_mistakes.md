@@ -19,29 +19,24 @@
 - When mocking exec errors for tests, set the appropriate error property based on the tool being tested (stderr for TypeScript, stdout for Biome)
 - When Edit reports "Found X matches but replace_all is false", use MultiEdit with replace_all:true for bulk changes or provide more unique context
 - Use grep with line numbers (`grep -n`) to quickly locate specific patterns when debugging Edit failures
- 
 - Complex mock objects in tests should be defined once and reused rather than recreated in each test case
 - When Write fails with "File has not been read yet", create the parent directory first with mkdir or verify it exists with ls
- 
 
 ### Session: 2025-09-11 10:30
- - When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
-- When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read - retry the Edit operation directly
- 
-- When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text - verify file state between edits
-- When test output only shows "(pass)" entries before truncation, this indicates all tests passed - the truncation is misleading
-- Directory paths cannot be read with the Read tool - use ls or Bash commands to list directory contents instead
-- When hooks block operations repeatedly, check if the hook is validating something that needs fixing rather than just retrying the same operation
- 
+- When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
+- When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read — ensure a Read precedes Edit
+- When test mocks throw errors, ensure the error object has the correct properties (stderr for TypeScript errors, stdout for Biome errors) that the code expects
+- When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text — verify file state between edits
+- Directory paths cannot be read with the Read tool — use ls or Bash commands to list directory contents instead
+- When hooks block operations repeatedly, check what validation is failing and fix that root cause rather than retrying the same edit
 - When grep with complex regex patterns fails, use simpler patterns or switch to line-based searching with sed
-- Timeout errors in validation hooks need special handling - check for error.code === 'ETIMEDOUT' in addition to error messages
+- Timeout errors in validation hooks need special handling — check for error.code === 'ETIMEDOUT' in addition to error messages
 
 ### Session: 2025-09-11 08:49
 - When encountering "File has not been read yet" errors, always use Read tool first even if you've seen the file content recently in the conversation
 - When Edit tool reports "String to replace not found", use Read to get actual file content instead of relying on memory or assumptions about file state
 - When MultiEdit gets "Found X matches but replace_all is false", either set replace_all:true or provide more unique context strings for single replacements
 - Use sed with line ranges (e.g., `sed -n '760,770p'`) to quickly inspect specific sections of files when debugging test failures
- 
 - Use grep with specific patterns like `grep -n "as any"` to quickly locate TypeScript type issues that need fixing
 - When fixing TypeScript 'any' types, use type assertions like `error as { code?: string }` or create proper type definitions
 - For complex mock objects in tests, define a helper function like `createMockLogger()` to avoid repetitive mock definitions
@@ -51,8 +46,7 @@
 ### Session: 2025-09-11 23:48
 
 ### Session: 2025-09-11 23:23
- - **ExitPlanMode hook rejection**: When the user rejects a plan multiple times, simplify the plan rather than retrying with similar complexity
- - **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
+- **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
 
 ### Session: 2025-09-11 22:25
 - **Biome CLI flags**: Use `--write` instead of `--apply` or `--fix` flags with biome check command
@@ -66,7 +60,7 @@
 
 ### Session: 2025-09-11 21:13
 - When Edit tool reports "File has not been read yet", always use Read tool first even if you believe you've seen the file content recently
-- When hooks reject edits (user doesn't want to proceed), retry the same edit - the hook may have been checking for something specific that's now resolved
+- When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
  
 - When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
 - When MultiEdit encounters multiple matches with replace_all:false, either set replace_all:true for all occurrences or provide more unique context strings
@@ -76,17 +70,16 @@
 ### Common Patterns (Consolidated)
 - **File has not been read yet**: Always use Read tool before Edit operations on files not in context
 - **String to replace not found**: When this occurs, Read the file first to get current content rather than relying on assumed state
+- **Test output truncation**: Console output can be truncated mid‑suite; don’t infer success from visible “(pass)” lines alone. Re‑run with a focused pattern (e.g., `bun test -t "<pattern>"`) or increase output, and verify summarized pass/fail counts.
 - **Interactive git commands**: Commands like `git rebase -i` require terminal interaction and fail in automated contexts - use non-interactive alternatives
 - **Hook path issues**: When hooks aren't firing, verify the hook path in settings.json matches the actual file location
 - **MultiEdit replace_all**: When getting "Found X matches but replace_all is false", either set replace_all:true or provide more unique context
 - **TypeScript type errors**: 'any' type errors require explicit type annotations or type assertions to access properties
 - **Git commit messages with newlines**: Use heredoc syntax or single-line messages to avoid quote escaping issues
-- **Grep blocking by hooks**: When grep is consistently blocked, switch to alternative approaches like TodoWrite or different tools
 - **JSONL parsing**: When tail/grep on JSONL files return truncated output, use more specific filters or line limits to avoid mid-entry cuts
-- **Bash complex syntax**: Commands like `$(date +%Y-%m-%d)` may fail with "syntax error near unexpected token" - use simpler commands or store intermediate results
+ 
 
 ### Claude CLI Specific
-- Claude CLI ignores the --output-format json flag - must explicitly instruct in the prompt with "ONLY JSON" repeated multiple times and examples
 - When parsing Claude CLI responses, expect wrapper format {"type":"result","result":"actual content"} and extract the inner content
 - Set generous timeouts (2+ minutes) for Claude CLI calls as complex prompts take time to process
 - When executing external commands from within a hook, always set cwd to a neutral directory like '/tmp' to avoid triggering recursive hooks in the project directory
