@@ -348,6 +348,18 @@ describe('capture-plan', () => {
         unlinkSync: mock(() => {}),
       };
 
+      // Mock GitHelpers to avoid real Claude API calls
+      const mockGitHelpers = {
+        getDefaultBranch: mock(() => 'main'),
+        hasUncommittedChanges: mock(() => false),
+        generateCommitMessage: mock(async () => 'chore: save work in progress'),
+        generateBranchName: mock(async () => 'feature/test-branch-001'),
+        createTaskBranch: mock(() => {}),
+        mergeTaskBranch: mock(() => {}),
+        getCurrentBranch: mock(() => 'feature/test-branch-001'),
+        switchToBranch: mock(() => {}),
+      } as any;
+
       const input: HookInput = {
         hook_event_name: 'PostToolUse',
         tool_name: 'ExitPlanMode',
@@ -360,6 +372,7 @@ describe('capture-plan', () => {
       const deps: CapturePlanDependencies = {
         execSync: mockExecSync,
         fileOps,
+        gitHelpers: mockGitHelpers,
         logger: createMockLogger(),
         isHookEnabled: () => true,
         isGitHubIntegrationEnabled: () => false,
@@ -396,9 +409,22 @@ describe('capture-plan', () => {
         cwd: '/project',
       };
 
+      // Mock GitHelpers to avoid real Claude API calls
+      const mockGitHelpers = {
+        getDefaultBranch: mock(() => 'main'),
+        hasUncommittedChanges: mock(() => false),
+        generateCommitMessage: mock(async () => 'chore: save work in progress'),
+        generateBranchName: mock(async () => 'feature/test-branch'),
+        createTaskBranch: mock(() => {}),
+        mergeTaskBranch: mock(() => {}),
+        getCurrentBranch: mock(() => 'main'),
+        switchToBranch: mock(() => {}),
+      } as any;
+
       const deps: CapturePlanDependencies = {
         execSync: mockExecSync,
         fileOps,
+        gitHelpers: mockGitHelpers,
         logger,
         debugLog: mock(() => {}),
       };
@@ -477,11 +503,15 @@ describe('capture-plan', () => {
         execSync: mockExecSync,
         fileOps,
         gitHelpers: {
+          getDefaultBranch: mock(() => 'main'),
           hasUncommittedChanges: mock(() => false),
           generateCommitMessage: mock(async () => 'Auto-commit'),
           generateBranchName: mock(async () => 'feature/task-027'),
           createTaskBranch: mock(() => {}),
-        } as GitHelpers,
+          mergeTaskBranch: mock(() => {}),
+          getCurrentBranch: mock(() => 'main'),
+          switchToBranch: mock(() => {}),
+        } as any,
         githubHelpers: {
           validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
           createGitHubIssue: mock(() => ({
@@ -550,11 +580,15 @@ describe('capture-plan', () => {
         execSync: mockExecSync,
         fileOps,
         gitHelpers: {
+          getDefaultBranch: mock(() => 'main'),
           hasUncommittedChanges: mock(() => false),
           generateCommitMessage: mock(async () => 'Auto-commit'),
           generateBranchName: mock(async () => 'feature/task-027'),
           createTaskBranch: mock(() => {}),
-        } as GitHelpers,
+          mergeTaskBranch: mock(() => {}),
+          getCurrentBranch: mock(() => 'main'),
+          switchToBranch: mock(() => {}),
+        } as any,
         githubHelpers: {
           validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
           createGitHubIssue: mock(() => ({
@@ -602,7 +636,16 @@ describe('capture-plan', () => {
       const deps: CapturePlanDependencies = {
         execSync: mock(() => ''),
         fileOps,
-        gitHelpers: {} as GitHelpers,
+        gitHelpers: {
+          getDefaultBranch: mock(() => 'main'),
+          hasUncommittedChanges: mock(() => false),
+          generateCommitMessage: mock(async () => 'chore: save work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          createTaskBranch: mock(() => {}),
+          mergeTaskBranch: mock(() => {}),
+          getCurrentBranch: mock(() => 'main'),
+          switchToBranch: mock(() => {}),
+        } as any,
         githubHelpers: {} as GitHubHelpers,
         logger: createMockLogger(),
         debugLog: mock(() => {}),

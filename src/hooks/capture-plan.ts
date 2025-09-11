@@ -314,7 +314,8 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
   if (input.hook_event_name === 'PostToolUse') {
     debugLog(`PostToolUse detected, tool_response: ${JSON.stringify(input.tool_response)}`);
     // Check if the plan was approved (tool_response contains plan field when approved)
-    if (!input.tool_response?.plan) {
+    const toolResponse = input.tool_response as { plan?: string } | undefined;
+    if (!toolResponse?.plan) {
       // Plan was rejected or tool_response is malformed - don't create task
       debugLog('Plan not approved or missing plan field');
       logger.info('Plan was not approved, skipping task creation', {
@@ -326,7 +327,8 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     logger.info('Plan was approved, creating task');
   }
 
-  const plan = input.tool_input?.plan;
+  const toolInput = input.tool_input as { plan?: string } | undefined;
+  const plan = toolInput?.plan;
   if (!plan) {
     debugLog('No plan found in tool input');
     logger.warn('No plan found in tool input', { tool_input: input.tool_input });

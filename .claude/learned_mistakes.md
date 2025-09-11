@@ -13,6 +13,18 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 12:42
+- When test output shows "(fail)" with truncated test names, use more specific test name patterns or grep with context flags (-A/-B) to see the full error details
+- When MultiEdit encounters "String to replace not found" errors, verify the exact string exists in the file with Read rather than relying on grep output
+- Mock functions in tests require explicit parameter types (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript implicit 'any' errors
+- When mocking exec errors for tests, set the appropriate error property based on the tool being tested (stderr for TypeScript, stdout for Biome)
+- When Edit reports "Found X matches but replace_all is false", use MultiEdit with replace_all:true for bulk changes or provide more unique context
+- Use grep with line numbers (`grep -n`) to quickly locate specific patterns when debugging Edit failures
+- When tests appear to pass but output is truncated, check if all visible tests show "(pass)" status - truncation happens at character limits not test boundaries
+- Complex mock objects in tests should be defined once and reused rather than recreated in each test case
+- When Write fails with "File has not been read yet", create the parent directory first with mkdir or verify it exists with ls
+- Recovery from "String to replace not found" often requires Read to get actual file content rather than making assumptions about file state
+
 ### Session: 2025-09-11 10:30
 - When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
 - When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read - retry the Edit operation directly

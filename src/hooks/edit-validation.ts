@@ -252,7 +252,8 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
     });
 
     // Only run on successful tool executions
-    if (!input.tool_response?.success) {
+    const toolResponse = input.tool_response as { success?: boolean } | undefined;
+    if (!toolResponse?.success) {
       return { continue: true };
     }
 

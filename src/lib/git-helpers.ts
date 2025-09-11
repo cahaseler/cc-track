@@ -4,7 +4,7 @@ import { unlinkSync, writeFileSync } from 'node:fs';
 // Interface for dependency injection
 export type ExecFunction = (
   command: string,
-  options?: { cwd?: string; encoding?: string; timeout?: number; shell?: string },
+  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string },
 ) => string;
 
 export interface FileOps {

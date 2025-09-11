@@ -14,11 +14,11 @@ export interface GitHubPR {
 // Interface for dependency injection
 export type ExecFunction = (
   command: string,
-  options?: { cwd?: string; encoding?: string; timeout?: number; shell?: string },
+  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string },
 ) => string;
 
 const defaultExec: ExecFunction = (command, options) => {
-  return nodeExecSync(command, { encoding: 'utf-8', ...options });
+  return nodeExecSync(command, { encoding: 'utf-8', ...options }) as string;
 };
 
 export class GitHubHelpers {
@@ -33,7 +33,7 @@ export class GitHubHelpers {
    */
   isGitHubCLIAvailable(): boolean {
     try {
-      this.exec('gh --version', { stdio: 'ignore' });
+      this.exec('gh --version 2>/dev/null');
       return true;
     } catch {
       return false;
@@ -45,7 +45,7 @@ export class GitHubHelpers {
    */
   isGitHubRepoConnected(cwd: string): boolean {
     try {
-      this.exec('gh repo view', { cwd, stdio: 'ignore' });
+      this.exec('gh repo view 2>/dev/null', { cwd });
       return true;
     } catch {
       return false;
@@ -114,9 +114,8 @@ export class GitHubHelpers {
       logger.info('Creating issue branch', { issueNumber });
 
       // Use gh issue develop to create and checkout a branch linked to the issue
-      this.exec(`gh issue develop ${issueNumber} --checkout`, {
+      this.exec(`gh issue develop ${issueNumber} --checkout 2>&1`, {
         cwd,
-        stdio: 'ignore',
       });
 
       // Get the current branch name
@@ -174,9 +173,8 @@ export class GitHubHelpers {
     try {
       logger.info('Pushing current branch to origin');
 
-      this.exec('git push -u origin HEAD', {
+      this.exec('git push -u origin HEAD 2>&1', {
         cwd,
-        stdio: 'ignore',
       });
 
       logger.info('Branch pushed successfully');
@@ -194,9 +192,8 @@ export class GitHubHelpers {
     try {
       logger.info('Switching to branch', { branchName });
 
-      this.exec(`git checkout ${branchName}`, {
+      this.exec(`git checkout ${branchName} 2>&1`, {
         cwd,
-        stdio: 'ignore',
       });
 
       logger.info('Switched to branch successfully', { branchName });
@@ -217,9 +214,8 @@ export class GitHubHelpers {
       let command = `gh repo create ${name} --description "${description}"`;
       command += isPublic ? ' --public' : ' --private';
 
-      this.exec(command, {
+      this.exec(command + ' 2>&1', {
         cwd,
-        stdio: 'ignore',
       });
 
       const repoUrl = `https://github.com/${name}`;
@@ -240,9 +236,8 @@ export class GitHubHelpers {
       logger.info('Connecting to GitHub repository', { repoUrl });
 
       // Add remote origin
-      this.exec(`git remote add origin ${repoUrl}`, {
+      this.exec(`git remote add origin ${repoUrl} 2>&1`, {
         cwd,
-        stdio: 'ignore',
       });
 
       logger.info('Connected to GitHub repository successfully', { repoUrl });
@@ -285,7 +280,7 @@ export class GitHubHelpers {
 
     // Check if authenticated
     try {
-      this.exec('gh auth status', { stdio: 'ignore' });
+      this.exec('gh auth status 2>/dev/null');
     } catch {
       errors.push('GitHub CLI is not authenticated. Run: gh auth login');
     }

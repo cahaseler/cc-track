@@ -21,6 +21,12 @@ export interface HookOutput {
   error?: string;
   success?: boolean;
   message?: string;
+  decision?: 'block' | 'allow' | undefined;
+  reason?: string;
+  hookSpecificOutput?: {
+    hookEventName: string;
+    additionalContext?: string;
+  };
 }
 
 export interface TaskContent {

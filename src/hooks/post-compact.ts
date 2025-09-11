@@ -35,7 +35,7 @@ export function readImportedFiles(
 
   let importedContent = '';
   const importedFiles: string[] = [];
-  
+
   for (const match of imports) {
     const importPath = join(projectRoot, match[1]);
     // Skip task files as they're handled separately
@@ -56,28 +56,25 @@ export function readImportedFiles(
 /**
  * Generate brief summary for user about what was restored
  */
-export function generateUserSummary(
-  importedFiles: string[],
-  activeTaskFile: string,
-): string {
+export function generateUserSummary(importedFiles: string[], activeTaskFile: string): string {
   let summary = '📋 Post-compaction context restored:\n';
-  
+
   // List imported files
   if (importedFiles.length > 0) {
     summary += `• Added ${importedFiles.length} context files: ${importedFiles.join(', ')}\n`;
   }
-  
+
   // Note active task
   if (activeTaskFile) {
     summary += `• Active task: ${activeTaskFile}\n`;
   }
-  
+
   // Brief explanation of instructions
   summary += '• Instructed Claude to:\n';
   summary += '  - Review recent journal entries for context\n';
   summary += '  - Update task documentation with progress\n';
   summary += '  - Record any technical decisions or patterns\n';
-  
+
   return summary;
 }
 
@@ -178,11 +175,7 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
     }
 
     // Read all imported files (excluding task files)
-    const { content: importedContent, files: importedFiles } = readImportedFiles(
-      claudeMdContent,
-      projectRoot,
-      fileOps,
-    );
+    const { content: importedContent, files: importedFiles } = readImportedFiles(claudeMdContent, projectRoot, fileOps);
 
     // Read the active task file if it exists
     let taskContent = '';

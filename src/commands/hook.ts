@@ -46,10 +46,9 @@ async function readStdinJson(): Promise<HookInput> {
  */
 export const hookCommand = new Command('hook')
   .description('Handle Claude Code hook events (reads JSON from stdin)')
-  .option(
+  .requiredOption(
     '-t, --type <type>',
     'hook type to execute (capture-plan, edit-validation, pre-compact, post-compact, stop-review)',
-    { required: true },
   )
   .option('--debug', 'enable debug logging')
   .action(async (options) => {

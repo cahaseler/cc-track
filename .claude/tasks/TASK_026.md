@@ -74,9 +74,14 @@
   - Reviewer initially challenged restoration, then conceded all gaps were properly fixed
   - Fixed import issue in git-helpers.ts (execSync references) per reviewer feedback
 - Total: 191 tests passing with 0 linting/type errors, TypeScript compilation clean
+- **POST-COMPACTION FIX**: Fixed critical issue where tests were making REAL Claude API calls (costing money!)
+  - Root cause: GitHelpers wasn't properly mocked in capture-plan and stop-review tests
+  - Impact: Tests taking 10+ seconds, actual API charges incurred
+  - Resolution: Added proper mocks for GitHelpers methods, tests now run in milliseconds
+  - Final: 207 tests passing with proper mocking, no external service calls
 
 ## Current Focus
-**TASK COMPLETE** - All requirements fulfilled. CLI tool fully implemented with comprehensive test coverage, all functionality gaps resolved, and automated code reviewer approval obtained.
+**TASK COMPLETE** - All requirements fulfilled. CLI tool fully implemented with comprehensive test coverage, all functionality gaps resolved, and automated code reviewer approval obtained. Post-compaction critical test mocking issue resolved.
 
 ## Decisions Made During Implementation
 

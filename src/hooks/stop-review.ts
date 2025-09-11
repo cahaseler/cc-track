@@ -646,7 +646,7 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
   });
 
   // If already in a stop hook, still do review/commit but always allow stop
-  const inStopHook = input.stop_hook_active || false;
+  const inStopHook = Boolean(input.stop_hook_active) || false;
 
   // Get project root
   const projectRoot = input.cwd || process.cwd();

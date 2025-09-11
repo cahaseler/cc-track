@@ -607,6 +607,15 @@ def456 chore: cleanup`,
         if (cmd.includes('status')) return 'M file.ts';
         if (cmd.includes('diff')) return 'diff content';
         if (cmd.includes('log')) return 'recent commits';
+        // Mock Claude CLI response
+        if (cmd.includes('claude') && cmd.includes('sonnet')) {
+          return JSON.stringify({
+            status: 'on_track',
+            message: 'Changes look good',
+            commitMessage: '[wip] Working on features',
+          });
+        }
+        if (cmd.includes('git add') && cmd.includes('git commit')) return 'Committed';
         return '';
       });
 
