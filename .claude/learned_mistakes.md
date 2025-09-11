@@ -14,7 +14,6 @@
 *(Entries will be added here by the pre_compact hook)*
 
 ### Session: 2025-09-11 12:42
-- When test output shows "(fail)" with truncated test names, use more specific test name patterns or grep with context flags (-A/-B) to see the full error details
 - When MultiEdit encounters "String to replace not found" errors, verify the exact string exists in the file with Read rather than relying on grep output
 - Mock functions in tests require explicit parameter types (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript implicit 'any' errors
 - When mocking exec errors for tests, set the appropriate error property based on the tool being tested (stderr for TypeScript, stdout for Biome)
@@ -26,7 +25,7 @@
 - Recovery from "String to replace not found" often requires Read to get actual file content rather than making assumptions about file state
 
 ### Session: 2025-09-11 10:30
-- When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
+-- When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
 - When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read - retry the Edit operation directly
 - When test mocks throw errors, ensure the error object has the correct properties (stderr for TypeScript errors, stdout for Biome errors) that the code expects
 - When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text - verify file state between edits
@@ -50,16 +49,10 @@
 - Use `grep -oE "pattern" | sort | uniq -c | sort -rn` to get frequency counts of specific error patterns in output
 
 ### Session: 2025-09-11 23:48
-- When test output appears truncated but shows multiple passing tests, assume the full test suite passed - the truncation is at character limit not test boundary
-- When copying files from one directory structure to another, if Read fails multiple times, skip to Write/copy directly rather than retrying Read
-- When planning complex refactors, if the user rejects detailed plans twice, simplify to a minimal viable approach focusing on core functionality only
-- After test suite completion with all visible tests passing, move to the next task rather than investigating potential truncation issues
 
 ### Session: 2025-09-11 23:23
-- **ExitPlanMode hook rejection**: When the user rejects a plan multiple times, simplify the plan rather than retrying with similar complexity
-- **Test output truncation**: When test output is truncated mid-line, the tests likely passed - truncation happens at character limits not test boundaries
-- **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
-- **Test suite completion**: When all visible tests show "(pass)" status before truncation, assume the full suite passed rather than investigating further
+-- **ExitPlanMode hook rejection**: When the user rejects a plan multiple times, simplify the plan rather than retrying with similar complexity
+-- **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
 
 ### Session: 2025-09-11 22:25
 - **Biome CLI flags**: Use `--write` instead of `--apply` or `--fix` flags with biome check command

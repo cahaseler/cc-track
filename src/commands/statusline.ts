@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
-import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { execSync as nodeExecSync } from 'node:child_process';
+import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from 'node:fs';
 import { Command } from 'commander';
-import { getConfig } from '../lib/config';
+import { getConfig as getConfigImpl } from '../lib/config';
 
 interface StatusLineInput {
   model?: {
@@ -10,13 +10,28 @@ interface StatusLineInput {
   };
 }
 
+// Dependency injection for testing
+interface StatusLineDeps {
+  execSync: typeof nodeExecSync;
+  existsSync: typeof nodeExistsSync;
+  readFileSync: typeof nodeReadFileSync;
+  getConfig: typeof getConfigImpl;
+}
+
+const defaultDeps: StatusLineDeps = {
+  execSync: nodeExecSync,
+  existsSync: nodeExistsSync,
+  readFileSync: nodeReadFileSync,
+  getConfig: getConfigImpl,
+};
+
 /**
  * Get today's cost from ccusage
  */
-function getTodaysCost(input: StatusLineInput): string {
+export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): string {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const result = execSync('bunx ccusage daily --json', {
+    const result = deps.execSync('bunx ccusage daily --json', {
       encoding: 'utf-8',
       input: JSON.stringify(input),
       stdio: ['pipe', 'pipe', 'ignore'],
@@ -33,9 +48,12 @@ function getTodaysCost(input: StatusLineInput): string {
 /**
  * Get usage info from ccusage statusline
  */
-function getUsageInfo(input: StatusLineInput): { hourlyRate: string; tokens: string; apiWindow: string } {
+export function getUsageInfo(
+  input: StatusLineInput,
+  deps = defaultDeps,
+): { hourlyRate: string; tokens: string; apiWindow: string } {
   try {
-    const result = execSync('bunx ccusage statusline', {
+    const result = deps.execSync('bunx ccusage statusline', {
       encoding: 'utf-8',
       input: JSON.stringify(input),
       stdio: ['pipe', 'pipe', 'ignore'],
@@ -62,12 +80,14 @@ function getUsageInfo(input: StatusLineInput): { hourlyRate: string; tokens: str
 /**
  * Get current git branch
  */
-function getCurrentBranch(): string {
+export function getCurrentBranch(deps = defaultDeps): string {
   try {
-    return execSync('git branch --show-current', {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    return deps
+      .execSync('git branch --show-current', {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+      .trim();
   } catch {
     return '';
   }
@@ -76,13 +96,13 @@ function getCurrentBranch(): string {
 /**
  * Get active task from CLAUDE.md
  */
-function getActiveTask(): string {
+export function getActiveTask(deps = defaultDeps): string {
   const claudeMdPath = 'CLAUDE.md';
-  if (!existsSync(claudeMdPath)) {
+  if (!deps.existsSync(claudeMdPath)) {
     return '';
   }
 
-  const content = readFileSync(claudeMdPath, 'utf-8');
+  const content = deps.readFileSync(claudeMdPath, 'utf-8');
   const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
 
   if (!taskMatch) {
@@ -93,11 +113,11 @@ function getActiveTask(): string {
   }
 
   const taskPath = taskMatch[0].replace('@', '');
-  if (!existsSync(taskPath)) {
+  if (!deps.existsSync(taskPath)) {
     return '';
   }
 
-  const taskContent = readFileSync(taskPath, 'utf-8');
+  const taskContent = deps.readFileSync(taskPath, 'utf-8');
   const firstLine = taskContent.split('\n')[0];
   return firstLine.replace(/^# /, '');
 }
@@ -105,7 +125,7 @@ function getActiveTask(): string {
 /**
  * Get cost emoji based on amount
  */
-function getCostEmoji(cost: number): string {
+export function getCostEmoji(cost: number): string {
   if (cost >= 300) return '🤑';
   if (cost >= 200) return '💰';
   if (cost >= 100) return '💸';
@@ -116,15 +136,15 @@ function getCostEmoji(cost: number): string {
 /**
  * Generate statusline output
  */
-export function generateStatusLine(input: StatusLineInput): string {
+export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): string {
   const modelName = input.model?.display_name || 'Unknown';
-  const todaysCost = getTodaysCost(input);
-  const { hourlyRate, tokens, apiWindow } = getUsageInfo(input);
-  const branch = getCurrentBranch();
-  const task = getActiveTask();
+  const todaysCost = getTodaysCost(input, deps);
+  const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
+  const branch = getCurrentBranch(deps);
+  const task = getActiveTask(deps);
 
   // Get API timer config
-  const config = getConfig();
+  const config = deps.getConfig();
   const apiTimerDisplay = config.features?.api_timer?.display || 'sonnet-only';
 
   // Build first line
