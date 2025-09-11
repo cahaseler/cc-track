@@ -79,9 +79,16 @@
   - Impact: Tests taking 10+ seconds, actual API charges incurred
   - Resolution: Added proper mocks for GitHelpers methods, tests now run in milliseconds
   - Final: 207 tests passing with proper mocking, no external service calls
+- **TEST COVERAGE EXPANSION**: Added comprehensive tests for pure functions per Craig's request
+  - Added boundary value tests for getCostEmoji (statusline command)
+  - Added tests for generateUserSummary (post-compact hook)
+  - Added skip tasks test for readImportedFiles (post-compact hook)
+  - Added proper tests for runTypeScriptCheck and runBiomeCheck (edit-validation hook)
+  - Note: Initially wrote incorrect tests without checking function signatures, then fixed with proper implementations
+  - Final: 252 tests passing, all running in ~300ms total
 
 ## Current Focus
-**POST-COMPLETION IMPROVEMENT**: Refactoring hook dispatcher to remove redundant --type parameter. The hook_event_name in the input already identifies the hook type, making the CLI parameter unnecessary and error-prone. This eliminates configuration duplication and potential mismatches.
+**COMPLETED**: Successfully removed redundant --type parameter from hook dispatcher. Hooks now automatically route based on hook_event_name and tool_name from the JSON input. CLI binary rebuilt and deployed successfully. All 252 tests passing.
 
 ## Decisions Made During Implementation
 
