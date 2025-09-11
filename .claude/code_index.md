@@ -13,37 +13,44 @@
 ```
 /home/ubuntu/projects/cc-track/
 ├── .claude/           # Project context and state
+│   ├── commands/      # Slash commands for Claude Code
 │   ├── plans/         # Captured plans from planning mode
 │   ├── tasks/         # Active and completed tasks
 │   └── *.md           # Context files (imported by CLAUDE.md)
-├── commands/          # Slash commands for Claude Code
-├── docs/              # Research and documentation
-├── hooks/             # Claude Code event hooks
-├── scripts/           # Utility scripts
+├── src/               # Source code for CLI
+│   ├── cli/           # CLI entry point
+│   ├── commands/      # Command implementations
+│   ├── hooks/         # Hook implementations
+│   └── lib/           # Shared libraries
+├── dist/              # Compiled CLI binary
 ├── templates/         # Templates for initialization
+├── docs/              # Research and documentation
 └── old_roopars_documents/  # Legacy documentation
 ```
 
 ## Key Files & Purpose
 
-### Hooks (Event Handlers)
+### CLI Implementation (src/)
 | File | Purpose |
 |------|---------|
-| .claude/hooks/capture_plan.ts | Captures plans from ExitPlanMode, creates task files |
-| .claude/hooks/pre_compact.ts | Extracts error patterns before compaction |
-| .claude/hooks/post_compact.ts | Restores context after compaction via SessionStart |
-| .claude/hooks/stop_review.ts | Reviews changes at Stop event, auto-commits with [wip] |
-| .claude/hooks/edit_validation.ts | Real-time TypeScript and Biome validation on edits |
+| src/cli/index.ts | Main CLI entry point with Commander setup |
+| src/hooks/capture-plan.ts | Captures plans from ExitPlanMode, creates task files |
+| src/hooks/pre-compact.ts | Extracts error patterns before compaction |
+| src/hooks/post-compact.ts | Restores context after compaction via SessionStart |
+| src/hooks/stop-review.ts | Reviews changes at Stop event, auto-commits |
+| src/hooks/edit-validation.ts | Real-time TypeScript and Biome validation on edits |
 
-### Scripts & Utilities
+### CLI Commands (src/commands/)
 | File | Purpose |
 |------|---------|
-| .claude/scripts/init-templates.ts | Initializes cc-track in a project |
-| .claude/scripts/git-session.ts | Git utilities for managing WIP commits |
-| .claude/scripts/add-to-backlog.ts | Appends items to backlog with date stamps |
-| .claude/scripts/complete-task.ts | Automated task completion with git squashing |
+| src/commands/init.ts | Initializes cc-track in a project |
+| src/commands/git-session.ts | Git utilities for managing WIP commits |
+| src/commands/backlog.ts | Appends items to backlog with date stamps |
+| src/commands/complete-task.ts | Automated task completion with git squashing |
+| src/commands/hook.ts | Unified hook dispatcher for all events |
+| src/commands/statusline.ts | Generate status line for Claude Code |
 
-### Commands
+### Slash Commands (.claude/commands/)
 | File | Purpose |
 |------|---------|
 | .claude/commands/init-track.md | Slash command to initialize cc-track |
@@ -73,12 +80,13 @@
 | .claude/track.config.json | Configuration for enabling/disabling hooks |
 | .claude/backlog.md | List of future ideas and improvements |
 
-### Libraries (.claude/lib/)
+### Libraries (src/lib/)
 | File | Purpose |
 |------|---------|
-| .claude/lib/config.ts | Configuration management helpers |
-| .claude/lib/git-helpers.ts | Git operations for branch management |
-| .claude/lib/logger.ts | Centralized logging system with rotation |
+| src/lib/config.ts | Configuration management helpers |
+| src/lib/git-helpers.ts | Git operations for branch management |
+| src/lib/github-helpers.ts | GitHub CLI wrapper functions |
+| src/lib/logger.ts | Centralized logging system with rotation |
 
 ---
 
@@ -86,4 +94,5 @@
 
 [2025-09-10 03:05] - Complete restructure with accurate project layout
 [2025-09-10 09:00] - Added backlog system files
-[2025-09-10 21:00] - Updated paths to reflect actual .claude/ structure, added missing files (edit_validation.ts, complete-task.ts, logger.ts, view-logs.md)
+[2025-09-10 21:00] - Updated paths to reflect actual .claude/ structure, added missing files
+[2025-09-11 19:30] - Migrated all code to src/ directory, removed legacy .claude script locations

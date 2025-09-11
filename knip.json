@@ -1,12 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
-    ".claude/hooks/*.ts",
-    ".claude/scripts/*.ts",
-    ".claude/lib/*.ts"
+    "src/cli/index.ts"
   ],
   "project": [
-    ".claude/**/*.ts"
+    "src/**/*.ts"
   ],
   "ignore": [
     "**/*.md",
