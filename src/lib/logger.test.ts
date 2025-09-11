@@ -222,4 +222,5 @@ describe('Logger', () => {
       expect(appendedLines).toHaveLength(0);
     });
   });
+
 });
