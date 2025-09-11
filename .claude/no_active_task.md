@@ -29,5 +29,7 @@ The following tasks are being tracked in this project:
 - TASK_023: Comprehensive Project Rename from cc-pars to cc-track
 - TASK_024: Add API Timer Display Configuration
 - TASK_025: GitHub Integration Implementation
+- TASK_026: Refactor cc-track to CLI Architecture
+- TASK_027: Add Semantic Release with Automatic GitHub Release Publishing
 
 To begin a new task, the user should enable planning mode. If they seem to want to begin complex outcome driven work, you should suggest this but don't be insistent if they don't want to.
