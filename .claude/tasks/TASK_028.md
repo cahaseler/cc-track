@@ -2,7 +2,7 @@
 
 **Purpose:** Clean up legacy .claude scripts and hooks that have been fully migrated to the new CLI structure under src/, removing 14 obsolete files while preserving all functionality.
 
-**Status:** planning
+**Status:** completed
 **Started:** 2025-09-11 19:12
 **Task ID:** 028
 
@@ -43,7 +43,8 @@
 Systematic deletion of migrated files organized by category (hooks, scripts, libraries, shell scripts), followed by configuration updates. All functionality has been verified to exist in the new CLI structure under src/.
 
 ## Current Focus
-Start with safe deletion of legacy hook files, then proceed through scripts, libraries, and shell script before updating configuration files.
+
+Task completed on 2025-09-11
 
 ## Open Questions & Blockers
 - Need to verify no hidden references to legacy files exist in configuration
