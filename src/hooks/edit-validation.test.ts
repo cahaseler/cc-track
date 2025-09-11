@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { HookInput } from '../types';
 import {
+  type EditValidationConfig,
   editValidationHook,
   extractFilePaths,
   filterTypeScriptFiles,
   formatValidationResults,
-  runTypeScriptCheck,
   runBiomeCheck,
-  type EditValidationConfig,
+  runTypeScriptCheck,
 } from './edit-validation';
 
 describe('edit-validation', () => {
@@ -123,7 +123,7 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => '');
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
@@ -137,7 +137,7 @@ describe('edit-validation', () => {
         typecheck: { enabled: true, command: 'tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => '');
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
@@ -150,15 +150,15 @@ describe('edit-validation', () => {
         typecheck: { enabled: true, command: 'tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => {
         const error = new Error('TypeScript failed');
         (error as { stderr?: string }).stderr = "test.ts(10,5): error TS2304: Cannot find name 'foo'.";
         throw error;
       });
-      
+
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
-      expect(result).toEqual(['Line 10: Cannot find name \'foo\'.']);
+      expect(result).toEqual(["Line 10: Cannot find name 'foo'."]);
     });
 
     test('rethrows timeout errors', () => {
@@ -168,13 +168,13 @@ describe('edit-validation', () => {
         typecheck: { enabled: true, command: 'tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => {
         const error = new Error('Command timed out');
         (error as { code?: string }).code = 'ETIMEDOUT';
         throw error;
       });
-      
+
       expect(() => {
         runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       }).toThrow('Command timed out');
@@ -187,11 +187,11 @@ describe('edit-validation', () => {
         typecheck: { enabled: true, command: 'tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => {
         throw new Error('Some generic error');
       });
-      
+
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
     });
@@ -214,7 +214,7 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: false, command: 'biome' },
       };
-      
+
       const mockExec = mock(() => '');
       const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
@@ -228,7 +228,7 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: true, command: 'biome check' },
       };
-      
+
       const mockExec = mock(() => '');
       const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
@@ -241,13 +241,13 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: true, command: 'biome check' },
       };
-      
+
       const mockExec = mock(() => {
         const error = new Error('Biome failed');
-        (error as { stdout?: string }).stdout = "/test/file.ts:10:5 lint/suspicious/noExplicitAny Unexpected any.";
+        (error as { stdout?: string }).stdout = '/test/file.ts:10:5 lint/suspicious/noExplicitAny Unexpected any.';
         throw error;
       });
-      
+
       const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual(['Line 10: Unexpected any.']);
     });
@@ -259,13 +259,13 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: true, command: 'biome check' },
       };
-      
+
       const mockExec = mock(() => {
         const error = new Error('Command timed out');
         (error as { code?: string }).code = 'ETIMEDOUT';
         throw error;
       });
-      
+
       expect(() => {
         runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       }).toThrow('Command timed out');
@@ -278,11 +278,11 @@ describe('edit-validation', () => {
         typecheck: { enabled: false, command: 'tsc' },
         lint: { enabled: true, command: 'biome check' },
       };
-      
+
       const mockExec = mock(() => {
         throw new Error('Some generic error');
       });
-      
+
       const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
     });
