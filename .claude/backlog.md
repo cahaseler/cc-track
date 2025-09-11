@@ -45,3 +45,4 @@
 **Priority:** CRITICAL - This is a fundamental quality issue. If we're using TypeScript, ALL our code should be type-checked, especially tests.
 - [2025-09-11] improve review system's ability to validate extremely large diffs via multi-tiered summary or other approaches
 - [2025-09-11] investigate consistent issues with pre-compaction hook when invoked on manual compaction
+- [2025-09-11] break task completion into two phases to allow better automation of pre-completion cleanup and documentation, linting, fixes, etc, followed by a second phase with the automated git actions, file updates, etc. claude code commands system currently works by running scripts then passing results to claude for things that can't be easily scripted, but our workflow really needs script (for checks), claude (for fixes and documentation and reflection), then another script (for squash, push, branch swap). So breaking it into two commands seems the best approach.
