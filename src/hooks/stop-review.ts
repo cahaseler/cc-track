@@ -59,9 +59,7 @@ export class SessionReviewer {
       // Handle documentation-only changes
       if (docOnlyChanges) {
         const taskId = this.getActiveTaskId();
-        const commitMessage = taskId 
-          ? `docs: update ${taskId} documentation`
-          : 'docs: update project documentation';
+        const commitMessage = taskId ? `docs: update ${taskId} documentation` : 'docs: update project documentation';
         return {
           status: 'on_track',
           message: 'Documentation updates only',
@@ -74,11 +72,15 @@ export class SessionReviewer {
       try {
         const gitHelpers = this.deps.gitHelpers || new GitHelpers();
         const taskId = this.getActiveTaskId();
-        commitMessage = await gitHelpers.generateCommitMessage(filteredDiff || fullDiff, this.projectRoot, taskId);
+        commitMessage = await gitHelpers.generateCommitMessage(
+          filteredDiff || fullDiff,
+          this.projectRoot,
+          taskId || undefined,
+        );
       } catch {
         // Fallback to generic message if generation fails
         const taskId = this.getActiveTaskId();
-        commitMessage = taskId 
+        commitMessage = taskId
           ? `wip: ${taskId} exploratory work and improvements`
           : 'chore: exploratory work and improvements';
       }
@@ -123,9 +125,7 @@ export class SessionReviewer {
       // This shouldn't happen if docOnlyChanges is false, but handle it anyway
       this.logger.warn('No code changes to review despite docOnlyChanges being false');
       const taskId = this.getActiveTaskId();
-      const commitMessage = taskId 
-        ? `wip: ${taskId} work in progress`
-        : 'wip: work in progress';
+      const commitMessage = taskId ? `wip: ${taskId} work in progress` : 'wip: work in progress';
       return {
         status: 'on_track',
         message: 'No code changes to review',
@@ -478,7 +478,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       this.logger.error('Claude review failed', { error: errorMsg });
       // Return review failure status
       const taskId = this.getActiveTaskId();
-      const commitMessage = taskId 
+      const commitMessage = taskId
         ? `wip: ${taskId} work in progress - review failed`
         : 'wip: work in progress - review failed';
       return {

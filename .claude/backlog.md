@@ -19,5 +19,4 @@
 - [2025-09-10] investigate supressing file change notifications to certain folders like logs to avoid noise injection into context.
 - [2025-09-11] Add git pull to post-compaction workflow - ensure latest changes from GitHub are pulled after compaction restoration
 - [2025-09-11] code review command that invokes long running code review agent, optionally using claude cli or codex cli
-- semantic release auto versioning and git build workflow
 - npm? or whatever bunx uses?
