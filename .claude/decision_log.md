@@ -135,6 +135,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** More vertical space usage but significantly better information hierarchy and readability
 - **Reversibility:** Easy - just change the line break logic in statusline.sh
 
+[2025-09-11 02:30] - GitHub Integration via gh CLI Over Direct API Calls
+- **Context:** Needed to implement GitHub integration for automatic issue creation and PR workflow
+- **Decision:** Use gh CLI wrapper functions instead of direct GitHub API calls or octokit library
+- **Rationale:** gh CLI handles authentication transparently, respects rate limits, works with existing user credentials, zero npm dependencies
+- **Alternatives Considered:** 
+  - octokit library: Adds external dependency, requires API token management, more complex authentication
+  - Direct REST API calls: Would need to handle authentication, rate limiting, and error handling manually
+  - GitHub Actions integration: Too complex for simple issue/PR creation, requires workflow files
+- **Implications:** Users must have gh CLI installed and authenticated, but get seamless GitHub integration without token management
+- **Reversibility:** Easy - wrapper functions abstract the implementation, could swap to octokit later if needed
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

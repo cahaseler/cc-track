@@ -26,5 +26,8 @@ The following tasks are being tracked in this project:
 - TASK_020: PostToolUse Hook for Edit Validation
 - TASK_021: Improve /complete-task Command with Smart Script
 - TASK_022: Make Stop Review Hook More Lenient About Documentation Updates
+- TASK_023: Comprehensive Project Rename from cc-pars to cc-track
+- TASK_024: Add API Timer Display Configuration
+- TASK_025: GitHub Integration Implementation
 
 To begin a new task, the user should enable planning mode. If they seem to want to begin complex outcome driven work, you should suggest this but don't be insistent if they don't want to.

@@ -13,6 +13,16 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 22:25
+- **Biome CLI flags**: Use `--write` instead of `--apply` or `--fix` flags with biome check command
+- **Git pre-push hooks**: When push fails due to linting/type errors, fix the specific errors shown rather than bypassing with --no-verify
+- **GitHub PR creation**: Use `--base` and `--head` flags explicitly when default branch detection fails
+- **Unused variables in catch blocks**: Prefix with underscore (e.g., `_commitError`) to satisfy linters
+- **Recovery pattern mismatch**: The recorded recovery attempts show reads/edits to unrelated files (track.config.json) that don't match the actual failures - this indicates misleading error logging
+- **No-op edits**: When old_string and new_string are identical, the Edit tool correctly rejects the operation
+- **Git hooks location**: Pre-push hooks are in `.git/hooks/pre-push` not `/.git/hooks/pre-push` (missing dot in path)
+- **Biome output parsing**: Use `--reporter=summary` with text matching rather than `--reporter=json` for simpler validation checks
+
 ### Session: 2025-09-11 21:13
 - When Edit tool reports "File has not been read yet", always use Read tool first even if you believe you've seen the file content recently
 - When hooks reject edits (user doesn't want to proceed), retry the same edit - the hook may have been checking for something specific that's now resolved
