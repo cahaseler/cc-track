@@ -59,7 +59,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": ".claude/statusline.sh",
+    "command": "/home/ubuntu/projects/cc-pars/dist/cc-track statusline",
     "padding": 0
   }
 }

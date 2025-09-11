@@ -6,6 +6,7 @@ import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
+import { statuslineCommand } from '../commands/statusline';
 
 // Version is hardcoded for compiled binary
 const VERSION = '1.0.0';
@@ -25,6 +26,7 @@ program.addCommand(initCommand);
 program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
 program.addCommand(gitSessionCommand);
+program.addCommand(statuslineCommand);
 
 // Parse arguments
 program.parse();
