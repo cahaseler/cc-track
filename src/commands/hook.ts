@@ -11,6 +11,43 @@ import type { HookInput, HookOutput } from '../types';
 const logger = createLogger('hook-dispatcher');
 
 /**
+ * Determine which hook to run based on the input data
+ */
+export function determineHookType(input: HookInput): string | null {
+  const { hook_event_name, tool_name } = input;
+
+  // Map event types to hook handlers
+  switch (hook_event_name) {
+    case 'PostToolUse':
+      // Check if this is an ExitPlanMode event for capture-plan
+      if (tool_name === 'ExitPlanMode') {
+        return 'capture-plan';
+      }
+      // Check if this is an Edit/Write/MultiEdit event for edit-validation
+      if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
+        return 'edit-validation';
+      }
+      return null;
+
+    case 'PreCompact':
+      return 'pre-compact';
+
+    case 'SessionStart':
+      // Check if source is compact for post-compact hook
+      if (input.source === 'compact') {
+        return 'post-compact';
+      }
+      return null;
+
+    case 'Stop':
+      return 'stop-review';
+
+    default:
+      return null;
+  }
+}
+
+/**
  * Map of hook types to their handler functions
  */
 const hookHandlers: Record<string, (input: HookInput) => Promise<HookOutput>> = {
@@ -46,62 +83,58 @@ async function readStdinJson(): Promise<HookInput> {
  */
 export const hookCommand = new Command('hook')
   .description('Handle Claude Code hook events (reads JSON from stdin)')
-  .requiredOption(
-    '-t, --type <type>',
-    'hook type to execute (capture-plan, edit-validation, pre-compact, post-compact, stop-review)',
-  )
-  .option('--debug', 'enable debug logging')
-  .action(async (options) => {
+  .action(async () => {
     try {
       // Read input from stdin
       const input = await readStdinJson();
 
-      // Enable debug logging if requested
-      if (options.debug) {
-        process.env.LOG_LEVEL = 'debug';
-      }
-
-      logger.debug('Processing hook event', {
-        event: input.hook_event_name,
-        cwd: input.cwd,
+      // Log the received input for debugging
+      logger.debug('Received hook input', {
+        hook_event_name: input.hook_event_name,
+        tool_name: input.tool_name,
         source: input.source,
       });
 
-      // Find handler for this hook type
-      const handler = options.type ? hookHandlers[options.type] : null;
+      // Determine hook type from input
+      const hookType = determineHookType(input);
 
+      if (!hookType) {
+        logger.debug('No handler for this hook event', {
+          hook_event_name: input.hook_event_name,
+          tool_name: input.tool_name,
+        });
+        // Return success with no action for unhandled events
+        console.log(JSON.stringify({ continue: true }));
+        process.exit(0);
+      }
+
+      // Get the handler for this hook type
+      const handler = hookHandlers[hookType];
       if (!handler) {
-        logger.error('Unknown hook type', { type: options.type });
-        const output: HookOutput = {
-          continue: false,
-          error: `Unknown hook type: ${options.type}`,
-        };
-        console.log(JSON.stringify(output));
+        logger.error('Unknown hook type', { hookType });
+        console.error(JSON.stringify({ error: `Unknown hook type: ${hookType}` }));
         process.exit(1);
       }
 
-      // Execute hook handler
-      const output = await handler(input);
+      // Execute the hook
+      logger.debug(`Executing ${hookType} hook`);
+      const result = await handler(input);
 
-      // Write output to stdout
-      console.log(JSON.stringify(output));
+      // Output the result as JSON
+      console.log(JSON.stringify(result));
 
       // Exit with appropriate code
-      if (output.continue === false || output.decision === 'block') {
+      if (result.decision === 'block' || result.error) {
         process.exit(2); // Block the action
       }
-
-      process.exit(0); // Success
+      process.exit(0);
     } catch (error) {
       logger.error('Hook execution failed', { error });
-
-      // Return error output
-      const errorOutput: HookOutput = {
-        continue: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-
-      console.log(JSON.stringify(errorOutput));
-      process.exit(1); // Error
+      console.error(
+        JSON.stringify({
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
+      process.exit(1);
     }
   });

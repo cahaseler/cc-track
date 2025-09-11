@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type capture-plan",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
             "timeout": 10000
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type edit-validation",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
             "timeout": 5000
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type pre-compact",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
             "timeout": 30000
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type post-compact",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
             "timeout": 5000
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook --type stop-review",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
             "timeout": 20000
           }
         ]
