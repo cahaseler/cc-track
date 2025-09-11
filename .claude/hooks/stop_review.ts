@@ -94,7 +94,7 @@ class SessionReviewer {
       // Extract task ID for commit message
       const taskIdMatch = activeTask.match(/Task ID:\*\* (\d+)/);
       const taskId = taskIdMatch ? `TASK_${taskIdMatch[1]}` : 'TASK';
-      
+
       return {
         status: 'on_track',
         message: 'Documentation updates only - auto-approved',
@@ -216,13 +216,18 @@ class SessionReviewer {
     }
   }
 
-  private getFilteredGitDiff(): { fullDiff: string; filteredDiff: string; hasDocChanges: boolean; docOnlyChanges: boolean } {
+  private getFilteredGitDiff(): {
+    fullDiff: string;
+    filteredDiff: string;
+    hasDocChanges: boolean;
+    docOnlyChanges: boolean;
+  } {
     const fullDiff = this.getGitDiff();
-    
+
     if (!fullDiff) {
       return { fullDiff: '', filteredDiff: '', hasDocChanges: false, docOnlyChanges: false };
     }
-    
+
     // Parse diff to filter out .md files
     const lines = fullDiff.split('\n');
     const filteredLines: string[] = [];
@@ -230,54 +235,55 @@ class SessionReviewer {
     let skipCurrentFile = false;
     let hasDocChanges = false;
     let hasCodeChanges = false;
-    
+
     for (const line of lines) {
       // Detect file headers in diff format: diff --git a/file b/file
       if (line.startsWith('diff --git')) {
         const fileMatch = line.match(/b\/(.+)$/);
         currentFile = fileMatch ? fileMatch[1] : '';
-        
+
         // Check if this is a documentation file
-        skipCurrentFile = currentFile.endsWith('.md') || 
-                         currentFile.endsWith('.markdown') ||
-                         currentFile.endsWith('.rst') ||
-                         currentFile.endsWith('.txt') ||
-                         currentFile.includes('/docs/') ||
-                         currentFile.includes('README');
-        
+        skipCurrentFile =
+          currentFile.endsWith('.md') ||
+          currentFile.endsWith('.markdown') ||
+          currentFile.endsWith('.rst') ||
+          currentFile.endsWith('.txt') ||
+          currentFile.includes('/docs/') ||
+          currentFile.includes('README');
+
         if (skipCurrentFile) {
           hasDocChanges = true;
           this.logger.debug(`Filtering out documentation file: ${currentFile}`);
         } else {
           hasCodeChanges = true;
         }
-        
+
         // Don't include the diff header for filtered files
         if (skipCurrentFile) {
           continue;
         }
       }
-      
+
       // Skip all lines for filtered files
       if (!skipCurrentFile) {
         filteredLines.push(line);
       }
     }
-    
+
     const result = {
       fullDiff,
       filteredDiff: filteredLines.join('\n'),
       hasDocChanges,
-      docOnlyChanges: hasDocChanges && !hasCodeChanges
+      docOnlyChanges: hasDocChanges && !hasCodeChanges,
     };
-    
+
     this.logger.debug('Diff filtering results', {
       fullDiffLength: fullDiff.length,
       filteredDiffLength: result.filteredDiff.length,
       hasDocChanges: result.hasDocChanges,
-      docOnlyChanges: result.docOnlyChanges
+      docOnlyChanges: result.docOnlyChanges,
     });
-    
+
     return result;
   }
 
@@ -297,7 +303,7 @@ class SessionReviewer {
       throw new Error(`Diff too large for review: ${diff.length} characters`);
     }
 
-    const docNote = hasDocChanges 
+    const docNote = hasDocChanges
       ? '\n\n## Important Note:\nChanges to .md (markdown) documentation files have been filtered out from the diff below and are always acceptable. Focus only on the code changes shown.'
       : '';
 
