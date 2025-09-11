@@ -84,16 +84,17 @@ export class GitHelpers {
   /**
    * Generate a commit message using Claude CLI Haiku with conventional commit format
    */
-  async generateCommitMessage(diff: string, _cwd: string): Promise<string> {
+  async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
     // Truncate diff if too long (Haiku has smaller context)
     const truncatedDiff = diff.substring(0, 3000);
 
-    const prompt = `Write a conventional commit message for these changes. Return only the commit message, nothing else.
+    const taskContext = taskId ? `\nActive task: ${taskId}` : '';
+    const prompt = `Write a conventional commit message for these changes. Return only the commit message, nothing else.${taskContext}
 
 ${truncatedDiff}
 
-Use format: type(scope): description
-Examples: feat: add user auth, fix: resolve parsing bug, docs: update readme`;
+Use format: type: description${taskId ? ` or type: ${taskId} description` : ''}
+Examples: ${taskId ? `feat: ${taskId} add user auth, fix: ${taskId} resolve parsing bug, docs: ${taskId} update readme` : 'feat: add user auth, fix: resolve parsing bug, docs: update readme'}`;
 
     try {
       // Write prompt to temp file to avoid shell escaping issues
@@ -245,8 +246,8 @@ export function hasUncommittedChanges(cwd: string): boolean {
   return defaultGitHelpers.hasUncommittedChanges(cwd);
 }
 
-export async function generateCommitMessage(diff: string, cwd: string): Promise<string> {
-  return defaultGitHelpers.generateCommitMessage(diff, cwd);
+export async function generateCommitMessage(diff: string, cwd: string, taskId?: string): Promise<string> {
+  return defaultGitHelpers.generateCommitMessage(diff, cwd, taskId);
 }
 
 export async function generateBranchName(plan: string, taskId: string, cwd: string): Promise<string> {
