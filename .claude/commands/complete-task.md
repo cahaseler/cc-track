@@ -50,17 +50,30 @@ Based on the completion results above:
       - Check if the completed task was listed in the backlog
       - Remove it if present (it's now complete, not a future item)
 
-4. **Provide Summary to User:**
+4. **Handle GitHub Workflow (if enabled):**
+   
+   **If the automated script indicates GitHub PR workflow is active:**
+   - Create a pull request using: `gh pr create --title "Task XXX: [Task Title]" --body "[Task summary and key changes]"`
+   - Include what was delivered, key technical details, and testing notes in PR description
+   - After PR creation, switch back to default branch: `git checkout main` (or `master`)
+   - Provide the PR URL to the user
+   
+   **If traditional git workflow was used:**
+   - Confirm the branch was merged successfully
+   - Note any manual steps needed
+   
+5. **Provide Summary to User:**
    - Task completion confirmation with ID and title
    - What was delivered (bullet points)
    - Key achievements or breakthroughs
    - Any issues, warnings, or follow-up items from the report
-   - Git status (was it squashed? any manual steps needed?)
+   - Git/GitHub status (squashed? merged? PR created?)
    - Validation status (TypeScript/Biome results)
    - Next steps recommendation
 
 ## Example Output
 
+### Traditional Git Workflow
 ```
 📝 Task 021 Completed: Improve /complete-task Command with Smart Script
 
@@ -73,7 +86,7 @@ Based on the completion results above:
 📊 Automated Results:
 - Task status: Updated to completed ✓
 - CLAUDE.md: Updated to no_active_task ✓
-- Git: 5 WIP commits squashed successfully
+- Git: 5 WIP commits squashed, branch merged successfully
 - Validation: TypeScript (0 errors), Biome (0 issues)
 
 🔍 Follow-up Items:
@@ -81,6 +94,35 @@ Based on the completion results above:
 - Monitor script performance with large task files
 
 Next: Ready for a new task? Use planning mode to get started.
+```
+
+### GitHub PR Workflow
+```
+📝 Task 025 Completed: GitHub Integration Implementation
+
+✅ Delivered:
+- Comprehensive GitHub integration with issue tracking
+- Automatic PR workflow with branch management
+- GitHub CLI wrapper functions with error handling
+- Configuration system for flexible GitHub features
+
+📊 Automated Results:
+- Task status: Updated to completed ✓
+- CLAUDE.md: Updated to no_active_task ✓
+- Git: 3 WIP commits squashed, branch pushed to origin
+- GitHub: Ready for PR creation
+- Validation: TypeScript (0 errors), Biome (0 issues)
+
+🚀 GitHub Workflow:
+- Branch: feature/github-integration-setup-025 pushed ✓
+- Issue: #25 linked to this task
+- Creating PR: Task 025: GitHub Integration Implementation
+
+📋 PR Created: https://github.com/cahaseler/cc-track/pull/1
+- Switched back to main branch ✓
+- Ready for code review and merge
+
+Next: PR ready for review! Once merged, ready for a new task.
 ```
 
 ## Important Notes

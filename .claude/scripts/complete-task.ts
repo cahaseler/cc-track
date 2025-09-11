@@ -3,6 +3,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pushCurrentBranch } from '../lib/github-helpers';
 
 interface CompletionResult {
   success: boolean;
@@ -22,7 +23,13 @@ interface CompletionResult {
     squashed?: boolean;
     commitMessage?: string;
     branchMerged?: boolean;
+    branchPushed?: boolean;
     notes?: string;
+  };
+  github?: {
+    prWorkflow?: boolean;
+    issueNumber?: number;
+    branchName?: string;
   };
   warnings: string[];
   filesChanged?: string[];
@@ -291,15 +298,51 @@ async function main() {
       result.warnings.push(`Git operations failed: ${error.message}`);
     }
 
-    // 7. Handle branching if enabled
+    // 7. Handle branching/GitHub workflow if enabled
     try {
-      // Check if git_branching is enabled
       const configPath = join(claudeDir, 'track.config.json');
       if (existsSync(configPath)) {
         const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 
-        if (config.hooks?.git_branching?.enabled) {
-          // Look for branch info in task file
+        // Check if GitHub integration is enabled
+        const githubEnabled = config.features?.github_integration?.enabled;
+        const prWorkflow = githubEnabled && config.features?.github_integration?.auto_create_prs;
+
+        if (prWorkflow) {
+          // GitHub PR workflow - just push the branch, don't merge
+          const branchMatch =
+            taskContent.match(/<!-- branch: (.*?) -->/) || taskContent.match(/<!-- issue_branch: (.*?) -->/);
+          const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
+
+          if (branchMatch) {
+            const branchName = branchMatch[1];
+            const currentBranch = execSync('git branch --show-current', { encoding: 'utf-8', cwd: projectRoot }).trim();
+
+            if (currentBranch === branchName) {
+              // Push the current branch
+              const pushSuccess = pushCurrentBranch(projectRoot);
+              if (pushSuccess) {
+                result.git.branchPushed = true;
+                result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
+
+                // Set up GitHub workflow info
+                result.github = {
+                  prWorkflow: true,
+                  branchName,
+                  issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                };
+              } else {
+                result.warnings.push('Failed to push branch to origin');
+                result.git.branchPushed = false;
+              }
+            } else {
+              result.git.notes = `Task branch ${branchName} not currently checked out`;
+            }
+          } else {
+            result.git.notes = 'No branch information found for GitHub PR workflow';
+          }
+        } else if (config.hooks?.git_branching?.enabled) {
+          // Traditional git branching workflow - merge locally
           const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
 
           if (branchMatch) {
@@ -345,7 +388,7 @@ async function main() {
       }
     } catch (branchError) {
       const error = branchError as Error;
-      result.warnings.push(`Branch operations failed: ${error.message}`);
+      result.warnings.push(`Branch/GitHub operations failed: ${error.message}`);
     }
 
     result.success = true;
