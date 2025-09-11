@@ -63,11 +63,15 @@
 - Fixed stop-review hook to handle large diffs correctly (still commits with [wip] when review fails)
 - Created tests for CLI commands (init, backlog, complete-task, hook) with structural validation
 - Fixed all linting errors and TypeScript compliance issues (all tests now pass lint and typecheck)
-- Updated all slash commands in .claude/commands/ to use compiled binary instead of bun scripts
-- Total: 186 tests passing with 0 linting/type errors
+- Updated all slash commands in .claude/commands/ to use compiled binary instead of bun scripts  
+- **RESTORED MISSING FUNCTIONALITY** from original implementation:
+  - complete-task: Full JSON output, validation checks, GitHub workflows, no_active_task updates, safe git operations
+  - init: Smart CLAUDE.md merging with backup, proper settings location, original directory structure
+  - git-session: All utilities (show-revert, squash, show-wip, diff, prepare-push) as CLI subcommands
+- Total: 191 tests passing with 0 linting/type errors
 
 ## Current Focus
-**VALIDATION PHASE** - All requirements implemented, now validating and testing CLI tool functionality to ensure it works correctly before marking complete
+**FUNCTIONALITY RESTORED** - All critical functionality gaps from @docs/command_functionality_differences_codex.md have been resolved. CLI tool now maintains full backward compatibility with original implementation while providing improved architecture and comprehensive test coverage. Ready for final validation.
 
 ## Open Questions & Blockers
 - ✅ Resolved: Commander.js chosen over minimal approach for better QoL features

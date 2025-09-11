@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { backlogCommand } from '../commands/backlog';
 import { completeTaskCommand } from '../commands/complete-task';
+import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
@@ -23,6 +24,7 @@ program.addCommand(hookCommand);
 program.addCommand(initCommand);
 program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
+program.addCommand(gitSessionCommand);
 
 // Parse arguments
 program.parse();
