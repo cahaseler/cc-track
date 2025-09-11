@@ -39,7 +39,7 @@
       "description": "Custom status line showing costs and task info"
     },
     "git_branching": {
-      "enabled": false,
+      "enabled": true,
       "description": "Create feature branches for tasks and merge on completion"
     }
   },
