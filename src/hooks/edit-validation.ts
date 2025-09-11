@@ -294,7 +294,7 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
         if (err.code === 'ETIMEDOUT') {
           return {
             decision: 'block',
-            systemMessage: '⏱️ Validation timeout - TypeScript check took too long',
+            reason: '⏱️ Validation timeout - TypeScript check took too long',
           };
         }
         // Re-throw other unexpected errors
@@ -312,7 +312,7 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
         if (err.code === 'ETIMEDOUT') {
           return {
             decision: 'block',
-            systemMessage: '⏱️ Validation timeout - Biome check took too long',
+            reason: '⏱️ Validation timeout - Biome check took too long',
           };
         }
         // Re-throw other unexpected errors
@@ -337,7 +337,7 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
 
       return {
         decision: 'block',
-        systemMessage: `⚠️ TypeScript/Biome validation failed:\n\n${message}`,
+        reason: `⚠️ TypeScript/Biome validation failed:\n\n${message}`,
       };
     }
 

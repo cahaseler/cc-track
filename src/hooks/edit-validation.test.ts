@@ -195,8 +195,8 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.systemMessage).toContain('TypeScript/Biome validation failed');
-      expect(result.systemMessage).toContain("Type 'string' is not assignable to type 'number'");
+      expect(result.reason).toContain('TypeScript/Biome validation failed');
+      expect(result.reason).toContain("Type 'string' is not assignable to type 'number'");
     });
 
     test('blocks edit when Biome linting fails', async () => {
@@ -232,8 +232,8 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.systemMessage).toContain('TypeScript/Biome validation failed');
-      expect(result.systemMessage).toContain('Unexpected any');
+      expect(result.reason).toContain('TypeScript/Biome validation failed');
+      expect(result.reason).toContain('Unexpected any');
     });
 
     test('allows edit when all validation passes', async () => {
@@ -262,7 +262,7 @@ describe('edit-validation', () => {
       });
       expect(result.continue).toBe(true);
       expect(result.decision).toBeUndefined();
-      expect(result.systemMessage).toBeUndefined();
+      expect(result.reason).toBeUndefined();
     });
 
     test('uses configured commands from track.config.json', async () => {
@@ -330,7 +330,7 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.systemMessage).toContain("Cannot find name 'undefinedVar'");
+      expect(result.reason).toContain("Cannot find name 'undefinedVar'");
     });
 
     test('handles validation timeout', async () => {
@@ -363,7 +363,7 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.systemMessage).toContain('Validation timeout');
+      expect(result.reason).toContain('Validation timeout');
     });
 
     test('handles file not found errors', async () => {
