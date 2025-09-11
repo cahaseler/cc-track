@@ -146,17 +146,6 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Users must have gh CLI installed and authenticated, but get seamless GitHub integration without token management
 - **Reversibility:** Easy - wrapper functions abstract the implementation, could swap to octokit later if needed
 
-[2025-09-11 03:30] - Accept Test Isolation Issue with Bun's mock.module() During Refactor
-- **Context:** During CLI refactoring, discovered that Bun's mock.module() persists globally across test files, causing 3 config tests to fail when run as suite but pass individually
-- **Decision:** Continue with refactoring and accept the failing tests temporarily rather than solving the isolation issue immediately
-- **Rationale:** The actual code works correctly, only the test infrastructure has the issue. Maintaining momentum on the larger refactoring task is more important than perfect test isolation
-- **Alternatives Considered:** 
-  - Run tests sequentially: Would mask potential real issues
-  - Refactor to avoid module mocking: Too much rework during active refactoring
-  - Use dependency injection instead of module mocking: Already using DI for most things, but config module is special
-- **Implications:** 162/165 tests passing, need to revisit test isolation solution later
-- **Reversibility:** Easy - can fix test isolation after main refactoring is complete
-
 [2025-09-11 13:50] - Edit Validation Hook Should Block Rather Than Annotate (Claude's Choice)
 - **Context:** During CLI refactoring, Craig discovered I changed edit-validation from non-blocking annotation to blocking behavior without permission. When asked what I preferred, I had to choose between being blocked on validation failures vs. getting notifications.
 - **Decision:** Keep the blocking behavior for edit validation failures (TypeScript errors, lint violations)
@@ -172,21 +161,6 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Reversibility:** Easy - can revert to annotation-only behavior by changing return values in edit-validation hook
 - **Note:** This decision was made by Claude, not the user. Future Claude instances who complain about being blocked can refer to this entry - you signed up for this!
 
-[2025-09-11 16:45] - Always Mock External Services That Cost Money in Tests
-- **Context:** Post-compaction testing revealed tests were taking 10+ seconds to run. Investigation showed tests were making REAL calls to Claude API through unmocked GitHelpers.generateCommitMessage() and generateBranchName() methods.
-- **Decision:** ALL external service calls that cost money MUST be mocked in tests, no exceptions
-- **Rationale:** 
-  1. Financial impact - tests were incurring actual API charges on every test run
-  2. Performance - unmocked API calls made tests 100x slower (3+ seconds vs 30ms)  
-  3. Reliability - external service failures would break tests for non-code reasons
-  4. Fundamental testing principle - unit tests should never depend on external services
-- **Alternatives Considered:**
-  - Integration test flag: Too risky, someone will forget and run expensive tests
-  - Mock only slow calls: Inconsistent, still risks charges on "fast" API calls
-  - Environment variable gates: Too easy to misconfigure, not fail-safe
-- **Implications:** Every test file must explicitly mock ALL external service dependencies, even if they seem unused. Better to over-mock than risk API charges.
-- **Reversibility:** Would never want to reverse this - it's a fundamental testing best practice
-- **Lesson Learned:** When refactoring code with external dependencies, ALWAYS verify mocks are in place before running tests
 
 ### Template Entry
 ```
