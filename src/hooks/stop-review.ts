@@ -659,7 +659,34 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
     };
   }
 
-  // Quick check for changes before doing any review
+  // Add any untracked files first
+  try {
+    const untrackedFiles = exec('git ls-files --others --exclude-standard', {
+      encoding: 'utf-8',
+      cwd: projectRoot,
+    }).trim();
+    
+    if (untrackedFiles) {
+      const files = untrackedFiles.split('\n').filter(f => f.length > 0);
+      logger.debug('Adding untracked files', { count: files.length });
+      
+      // Add each untracked file
+      for (const file of files) {
+        try {
+          exec(`git add "${file}"`, {
+            encoding: 'utf-8',
+            cwd: projectRoot,
+          });
+        } catch (e) {
+          logger.warn('Failed to add file', { file, error: e });
+        }
+      }
+    }
+  } catch (e) {
+    logger.warn('Failed to check for untracked files', { error: e });
+  }
+
+  // Quick check for changes after adding untracked files
   if (!hasUncommittedChanges(projectRoot, exec)) {
     logger.info('No changes detected, exiting early');
     return {
