@@ -12,7 +12,7 @@
 - [x] Transform hooks from stdin/stdout scripts to pure functions
 - [ ] Create hook dispatcher in commands/hook.ts to handle stdin/stdout once
 - [ ] Implement CLI entry point with Commander.js structure
-- [ ] Write comprehensive tests for all hook functions using Bun test
+- [x] Write comprehensive tests for all hook functions using Bun test
 - [x] Write tests for library functions (config, logger, git-helpers, github-helpers)
 - [ ] Create init command for project initialization
 - [ ] Create backlog command for adding items
@@ -46,28 +46,34 @@
 - Refactored all lib modules with dependency injection pattern:
   - config.ts (9 tests passing)
   - logger.ts (10 tests passing)
-  - git-helpers.ts (22 tests passing)
+  - git-helpers.ts (22 tests passing)  
   - github-helpers.ts (23 tests passing)
-- Refactored hooks as pure functions:
+- Refactored ALL hooks as pure functions with comprehensive tests:
   - edit-validation.ts (16 tests passing)
-  - pre-compact.ts (preserved ALL complex functionality including ErrorPatternExtractor)
-- Total: 80 tests passing across lib and hooks modules
+  - pre-compact.ts (24 tests passing - preserved ALL complex functionality including ErrorPatternExtractor)
+  - capture-plan.ts (20 tests passing - preserved task creation, Claude CLI enrichment, git branching, GitHub integration)
+  - post-compact.ts (14 tests passing)
+  - stop-review.ts (27 tests passing - preserved entire SessionReviewer class with all methods)
+- Total: 165 tests (162 passing, 3 failing due to test isolation issue with mock.module())
+- Test isolation issue identified: Bun's mock.module() persists globally, causing 3 config tests to fail when run as suite
 
 ## Current Focus
-Writing comprehensive tests for the pre-compact hook to verify all complex functionality works correctly
+Implementing CLI entry point with Commander.js - all hooks are now refactored and tested
 
 ## Open Questions & Blockers
 - ✅ Resolved: Commander.js chosen over minimal approach for better QoL features
 - ✅ Resolved: Dependency injection pattern adopted for testability
 - ✅ Resolved: Must preserve ALL hook functionality (not simplify) during refactor
+- ⚠️ Test isolation issue: mock.module() persists globally, affecting 3 config tests (acceptable for now per Craig)
 - Still need to validate bun build --compile with all dependencies
 - Need to ensure compiled binary has proper permissions and PATH setup
 
 ## Next Steps
-1. Complete tests for pre-compact hook
-2. Refactor remaining hooks (capture-plan, post-compact, stop-review)
-3. Write tests for remaining hooks  
+1. ✅ Complete tests for pre-compact hook
+2. ✅ Refactor remaining hooks (capture-plan, post-compact, stop-review)
+3. ✅ Write tests for remaining hooks  
 4. Implement CLI entry point with commander
-5. Build and test compiled binary
+5. Create hook dispatcher to handle stdin/stdout
+6. Build and test compiled binary
 
 <!-- branch: feature/cli-tool-refactor-with-tests-026 -->

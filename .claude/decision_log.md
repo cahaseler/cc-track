@@ -146,6 +146,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Users must have gh CLI installed and authenticated, but get seamless GitHub integration without token management
 - **Reversibility:** Easy - wrapper functions abstract the implementation, could swap to octokit later if needed
 
+[2025-09-11 03:30] - Accept Test Isolation Issue with Bun's mock.module() During Refactor
+- **Context:** During CLI refactoring, discovered that Bun's mock.module() persists globally across test files, causing 3 config tests to fail when run as suite but pass individually
+- **Decision:** Continue with refactoring and accept the failing tests temporarily rather than solving the isolation issue immediately
+- **Rationale:** The actual code works correctly, only the test infrastructure has the issue. Maintaining momentum on the larger refactoring task is more important than perfect test isolation
+- **Alternatives Considered:** 
+  - Run tests sequentially: Would mask potential real issues
+  - Refactor to avoid module mocking: Too much rework during active refactoring
+  - Use dependency injection instead of module mocking: Already using DI for most things, but config module is special
+- **Implications:** 162/165 tests passing, need to revisit test isolation solution later
+- **Reversibility:** Easy - can fix test isolation after main refactoring is complete
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
