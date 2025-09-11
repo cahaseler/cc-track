@@ -19,20 +19,20 @@
 - When mocking exec errors for tests, set the appropriate error property based on the tool being tested (stderr for TypeScript, stdout for Biome)
 - When Edit reports "Found X matches but replace_all is false", use MultiEdit with replace_all:true for bulk changes or provide more unique context
 - Use grep with line numbers (`grep -n`) to quickly locate specific patterns when debugging Edit failures
-- When tests appear to pass but output is truncated, check if all visible tests show "(pass)" status - truncation happens at character limits not test boundaries
+ 
 - Complex mock objects in tests should be defined once and reused rather than recreated in each test case
 - When Write fails with "File has not been read yet", create the parent directory first with mkdir or verify it exists with ls
-- Recovery from "String to replace not found" often requires Read to get actual file content rather than making assumptions about file state
+ 
 
 ### Session: 2025-09-11 10:30
--- When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
+ - When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
 - When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read - retry the Edit operation directly
-- When test mocks throw errors, ensure the error object has the correct properties (stderr for TypeScript errors, stdout for Biome errors) that the code expects
+ 
 - When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text - verify file state between edits
 - When test output only shows "(pass)" entries before truncation, this indicates all tests passed - the truncation is misleading
 - Directory paths cannot be read with the Read tool - use ls or Bash commands to list directory contents instead
 - When hooks block operations repeatedly, check if the hook is validating something that needs fixing rather than just retrying the same operation
-- Mock functions in tests need proper type signatures (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript errors
+ 
 - When grep with complex regex patterns fails, use simpler patterns or switch to line-based searching with sed
 - Timeout errors in validation hooks need special handling - check for error.code === 'ETIMEDOUT' in addition to error messages
 
@@ -41,7 +41,7 @@
 - When Edit tool reports "String to replace not found", use Read to get actual file content instead of relying on memory or assumptions about file state
 - When MultiEdit gets "Found X matches but replace_all is false", either set replace_all:true or provide more unique context strings for single replacements
 - Use sed with line ranges (e.g., `sed -n '760,770p'`) to quickly inspect specific sections of files when debugging test failures
-- When test output shows "(pass)" for all visible tests before truncation, assume the full test suite passed rather than investigating truncation
+ 
 - Use grep with specific patterns like `grep -n "as any"` to quickly locate TypeScript type issues that need fixing
 - When fixing TypeScript 'any' types, use type assertions like `error as { code?: string }` or create proper type definitions
 - For complex mock objects in tests, define a helper function like `createMockLogger()` to avoid repetitive mock definitions
@@ -51,8 +51,8 @@
 ### Session: 2025-09-11 23:48
 
 ### Session: 2025-09-11 23:23
--- **ExitPlanMode hook rejection**: When the user rejects a plan multiple times, simplify the plan rather than retrying with similar complexity
--- **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
+ - **ExitPlanMode hook rejection**: When the user rejects a plan multiple times, simplify the plan rather than retrying with similar complexity
+ - **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
 
 ### Session: 2025-09-11 22:25
 - **Biome CLI flags**: Use `--write` instead of `--apply` or `--fix` flags with biome check command
@@ -67,7 +67,7 @@
 ### Session: 2025-09-11 21:13
 - When Edit tool reports "File has not been read yet", always use Read tool first even if you believe you've seen the file content recently
 - When hooks reject edits (user doesn't want to proceed), retry the same edit - the hook may have been checking for something specific that's now resolved
-- When "String to replace not found" occurs, use Read to get the actual file content instead of relying on memory or assumptions about file state
+ 
 - When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
 - When MultiEdit encounters multiple matches with replace_all:false, either set replace_all:true for all occurrences or provide more unique context strings
 - Type assertions like `error as { stdout?: string; stderr?: string }` are more maintainable than using 'any' type
