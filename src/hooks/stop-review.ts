@@ -665,11 +665,11 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
       encoding: 'utf-8',
       cwd: projectRoot,
     }).trim();
-    
+
     if (untrackedFiles) {
-      const files = untrackedFiles.split('\n').filter(f => f.length > 0);
+      const files = untrackedFiles.split('\n').filter((f) => f.length > 0);
       logger.debug('Adding untracked files', { count: files.length });
-      
+
       // Add each untracked file
       for (const file of files) {
         try {

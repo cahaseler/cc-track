@@ -261,7 +261,7 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
       log.debug('Skipping validation - no tool response');
       return { continue: true };
     }
-    
+
     // For Write tool specifically, check the success field
     if (input.tool_name === 'Write') {
       const writeResponse = input.tool_response as { success?: boolean };

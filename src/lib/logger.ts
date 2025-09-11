@@ -160,14 +160,13 @@ export class Logger {
       const logFile = this.getLogFileName();
       const logLine = `${JSON.stringify(entry)}\n`;
       this.fs.appendFileSync(logFile, logLine);
-      
+
       // NEVER output to console - hooks must only return values, not print
       // All logging goes to files only
     } catch (_error) {
       // Fail silently - logging should never break the application
     }
   }
-
 
   error(message: string, context?: Record<string, unknown>): void {
     this.writeLog(LogLevel.ERROR, 'ERROR', message, context);
