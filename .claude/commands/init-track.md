@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Write, Read, Grep, Glob
+allowed-tools: Bash(mkdir:*), Bash(/home/ubuntu/projects/cc-pars/dist/cc-track init), Write, Read, Grep, Glob
 description: Initialize cc-track context management system for this project
 ---
 
@@ -9,7 +9,7 @@ description: Initialize cc-track context management system for this project
 !`mkdir -p .claude/hooks .claude/plans .claude/utils`
 
 ### Step 2: Copy Template Files
-!`bun run /home/ubuntu/projects/cc-track/scripts/init-templates.ts`
+!`/home/ubuntu/projects/cc-pars/dist/cc-track init`
 
 ## What Just Happened
 

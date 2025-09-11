@@ -31,6 +31,9 @@
         "enabled": true,
         "command": "bunx knip"
       }
+    },
+    "test": {
+      "enabled": true
     }
   },
   "features": {

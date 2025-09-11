@@ -1,12 +1,12 @@
 ---
-allowed-tools: Bash(bun run:*), TodoWrite, mcp__private-journal__process_thoughts, Edit, Read
+allowed-tools: Bash(bun run:*), Bash(/home/ubuntu/projects/cc-pars/dist/cc-track complete-task), TodoWrite, mcp__private-journal__process_thoughts, Edit, Read
 description: Complete the current active task with reflection and documentation
 ---
 
 # Complete Task Command
 
 ## Automated Completion Results
-!`bun run .claude/scripts/complete-task.ts`
+!`/home/ubuntu/projects/cc-pars/dist/cc-track complete-task`
 
 ## Your Task
 
@@ -122,7 +122,7 @@ Next: Ready for a new task? Use planning mode to get started.
 - Switched back to main branch ✓
 - Ready for code review and merge
 
-Next: PR ready for review! Once merged, ready for a new task.
+Next: PR ready for review! Once merged, switch back to the default branch and remember to pull the latest merged code!
 ```
 
 ## Important Notes

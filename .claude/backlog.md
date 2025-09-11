@@ -18,3 +18,6 @@
 - packaging and distribution, installer, initial installation flow.
 - [2025-09-10] revise review_stop hook to have a claude instance review recent chat messages for AI bullshit excuses like functional enough or not critical functionality when it's trying to avoid completing a task properly
 - [2025-09-10] investigate supressing file change notifications to certain folders like logs to avoid noise injection into context.
+- [2025-09-11] Add git pull to post-compaction workflow - ensure latest changes from GitHub are pulled after compaction restoration
+- [2025-09-11] Add fallback task creation when Claude CLI fails in capture-plan hook - create basic task with raw plan content instead of failing entirely
+- [2025-09-11] code review command that invokes long running code review agent, optionally using claude cli or codex cli

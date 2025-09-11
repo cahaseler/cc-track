@@ -9,7 +9,10 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "fix": "biome check --write .",
-    "check": "bun run typecheck && bun run lint"
+    "check": "bun run typecheck && bun run lint",
+    "test": "bun test",
+    "build": "bun build src/cli/index.ts --compile --outfile dist/cc-track",
+    "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
@@ -18,6 +21,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "ccusage": "latest"
+    "ccusage": "latest",
+    "commander": "^14.0.0"
   }
 }

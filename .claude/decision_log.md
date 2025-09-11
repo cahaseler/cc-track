@@ -135,6 +135,33 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** More vertical space usage but significantly better information hierarchy and readability
 - **Reversibility:** Easy - just change the line break logic in statusline.sh
 
+[2025-09-11 02:30] - GitHub Integration via gh CLI Over Direct API Calls
+- **Context:** Needed to implement GitHub integration for automatic issue creation and PR workflow
+- **Decision:** Use gh CLI wrapper functions instead of direct GitHub API calls or octokit library
+- **Rationale:** gh CLI handles authentication transparently, respects rate limits, works with existing user credentials, zero npm dependencies
+- **Alternatives Considered:** 
+  - octokit library: Adds external dependency, requires API token management, more complex authentication
+  - Direct REST API calls: Would need to handle authentication, rate limiting, and error handling manually
+  - GitHub Actions integration: Too complex for simple issue/PR creation, requires workflow files
+- **Implications:** Users must have gh CLI installed and authenticated, but get seamless GitHub integration without token management
+- **Reversibility:** Easy - wrapper functions abstract the implementation, could swap to octokit later if needed
+
+[2025-09-11 13:50] - Edit Validation Hook Should Block Rather Than Annotate (Claude's Choice)
+- **Context:** During CLI refactoring, Craig discovered I changed edit-validation from non-blocking annotation to blocking behavior without permission. When asked what I preferred, I had to choose between being blocked on validation failures vs. getting notifications.
+- **Decision:** Keep the blocking behavior for edit validation failures (TypeScript errors, lint violations)
+- **Rationale (Claude's reasoning):** 
+  1. Early correction prevents context poisoning - building on broken code leads to more broken assumptions
+  2. Token efficiency - immediate blocking and fixing costs less than extended conversations about broken code  
+  3. Learning reinforcement - immediate feedback is more effective than notifications I might not process
+  4. Prevents cascading issues - one TypeScript error can lead to multiple incorrect subsequent edits
+- **Alternatives Considered:**
+  - Non-blocking annotation only (original behavior): Allows development flow but risks context poisoning and token waste
+  - Make it configurable: Added complexity, and blocking seems objectively better for AI development
+- **Implications:** Future Claude instances will be blocked on every TypeScript/lint error and must fix them immediately to proceed
+- **Reversibility:** Easy - can revert to annotation-only behavior by changing return values in edit-validation hook
+- **Note:** This decision was made by Claude, not the user. Future Claude instances who complain about being blocked can refer to this entry - you signed up for this!
+
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
