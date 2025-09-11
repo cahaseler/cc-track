@@ -274,7 +274,7 @@ export function switchToBranch(branchName: string, cwd: string): void {
 
 export function isGitRepository(cwd: string): boolean {
   try {
-    execSync('git rev-parse --git-dir', { cwd, encoding: 'utf-8' });
+    nodeExecSync('git rev-parse --git-dir', { cwd, encoding: 'utf-8' });
     return true;
   } catch {
     return false;
@@ -283,7 +283,7 @@ export function isGitRepository(cwd: string): boolean {
 
 export function getTaskBranch(taskId: string, cwd: string): string | null {
   try {
-    const branches = execSync('git branch', { cwd, encoding: 'utf-8' });
+    const branches = nodeExecSync('git branch', { cwd, encoding: 'utf-8' });
     const match = branches.match(new RegExp(`\\* (.*${taskId.toLowerCase()}.*)`));
     return match ? match[1].trim() : null;
   } catch {
