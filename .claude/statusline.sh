@@ -103,9 +103,13 @@ if [ -n "$TOKENS_INFO" ]; then
     OUTPUT="$OUTPUT | $TOKENS_INFO"
 fi
 
-# Add branch if available
+# Add line break after first line (model, cost, rate, tokens)
+OUTPUT="$OUTPUT
+"
+
+# Start second line with branch if available (no leading separator)
 if [ -n "$BRANCH" ]; then
-    OUTPUT="$OUTPUT$BRANCH"
+    OUTPUT="${OUTPUT}${BRANCH#" | "}"  # Remove leading " | " from branch
 fi
 
 # Add task if available
