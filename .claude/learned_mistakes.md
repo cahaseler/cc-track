@@ -13,6 +13,11 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-11 15:43
+- **Git checkout conflicts**: When git checkout fails due to uncommitted changes, use `git stash` first to save local changes, then checkout and `git stash pop` to restore them
+- **Git pull with divergent branches**: When git pull shows "divergent branches" hint, use `git pull --rebase origin <branch>` to avoid merge commits, or `git pull --merge` if merge is preferred
+- **Incomplete error messages**: When git operations show truncated hints (ending with "...h"), the full message likely recommends using `--rebase` or `--merge` flags explicitly
+
 ### Session: 2025-09-11 12:42
 - When MultiEdit encounters "String to replace not found" errors, verify the exact string exists in the file with Read rather than relying on grep output
 - Mock functions in tests require explicit parameter types (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript implicit 'any' errors
