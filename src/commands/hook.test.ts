@@ -19,7 +19,9 @@ describe('hook command', () => {
     const typeOption = hookCommand.options.find((opt) => opt.long === '--type');
     const debugOption = hookCommand.options.find((opt) => opt.long === '--debug');
 
-    expect(typeOption?.description).toBe('hook type to execute');
+    expect(typeOption?.description).toBe(
+      'hook type to execute (capture-plan, edit-validation, pre-compact, post-compact, stop-review)',
+    );
     expect(debugOption?.description).toBe('enable debug logging');
   });
 });
