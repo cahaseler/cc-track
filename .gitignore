@@ -2,12 +2,16 @@
 node_modules/
 *.node
 
-# Build outputs
+# Build outputs (local builds ignored, CI builds allowed)
 dist/
 build/
 *.js
 *.d.ts
 *.map
+
+# Allow release artifacts in CI (GitHub Actions will build these)
+!dist/cc-track-linux
+!dist/cc-track-windows.exe
 
 # IDE
 .vscode/
