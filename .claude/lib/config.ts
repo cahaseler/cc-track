@@ -12,6 +12,7 @@ interface HookConfig {
     enabled: boolean;
     command: string;
   };
+  display?: string; // For api_timer feature
 }
 
 interface Config {
@@ -62,6 +63,11 @@ const DEFAULT_CONFIG: Config = {
     git_branching: {
       enabled: false,
       description: 'Create feature branches for tasks and merge on completion',
+    },
+    api_timer: {
+      enabled: true,
+      description: 'Display API window reset timer in statusline',
+      display: 'sonnet-only',
     },
   },
 };

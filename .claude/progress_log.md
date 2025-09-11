@@ -128,3 +128,8 @@
   Details: Successfully rebranded entire project with new name and cohesive train theming
   Files: README.md, package.json, .claude/track.config.json, all commands, hooks, scripts, and documentation (22 files total)
   Key Achievement: Renamed to "cc-track" (Task Review And Context Keeper) with tagline "Keep your vibe coding on track". Added subtle train theming (🚅 🛤️) and cost tier emojis for better visual feedback.
+
+[2025-09-10 21:45] - Completed: Task 024 - Add API Timer Display Configuration
+  Details: Implemented configurable API window reset timer for statusline
+  Files: .claude/lib/config.ts, .claude/statusline.sh, .claude/track.config.json, templates/statusline.sh
+  Key Achievement: Added three display modes (hide/show/sonnet-only) to track API rate limit windows. Especially useful for knowing when Opus becomes available again after hitting usage caps.
