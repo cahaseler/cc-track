@@ -199,6 +199,7 @@ describe('stop-review', () => {
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
           existsSync: mock(() => true),
+          readFileSync: mock(() => '@.claude/tasks/TASK_001.md'),
           unlinkSync: mock(() => {}),
         };
 
@@ -230,6 +231,7 @@ describe('stop-review', () => {
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
           existsSync: mock(() => true),
+          readFileSync: mock(() => '@.claude/tasks/TASK_001.md'),
           unlinkSync: mock(() => {}),
         };
 
@@ -258,6 +260,7 @@ describe('stop-review', () => {
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
           existsSync: mock(() => true),
+          readFileSync: mock(() => '@.claude/tasks/TASK_001.md'),
           unlinkSync: mock(() => {}),
         };
 
