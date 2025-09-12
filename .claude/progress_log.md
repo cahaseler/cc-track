@@ -179,3 +179,8 @@
   Details: Restored GitHub issue creation functionality by fixing validation and command escaping issues
   Files: src/lib/github-helpers.ts (isGitHubRepoConnected and createGitHubIssue functions updated)
   Key Achievement: Fixed two-layer problem: GitHub repo connection validation was failing due to stderr redirection issues, and issue creation was failing due to shell interpretation of backticks in markdown content. GitHub integration now fully operational for automatic issue creation during task planning.
+
+[2025-09-12 16:50] - Completed: Task 035 - Fix TypeScript Validation Hook Issue
+  Details: Resolved false positive TypeScript errors by implementing project-wide validation with file-specific filtering
+  Files: src/hooks/edit-validation.ts, src/hooks/edit-validation.test.ts
+  Key Achievement: TypeScript validation now respects tsconfig.json settings by running on entire project and filtering output. Eliminated false positives for import.meta and Map iteration while maintaining good performance (0.3-0.5s with incremental compilation).
