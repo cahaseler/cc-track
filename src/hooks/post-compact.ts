@@ -32,7 +32,11 @@ export function readImportedFiles(
 ): { content: string; files: string[] } {
   const fs = fileOps || { existsSync, readFileSync };
   const importPattern = /@(\.claude\/[^\s]+)/g;
-  const imports = [...claudeMdContent.matchAll(importPattern)];
+  const imports: RegExpExecArray[] = [];
+  let match;
+  while ((match = importPattern.exec(claudeMdContent)) !== null) {
+    imports.push(match);
+  }
 
   let importedContent = '';
   const importedFiles: string[] = [];
@@ -173,7 +177,7 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
       claudeMdContent = fileOps.readFileSync(claudeMdPath, 'utf-8');
     }
 
-    const activeTaskFile = getActiveTaskFileFromClaudeMd(projectRoot) || '';
+    const activeTaskFile = extractActiveTaskFile(claudeMdContent);
 
     // Read all imported files (excluding task files)
     const { content: importedContent, files: importedFiles } = readImportedFiles(claudeMdContent, projectRoot, fileOps);

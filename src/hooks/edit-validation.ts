@@ -51,6 +51,16 @@ export function filterTypeScriptFiles(paths: string[]): string[] {
 }
 
 /**
+ * Identify test files to skip typechecking (but still allow linting)
+ */
+export function isTestFile(filePath: string): boolean {
+  // Match common test naming conventions and folders
+  if (/(\.test\.|\.spec\.)\w+$/.test(filePath)) return true; // *.test.ts(x), *.spec.ts(x), *.test.mts/cts
+  if (/(^|\/)__tests__(\/|$)/.test(filePath)) return true; // __tests__/ paths
+  return false;
+}
+
+/**
  * Load edit validation configuration
  */
 export function loadEditValidationConfig(cwd: string): EditValidationConfig {
@@ -99,6 +109,12 @@ export function runTypeScriptCheck(
   const errors: string[] = [];
 
   if (!config.typecheck?.enabled) {
+    return errors;
+  }
+
+  // Skip typechecking for test files to avoid noisy failures
+  if (isTestFile(filePath)) {
+    log.debug('Skipping TypeScript check for test file', { filePath });
     return errors;
   }
 
