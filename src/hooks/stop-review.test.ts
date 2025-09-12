@@ -344,6 +344,38 @@ diff --git a/docs/guide.md b/docs/guide.md
         expect(result.docOnlyChanges).toBe(true);
         expect(result.filteredDiff).toBe('');
       });
+
+      test('filters out private journal and embedding files', () => {
+        const mockExec = mock(
+          () => `diff --git a/src/code.ts b/src/code.ts
++code change
+diff --git a/.private-journal/2025-09-12/entry.md b/.private-journal/2025-09-12/entry.md
++journal entry
+diff --git a/.private-journal/2025-09-12/entry.embedding b/.private-journal/2025-09-12/entry.embedding
++embedding data
+diff --git a/some-file.embedding b/some-file.embedding
++other embedding
+diff --git a/src/more.ts b/src/more.ts
++more code`,
+        );
+
+        const logger = {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+          warn: mock(() => {}),
+          error: mock(() => {}),
+        };
+
+        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec });
+        const result = reviewer.getFilteredGitDiff();
+
+        expect(result.hasDocChanges).toBe(true); // Journal files are treated like docs
+        expect(result.docOnlyChanges).toBe(false); // Has code changes too
+        expect(result.filteredDiff).toContain('src/code.ts');
+        expect(result.filteredDiff).toContain('src/more.ts');
+        expect(result.filteredDiff).not.toContain('.private-journal');
+        expect(result.filteredDiff).not.toContain('.embedding');
+      });
     });
 
     describe('buildReviewPrompt', () => {
@@ -1132,6 +1164,100 @@ def456 chore: cleanup`,
       expect(result.continue).toBe(true);
       // When no active task, doesn't call Claude for review
       expect(result.systemMessage).toContain('Project is on track');
+    });
+
+    test('does not show task warning when active task exists', async () => {
+      // This test verifies the fix for the false positive task warning
+      const execHistory: string[] = [];
+      const mockCommits = `abc1234 Some work
+def5678 More changes
+ghi9012 Another commit
+jkl3456 Yet another change`;
+
+      const mockExec = mock((cmd: string) => {
+        execHistory.push(cmd);
+        if (cmd.includes('rev-parse')) return '.git';
+        if (cmd.includes('ls-files')) return '';
+        if (cmd.includes('status --porcelain')) return 'M file.ts';
+        if (cmd.includes('diff HEAD')) return 'diff --git a/file.ts b/file.ts\n+code change';
+        if (cmd.includes('log --oneline')) return mockCommits; // No TASK_ in commits
+        if (cmd.includes('add')) return '';
+        if (cmd.includes('commit')) return '';
+        return '';
+      });
+
+      const fileOps: MockFileOps = {
+        existsSync: mock((path: string) => {
+          if (path.includes('TASK')) return true;
+          if (path.includes('CLAUDE.md')) return true;
+          return false;
+        }),
+        readFileSync: mock((path: string) => {
+          // Active task exists!
+          if (path.includes('CLAUDE.md')) {
+            return '# Project\n@.claude/tasks/TASK_030.md';
+          }
+          if (path.includes('TASK_030.md')) {
+            return '# Task 030\n**Status:** in-progress\n**Task ID:** 030\n\nSome task content';
+          }
+          return '';
+        }),
+        writeFileSync: mock(() => {}),
+        unlinkSync: mock(() => {}),
+        createReadStream: mock(() => {
+          const stream = {
+            on: mock((event: string, callback: (...args: unknown[]) => void) => {
+              if (event === 'end') {
+                setTimeout(() => callback(), 0);
+              }
+              return stream;
+            }),
+            pause: mock(() => {}),
+            resume: mock(() => {}),
+            close: mock(() => {}),
+            removeListener: mock(() => stream),
+          };
+          return stream;
+        }),
+      };
+
+      const input: HookInput = {
+        hook_event_name: 'Stop',
+        cwd: '/project',
+      };
+
+      const mockGitHelpers = new GitHelpers(
+        mock((cmd: string) => {
+          if (cmd.includes('claude')) return 'wip: TASK_030 work in progress';
+          return '';
+        }),
+        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+      );
+
+      // Create a mock claudeMdHelpers that returns an active task
+      const mockClaudeMdHelpers = {
+        getActiveTaskContent: mock(() => '# Task 030\n**Status:** in-progress\n**Task ID:** 030\n\nSome task content'),
+        getActiveTaskId: mock(() => 'TASK_030'),
+        getActiveTaskFile: mock(() => 'TASK_030.md'),
+        getActiveTaskDisplay: mock(() => 'TASK_030: Test task'),
+        setActiveTask: mock(() => {}),
+        clearActiveTask: mock(() => {}),
+        hasActiveTask: mock(() => true),
+      };
+
+      const result = await stopReviewHook(input, {
+        execSync: mockExec,
+        fileOps,
+        logger: createMockLogger(),
+        isHookEnabled: () => true,
+        gitHelpers: mockGitHelpers,
+        claudeMdHelpers: mockClaudeMdHelpers as any,
+      });
+
+      expect(result.continue).toBe(true);
+      // Should NOT contain the task warning message even though commits don't have TASK_
+      expect(result.systemMessage).not.toContain("I notice you've made");
+      expect(result.systemMessage).not.toContain('commits without an active task');
     });
   });
 });

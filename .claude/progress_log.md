@@ -147,4 +147,14 @@
 [2025-09-11 19:16] - Completed: Task 028 - Remove Legacy .claude Scripts After CLI Migration
   Details: Successfully cleaned up 14 legacy files after full migration to new CLI structure
   Files: Deleted files from .claude/hooks/, .claude/scripts/, .claude/lib/, and .claude/statusline.sh; Updated knip.json and .claude/code_index.md
-  Key Achievement: Removed all legacy code while preserving functionality in src/ directory. Auto-branching feature made cleanup risk-free with isolated changes.
+  Key Achievement: Fully migrated to new CLI architecture with zero legacy dependencies. CLI binary now self-contained at dist/cc-track.
+
+[2025-09-11 22:22] - Completed: Task 029 - Consolidate Duplicate Helper Functions Across Codebase
+  Details: Successfully eliminated ~150 lines of duplicate code by creating centralized modules for CLAUDE.md operations, git utilities, and config access patterns
+  Files: Created src/lib/claude-md.ts with dependency injection; Updated statusline.ts, stop-review.ts, post-compact.ts, capture-plan.ts, complete-task.ts, git-session.ts
+  Key Achievement: Established proper dependency injection patterns for testability. Solved parallel test execution bug caused by global mock contamination. All 247 tests now pass with 0 failures.
+
+[2025-09-12 22:49] - Completed: Task 030 - Hook Improvements for Better Developer Experience
+  Details: Enhanced edit-validation and stop-review hooks to provide cleaner developer experience by filtering private journal files and fixing false positive task warnings
+  Files: src/hooks/stop-review.ts, src/hooks/stop-review.test.ts, src/hooks/edit-validation.ts, dist/cc-track (rebuilt)
+  Key Achievement: Private journal files now excluded from code review while remaining in git for backup. Fixed false positive "commits without an active task" warning. All 249 tests passing with proper mock isolation.

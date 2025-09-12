@@ -163,7 +163,7 @@ export class SessionReviewer {
     return claudeMdHelpers.getActiveTaskContent(this.projectRoot);
   }
 
-  private getActiveTaskId(): string | null {
+  getActiveTaskId(): string | null {
     const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
     return claudeMdHelpers.getActiveTaskId(this.projectRoot);
   }
@@ -276,18 +276,20 @@ export class SessionReviewer {
         const fileMatch = line.match(/b\/(.+)$/);
         currentFile = fileMatch ? fileMatch[1] : '';
 
-        // Check if this is a documentation file
+        // Check if this is a documentation file or private journal file
         skipCurrentFile =
           currentFile.endsWith('.md') ||
           currentFile.endsWith('.markdown') ||
           currentFile.endsWith('.rst') ||
           currentFile.endsWith('.txt') ||
           currentFile.includes('/docs/') ||
-          currentFile.includes('README');
+          currentFile.includes('README') ||
+          currentFile.includes('.private-journal/') ||
+          currentFile.endsWith('.embedding');
 
         if (skipCurrentFile) {
           hasDocChanges = true;
-          this.logger.debug(`Filtering out documentation file: ${currentFile}`);
+          this.logger.debug(`Filtering out file from review: ${currentFile}`);
         } else {
           hasCodeChanges = true;
         }
@@ -711,8 +713,10 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
       if (committed) {
         logger.info(`Auto-committed: ${review.commitMessage}`);
 
+        // Only suggest creating a task if there's NO active task
         // Check if this was a non-task commit and check recent history
-        if (!review.commitMessage.includes('TASK_')) {
+        const activeTaskId = reviewer.getActiveTaskId();
+        if (!activeTaskId && !review.commitMessage.includes('TASK_')) {
           const nonTaskCount = reviewer.checkRecentNonTaskCommits();
           // We just made a commit, so if there were 2+ before, we now have 3+
           if (nonTaskCount >= 2) {
