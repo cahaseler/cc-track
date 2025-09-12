@@ -91,13 +91,12 @@ Testing and finalizing the two-phase workflow. All major functionality is implem
 
 ## Next Steps
 
-1. ~~Create `src/commands/prepare-completion.ts` with validation logic~~ ✓ Complete
-2. ~~Test validation checks individually (TypeScript, Biome, tests, Knip)~~ ✓ Complete
-3. ~~Create `.claude/commands/prepare-completion.md` with issue fixing logic~~ ✓ Complete
-4. Register prepare-completion command in CLI (add to src/cli/index.ts)
-5. Update `src/commands/complete-task.ts` with enhanced functionality (Phase 2)
-6. Update `.claude/commands/complete-task.md` for minimal Claude responsibilities
-7. Test prepare phase end-to-end with stop-review hook
-8. Test complete phase with PR creation and branch management
+1. ~~Create validation-checks and prepare-completion commands~~ ✓ Complete
+2. ~~Update complete-task with enhanced functionality~~ ✓ Complete
+3. ~~Register all commands in CLI~~ ✓ Complete
+4. Test the two-phase workflow end-to-end
+5. Add/update tests for the new commands
+6. Have user run `/prepare-completion` to test the workflow
+7. Have user run `/complete-task` after preparation is done
 
 <!-- branch: feature/task-completion-enhancement-033 -->
