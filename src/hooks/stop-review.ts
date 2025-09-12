@@ -276,18 +276,20 @@ export class SessionReviewer {
         const fileMatch = line.match(/b\/(.+)$/);
         currentFile = fileMatch ? fileMatch[1] : '';
 
-        // Check if this is a documentation file
+        // Check if this is a documentation file or private journal file
         skipCurrentFile =
           currentFile.endsWith('.md') ||
           currentFile.endsWith('.markdown') ||
           currentFile.endsWith('.rst') ||
           currentFile.endsWith('.txt') ||
           currentFile.includes('/docs/') ||
-          currentFile.includes('README');
+          currentFile.includes('README') ||
+          currentFile.includes('.private-journal/') ||
+          currentFile.endsWith('.embedding');
 
         if (skipCurrentFile) {
           hasDocChanges = true;
-          this.logger.debug(`Filtering out documentation file: ${currentFile}`);
+          this.logger.debug(`Filtering out file from review: ${currentFile}`);
         } else {
           hasCodeChanges = true;
         }

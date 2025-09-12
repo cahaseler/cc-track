@@ -344,6 +344,38 @@ diff --git a/docs/guide.md b/docs/guide.md
         expect(result.docOnlyChanges).toBe(true);
         expect(result.filteredDiff).toBe('');
       });
+
+      test('filters out private journal and embedding files', () => {
+        const mockExec = mock(
+          () => `diff --git a/src/code.ts b/src/code.ts
++code change
+diff --git a/.private-journal/2025-09-12/entry.md b/.private-journal/2025-09-12/entry.md
++journal entry
+diff --git a/.private-journal/2025-09-12/entry.embedding b/.private-journal/2025-09-12/entry.embedding
++embedding data
+diff --git a/some-file.embedding b/some-file.embedding
++other embedding
+diff --git a/src/more.ts b/src/more.ts
++more code`,
+        );
+
+        const logger = {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+          warn: mock(() => {}),
+          error: mock(() => {}),
+        };
+
+        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec });
+        const result = reviewer.getFilteredGitDiff();
+
+        expect(result.hasDocChanges).toBe(true); // Journal files are treated like docs
+        expect(result.docOnlyChanges).toBe(false); // Has code changes too
+        expect(result.filteredDiff).toContain('src/code.ts');
+        expect(result.filteredDiff).toContain('src/more.ts');
+        expect(result.filteredDiff).not.toContain('.private-journal');
+        expect(result.filteredDiff).not.toContain('.embedding');
+      });
     });
 
     describe('buildReviewPrompt', () => {
