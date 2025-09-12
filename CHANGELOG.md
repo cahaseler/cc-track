@@ -1,3 +1,11 @@
+## [1.2.1](https://github.com/cahaseler/cc-track/compare/v1.2.0...v1.2.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* conventional commit message generation for code changes ([459987f](https://github.com/cahaseler/cc-track/commit/459987fc9bcb468dde7742156b96ca3660b5584f))
+* reduce token consumption in post-compaction context file handling ([6bf697e](https://github.com/cahaseler/cc-track/commit/6bf697e61d3359b19a1b6ffceea0be63f1bcb311))
+
 # [1.2.0](https://github.com/cahaseler/cc-track/compare/v1.1.0...v1.2.0) (2025-09-12)
 
 
