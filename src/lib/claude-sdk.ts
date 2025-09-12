@@ -113,7 +113,7 @@ Requirements:
 - Focus on the "what" and "why", not the "how"
 - Respond with JUST the commit message, no explanation`;
 
-    const response = await ClaudeSDK.prompt(prompt, 'haiku');
+    const response = await this.prompt(prompt, 'haiku');
 
     if (!response.success) {
       throw new Error(`Failed to generate commit message: ${response.error}`);
@@ -138,7 +138,7 @@ Requirements:
 - Types: feature, bug, chore, docs
 - Respond with JUST the branch name`;
 
-    const response = await ClaudeSDK.prompt(prompt, 'haiku');
+    const response = await this.prompt(prompt, 'haiku');
 
     if (!response.success) {
       throw new Error(`Failed to generate branch name: ${response.error}`);
@@ -167,7 +167,7 @@ Respond in JSON format:
   "review": "Brief explanation of any issues or confirmation that requirements are met"
 }`;
 
-    const response = await ClaudeSDK.prompt(prompt, 'sonnet');
+    const response = await this.prompt(prompt, 'sonnet');
 
     if (!response.success) {
       throw new Error(`Failed to review code: ${response.error}`);
@@ -203,7 +203,7 @@ Focus on:
 
 Format as markdown with clear headers. Be concise.`;
 
-    const response = await ClaudeSDK.prompt(prompt, 'haiku');
+    const response = await this.prompt(prompt, 'haiku');
 
     if (!response.success) {
       // Don't fail the hook if extraction fails
