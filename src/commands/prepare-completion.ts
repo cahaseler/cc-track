@@ -1,8 +1,5 @@
-import { execSync } from 'node:child_process';
 import { Command } from 'commander';
-import { createLogger } from '../lib/logger';
-
-const _logger = createLogger('prepare-completion-command');
+import { type PreparationResult, runValidationChecks } from '../lib/validation';
 
 /**
  * Prepare completion command action
@@ -12,22 +9,13 @@ async function prepareCompletionAction() {
   const projectRoot = process.cwd();
 
   try {
-    // Run validation checks (ignore stderr for bun dependency messages)
-    const validationOutput = execSync('./dist/cc-track validation-checks 2>&1', {
-      encoding: 'utf-8',
-      cwd: projectRoot,
-      shell: '/bin/bash',
-    });
+    // Run validation checks directly
+    const result: PreparationResult = await runValidationChecks(projectRoot);
 
-    // Find the JSON in the output (it starts with { and ends with })
-    // This handles cases where bun outputs dependency messages before the JSON
-    const jsonMatch = validationOutput.match(/\{[\s\S]*\}$/);
-    if (!jsonMatch) {
-      throw new Error('Invalid validation output - no JSON found');
+    // Handle case where validation failed to run
+    if (!result.success && result.error) {
+      throw new Error(result.error);
     }
-
-    // Parse the JSON result
-    const result = JSON.parse(jsonMatch[0]);
 
     // Generate dynamic instructions based on the results
     console.log('## Prepare Task for Completion\n');

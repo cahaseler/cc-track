@@ -7,6 +7,7 @@ import { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/c
 import { getDefaultBranch, isWipCommit } from '../lib/git-helpers';
 import { pushCurrentBranch } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
+import { runValidationChecks } from '../lib/validation';
 
 const logger = createLogger('complete-task-command');
 
@@ -74,11 +75,7 @@ async function completeTaskAction(options: {
     if (!options.skipValidation) {
       logger.info('Running pre-flight validation check');
       try {
-        const preflightResult = execSync('./dist/cc-track validation-checks', {
-          encoding: 'utf-8',
-          cwd: projectRoot,
-        });
-        const preflightData = JSON.parse(preflightResult);
+        const preflightData = await runValidationChecks(projectRoot);
 
         if (!preflightData.readyForCompletion) {
           result.validation.preflightPassed = false;

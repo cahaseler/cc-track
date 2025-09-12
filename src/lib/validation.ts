@@ -1,13 +1,12 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Command } from 'commander';
-import { getActiveTaskId } from '../lib/claude-md';
-import { type EditValidationConfig, getConfig } from '../lib/config';
-import { isWipCommit } from '../lib/git-helpers';
-import { createLogger } from '../lib/logger';
+import { getActiveTaskId } from './claude-md';
+import { type EditValidationConfig, getConfig } from './config';
+import { isWipCommit } from './git-helpers';
+import { createLogger } from './logger';
 
-const logger = createLogger('validation-checks-command');
+const logger = createLogger('validation');
 
 interface ValidationResult {
   typescript?: {
@@ -50,7 +49,7 @@ interface TaskInfo {
   filePath?: string;
 }
 
-interface PreparationResult {
+export interface PreparationResult {
   success: boolean;
   readyForCompletion: boolean;
   task: TaskInfo;
@@ -144,32 +143,42 @@ function runTests(projectRoot: string): ValidationResult['tests'] {
     }
 
     logger.info('Running tests');
-    // Run tests and capture output - execSync already captures by default
-    const output = execSync('bun test 2>&1', {
-      cwd: projectRoot,
-      encoding: 'utf-8',
-    });
+    // Run tests silently and just check exit code
+    // We redirect output to /dev/null to avoid polluting the JSON output
+    try {
+      execSync('bun test >/dev/null 2>&1', {
+        cwd: projectRoot,
+        encoding: 'utf-8',
+        shell: '/bin/bash',
+      });
+      // If execSync doesn't throw, tests passed
+      logger.info('All tests passed');
+      return { passed: true };
+    } catch (_testError) {
+      // Tests failed - run again to get details for the error report
+      const output = execSync('bun test 2>&1 || true', {
+        cwd: projectRoot,
+        encoding: 'utf-8',
+        shell: '/bin/bash',
+      });
 
-    // Parse test output for results - look for the summary line
-    const failMatch = output.match(/(\d+)\s+fail/);
-    const passMatch = output.match(/(\d+)\s+pass/);
+      // Extract fail count and failed test details
+      const failMatch = output.match(/(\d+)\s+fail/);
+      const failCount = failMatch ? parseInt(failMatch[1], 10) : 1;
 
-    if (failMatch && failMatch[1] !== '0') {
-      // Only include detailed output if there are failures
+      // Extract only the failed test lines
       const failedTests = output
         .split('\n')
         .filter((line) => line.includes('(fail)'))
+        .map((line) => line.trim())
         .join('\n');
+
       return {
         passed: false,
-        errors: failedTests || output.substring(0, 2000),
-        failCount: parseInt(failMatch[1], 10),
+        errors: failedTests || 'Test failures detected',
+        failCount: failCount,
       };
     }
-
-    // Tests passed - return minimal info
-    logger.info(`Tests passed: ${passMatch ? passMatch[0] : 'all'}`);
-    return { passed: true };
   } catch (error) {
     const err = error as { stdout?: string; stderr?: string };
     const output = err.stdout || err.stderr || 'Tests failed';
@@ -349,10 +358,10 @@ function getTaskInfo(projectRoot: string): TaskInfo {
 }
 
 /**
- * Prepare completion command action
+ * Run validation checks and return the result
+ * This function can be called by other commands or used directly
  */
-async function prepareCompletionAction() {
-  const projectRoot = process.cwd();
+export async function runValidationChecks(projectRoot: string = process.cwd()): Promise<PreparationResult> {
   const result: PreparationResult = {
     success: false,
     readyForCompletion: false,
@@ -374,8 +383,8 @@ async function prepareCompletionAction() {
 
     if (!result.task.exists) {
       result.error = 'No active task found';
-      console.log(JSON.stringify(result, null, 2));
-      process.exit(1);
+      result.success = false;
+      return result;
     }
 
     if (result.task.status !== 'in_progress') {
@@ -436,16 +445,5 @@ async function prepareCompletionAction() {
     result.success = false;
   }
 
-  // Output result
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(result.readyForCompletion ? 0 : 1);
-}
-
-/**
- * Create validation-checks command
- */
-export function createValidationChecksCommand(): Command {
-  return new Command('validation-checks')
-    .description('Run validation checks for task completion')
-    .action(prepareCompletionAction);
+  return result;
 }
