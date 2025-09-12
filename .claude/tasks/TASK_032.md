@@ -2,7 +2,7 @@
 
 **Purpose:** Make the log directory configurable via track.config.json and default to a system-appropriate location outside the project directory to eliminate VS Code file change notifications that waste tokens.
 
-**Status:** planning
+**Status:** completed
 **Started:** 2025-09-12 07:29
 **Task ID:** 032
 
@@ -40,7 +40,8 @@
 5. **Path Handling**: Support environment variable expansion and tilde resolution
 
 ## Current Focus
-Start with updating the configuration structure in config.ts to define the new logging configuration interface and default values.
+
+Task completed on 2025-09-12
 
 ## Open Questions & Blockers
 - Should we preserve log history during migration or start fresh?
