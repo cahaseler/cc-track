@@ -45,9 +45,10 @@ export class GitHubHelpers {
    */
   isGitHubRepoConnected(cwd: string): boolean {
     try {
-      this.exec('gh repo view 2>/dev/null', { cwd });
+      this.exec('gh repo view', { cwd, shell: '/bin/bash' });
       return true;
-    } catch {
+    } catch (error) {
+      logger.debug('GitHub repo connection check failed', { error: (error as Error).message, cwd });
       return false;
     }
   }
@@ -76,12 +77,17 @@ export class GitHubHelpers {
     try {
       logger.info('Creating GitHub issue', { title, labels });
 
-      let command = `gh issue create --title "${title}" --body "${body}"`;
+      // Properly escape arguments to avoid shell interpretation
+      const escapedTitle = title.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+      const escapedBody = body.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+      
+      let command = `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`;
       if (labels && labels.length > 0) {
-        command += ` --label "${labels.join(',')}"`;
+        const escapedLabels = labels.join(',').replace(/"/g, '\\"');
+        command += ` --label "${escapedLabels}"`;
       }
 
-      const result = this.exec(command, { cwd });
+      const result = this.exec(command, { cwd, shell: '/bin/bash' });
 
       // Extract issue URL from output
       const url = result.trim();
