@@ -106,6 +106,11 @@
 - Type assertions like `error as { stdout?: string; stderr?: string }` are more maintainable than using 'any' type
 - When renaming projects, expect to find references in unexpected places - use grep extensively to find all occurrences
 
+### Session: 2025-09-12 17:00
+- **Feature creep without permission**: Never add unrequested features like GitHub labels that require external configuration - stick to the specified requirements
+- **Silent failures from optional features**: When adding "nice to have" features, they can break core functionality if they fail (e.g., label creation failing prevented issue creation)
+- **Assumption about user environments**: Don't assume users have customized GitHub repos with specific labels - tools should work with standard configurations
+
 ### Common Patterns (Consolidated)
 - **File has not been read yet**: Always use Read tool before Edit operations on files not in context
 - **String to replace not found**: When this occurs, Read the file first to get current content rather than relying on assumed state
