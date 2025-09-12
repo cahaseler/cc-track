@@ -195,6 +195,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Slightly slower validation (0.5s vs instant) but correct results. Incremental compilation reduces subsequent runs to 0.3s
 - **Reversibility:** Easy - could revert to single-file checking if TypeScript adds this feature in the future
 
+[2025-09-12 13:30] - Fix GitHub Issue-Branch Linking by Reordering Operations
+- **Context:** GitHub issues weren't being properly linked to branches/PRs because the capture-plan hook had backwards logic that only created issue branches when regular git branching was disabled
+- **Decision:** Refactor capture-plan hook to create GitHub issues BEFORE branching, return issue object from handleGitHubIntegration, and use issue existence to determine branching strategy
+- **Rationale:** Creating issues first allows informed decision about which branching method to use. Returning the issue object enables the main flow to check if issue creation succeeded before attempting issue-linked branching
+- **Alternatives Considered:** 
+  - Just fix the condition without reordering: Would still have race conditions and coupling issues
+  - Pass flags between functions: More complex and error-prone than returning the issue object
+  - Always use one branching method: Would lose flexibility for different workflows
+- **Implications:** Proper GitHub integration with automatic issue-PR linking, cleaner separation of concerns, more maintainable code structure
+- **Reversibility:** Easy - could revert the changes, though the new structure is objectively better
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
