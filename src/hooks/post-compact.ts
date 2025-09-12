@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { getActiveTaskFile as getActiveTaskFileFromClaudeMd } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -167,12 +168,12 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
     // Read CLAUDE.md if it exists
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     let claudeMdContent = '';
-    let activeTaskFile = '';
-
+    
     if (fileOps.existsSync(claudeMdPath)) {
       claudeMdContent = fileOps.readFileSync(claudeMdPath, 'utf-8');
-      activeTaskFile = extractActiveTaskFile(claudeMdContent);
     }
+    
+    const activeTaskFile = getActiveTaskFileFromClaudeMd(projectRoot) || '';
 
     // Read all imported files (excluding task files)
     const { content: importedContent, files: importedFiles } = readImportedFiles(claudeMdContent, projectRoot, fileOps);

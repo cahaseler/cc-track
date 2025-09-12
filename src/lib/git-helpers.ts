@@ -82,6 +82,13 @@ export class GitHelpers {
   }
 
   /**
+   * Check if a commit message indicates a WIP commit
+   */
+  isWipCommit(commitLine: string): boolean {
+    return commitLine.includes('[wip]') || Boolean(commitLine.match(/\s+wip:/));
+  }
+
+  /**
    * Generate a commit message using Claude CLI Haiku with conventional commit format
    */
   async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
@@ -268,6 +275,10 @@ export function getCurrentBranch(cwd: string): string {
 
 export function switchToBranch(branchName: string, cwd: string): void {
   defaultGitHelpers.switchToBranch(branchName, cwd);
+}
+
+export function isWipCommit(commitLine: string): boolean {
+  return defaultGitHelpers.isWipCommit(commitLine);
 }
 
 export function isGitRepository(cwd: string): boolean {

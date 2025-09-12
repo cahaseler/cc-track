@@ -2,7 +2,9 @@
 import { execSync as nodeExecSync } from 'node:child_process';
 import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from 'node:fs';
 import { Command } from 'commander';
+import { getActiveTaskDisplay } from '../lib/claude-md';
 import { getConfig as getConfigImpl } from '../lib/config';
+import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
 
 interface StatusLineInput {
   model?: {
@@ -16,6 +18,7 @@ interface StatusLineDeps {
   existsSync: typeof nodeExistsSync;
   readFileSync: typeof nodeReadFileSync;
   getConfig: typeof getConfigImpl;
+  getCurrentBranch: typeof getCurrentBranchImpl;
 }
 
 const defaultDeps: StatusLineDeps = {
@@ -23,6 +26,7 @@ const defaultDeps: StatusLineDeps = {
   existsSync: nodeExistsSync,
   readFileSync: nodeReadFileSync,
   getConfig: getConfigImpl,
+  getCurrentBranch: getCurrentBranchImpl,
 };
 
 /**
@@ -82,12 +86,7 @@ export function getUsageInfo(
  */
 export function getCurrentBranch(deps = defaultDeps): string {
   try {
-    return deps
-      .execSync('git branch --show-current', {
-        encoding: 'utf-8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      .trim();
+    return deps.getCurrentBranch(process.cwd());
   } catch {
     return '';
   }
@@ -97,29 +96,7 @@ export function getCurrentBranch(deps = defaultDeps): string {
  * Get active task from CLAUDE.md
  */
 export function getActiveTask(deps = defaultDeps): string {
-  const claudeMdPath = 'CLAUDE.md';
-  if (!deps.existsSync(claudeMdPath)) {
-    return '';
-  }
-
-  const content = deps.readFileSync(claudeMdPath, 'utf-8');
-  const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
-
-  if (!taskMatch) {
-    if (content.includes('@.claude/no_active_task.md')) {
-      return 'No active task';
-    }
-    return '';
-  }
-
-  const taskPath = taskMatch[0].replace('@', '');
-  if (!deps.existsSync(taskPath)) {
-    return '';
-  }
-
-  const taskContent = deps.readFileSync(taskPath, 'utf-8');
-  const firstLine = taskContent.split('\n')[0];
-  return firstLine.replace(/^# /, '');
+  return getActiveTaskDisplay(process.cwd());
 }
 
 /**

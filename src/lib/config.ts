@@ -12,6 +12,10 @@ interface HookConfig {
     enabled: boolean;
     command: string;
   };
+  knip?: {
+    enabled: boolean;
+    command: string;
+  };
   display?: string;
   auto_create_issues?: boolean;
   use_issue_branches?: boolean;

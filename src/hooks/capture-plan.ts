@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { setActiveTask } from '../lib/claude-md';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
@@ -256,24 +257,8 @@ export async function handleGitHubIntegration(
  * Update CLAUDE.md to point to new task
  */
 export function updateClaudeMd(projectRoot: string, taskId: string, fileOps: CapturePlanDependencies['fileOps']): void {
-  const fs = fileOps || { existsSync, readFileSync, writeFileSync };
-  const claudeMdPath = join(projectRoot, 'CLAUDE.md');
-
-  if (!fs.existsSync(claudeMdPath)) {
-    return;
-  }
-
-  let claudeMd = fs.readFileSync(claudeMdPath, 'utf-8');
-
-  // Replace the active task import
-  if (claudeMd.includes('@.claude/no_active_task.md')) {
-    claudeMd = claudeMd.replace('@.claude/no_active_task.md', `@.claude/tasks/TASK_${taskId}.md`);
-  } else if (claudeMd.match(/@\.claude\/tasks\/TASK_.*?\.md/)) {
-    // Replace existing task
-    claudeMd = claudeMd.replace(/@\.claude\/tasks\/TASK_.*?\.md/, `@.claude/tasks/TASK_${taskId}.md`);
-  }
-
-  fs.writeFileSync(claudeMdPath, claudeMd);
+  // Use the centralized function
+  setActiveTask(projectRoot, `TASK_${taskId}`);
 }
 
 /**

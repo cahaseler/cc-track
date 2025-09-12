@@ -2,8 +2,9 @@ import { execSync } from 'node:child_process';
 import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { getActiveTaskContent, getActiveTaskId } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
-import { GitHelpers } from '../lib/git-helpers';
+import { GitHelpers, hasUncommittedChanges } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -160,28 +161,11 @@ export class SessionReviewer {
   }
 
   private getActiveTask(): string | null {
-    const fs = this.deps.fileOps || { existsSync, readFileSync };
-    const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
-    if (!fs.existsSync(claudeMdPath)) return null;
-
-    const content = fs.readFileSync(claudeMdPath, 'utf-8');
-    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
-    if (!taskMatch) return null;
-
-    const taskPath = join(this.claudeDir, 'tasks', taskMatch[1]);
-    if (!fs.existsSync(taskPath)) return null;
-
-    return fs.readFileSync(taskPath, 'utf-8');
+    return getActiveTaskContent(this.projectRoot);
   }
 
   private getActiveTaskId(): string | null {
-    const fs = this.deps.fileOps || { existsSync, readFileSync };
-    const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
-    if (!fs.existsSync(claudeMdPath)) return null;
-
-    const content = fs.readFileSync(claudeMdPath, 'utf-8');
-    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+)\.md/);
-    return taskMatch ? taskMatch[1] : null;
+    return getActiveTaskId(this.projectRoot);
   }
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
@@ -553,21 +537,6 @@ export function isGitRepository(projectRoot: string, exec: typeof execSync = exe
 }
 
 /**
- * Check for uncommitted changes
- */
-export function hasUncommittedChanges(projectRoot: string, exec: typeof execSync = execSync): boolean {
-  try {
-    const status = exec('git status --porcelain', {
-      encoding: 'utf-8',
-      cwd: projectRoot,
-    });
-    return !!status.trim();
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Generate stop hook output based on review
  */
 export function generateStopOutput(
@@ -713,7 +682,7 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
   }
 
   // Quick check for changes after adding untracked files
-  if (!hasUncommittedChanges(projectRoot, exec)) {
+  if (!hasUncommittedChanges(projectRoot)) {
     logger.info('No changes detected, exiting early');
     return {
       continue: true,

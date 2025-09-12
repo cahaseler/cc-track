@@ -2,16 +2,10 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
+import { isWipCommit } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 
 const logger = createLogger('git-session-command');
-
-/**
- * Check if a commit is a WIP commit (supports both [wip] and wip: formats)
- */
-function isWipCommit(commitLine: string): boolean {
-  return commitLine.includes('[wip]') || Boolean(commitLine.match(/\s+wip:/));
-}
 
 /**
  * Get the last commit that's NOT a WIP commit
