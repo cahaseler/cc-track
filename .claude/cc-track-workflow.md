@@ -25,6 +25,11 @@ Plan → Task Created → Development → Validation → Documentation → Compl
 **Hooks during work:**
 - `edit-validation`: Real-time TypeScript/Biome validation on file edits
 - `stop-review`: Reviews changes at stop points, auto-commits with WIP messages
+  - **Important:** Stop-review validates work against the task file's requirements
+  - If it flags deviations, either:
+    1. Claude is off-track and needs to realign with requirements, or
+    2. Requirements have evolved and task file needs updating
+  - Work with user to clarify and update task file if needed
 - Work continues across multiple sessions as needed
 
 ### 3. Prepare for Completion
