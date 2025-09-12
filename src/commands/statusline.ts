@@ -2,7 +2,6 @@
 import { execSync as nodeExecSync } from 'node:child_process';
 import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from 'node:fs';
 import { Command } from 'commander';
-import { getActiveTaskDisplay } from '../lib/claude-md';
 import { getConfig as getConfigImpl } from '../lib/config';
 import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
 
@@ -96,7 +95,29 @@ export function getCurrentBranch(deps = defaultDeps): string {
  * Get active task from CLAUDE.md
  */
 export function getActiveTask(deps = defaultDeps): string {
-  return getActiveTaskDisplay(process.cwd());
+  const claudeMdPath = 'CLAUDE.md';
+  if (!deps.existsSync(claudeMdPath)) {
+    return '';
+  }
+
+  const content = deps.readFileSync(claudeMdPath, 'utf-8');
+  const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
+  
+  if (!taskMatch) {
+    if (content.includes('@.claude/no_active_task.md')) {
+      return 'No active task';
+    }
+    return '';
+  }
+
+  const taskFilePath = `.claude/tasks/${taskMatch[1]}`;
+  if (!deps.existsSync(taskFilePath)) {
+    return '';
+  }
+
+  const taskContent = deps.readFileSync(taskFilePath, 'utf-8');
+  const titleMatch = taskContent.match(/^# (.+)$/m);
+  return titleMatch ? titleMatch[1] : '';
 }
 
 /**

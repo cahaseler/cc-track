@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { clearActiveTask, getActiveTaskFile, getActiveTaskId } from '../lib/claude-md';
+import { clearActiveTask, getActiveTaskId } from '../lib/claude-md';
 import { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
 import { getDefaultBranch, isWipCommit } from '../lib/git-helpers';
 import { pushCurrentBranch } from '../lib/github-helpers';

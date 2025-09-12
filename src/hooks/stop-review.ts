@@ -31,13 +31,11 @@ export interface ReviewResult {
 
 export class SessionReviewer {
   private projectRoot: string;
-  private claudeDir: string;
   private logger: ReturnType<typeof createLogger>;
   private deps: StopReviewDependencies;
 
   constructor(projectRoot: string, logger: ReturnType<typeof createLogger>, deps: StopReviewDependencies = {}) {
     this.projectRoot = projectRoot;
-    this.claudeDir = join(projectRoot, '.claude');
     this.logger = logger;
     this.deps = deps;
   }

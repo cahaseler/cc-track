@@ -27,3 +27,4 @@
 - Fix broken "💡 I notice you've made 11 commits without an active task. Consider using planning mode (shift-tab) to create a task for better tracking." message from triggering when I have an active task. Possibly due to commits not including the active task ID when they should
 - Add automatic file header summaries for all TypeScript files. Each file should start with a block comment containing a one-sentence ai-written summary plus an auto-generated `@exports` list of functions/classes with line numbers. Use the TypeScript compiler API in a Node script to parse ASTs, extract exports, and update headers. Wire it into a pre-commit or post-edit hook so the `@exports` section stays current without manual edits. This makes files self-describing in the first 20 lines for AI tools and repo navigation.
 
+- [2025-09-12] adjust edit-validation hook to not output typecheck errors for test files

@@ -13,6 +13,12 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-12 20:50
+- **Git push prerequisites**: When "Your branch is ahead of origin" appears, ensure all changes are committed before pushing - uncommitted changes will block the push
+- **TypeScript unused variable errors**: Variables/imports marked as "declared but never read" (TS6133) need to be either removed or prefixed with underscore to indicate intentional non-use
+- **Biome check output parsing**: The tail command may truncate error details - use full output or specific error counts rather than relying on truncated messages
+- **Mock object updates in tests**: When adding new properties to mock objects that appear multiple times, use MultiEdit with replace_all:true or update each occurrence individually with unique context
+
 ### Session: 2025-09-11 19:41
 - When encountering "Found X matches but replace_all is false" errors, use MultiEdit with replace_all:true for bulk replacements across multiple occurrences
 - When MultiEdit fails with "String to replace not found" on later edits, earlier edits in the sequence may have already modified the target text - split into separate Edit operations

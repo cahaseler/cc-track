@@ -256,7 +256,7 @@ export async function handleGitHubIntegration(
 /**
  * Update CLAUDE.md to point to new task
  */
-export function updateClaudeMd(projectRoot: string, taskId: string, fileOps: CapturePlanDependencies['fileOps']): void {
+export function updateClaudeMd(projectRoot: string, taskId: string, _fileOps: CapturePlanDependencies['fileOps']): void {
   // Use the centralized function
   setActiveTask(projectRoot, `TASK_${taskId}`);
 }

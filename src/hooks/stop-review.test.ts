@@ -4,8 +4,6 @@ import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';
 import {
   generateStopOutput,
-  hasUncommittedChanges,
-  isGitRepository,
   type ReviewResult,
   SessionReviewer,
   type StopReviewDependencies,
@@ -39,39 +37,6 @@ describe('stop-review', () => {
 
   afterEach(() => {
     mock.restore();
-  });
-
-  describe('isGitRepository', () => {
-    test('returns true when in git repo', () => {
-      const mockExec = mock(() => '.git');
-      expect(isGitRepository('/project', mockExec)).toBe(true);
-    });
-
-    test('returns false when not in git repo', () => {
-      const mockExec = mock(() => {
-        throw new Error('Not a git repository');
-      });
-      expect(isGitRepository('/project', mockExec)).toBe(false);
-    });
-  });
-
-  describe('hasUncommittedChanges', () => {
-    test('returns true when changes exist', () => {
-      const mockExec = mock(() => 'M file.ts\nA new.ts');
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(true);
-    });
-
-    test('returns false when no changes', () => {
-      const mockExec = mock(() => '');
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(false);
-    });
-
-    test('returns false on error', () => {
-      const mockExec = mock(() => {
-        throw new Error('Git error');
-      });
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(false);
-    });
   });
 
   describe('generateStopOutput', () => {
