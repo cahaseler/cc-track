@@ -37,7 +37,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -52,7 +52,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -69,7 +69,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -84,7 +84,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getUsageInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -101,7 +101,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getUsageInfo({}, mockDeps);
@@ -118,7 +118,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => 'feature/new-feature'),
+        getCurrentBranch: mock((_cwd: string) => 'feature/new-feature'),
       };
 
       const result = getCurrentBranch(mockDeps);
@@ -133,7 +133,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ''),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getCurrentBranch(mockDeps);
@@ -160,7 +160,7 @@ describe('statusline', () => {
           return '';
         }),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getActiveTask(mockDeps);
@@ -173,7 +173,7 @@ describe('statusline', () => {
         existsSync: mock((path: string) => path === 'CLAUDE.md'),
         readFileSync: mock(() => '## Active Task\n@.claude/no_active_task.md\n'),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getActiveTask(mockDeps);
@@ -186,7 +186,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = getActiveTask(mockDeps);
@@ -264,7 +264,7 @@ describe('statusline', () => {
             },
           },
         })),
-        getCurrentBranch: mock((cwd: string) => "main"),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
       };
 
       const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -292,7 +292,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = generateStatusLine({}, mockDeps);
@@ -310,7 +310,7 @@ describe('statusline', () => {
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((cwd: string) => ""),
+        getCurrentBranch: mock((_cwd: string) => ''),
       };
 
       const result = generateStatusLine({}, mockDeps);
@@ -334,7 +334,7 @@ describe('statusline', () => {
             },
           },
         })),
-        getCurrentBranch: mock((cwd: string) => "main"),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
       };
 
       const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -358,7 +358,7 @@ describe('statusline', () => {
             },
           },
         })),
-        getCurrentBranch: mock((cwd: string) => "main"),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
       };
 
       const result = generateStatusLine({ model: { display_name: 'Claude Haiku' } }, mockDeps);

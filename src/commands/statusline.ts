@@ -102,7 +102,7 @@ export function getActiveTask(deps = defaultDeps): string {
 
   const content = deps.readFileSync(claudeMdPath, 'utf-8');
   const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
-  
+
   if (!taskMatch) {
     if (content.includes('@.claude/no_active_task.md')) {
       return 'No active task';

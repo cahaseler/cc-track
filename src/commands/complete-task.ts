@@ -312,78 +312,78 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
         const prWorkflow = githubEnabled && githubConfig?.auto_create_prs;
 
         if (prWorkflow) {
-            // GitHub PR workflow - just push the branch, don't merge
-            const branchMatch =
-              taskContent.match(/<!-- branch: (.*?) -->/) || taskContent.match(/<!-- issue_branch: (.*?) -->/);
-            const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
+          // GitHub PR workflow - just push the branch, don't merge
+          const branchMatch =
+            taskContent.match(/<!-- branch: (.*?) -->/) || taskContent.match(/<!-- issue_branch: (.*?) -->/);
+          const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
 
-            if (branchMatch) {
-              const branchName = branchMatch[1];
-              const currentBranch = execSync('git branch --show-current', {
-                encoding: 'utf-8',
-                cwd: projectRoot,
-              }).trim();
+          if (branchMatch) {
+            const branchName = branchMatch[1];
+            const currentBranch = execSync('git branch --show-current', {
+              encoding: 'utf-8',
+              cwd: projectRoot,
+            }).trim();
 
-              if (currentBranch === branchName) {
-                // Push the current branch
-                const pushSuccess = pushCurrentBranch(projectRoot);
-                if (pushSuccess) {
-                  result.git.branchPushed = true;
-                  result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
+            if (currentBranch === branchName) {
+              // Push the current branch
+              const pushSuccess = pushCurrentBranch(projectRoot);
+              if (pushSuccess) {
+                result.git.branchPushed = true;
+                result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
 
-                  // Set up GitHub workflow info
-                  result.github = {
-                    prWorkflow: true,
-                    branchName,
-                    issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
-                  };
-                } else {
-                  result.warnings.push('Failed to push branch to origin');
-                  result.git.branchPushed = false;
-                }
+                // Set up GitHub workflow info
+                result.github = {
+                  prWorkflow: true,
+                  branchName,
+                  issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                };
               } else {
-                result.git.notes = `Task branch ${branchName} not currently checked out`;
+                result.warnings.push('Failed to push branch to origin');
+                result.git.branchPushed = false;
               }
             } else {
-              result.git.notes = 'No branch information found for GitHub PR workflow';
+              result.git.notes = `Task branch ${branchName} not currently checked out`;
             }
-          } else if (getConfig().features?.git_branching?.enabled) {
-            // Traditional git branching workflow - merge locally
-            const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
-
-            if (branchMatch) {
-              const branchName = branchMatch[1];
-              const currentBranch = execSync('git branch --show-current', {
-                encoding: 'utf-8',
-                cwd: projectRoot,
-              }).trim();
-
-              if (currentBranch === branchName) {
-                // Get default branch
-                const defaultBranch = getDefaultBranch(projectRoot);
-
-                // Attempt to merge
-                try {
-                  execSync(`git checkout ${defaultBranch}`, { cwd: projectRoot });
-                  execSync(`git merge ${branchName} --no-ff -m "Merge branch '${branchName}'"`, { cwd: projectRoot });
-                  result.git.branchMerged = true;
-                  result.git.notes = `Merged ${branchName} into ${defaultBranch}`;
-                } catch (mergeError) {
-                  const error = mergeError as Error;
-                  result.warnings.push(`Failed to merge branch: ${error.message}`);
-                  result.git.branchMerged = false;
-                  // Try to switch back to task branch
-                  try {
-                    execSync(`git checkout ${branchName}`, { cwd: projectRoot });
-                  } catch {}
-                }
-              } else {
-                result.git.notes = `Task branch ${branchName} not currently checked out`;
-              }
-            } else {
-              result.git.notes = 'No branch information in task file';
-            }
+          } else {
+            result.git.notes = 'No branch information found for GitHub PR workflow';
           }
+        } else if (getConfig().features?.git_branching?.enabled) {
+          // Traditional git branching workflow - merge locally
+          const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
+
+          if (branchMatch) {
+            const branchName = branchMatch[1];
+            const currentBranch = execSync('git branch --show-current', {
+              encoding: 'utf-8',
+              cwd: projectRoot,
+            }).trim();
+
+            if (currentBranch === branchName) {
+              // Get default branch
+              const defaultBranch = getDefaultBranch(projectRoot);
+
+              // Attempt to merge
+              try {
+                execSync(`git checkout ${defaultBranch}`, { cwd: projectRoot });
+                execSync(`git merge ${branchName} --no-ff -m "Merge branch '${branchName}'"`, { cwd: projectRoot });
+                result.git.branchMerged = true;
+                result.git.notes = `Merged ${branchName} into ${defaultBranch}`;
+              } catch (mergeError) {
+                const error = mergeError as Error;
+                result.warnings.push(`Failed to merge branch: ${error.message}`);
+                result.git.branchMerged = false;
+                // Try to switch back to task branch
+                try {
+                  execSync(`git checkout ${branchName}`, { cwd: projectRoot });
+                } catch {}
+              }
+            } else {
+              result.git.notes = `Task branch ${branchName} not currently checked out`;
+            }
+          } else {
+            result.git.notes = 'No branch information in task file';
+          }
+        }
       } catch (branchError) {
         const error = branchError as Error;
         result.warnings.push(`Branch/GitHub operations failed: ${error.message}`);

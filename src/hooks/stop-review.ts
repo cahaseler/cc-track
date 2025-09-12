@@ -1,6 +1,5 @@
 import { execSync } from 'node:child_process';
-import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createReadStream, existsSync, type readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { getActiveTaskContent, getActiveTaskId } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';

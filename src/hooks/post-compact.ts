@@ -168,11 +168,11 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
     // Read CLAUDE.md if it exists
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     let claudeMdContent = '';
-    
+
     if (fileOps.existsSync(claudeMdPath)) {
       claudeMdContent = fileOps.readFileSync(claudeMdPath, 'utf-8');
     }
-    
+
     const activeTaskFile = getActiveTaskFileFromClaudeMd(projectRoot) || '';
 
     // Read all imported files (excluding task files)

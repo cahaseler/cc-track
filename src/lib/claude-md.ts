@@ -32,7 +32,7 @@ export function getActiveTaskId(projectRoot: string): string | null {
   if (!taskFile) {
     return null;
   }
-  
+
   const match = taskFile.match(/TASK_(\d+)\.md/);
   return match ? `TASK_${match[1]}` : null;
 }
@@ -66,7 +66,7 @@ export function setActiveTask(projectRoot: string, taskId: string): void {
   }
 
   let content = readFileSync(claudeMdPath, 'utf-8');
-  
+
   // Replace no_active_task.md or existing task
   if (content.includes('@.claude/no_active_task.md')) {
     content = content.replace('@.claude/no_active_task.md', `@.claude/tasks/${taskId}.md`);
