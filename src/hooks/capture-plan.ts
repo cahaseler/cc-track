@@ -2,7 +2,9 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeMdHelpers } from '../lib/claude-md';
+import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
@@ -20,6 +22,12 @@ export interface CapturePlanDependencies {
   };
   gitHelpers?: GitHelpers;
   githubHelpers?: GitHubHelpers;
+  claudeSDK?: ClaudeSDKInterface & {
+    prompt: (
+      text: string,
+      model: 'haiku' | 'sonnet' | 'opus',
+    ) => Promise<{ text: string; success: boolean; error?: string }>;
+  };
   logger?: ReturnType<typeof createLogger>;
   debugLog?: (msg: string) => void;
   isHookEnabled?: typeof isHookEnabled;
@@ -102,41 +110,26 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
 }
 
 /**
- * Enrich plan using Claude CLI
+ * Enrich plan using Claude SDK
  */
-export async function enrichPlanWithClaude(
-  prompt: string,
-  tempPromptPath: string,
-  deps: CapturePlanDependencies,
-): Promise<string> {
-  const exec = deps.execSync || execSync;
-  const fs = deps.fileOps || { writeFileSync, existsSync, unlinkSync };
+export async function enrichPlanWithClaude(prompt: string, deps: CapturePlanDependencies): Promise<string> {
   const logger = deps.logger || createLogger('capture_plan');
-
-  // Write prompt to temp file to avoid shell escaping issues
-  fs.writeFileSync(tempPromptPath, prompt);
+  const claudeSDK = deps.claudeSDK || DefaultClaudeSDK;
 
   try {
-    const taskContent = exec(`claude --model sonnet --output-format text < "${tempPromptPath}"`, {
-      encoding: 'utf-8',
-      cwd: '/tmp', // Run in /tmp to avoid triggering Stop hook recursion
-      maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
-      shell: '/bin/bash',
-    }).trim();
+    // Use SDK instead of CLI - no temp files or /tmp hack needed!
+    const response = await claudeSDK.prompt(prompt, 'sonnet');
 
-    return taskContent;
+    if (!response.success) {
+      throw new Error(response.error || 'SDK call failed');
+    }
+
+    return response.text.trim();
   } catch (cmdError) {
-    logger.error('Claude CLI failed', {
+    logger.error('Claude SDK failed', {
       error: cmdError instanceof Error ? cmdError.message : String(cmdError),
-      command: 'claude --model sonnet --output-format text',
-      cwd: '/tmp',
     });
     throw cmdError;
-  } finally {
-    // Clean up temp file
-    if (fs.existsSync(tempPromptPath)) {
-      fs.unlinkSync(tempPromptPath);
-    }
   }
 }
 
@@ -342,9 +335,8 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     // Generate enrichment prompt
     const enrichmentPrompt = generateEnrichmentPrompt(plan, taskId, now);
 
-    // Use Claude CLI to enrich the plan
-    const tempPromptPath = join(claudeDir, '.temp_prompt.txt');
-    const taskContent = await enrichPlanWithClaude(enrichmentPrompt, tempPromptPath, deps);
+    // Use Claude SDK to enrich the plan
+    const taskContent = await enrichPlanWithClaude(enrichmentPrompt, deps);
 
     // Save the enriched task file in tasks directory
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);

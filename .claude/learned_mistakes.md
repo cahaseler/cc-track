@@ -13,6 +13,15 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-12 15:09
+- **SDK migration patterns**: When replacing CLI calls with SDK calls, remove all temp file operations and execSync dependencies - the SDK handles everything internally
+- **Test dependency updates**: When migrating from CLI to SDK in code, update test mocks to match the new dependency structure (replace execSync/fileOps mocks with SDK mocks)
+- **Process cleanup**: Use `pkill -f <pattern>` with `|| echo "Process not found"` to gracefully handle when processes aren't running
+- **Test timeout debugging**: When tests timeout after 2 minutes, the issue is likely in the test code itself (infinite loops, missing await) not the code being tested
+- **MultiEdit string matching**: When MultiEdit fails with "String to replace not found", the string may have already been modified by an earlier edit in the same MultiEdit sequence
+- **Async function signatures**: When converting sync functions (execSync) to async (SDK calls), update the function signature to async and all callers to use await
+- **Mock object structure changes**: When refactoring from CLI to SDK, test mocks need matching structure changes - SDK mocks return objects with success/text/error properties
+
 ### Session: 2025-09-12 08:53
 - **Hook rejection recovery**: When a hook blocks an edit with "The user doesn't want to proceed", the rejection message indicates what validation failed - fix the root cause rather than retrying the same edit
 - **Complex string replacements in YAML headers**: When editing YAML frontmatter with multiline strings, Edit operations may fail to find exact matches - use smaller, more unique portions of the string for replacement

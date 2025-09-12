@@ -22,6 +22,48 @@ function createMockLogger(): ReturnType<typeof createLogger> {
   } as unknown as ReturnType<typeof createLogger>;
 }
 
+// Create mock ClaudeSDK for tests
+function createMockClaudeSDK() {
+  return {
+    generateCommitMessage: mock(async () => 'chore: save work in progress'),
+    generateBranchName: mock(async () => 'feature/test-branch'),
+    prompt: mock(async (prompt: string) => {
+      // Return different responses based on prompt content to support different test scenarios
+      if (prompt.includes('deviation') || prompt.includes('Breaking changes')) {
+        return {
+          text: JSON.stringify({
+            status: 'deviation',
+            message: 'Breaking changes without tests',
+            commit_message: 'wip: work in progress',
+          }),
+          success: true,
+        };
+      }
+
+      if (prompt.includes('verification') || prompt.includes('test')) {
+        return {
+          text: JSON.stringify({
+            status: 'needs_verification',
+            message: "Tests haven't been run",
+            commit_message: 'wip: work in progress',
+          }),
+          success: true,
+        };
+      }
+
+      // Default on_track response
+      return {
+        text: JSON.stringify({
+          status: 'on_track',
+          message: 'Changes look good',
+          commit_message: '[wip] TASK_001 work in progress',
+        }),
+        success: true,
+      };
+    }),
+  };
+}
+
 // Create a ClaudeMdHelpers mock for active task
 function createMockClaudeMdHelpers(activeTaskId: string = 'TASK_001'): ClaudeMdHelpers {
   const taskNumber = activeTaskId.replace('TASK_', '');
@@ -149,6 +191,7 @@ describe('stop-review', () => {
         const reviewer = new SessionReviewer('/project', logger, {
           execSync: mockExec as any,
           fileOps: fileOps as any,
+          claudeSDK: createMockClaudeSDK(),
           claudeMdHelpers: createMockClaudeMdHelpers('TASK_026'),
         });
 
@@ -167,16 +210,7 @@ describe('stop-review', () => {
 
     describe('callClaudeForReview', () => {
       test('returns deviation status from Claude', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude') && cmd.includes('sonnet')) {
-            return JSON.stringify({
-              status: 'deviation',
-              message: 'Breaking changes without tests',
-              commitMessage: '',
-            });
-          }
-          return '';
-        });
+        const mockClaudeSDK = createMockClaudeSDK();
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -188,27 +222,18 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
-        const result = await reviewer.callClaudeForReview('Test prompt');
+        // The mock will return deviation response for prompts containing "deviation"
+        const result = await reviewer.callClaudeForReview('Test prompt with deviation content');
         expect(result.status).toBe('deviation');
         expect(result.message).toBe('Breaking changes without tests');
       });
 
       test('returns on_track status from Claude', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude') && cmd.includes('sonnet')) {
-            return JSON.stringify({
-              status: 'on_track',
-              message: 'Changes look good',
-              commitMessage: '[wip] TASK_001: Added feature',
-              details: 'Implementation complete',
-            });
-          }
-          return '';
-        });
+        const mockClaudeSDK = createMockClaudeSDK();
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -220,24 +245,25 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
         const result = await reviewer.callClaudeForReview('Test prompt');
         expect(result.status).toBe('on_track');
-        expect(result.commitMessage).toContain('[wip] TASK_001');
+        expect(result.commit_message).toContain('[wip] TASK_001');
       });
 
       test('handles Claude timeout', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude')) {
+        const mockClaudeSDK = {
+          generateCommitMessage: mock(async () => 'chore: save work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => {
             const error = new Error('Command timed out');
             (error as { code?: string }).code = 'ETIMEDOUT';
             throw error;
-          }
-          return '';
-        });
+          }),
+        };
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -249,7 +275,7 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
@@ -523,7 +549,11 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec, fileOps });
+        const reviewer = new SessionReviewer('/project', logger, {
+          execSync: mockExec,
+          fileOps,
+          claudeSDK: createMockClaudeSDK(),
+        });
         const result = await reviewer.review('/transcript.jsonl');
 
         expect(result.status).toBe('on_track');
@@ -550,7 +580,11 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec, fileOps });
+        const reviewer = new SessionReviewer('/project', logger, {
+          execSync: mockExec,
+          fileOps,
+          claudeSDK: createMockClaudeSDK(),
+        });
         const result = await reviewer.review('/transcript.jsonl');
 
         expect(result.status).toBe('on_track');
@@ -625,14 +659,6 @@ def456 chore: cleanup`,
         if (cmd.includes('status')) return 'M file.ts';
         if (cmd.includes('diff')) return 'diff content';
         if (cmd.includes('log')) return 'recent commits';
-        // Mock Claude CLI response
-        if (cmd.includes('claude') && cmd.includes('sonnet')) {
-          return JSON.stringify({
-            status: 'on_track',
-            message: 'Changes look good',
-            commitMessage: '[wip] Working on features',
-          });
-        }
         if (cmd.includes('git add') && cmd.includes('git commit')) return 'Committed';
         return '';
       });
@@ -686,6 +712,20 @@ def456 chore: cleanup`,
         // Don't provide transcript_path to avoid readline issues
       };
 
+      // Mock Claude SDK response for review
+      const claudeSDK = {
+        generateCommitMessage: mock(async () => 'chore: update project configuration'),
+        generateBranchName: mock(async () => 'feature/test-branch'),
+        prompt: mock(async () => ({
+          text: JSON.stringify({
+            status: 'on_track',
+            message: 'Changes look good',
+            commitMessage: '[wip] Working on features',
+          }),
+          success: true,
+        })),
+      };
+
       // Mock GitHelpers to avoid real Claude API calls
       const mockGitHelpers = new GitHelpers(
         mock((cmd: string) => {
@@ -695,7 +735,11 @@ def456 chore: cleanup`,
           if (cmd.includes('symbolic-ref')) return 'main';
           return '';
         }),
-        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        undefined,
+        {
+          generateCommitMessage: mock(async () => 'chore: update project configuration'),
+          generateBranchName: mock(async () => 'feature/task-001'),
+        },
       );
 
       const deps: StopReviewDependencies = {
@@ -704,6 +748,7 @@ def456 chore: cleanup`,
         logger: createMockLogger(),
         isHookEnabled: () => true,
         gitHelpers: mockGitHelpers,
+        claudeSDK: claudeSDK as any,
       };
 
       const result = await stopReviewHook(input, deps);
@@ -721,17 +766,6 @@ def456 chore: cleanup`,
           if (cmd.includes('status --porcelain')) return 'M file.ts\nM another.ts';
           if (cmd.includes('diff')) return 'diff --git a/file.ts b/file.ts\n+breaking change';
           if (cmd.includes('log')) return 'abc123 Previous commit';
-          // Mock Claude CLI response - deviation detected
-          // The command includes shell redirection, so match on 'claude' and 'sonnet'
-          if (cmd.includes('claude') && cmd.includes('sonnet')) {
-            console.log('Returning mock deviation response');
-            // Return the JSON directly as Claude would
-            return JSON.stringify({
-              status: 'deviation',
-              message: 'Breaking changes detected without tests',
-              commitMessage: '',
-            });
-          }
           return '';
         },
       );
@@ -794,6 +828,18 @@ def456 chore: cleanup`,
         claudeMdHelpers: createMockClaudeMdHelpers(),
         logger: createMockLogger(),
         isHookEnabled: () => true,
+        claudeSDK: {
+          generateCommitMessage: mock(async () => 'wip: work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => ({
+            text: JSON.stringify({
+              status: 'deviation',
+              message: 'Breaking changes detected without tests',
+              commitMessage: '',
+            }),
+            success: true,
+          })),
+        } as any,
       };
 
       const result = await stopReviewHook(input, deps);
@@ -811,14 +857,6 @@ def456 chore: cleanup`,
         if (cmd.includes('status')) return 'M file.ts';
         if (cmd.includes('diff')) return 'diff content';
         if (cmd.includes('log')) return '';
-        // Mock Claude CLI response - needs verification
-        if (cmd.includes('claude') && cmd.includes('--model sonnet')) {
-          return JSON.stringify({
-            status: 'needs_verification',
-            message: "Tests haven't been run to verify changes",
-            commitMessage: '',
-          });
-        }
         return '';
       });
 
@@ -870,6 +908,18 @@ def456 chore: cleanup`,
         fileOps: fileOps as any,
         claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
+        claudeSDK: {
+          generateCommitMessage: mock(async () => 'wip: work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => ({
+            text: JSON.stringify({
+              status: 'needs_verification',
+              message: "Tests haven't been run to verify changes",
+              commitMessage: '',
+            }),
+            success: true,
+          })),
+        } as any,
       });
       expect(result.decision).toBe('block');
       expect(result.systemMessage).toContain('🔍 VERIFICATION NEEDED');
@@ -946,6 +996,19 @@ def456 chore: cleanup`,
         fileOps: fileOps as any,
         claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
+        claudeSDK: {
+          generateCommitMessage: mock(async () => '[wip] TASK_001: Implement feature'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => ({
+            text: JSON.stringify({
+              status: 'on_track',
+              message: 'Changes align with requirements',
+              commitMessage: '[wip] TASK_001: Implement feature',
+              details: 'Added validation logic',
+            }),
+            success: true,
+          })),
+        } as any,
       });
 
       expect(result.continue).toBe(true);
@@ -1018,6 +1081,18 @@ def456 chore: cleanup`,
         fileOps: fileOps as any,
         claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
+        claudeSDK: {
+          generateCommitMessage: mock(async () => 'wip: work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => ({
+            text: JSON.stringify({
+              status: 'critical_failure',
+              message: 'Deleted critical authentication logic',
+              commitMessage: '',
+            }),
+            success: true,
+          })),
+        } as any,
       });
 
       expect(result.continue).toBe(true); // Allows stop but with warning
@@ -1087,6 +1162,15 @@ def456 chore: cleanup`,
         fileOps: fileOps as any,
         claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
+        claudeSDK: {
+          generateCommitMessage: mock(async () => 'wip: work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => {
+            const error = new Error('Command timed out');
+            (error as { code?: string }).code = 'ETIMEDOUT';
+            throw error;
+          }),
+        } as any,
       });
 
       expect(result.continue).toBe(true);
@@ -1144,13 +1228,16 @@ def456 chore: cleanup`,
       // Mock GitHelpers to avoid real Claude API calls
       const mockGitHelpers = new GitHelpers(
         mock((cmd: string) => {
-          if (cmd.includes('claude')) return 'chore: work in progress';
           if (cmd.includes('branch --show-current')) return 'main';
           if (cmd.includes('status --porcelain')) return '';
           if (cmd.includes('symbolic-ref')) return 'main';
           return '';
         }),
-        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        undefined,
+        {
+          generateCommitMessage: mock(async () => 'chore: work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+        },
       );
 
       const result = await stopReviewHook(input, {
@@ -1227,11 +1314,12 @@ jkl3456 Yet another change`;
       };
 
       const mockGitHelpers = new GitHelpers(
-        mock((cmd: string) => {
-          if (cmd.includes('claude')) return 'wip: TASK_030 work in progress';
-          return '';
-        }),
-        { writeFileSync: mock(() => {}), unlinkSync: mock(() => {}) },
+        mock(() => ''),
+        undefined,
+        {
+          generateCommitMessage: mock(async () => 'wip: TASK_030 work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+        },
       );
 
       // Create a mock claudeMdHelpers that returns an active task

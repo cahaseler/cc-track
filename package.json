@@ -30,6 +30,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.112",
     "ccusage": "latest",
     "commander": "^14.0.0"
   }

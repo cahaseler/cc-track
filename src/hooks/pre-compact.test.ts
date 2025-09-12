@@ -5,6 +5,7 @@ import {
   analyzeErrorPatterns,
   ErrorPatternExtractor,
   type ErrorSequence,
+  type PreCompactDependencies,
   preCompactHook,
   type TranscriptEntry,
   updateLearnedMistakes,
@@ -19,6 +20,29 @@ function createMockLogger(): ReturnType<typeof createLogger> {
     error: mock(() => {}),
     exception: mock(() => {}),
   } as unknown as ReturnType<typeof createLogger>;
+}
+
+// Create mock ClaudeSDK
+function createMockClaudeSDK() {
+  return {
+    extractErrorPatterns: mock(async (prompt: string) => {
+      // Check more specific patterns first
+      if (prompt.includes('Operation not permitted')) {
+        return '- New lesson about file permissions';
+      }
+      if (prompt.includes('TypeScript compilation failed')) {
+        return "- TypeScript error: Property 'foo' does not exist, fixed by adding foo property to interface\n- Always check compilation before committing";
+      }
+      if (prompt.includes('permission denied') || prompt.includes('Permission denied')) {
+        return '- When encountering permission denied, use sudo\n- Always quote file paths with spaces';
+      }
+      if (prompt.includes('NO NEW LESSONS')) {
+        return 'NO NEW LESSONS';
+      }
+      // Default case
+      return '- New lesson about file permissions';
+    }),
+  };
 }
 
 describe('pre-compact', () => {
@@ -318,26 +342,12 @@ describe('pre-compact', () => {
       expect(result).toEqual([]);
     });
 
-    test('analyzes interesting sequences with Claude CLI', async () => {
-      const logger = {
-        info: mock(() => {}),
-        debug: mock(() => {}),
-        warn: mock(() => {}),
-        error: mock(() => {}),
-        exception: mock(() => {}),
-      };
-
-      const mockExec = mock((cmd: string) => {
-        if (cmd.includes('claude --output-format text')) {
-          return '- When encountering permission denied, use sudo\n- Always quote file paths with spaces\n';
-        }
-        return '';
-      });
+    test('analyzes interesting sequences with Claude SDK', async () => {
+      const logger = createMockLogger();
+      const mockClaudeSDK = createMockClaudeSDK();
 
       mock.module('node:fs', () => ({
         existsSync: () => false,
-        writeFileSync: mock(() => {}),
-        unlinkSync: mock(() => {}),
       }));
 
       const sequences: ErrorSequence[] = [
@@ -354,28 +364,27 @@ describe('pre-compact', () => {
         },
       ];
 
-      const result = await analyzeErrorPatterns(sequences, '/project', logger, mockExec);
+      const deps: PreCompactDependencies = {
+        claudeSDK: mockClaudeSDK,
+        logger,
+      };
+
+      const result = await analyzeErrorPatterns(sequences, '/project', logger, deps);
 
       expect(result).toContain('When encountering permission denied, use sudo');
       expect(result).toContain('Always quote file paths with spaces');
     });
 
-    test('handles Claude CLI failure gracefully', async () => {
-      const logger = {
-        info: mock(() => {}),
-        debug: mock(() => {}),
-        warn: mock(() => {}),
-        error: mock(() => {}),
-        exception: mock(() => {}),
+    test('handles Claude SDK failure gracefully', async () => {
+      const logger = createMockLogger();
+      const mockClaudeSDK = {
+        extractErrorPatterns: mock(async () => {
+          throw new Error('Claude SDK failed');
+        }),
       };
-
-      const mockExec = mock(() => {
-        throw new Error('Claude CLI failed');
-      });
 
       mock.module('node:fs', () => ({
         existsSync: () => false,
-        writeFileSync: mock(() => {}),
       }));
 
       const sequences: ErrorSequence[] = [
@@ -391,31 +400,22 @@ describe('pre-compact', () => {
         },
       ];
 
-      const result = await analyzeErrorPatterns(sequences, '/project', logger, mockExec);
+      const deps: PreCompactDependencies = {
+        claudeSDK: mockClaudeSDK,
+        logger,
+      };
+
+      const result = await analyzeErrorPatterns(sequences, '/project', logger, deps);
       expect(result).toEqual([]);
     });
 
     test('merges with existing lessons', async () => {
-      const logger = {
-        info: mock(() => {}),
-        debug: mock(() => {}),
-        warn: mock(() => {}),
-        error: mock(() => {}),
-        exception: mock(() => {}),
-      };
-
-      const mockExec = mock((cmd: string) => {
-        if (cmd.includes('claude --output-format text')) {
-          return '- New lesson about file permissions\n';
-        }
-        return '';
-      });
+      const logger = createMockLogger();
+      const mockClaudeSDK = createMockClaudeSDK();
 
       mock.module('node:fs', () => ({
         existsSync: () => true,
         readFileSync: () => '## Error Patterns\n- Existing lesson one\n- Existing lesson two\n',
-        writeFileSync: mock(() => {}),
-        unlinkSync: mock(() => {}),
       }));
 
       const sequences: ErrorSequence[] = [
@@ -431,7 +431,12 @@ describe('pre-compact', () => {
         },
       ];
 
-      const result = await analyzeErrorPatterns(sequences, '/project', logger, mockExec);
+      const deps: PreCompactDependencies = {
+        claudeSDK: mockClaudeSDK,
+        logger,
+      };
+
+      const result = await analyzeErrorPatterns(sequences, '/project', logger, deps);
       expect(result).toContain('New lesson about file permissions');
     });
   });
@@ -616,14 +621,6 @@ describe('pre-compact', () => {
     });
 
     test('extracts and appends error patterns to learned_mistakes.md', async () => {
-      const mockExec = mock((cmd: string) => {
-        if (cmd.includes('claude')) {
-          // Return extracted patterns as bulleted list
-          return "- TypeScript error: Property 'foo' does not exist, fixed by adding foo property to interface\n- Always check compilation before committing";
-        }
-        return '';
-      });
-
       let learnedMistakesContent = '# Learned Mistakes\n\n## Error Patterns\n';
 
       mock.module('node:fs', () => ({
@@ -753,8 +750,7 @@ describe('pre-compact', () => {
         session_id: 'test-123',
       };
 
-      // Need to pass the mock exec directly to analyzeErrorPatterns
-      // Since preCompactHook doesn't accept deps, we'll test at a slightly lower level
+      // Testing at a lower level to directly mock the transcript processing
       const { ErrorPatternExtractor } = await import('./pre-compact');
       const logger = createMockLogger();
 
@@ -762,7 +758,12 @@ describe('pre-compact', () => {
       const sequences = await extractor.extractFromTranscript('/transcript.jsonl');
 
       if (sequences.length > 0) {
-        const patterns = await analyzeErrorPatterns(sequences, '/project', logger, mockExec);
+        const mockClaudeSDK = createMockClaudeSDK();
+        const deps: PreCompactDependencies = {
+          claudeSDK: mockClaudeSDK,
+          logger,
+        };
+        const patterns = await analyzeErrorPatterns(sequences, '/project', logger, deps);
         const { updateLearnedMistakes } = await import('./pre-compact');
         await updateLearnedMistakes('/project', patterns);
       }

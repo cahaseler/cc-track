@@ -1,8 +1,10 @@
 import { execSync } from 'node:child_process';
-import { createReadStream, existsSync, type readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { ClaudeMdHelpers } from '../lib/claude-md';
+import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -13,11 +15,16 @@ export interface StopReviewDependencies {
     existsSync: typeof existsSync;
     readFileSync: typeof readFileSync;
     writeFileSync: typeof writeFileSync;
-    unlinkSync: typeof unlinkSync;
     createReadStream: typeof createReadStream;
   };
   gitHelpers?: GitHelpers;
   claudeMdHelpers?: ClaudeMdHelpers;
+  claudeSDK?: ClaudeSDKInterface & {
+    prompt: (
+      text: string,
+      model: 'haiku' | 'sonnet' | 'opus',
+    ) => Promise<{ text: string; success: boolean; error?: string }>;
+  };
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
 }
@@ -405,29 +412,20 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
   }
 
   async callClaudeForReview(prompt: string): Promise<ReviewResult> {
-    const exec = this.deps.execSync || execSync;
-    const fs = this.deps.fileOps || { writeFileSync, existsSync, unlinkSync };
+    const claudeSDK = this.deps.claudeSDK || DefaultClaudeSDK;
 
     try {
-      const tempFile = `/tmp/stop_review_${Date.now()}.txt`;
-      fs.writeFileSync(tempFile, prompt);
+      // Use SDK to call Claude - no temp files needed!
+      const response = await claudeSDK.prompt(prompt, 'sonnet');
 
-      const response = exec(`claude --model sonnet --output-format json < "${tempFile}"`, {
-        encoding: 'utf-8',
-        timeout: 120000, // 2 minutes - plenty of time for Claude to think
-        shell: '/bin/bash',
-        cwd: '/tmp', // Run in /tmp to avoid triggering our own Stop hook!
-      }).trim();
-
-      // Clean up temp file
-      if (fs.existsSync(tempFile)) {
-        fs.unlinkSync(tempFile);
+      if (!response.success) {
+        throw new Error(response.error || 'SDK call failed');
       }
 
       // Log the raw response for debugging
-      this.logger.debug(`Claude raw response: ${response.substring(0, 500)}`);
+      this.logger.debug(`Claude raw response: ${response.text.substring(0, 500)}`);
 
-      let result = JSON.parse(response);
+      let result = JSON.parse(response.text);
 
       // Handle Claude CLI wrapper format
       if (result.type === 'result' && result.result) {
