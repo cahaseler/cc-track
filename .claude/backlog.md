@@ -30,3 +30,4 @@
 - [2025-09-12] adjust edit-validation hook to not output typecheck errors for test files
 - [2025-09-12] exclude private joural embeddings from stop-review hook to avoid false overreactions
 - [2025-09-12] add enforcement mechanism to stop-review hook to flag when AI updates task files or otherwise claims task completion when there are obviously still open issues like failing tests, lint errors, etc
+- [2025-09-12] Rename master branch to main for modern git conventions. This will likely involve code updates too that make assumptions about the default branch. We should make the default branch name configurable for the purposes of our code.
