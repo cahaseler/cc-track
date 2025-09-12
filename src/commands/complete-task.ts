@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { clearActiveTask, getActiveTaskId } from '../lib/claude-md';
-import { type EditValidationConfig, getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
+import { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
 import { getDefaultBranch, isWipCommit } from '../lib/git-helpers';
 import { pushCurrentBranch } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
@@ -49,12 +49,6 @@ interface CompletionResult {
   error?: string;
 }
 
-interface ValidationConfig {
-  typecheck?: { enabled: boolean; command: string };
-  lint?: { enabled: boolean; command: string };
-  knip?: { enabled: boolean; command: string };
-}
-
 /**
  * Complete task command implementation
  */
@@ -98,29 +92,33 @@ async function completeTaskAction(options: {
           if (preflightData.validation?.tests?.failCount) {
             result.warnings.push(`${preflightData.validation.tests.failCount} tests failing`);
           }
-          console.log(JSON.stringify(result, null, 2));
-          process.exit(1);
+        } else {
+          result.validation.preflightPassed = true;
+          logger.info('Pre-flight validation passed');
         }
-        result.validation.preflightPassed = true;
-        logger.info('Pre-flight validation passed');
       } catch (error) {
-        logger.warn('Pre-flight validation check failed', { error });
-        result.warnings.push('Pre-flight validation check failed - continuing anyway');
+        logger.warn('Pre-flight validation check failed: ', { error });
+        result.validation.preflightPassed = false;
+        result.error = `Pre-flight validation check failed: ${error}`;
       }
     }
 
     // 1. Validate prerequisites
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     if (!existsSync(claudeMdPath)) {
-      result.error = 'CLAUDE.md not found';
-      console.log(JSON.stringify(result, null, 2));
+      console.log('## ❌ Task Completion Failed\n');
+      console.log('Error: CLAUDE.md not found\n');
+      console.log('Please ensure cc-track is properly initialized in this project.');
+      console.log('Run `/init-track` if needed, then try again.');
       process.exit(1);
     }
 
     const taskId = getActiveTaskId(projectRoot);
     if (!taskId) {
-      result.error = 'No active task found in CLAUDE.md';
-      console.log(JSON.stringify(result, null, 2));
+      console.log('## ❌ Task Completion Failed\n');
+      console.log('Error: No active task found in CLAUDE.md\n');
+      console.log('Please ensure there is an active task set in CLAUDE.md.');
+      console.log('The task should be referenced with `@.claude/tasks/TASK_XXX.md`');
       process.exit(1);
     }
 
@@ -128,8 +126,10 @@ async function completeTaskAction(options: {
     const taskFilePath = join(claudeDir, 'tasks', `${result.taskId}.md`);
 
     if (!existsSync(taskFilePath)) {
-      result.error = `Task file not found: ${taskFilePath}`;
-      console.log(JSON.stringify(result, null, 2));
+      console.log('## ❌ Task Completion Failed\n');
+      console.log(`Error: Task file not found: ${taskFilePath}\n`);
+      console.log('The task file referenced in CLAUDE.md does not exist.');
+      console.log('Please check that the task file path is correct.');
       process.exit(1);
     }
 
@@ -185,86 +185,7 @@ async function completeTaskAction(options: {
       result.warnings.push('no_active_task.md not found');
     }
 
-    // 5. Run validation checks (read config to see what's enabled)
-    const config = getConfig();
-    let validationConfig: ValidationConfig = {
-      typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
-      lint: { enabled: true, command: 'bunx biome check' },
-      knip: { enabled: true, command: 'bunx knip' },
-    };
-
-    // Check if validation config exists in edit_validation hook config
-    const editValidation = config.hooks?.edit_validation;
-    if (editValidation && 'typecheck' in editValidation) {
-      const editConfig = editValidation as EditValidationConfig;
-      validationConfig = {
-        typecheck: editConfig.typecheck || validationConfig.typecheck,
-        lint: editConfig.lint || validationConfig.lint,
-        knip: editConfig.knip || validationConfig.knip,
-      };
-    }
-
-    // Run TypeScript check if enabled
-    if (validationConfig.typecheck?.enabled) {
-      try {
-        execSync(validationConfig.typecheck.command, { encoding: 'utf-8', cwd: projectRoot });
-        result.validation.typescript = 'No errors';
-      } catch (error) {
-        const execError = error as { stdout?: string; stderr?: string };
-        const output = execError.stdout || execError.stderr || '';
-        const errorCount = (output.match(/error TS/g) || []).length;
-        result.validation.typescript = `${errorCount} error${errorCount !== 1 ? 's' : ''}`;
-        result.warnings.push(`TypeScript validation found ${errorCount} errors`);
-      }
-    }
-
-    // Run Biome check if enabled
-    if (validationConfig.lint?.enabled) {
-      try {
-        execSync(validationConfig.lint.command, { encoding: 'utf-8', cwd: projectRoot });
-        result.validation.biome = 'No issues';
-      } catch (error) {
-        const execError = error as { stdout?: string; stderr?: string };
-        const output = execError.stdout || execError.stderr || '';
-        // Try to extract error count from Biome output
-        const match = output.match(/Found (\d+) error/);
-        const errorCount = match ? parseInt(match[1], 10) : 'unknown';
-        result.validation.biome = `${errorCount} issue${errorCount !== 1 ? 's' : ''}`;
-        result.warnings.push(`Biome validation found ${errorCount} issues`);
-      }
-    }
-
-    // Run knip check if enabled
-    if (validationConfig.knip?.enabled) {
-      try {
-        execSync(validationConfig.knip.command, { encoding: 'utf-8', cwd: projectRoot });
-        result.validation.knip = 'No unused code';
-      } catch (error) {
-        const execError = error as { stdout?: string; stderr?: string };
-        const output = execError.stdout || execError.stderr || '';
-        // Parse knip output to extract counts
-        const filesMatch = output.match(/Unused files\s+(\d+)/);
-        const exportsMatch = output.match(/Unused exports\s+(\d+)/);
-        const depsMatch = output.match(/Unused dependencies\s+(\d+)/);
-
-        const issues = [];
-        if (filesMatch && filesMatch[1] !== '0')
-          issues.push(`${filesMatch[1]} unused file${filesMatch[1] !== '1' ? 's' : ''}`);
-        if (exportsMatch && exportsMatch[1] !== '0')
-          issues.push(`${exportsMatch[1]} unused export${exportsMatch[1] !== '1' ? 's' : ''}`);
-        if (depsMatch && depsMatch[1] !== '0')
-          issues.push(`${depsMatch[1]} unused dep${depsMatch[1] !== '1' ? 's' : ''}`);
-
-        if (issues.length > 0) {
-          result.validation.knip = issues.join(', ');
-          result.warnings.push(`Knip found: ${issues.join(', ')}`);
-        } else {
-          result.validation.knip = 'Check completed';
-        }
-      }
-    }
-
-    // 6. Git operations (unless --no-squash is specified)
+    // 5. Git operations (unless --no-squash is specified)
     if (!options.noSquash) {
       try {
         // Check for uncommitted changes and commit them first
@@ -389,7 +310,11 @@ async function completeTaskAction(options: {
                     encoding: 'utf-8',
                     cwd: projectRoot,
                   });
-                  const existingPRs = JSON.parse(prListOutput) as Array<{ number: number; url: string; state: string }>;
+                  const existingPRs = JSON.parse(prListOutput) as Array<{
+                    number: number;
+                    url: string;
+                    state: string;
+                  }>;
 
                   const openPR = existingPRs.find((pr) => pr.state === 'OPEN');
                   if (openPR) {
@@ -511,8 +436,15 @@ async function completeTaskAction(options: {
   }
 
   // Generate context-specific instructions for Claude
-  console.log(JSON.stringify(result, null, 2));
-  console.log('\n## Your Tasks\n');
+  console.log('## Your Tasks\n');
+
+  // Check for critical errors first
+  if (result.error) {
+    console.log('### ❌ Task Completion Failed\n');
+    console.log(`Error: ${result.error}\n`);
+    console.log('Please inform the user of this error. Cannot proceed with task completion.');
+    process.exit(1);
+  }
 
   // 1. Check pre-flight validation
   if (result.validation.preflightPassed === false) {
