@@ -218,29 +218,6 @@ export function runBiomeCheck(
   return errors;
 }
 
-/**
- * Validate multiple TypeScript files
- */
-export function validateFiles(filePaths: string[], config: EditValidationConfig, cwd: string): ValidationResult[] {
-  const results: ValidationResult[] = [];
-
-  for (const filePath of filePaths) {
-    const fileName = basename(filePath);
-    const errors: string[] = [];
-
-    // Run TypeScript check
-    errors.push(...runTypeScriptCheck(filePath, config, cwd));
-
-    // Run Biome check
-    errors.push(...runBiomeCheck(filePath, config, cwd));
-
-    if (errors.length > 0) {
-      results.push({ fileName, errors });
-    }
-  }
-
-  return results;
-}
 
 /**
  * Format validation results into a readable message

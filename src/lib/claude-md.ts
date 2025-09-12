@@ -165,31 +165,11 @@ function getDefaultInstance(): ClaudeMdHelpers {
   return defaultClaudeMdHelpers;
 }
 
-// Export standalone functions that use the default instance
-export function getActiveTaskFile(projectRoot: string): string | null {
-  return getDefaultInstance().getActiveTaskFile(projectRoot);
-}
-
+// Keep only the standalone functions that are actually used (in complete-task.ts)
 export function getActiveTaskId(projectRoot: string): string | null {
   return getDefaultInstance().getActiveTaskId(projectRoot);
 }
 
-export function getActiveTaskContent(projectRoot: string): string | null {
-  return getDefaultInstance().getActiveTaskContent(projectRoot);
-}
-
-export function setActiveTask(projectRoot: string, taskId: string): void {
-  getDefaultInstance().setActiveTask(projectRoot, taskId);
-}
-
 export function clearActiveTask(projectRoot: string): void {
   getDefaultInstance().clearActiveTask(projectRoot);
-}
-
-export function hasActiveTask(projectRoot: string): boolean {
-  return getDefaultInstance().hasActiveTask(projectRoot);
-}
-
-export function getActiveTaskDisplay(projectRoot: string): string {
-  return getDefaultInstance().getActiveTaskDisplay(projectRoot);
 }
