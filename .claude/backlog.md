@@ -27,3 +27,4 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-12] investigate why editing cli/index gives typescript errors from the validator hook- [2025-09-12] prepare task for completion hook failes with a hard error rather than passing linting feedback to claude when there's a lint error: Error: Bash command failed for pattern !
 - [2025-09-12] whenever the stop review hook makes a commit it should unobtrusively notify claude
+- [2025-09-12] GitHub issues not properly linked to branches/PRs - should use 'gh issue develop' after creating issue instead of separate git branch creation
