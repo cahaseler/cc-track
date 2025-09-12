@@ -144,18 +144,31 @@ function runTests(projectRoot: string): ValidationResult['tests'] {
     }
 
     logger.info('Running tests');
-    const output = execSync('bun test', { cwd: projectRoot, encoding: 'utf-8' });
+    // Run tests and capture output - execSync already captures by default
+    const output = execSync('bun test 2>&1', {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+    });
 
-    // Parse test output for results
+    // Parse test output for results - look for the summary line
     const failMatch = output.match(/(\d+)\s+fail/);
+    const passMatch = output.match(/(\d+)\s+pass/);
+
     if (failMatch && failMatch[1] !== '0') {
+      // Only include detailed output if there are failures
+      const failedTests = output
+        .split('\n')
+        .filter((line) => line.includes('(fail)'))
+        .join('\n');
       return {
         passed: false,
-        errors: output.substring(0, 2000),
+        errors: failedTests || output.substring(0, 2000),
         failCount: parseInt(failMatch[1], 10),
       };
     }
 
+    // Tests passed - return minimal info
+    logger.info(`Tests passed: ${passMatch ? passMatch[0] : 'all'}`);
     return { passed: true };
   } catch (error) {
     const err = error as { stdout?: string; stderr?: string };

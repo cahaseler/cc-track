@@ -12,14 +12,22 @@ async function prepareCompletionAction() {
   const projectRoot = process.cwd();
 
   try {
-    // Run validation checks
-    const validationResult = execSync('./dist/cc-track validation-checks', {
+    // Run validation checks (ignore stderr for bun dependency messages)
+    const validationOutput = execSync('./dist/cc-track validation-checks 2>&1', {
       encoding: 'utf-8',
       cwd: projectRoot,
+      shell: '/bin/bash',
     });
 
+    // Find the JSON in the output (it starts with { and ends with })
+    // This handles cases where bun outputs dependency messages before the JSON
+    const jsonMatch = validationOutput.match(/\{[\s\S]*\}$/);
+    if (!jsonMatch) {
+      throw new Error('Invalid validation output - no JSON found');
+    }
+
     // Parse the JSON result
-    const result = JSON.parse(validationResult);
+    const result = JSON.parse(jsonMatch[0]);
 
     // Generate dynamic instructions based on the results
     console.log('## Prepare Task for Completion\n');
@@ -37,46 +45,48 @@ async function prepareCompletionAction() {
 
       // TypeScript errors
       if (result.validation?.typescript?.passed === false) {
-      console.log('#### TypeScript Errors');
-      console.log(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
-      if (result.validation.typescript.errors) {
-        console.log('```');
-        console.log(result.validation.typescript.errors.substring(0, 1000));
-        if (result.validation.typescript.errors.length > 1000) {
-          console.log('... (truncated)');
+        console.log('#### TypeScript Errors');
+        console.log(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
+        if (result.validation.typescript.errors) {
+          console.log('```');
+          console.log(result.validation.typescript.errors.substring(0, 1000));
+          if (result.validation.typescript.errors.length > 1000) {
+            console.log('... (truncated)');
+          }
+          console.log('```\n');
         }
-        console.log('```\n');
-      }
-        console.log('**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n');
+        console.log(
+          '**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n',
+        );
       }
 
       // Biome/linting issues
       if (result.validation?.biome?.passed === false) {
-      console.log('#### Linting Issues');
-      console.log(`Found ${result.validation.biome.issueCount || 'multiple'} Biome issues.\n`);
-      if (result.validation.biome.errors) {
-        console.log('```');
-        console.log(result.validation.biome.errors.substring(0, 1000));
-        if (result.validation.biome.errors.length > 1000) {
-          console.log('... (truncated)');
+        console.log('#### Linting Issues');
+        console.log(`Found ${result.validation.biome.issueCount || 'multiple'} Biome issues.\n`);
+        if (result.validation.biome.errors) {
+          console.log('```');
+          console.log(result.validation.biome.errors.substring(0, 1000));
+          if (result.validation.biome.errors.length > 1000) {
+            console.log('... (truncated)');
+          }
+          console.log('```\n');
         }
-        console.log('```\n');
-      }
         console.log('**Action:** Fix linting issues. Many can be auto-fixed with `bunx biome check --write`.\n');
       }
 
       // Test failures
       if (result.validation?.tests?.passed === false) {
-      console.log('#### Test Failures');
-      console.log(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
-      if (result.validation.tests.errors) {
-        console.log('```');
-        console.log(result.validation.tests.errors.substring(0, 1000));
-        if (result.validation.tests.errors.length > 1000) {
-          console.log('... (truncated)');
+        console.log('#### Test Failures');
+        console.log(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
+        if (result.validation.tests.errors) {
+          console.log('```');
+          console.log(result.validation.tests.errors.substring(0, 1000));
+          if (result.validation.tests.errors.length > 1000) {
+            console.log('... (truncated)');
+          }
+          console.log('```\n');
         }
-        console.log('```\n');
-      }
         console.log('**Action:** Fix failing tests or update test expectations as needed.\n');
       }
 
@@ -94,7 +104,7 @@ async function prepareCompletionAction() {
           issues.push(`${result.validation.knip.unusedDeps} unused dependencies`);
         }
         console.log(`Knip found: ${issues.join(', ')}\n`);
-        console.log('**Note:** These are warnings and won\'t block completion, but consider cleaning them up.\n');
+        console.log("**Note:** These are warnings and won't block completion, but consider cleaning them up.\n");
       }
     }
 
@@ -114,7 +124,7 @@ async function prepareCompletionAction() {
     if (result.task?.status !== 'in_progress') {
       console.log('#### Task Status');
       console.log(`Task status is '${result.task?.status || 'unknown'}', expected 'in_progress'.\n`);
-      console.log('**Note:** This won\'t block completion but is unusual.\n');
+      console.log("**Note:** This won't block completion but is unusual.\n");
     }
 
     // Documentation update reminder
@@ -154,11 +164,13 @@ async function prepareCompletionAction() {
   } catch (error) {
     // Handle cases where validation-checks command fails completely
     console.log('## ❌ Validation Check Failed\n');
-    
-    const err = error as any;
+
+    const err = error as { code?: string; status?: number; message?: string; stderr?: string };
     if (err.code === 'ENOENT') {
       console.log('Error: Could not find cc-track binary.\n');
-      console.log('Please ensure the project is built with: `bun build ./src/cli/index.ts --compile --outfile dist/cc-track`');
+      console.log(
+        'Please ensure the project is built with: `bun build ./src/cli/index.ts --compile --outfile dist/cc-track`',
+      );
     } else if (err.status === 127) {
       console.log('Error: cc-track command not found.\n');
       console.log('Please ensure the project is built properly.');
@@ -169,7 +181,7 @@ async function prepareCompletionAction() {
         console.log(err.stderr);
       }
     }
-    
+
     process.exit(1);
   }
 }
