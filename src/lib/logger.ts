@@ -75,7 +75,7 @@ export class Logger {
   private findLogDir(): string {
     // Get logging config to check for configured directory
     const loggingConfig = getLoggingConfig();
-    
+
     if (loggingConfig.directory) {
       // Expand tilde to home directory
       return this.expandPath(loggingConfig.directory);
@@ -101,23 +101,25 @@ export class Logger {
       case 'darwin':
         // macOS: ~/Library/Logs/cc-track/
         return join(home, 'Library', 'Logs', 'cc-track');
-      
-      case 'win32':
+
+      case 'win32': {
         // Windows: %LOCALAPPDATA%\cc-track\logs\
         const localAppData = process.env.LOCALAPPDATA || join(home, 'AppData', 'Local');
         return join(localAppData, 'cc-track', 'logs');
-      
-      default:
+      }
+
+      default: {
         // Linux/WSL/Others: Follow XDG Base Directory spec
         const xdgDataHome = process.env.XDG_DATA_HOME || join(home, '.local', 'share');
         return join(xdgDataHome, 'cc-track', 'logs');
+      }
     }
   }
 
   private getLogConfig(): LogConfig {
     // Get logging config from the centralized config system
     const loggingConfig = getLoggingConfig();
-    
+
     // Convert to LogConfig format used internally
     return {
       enabled: loggingConfig.enabled,

@@ -237,7 +237,8 @@ export function getGitConfig(configPath?: string): GitConfig | null {
 
 export function getLoggingConfig(configPath?: string): LoggingConfig {
   const config = getConfig(configPath);
-  return config.logging || DEFAULT_CONFIG.logging!;
+  // DEFAULT_CONFIG.logging is always defined, so this is safe
+  return config.logging || DEFAULT_CONFIG.logging as LoggingConfig;
 }
 
 export function clearConfigCache(): void {

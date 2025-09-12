@@ -238,7 +238,7 @@ describe('Logger', () => {
 
       const logger = new Logger('test', undefined, undefined, mockFs);
       const fileName = logger.getLogFileName();
-      
+
       expect(fileName).toContain('/custom/log/path');
       mockGetLoggingConfig.mockRestore();
     });
@@ -247,7 +247,7 @@ describe('Logger', () => {
       const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
       const mockHomedir = spyOn(os, 'homedir');
       mockHomedir.mockReturnValue('/home/testuser');
-      
+
       mockGetLoggingConfig.mockReturnValue({
         enabled: true,
         level: 'INFO',
@@ -258,9 +258,9 @@ describe('Logger', () => {
 
       const logger = new Logger('test', undefined, undefined, mockFs);
       const fileName = logger.getLogFileName();
-      
+
       expect(fileName).toContain('/home/testuser/.local/share/cc-track/logs');
-      
+
       mockGetLoggingConfig.mockRestore();
       mockHomedir.mockRestore();
     });
@@ -269,7 +269,7 @@ describe('Logger', () => {
       const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
       const mockPlatform = spyOn(os, 'platform');
       const mockHomedir = spyOn(os, 'homedir');
-      
+
       mockGetLoggingConfig.mockReturnValue({
         enabled: true,
         level: 'INFO',
@@ -281,9 +281,9 @@ describe('Logger', () => {
 
       const logger = new Logger('test', undefined, undefined, mockFs);
       const fileName = logger.getLogFileName();
-      
+
       expect(fileName).toContain('/home/testuser/.local/share/cc-track/logs');
-      
+
       mockGetLoggingConfig.mockRestore();
       mockPlatform.mockRestore();
       mockHomedir.mockRestore();
@@ -293,7 +293,7 @@ describe('Logger', () => {
       const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
       const mockPlatform = spyOn(os, 'platform');
       const mockHomedir = spyOn(os, 'homedir');
-      
+
       mockGetLoggingConfig.mockReturnValue({
         enabled: true,
         level: 'INFO',
@@ -305,9 +305,9 @@ describe('Logger', () => {
 
       const logger = new Logger('test', undefined, undefined, mockFs);
       const fileName = logger.getLogFileName();
-      
+
       expect(fileName).toContain('/Users/testuser/Library/Logs/cc-track');
-      
+
       mockGetLoggingConfig.mockRestore();
       mockPlatform.mockRestore();
       mockHomedir.mockRestore();
@@ -317,7 +317,7 @@ describe('Logger', () => {
       const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
       const mockPlatform = spyOn(os, 'platform');
       const mockHomedir = spyOn(os, 'homedir');
-      
+
       mockGetLoggingConfig.mockReturnValue({
         enabled: true,
         level: 'INFO',
@@ -330,9 +330,9 @@ describe('Logger', () => {
 
       const logger = new Logger('test', undefined, undefined, mockFs);
       const fileName = logger.getLogFileName();
-      
+
       expect(fileName).toContain('cc-track');
-      
+
       delete process.env.LOCALAPPDATA;
       mockGetLoggingConfig.mockRestore();
       mockPlatform.mockRestore();
