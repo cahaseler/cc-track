@@ -144,7 +144,7 @@ describe('edit-validation', () => {
       // Verify it runs on the whole project, not individual file
       expect(mockExec).toHaveBeenCalledWith(
         'bunx tsc --noEmit --pretty false --incremental',
-        expect.objectContaining({ cwd: '/test' })
+        expect.objectContaining({ cwd: '/test' }),
       );
     });
 
@@ -159,7 +159,8 @@ describe('edit-validation', () => {
       const mockExec = mock(() => {
         const error = new Error('TypeScript failed');
         // Now we filter for the specific file from full project output
-        (error as { stderr?: string }).stderr = "/test/file.ts(10,5): error TS2304: Cannot find name 'foo'.\n/test/other.ts(5,1): error TS2304: Cannot find name 'bar'.";
+        (error as { stderr?: string }).stderr =
+          "/test/file.ts(10,5): error TS2304: Cannot find name 'foo'.\n/test/other.ts(5,1): error TS2304: Cannot find name 'bar'.";
         throw error;
       });
 
@@ -224,10 +225,7 @@ describe('edit-validation', () => {
 
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       // Should only include errors from /test/file.ts
-      expect(result).toEqual([
-        "Line 10: Cannot find name 'foo'.",
-        "Line 15: Property 'baz' does not exist.",
-      ]);
+      expect(result).toEqual(["Line 10: Cannot find name 'foo'.", "Line 15: Property 'baz' does not exist."]);
     });
   });
 
