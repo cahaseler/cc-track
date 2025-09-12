@@ -22,6 +22,48 @@ function createMockLogger(): ReturnType<typeof createLogger> {
   } as unknown as ReturnType<typeof createLogger>;
 }
 
+// Create mock ClaudeSDK for tests
+function createMockClaudeSDK() {
+  return {
+    generateCommitMessage: mock(async () => 'chore: save work in progress'),
+    generateBranchName: mock(async () => 'feature/test-branch'),
+    prompt: mock(async (prompt: string) => {
+      // Return different responses based on prompt content to support different test scenarios
+      if (prompt.includes('deviation') || prompt.includes('Breaking changes')) {
+        return {
+          text: JSON.stringify({
+            status: 'deviation',
+            message: 'Breaking changes without tests',
+            commit_message: 'wip: work in progress',
+          }),
+          success: true,
+        };
+      }
+      
+      if (prompt.includes('verification') || prompt.includes('test')) {
+        return {
+          text: JSON.stringify({
+            status: 'needs_verification',
+            message: "Tests haven't been run",
+            commit_message: 'wip: work in progress',
+          }),
+          success: true,
+        };
+      }
+      
+      // Default on_track response
+      return {
+        text: JSON.stringify({
+          status: 'on_track',
+          message: 'Changes look good',
+          commit_message: '[wip] TASK_001 work in progress',
+        }),
+        success: true,
+      };
+    }),
+  };
+}
+
 // Create a ClaudeMdHelpers mock for active task
 function createMockClaudeMdHelpers(activeTaskId: string = 'TASK_001'): ClaudeMdHelpers {
   const taskNumber = activeTaskId.replace('TASK_', '');
@@ -149,6 +191,7 @@ describe('stop-review', () => {
         const reviewer = new SessionReviewer('/project', logger, {
           execSync: mockExec as any,
           fileOps: fileOps as any,
+          claudeSDK: createMockClaudeSDK(),
           claudeMdHelpers: createMockClaudeMdHelpers('TASK_026'),
         });
 
@@ -167,16 +210,7 @@ describe('stop-review', () => {
 
     describe('callClaudeForReview', () => {
       test('returns deviation status from Claude', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude') && cmd.includes('sonnet')) {
-            return JSON.stringify({
-              status: 'deviation',
-              message: 'Breaking changes without tests',
-              commitMessage: '',
-            });
-          }
-          return '';
-        });
+        const mockClaudeSDK = createMockClaudeSDK();
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -188,27 +222,18 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
-        const result = await reviewer.callClaudeForReview('Test prompt');
+        // The mock will return deviation response for prompts containing "deviation"
+        const result = await reviewer.callClaudeForReview('Test prompt with deviation content');
         expect(result.status).toBe('deviation');
         expect(result.message).toBe('Breaking changes without tests');
       });
 
       test('returns on_track status from Claude', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude') && cmd.includes('sonnet')) {
-            return JSON.stringify({
-              status: 'on_track',
-              message: 'Changes look good',
-              commitMessage: '[wip] TASK_001: Added feature',
-              details: 'Implementation complete',
-            });
-          }
-          return '';
-        });
+        const mockClaudeSDK = createMockClaudeSDK();
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -220,7 +245,7 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
@@ -230,14 +255,15 @@ describe('stop-review', () => {
       });
 
       test('handles Claude timeout', async () => {
-        const mockExec = mock((cmd: string) => {
-          if (cmd.includes('claude')) {
+        const mockClaudeSDK = {
+          generateCommitMessage: mock(async () => 'chore: save work in progress'),
+          generateBranchName: mock(async () => 'feature/test-branch'),
+          prompt: mock(async () => {
             const error = new Error('Command timed out');
             (error as { code?: string }).code = 'ETIMEDOUT';
             throw error;
-          }
-          return '';
-        });
+          }),
+        };
 
         const fileOps: MockFileOps = {
           writeFileSync: mock(() => {}),
@@ -249,7 +275,7 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
+          claudeSDK: mockClaudeSDK,
           fileOps,
         });
 
@@ -523,7 +549,11 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec, fileOps });
+        const reviewer = new SessionReviewer('/project', logger, { 
+          execSync: mockExec, 
+          fileOps,
+          claudeSDK: createMockClaudeSDK(),
+        });
         const result = await reviewer.review('/transcript.jsonl');
 
         expect(result.status).toBe('on_track');
@@ -550,7 +580,11 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { execSync: mockExec, fileOps });
+        const reviewer = new SessionReviewer('/project', logger, { 
+          execSync: mockExec, 
+          fileOps,
+          claudeSDK: createMockClaudeSDK(),
+        });
         const result = await reviewer.review('/transcript.jsonl');
 
         expect(result.status).toBe('on_track');
