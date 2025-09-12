@@ -80,7 +80,7 @@ describe('GitHubHelpers', () => {
       mockExec = mock(() => 'https://github.com/user/repo/issues/123\n');
       gitHubHelpers = new GitHubHelpers(mockExec);
 
-      const issue = gitHubHelpers.createGitHubIssue('Test Issue', 'Body', '/test', ['bug']);
+      const issue = gitHubHelpers.createGitHubIssue('Test Issue', 'Body', '/test');
 
       expect(issue).toEqual({
         number: 123,

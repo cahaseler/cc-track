@@ -221,7 +221,7 @@ export async function handleGitHubIntegration(
     const { title, body } = githubHelpers.formatTaskForGitHub(taskContent);
 
     // Create GitHub issue
-    const issue = githubHelpers.createGitHubIssue(title, body, projectRoot, ['task', 'cc-track']);
+    const issue = githubHelpers.createGitHubIssue(title, body, projectRoot);
 
     if (!issue) {
       logger.error('Failed to create GitHub issue', { taskId });

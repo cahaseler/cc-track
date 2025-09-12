@@ -80,19 +80,15 @@ export class GitHubHelpers {
   /**
    * Create a GitHub issue
    */
-  createGitHubIssue(title: string, body: string, cwd: string, labels?: string[]): GitHubIssue | null {
+  createGitHubIssue(title: string, body: string, cwd: string): GitHubIssue | null {
     try {
-      logger.info('Creating GitHub issue', { title, labels });
+      logger.info('Creating GitHub issue', { title });
 
       // Properly escape arguments to avoid shell interpretation
       const escapedTitle = this.escapeShellArgument(title);
       const escapedBody = this.escapeShellArgument(body);
 
-      let command = `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`;
-      if (labels && labels.length > 0) {
-        const escapedLabels = this.escapeShellArgument(labels.join(','));
-        command += ` --label "${escapedLabels}"`;
-      }
+      const command = `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`;
 
       const result = this.exec(command, { cwd });
 
@@ -355,8 +351,8 @@ export function getGitHubRepoInfo(cwd: string): { owner: string; repo: string } 
   return defaultGitHubHelpers.getGitHubRepoInfo(cwd);
 }
 
-export function createGitHubIssue(title: string, body: string, cwd: string, labels?: string[]): GitHubIssue | null {
-  return defaultGitHubHelpers.createGitHubIssue(title, body, cwd, labels);
+export function createGitHubIssue(title: string, body: string, cwd: string): GitHubIssue | null {
+  return defaultGitHubHelpers.createGitHubIssue(title, body, cwd);
 }
 
 export function createIssueBranch(issueNumber: number, cwd: string): string | null {
