@@ -157,4 +157,10 @@
 [2025-09-12 22:49] - Completed: Task 030 - Hook Improvements for Better Developer Experience
   Details: Enhanced edit-validation and stop-review hooks to provide cleaner developer experience by filtering private journal files and fixing false positive task warnings
   Files: src/hooks/stop-review.ts, src/hooks/stop-review.test.ts, src/hooks/edit-validation.ts, dist/cc-track (rebuilt)
+  Key Achievement: Enhanced edit-validation and stop-review hooks to provide cleaner developer experience by filtering private journal files and fixing false positive task warnings
+
+[2025-09-12 23:00] - Completed: Task 031 - Make Default Branch Configurable and Migrate to 'main'
+  Details: Implemented configurable default branch support (Phase 1 only - configuration infrastructure)
+  Files: src/lib/git-helpers.ts, src/lib/git-helpers.test.ts, src/lib/config.ts, src/commands/complete-task.ts, .claude/track.config.json, .claude/commands/complete-task.md
+  Key Achievement: Added git.defaultBranch configuration with smart fallback detection. Complete-task command now outputs detected branch for Claude instances. Phase 2 (actual migration to 'main') deferred for separate PR.
   Key Achievement: Private journal files now excluded from code review while remaining in git for backup. Fixed false positive "commits without an active task" warning. All 249 tests passing with proper mock isolation.

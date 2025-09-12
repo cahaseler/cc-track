@@ -36,6 +36,10 @@
       "enabled": true
     }
   },
+  "git": {
+    "defaultBranch": "main",
+    "description": "Default branch name for git operations (e.g., 'main' or 'master')"
+  },
   "features": {
     "statusline": {
       "enabled": true,

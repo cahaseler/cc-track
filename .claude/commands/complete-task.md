@@ -55,7 +55,7 @@ Based on the completion results above:
    **If the automated script indicates GitHub PR workflow is active:**
    - Create a pull request using: `gh pr create --title "Task XXX: [Task Title]" --body "[Task summary and key changes]"`
    - Include what was delivered, key technical details, and testing notes in PR description
-   - After PR creation, switch back to default branch: `git checkout main` (or `master`)
+   - After PR creation, switch back to default branch using: `git checkout [defaultBranch from result.git.defaultBranch]`
    - Provide the PR URL to the user
    
    **If traditional git workflow was used:**
