@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
-import { getConfig } from './config';
+import { getLoggingConfig } from './config';
 
 export enum LogLevel {
   ERROR = 0,
@@ -72,35 +73,60 @@ export class Logger {
   }
 
   private findLogDir(): string {
-    // Try to find .claude directory by checking current dir and parent dirs
-    let currentPath = process.cwd();
+    // Get logging config to check for configured directory
+    const loggingConfig = getLoggingConfig();
 
-    while (currentPath !== '/') {
-      const claudeDir = join(currentPath, '.claude');
-      if (this.fs.existsSync(claudeDir)) {
-        return join(claudeDir, 'logs');
-      }
-      // Move up one directory
-      currentPath = join(currentPath, '..');
+    if (loggingConfig.directory) {
+      // Expand tilde to home directory
+      return this.expandPath(loggingConfig.directory);
     }
 
-    // Default to current working directory
-    return join(process.cwd(), '.claude', 'logs');
+    // Use platform-specific default directory
+    return this.getDefaultLogDir();
+  }
+
+  private expandPath(path: string): string {
+    if (path.startsWith('~')) {
+      return join(homedir(), path.slice(1));
+    }
+    // Expand environment variables (basic support for $HOME)
+    return path.replace(/\$HOME/g, homedir());
+  }
+
+  private getDefaultLogDir(): string {
+    const home = homedir();
+    const plat = platform();
+
+    switch (plat) {
+      case 'darwin':
+        // macOS: ~/Library/Logs/cc-track/
+        return join(home, 'Library', 'Logs', 'cc-track');
+
+      case 'win32': {
+        // Windows: %LOCALAPPDATA%\cc-track\logs\
+        const localAppData = process.env.LOCALAPPDATA || join(home, 'AppData', 'Local');
+        return join(localAppData, 'cc-track', 'logs');
+      }
+
+      default: {
+        // Linux/WSL/Others: Follow XDG Base Directory spec
+        const xdgDataHome = process.env.XDG_DATA_HOME || join(home, '.local', 'share');
+        return join(xdgDataHome, 'cc-track', 'logs');
+      }
+    }
   }
 
   private getLogConfig(): LogConfig {
-    const config = getConfig();
+    // Get logging config from the centralized config system
+    const loggingConfig = getLoggingConfig();
 
-    // Default logging config if not specified
-    const defaultConfig: LogConfig = {
-      enabled: true,
-      level: 'INFO',
-      retentionDays: 7,
-      prettyPrint: false,
+    // Convert to LogConfig format used internally
+    return {
+      enabled: loggingConfig.enabled,
+      level: loggingConfig.level,
+      retentionDays: loggingConfig.retentionDays,
+      prettyPrint: loggingConfig.prettyPrint,
     };
-
-    // @ts-expect-error - logging might not exist in config yet
-    return config.logging || defaultConfig;
   }
 
   private cleanOldLogs(): void {

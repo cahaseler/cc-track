@@ -68,6 +68,7 @@
     "level": "DEBUG",
     "retentionDays": 7,
     "prettyPrint": false,
+    "directory": "~/.local/share/cc-track/logs",
     "description": "Centralized logging system for debugging and monitoring"
   }
 }
