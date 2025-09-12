@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/cahaseler/cc-track/compare/v1.4.1...v1.4.2) (2025-09-12)
+
+
+### Bug Fixes
+
+* TASK_037 fix GitHub issue branch linking logic ([e4383f3](https://github.com/cahaseler/cc-track/commit/e4383f38cdb1a2b0ffdb0c0a5ffb275e6d0c9ab9))
+
 ## [1.4.1](https://github.com/cahaseler/cc-track/compare/v1.4.0...v1.4.1) (2025-09-12)
 
 
