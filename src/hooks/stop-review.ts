@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
-import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createReadStream, existsSync, type readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
+import { ClaudeMdHelpers } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
@@ -17,6 +17,7 @@ export interface StopReviewDependencies {
     createReadStream: typeof createReadStream;
   };
   gitHelpers?: GitHelpers;
+  claudeMdHelpers?: ClaudeMdHelpers;
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
 }
@@ -30,13 +31,11 @@ export interface ReviewResult {
 
 export class SessionReviewer {
   private projectRoot: string;
-  private claudeDir: string;
   private logger: ReturnType<typeof createLogger>;
   private deps: StopReviewDependencies;
 
   constructor(projectRoot: string, logger: ReturnType<typeof createLogger>, deps: StopReviewDependencies = {}) {
     this.projectRoot = projectRoot;
-    this.claudeDir = join(projectRoot, '.claude');
     this.logger = logger;
     this.deps = deps;
   }
@@ -160,28 +159,13 @@ export class SessionReviewer {
   }
 
   private getActiveTask(): string | null {
-    const fs = this.deps.fileOps || { existsSync, readFileSync };
-    const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
-    if (!fs.existsSync(claudeMdPath)) return null;
-
-    const content = fs.readFileSync(claudeMdPath, 'utf-8');
-    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
-    if (!taskMatch) return null;
-
-    const taskPath = join(this.claudeDir, 'tasks', taskMatch[1]);
-    if (!fs.existsSync(taskPath)) return null;
-
-    return fs.readFileSync(taskPath, 'utf-8');
+    const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
+    return claudeMdHelpers.getActiveTaskContent(this.projectRoot);
   }
 
   private getActiveTaskId(): string | null {
-    const fs = this.deps.fileOps || { existsSync, readFileSync };
-    const claudeMdPath = join(this.projectRoot, 'CLAUDE.md');
-    if (!fs.existsSync(claudeMdPath)) return null;
-
-    const content = fs.readFileSync(claudeMdPath, 'utf-8');
-    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+)\.md/);
-    return taskMatch ? taskMatch[1] : null;
+    const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
+    return claudeMdHelpers.getActiveTaskId(this.projectRoot);
   }
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
@@ -553,21 +537,6 @@ export function isGitRepository(projectRoot: string, exec: typeof execSync = exe
 }
 
 /**
- * Check for uncommitted changes
- */
-export function hasUncommittedChanges(projectRoot: string, exec: typeof execSync = execSync): boolean {
-  try {
-    const status = exec('git status --porcelain', {
-      encoding: 'utf-8',
-      cwd: projectRoot,
-    });
-    return !!status.trim();
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Generate stop hook output based on review
  */
 export function generateStopOutput(
@@ -713,8 +682,17 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
   }
 
   // Quick check for changes after adding untracked files
-  if (!hasUncommittedChanges(projectRoot, exec)) {
-    logger.info('No changes detected, exiting early');
+  try {
+    const status = exec('git status --porcelain', { cwd: projectRoot }).toString().trim();
+    if (!status) {
+      logger.info('No changes detected, exiting early');
+      return {
+        continue: true,
+        systemMessage: '✅ No changes to commit',
+      };
+    }
+  } catch {
+    logger.info('Failed to check git status, exiting early');
     return {
       continue: true,
       systemMessage: '✅ No changes to commit',

@@ -13,6 +13,33 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-12 21:17
+- When git status shows "Your branch is ahead of origin" with uncommitted changes, commit first before pushing - the push will fail until changes are staged and committed
+- When tail truncates Biome check output mid-error, use head or specific line counts to see the beginning of error messages which contain the actual error details
+- Test timeouts (2m+) often indicate infinite loops or hanging operations in test code - check for missing await statements or improper mock implementations
+- When bun test output shows only passing tests at the beginning, failures are likely at the end - use grep with fail patterns or check the test summary counts
+- Use `grep -E "^\(fail\)"` to extract only failing test names from bun test output, avoiding partial matches in test descriptions
+- When multiple test files produce mixed output, run them individually or use focused patterns to isolate specific failures
+- Error recovery often succeeds with simpler, more targeted operations (Glob, Grep) rather than complex commands after initial failures
+
+### Session: 2025-09-12 20:50
+- **Git push prerequisites**: When "Your branch is ahead of origin" appears, ensure all changes are committed before pushing - uncommitted changes will block the push
+- **TypeScript unused variable errors**: Variables/imports marked as "declared but never read" (TS6133) need to be either removed or prefixed with underscore to indicate intentional non-use
+- **Biome check output parsing**: The tail command may truncate error details - use full output or specific error counts rather than relying on truncated messages
+- **Mock object updates in tests**: When adding new properties to mock objects that appear multiple times, use MultiEdit with replace_all:true or update each occurrence individually with unique context
+
+### Session: 2025-09-11 19:41
+- When encountering "Found X matches but replace_all is false" errors, use MultiEdit with replace_all:true for bulk replacements across multiple occurrences
+- When MultiEdit fails with "String to replace not found" on later edits, earlier edits in the sequence may have already modified the target text - split into separate Edit operations
+- Test output can be truncated mid-suite showing only partial results - use specific test patterns with `-t "<pattern>"` to focus on failing tests
+- When TypeScript reports type errors after adding mocks, use type assertions like `as any` on mock objects rather than trying to match complex type signatures
+- Create helper functions like `createMockLogger()` to avoid repetitive mock definitions across multiple test cases
+- Directory listings with `ls` fail on non-existent paths - verify parent directory exists before attempting to list subdirectories
+- When git checkout fails due to uncommitted changes, either commit the changes or use `git stash` before switching branches
+- File paths in error messages may be truncated - use grep with specific patterns to find the full context
+- When updating documentation files that track progress, use `tail` to check the current end state before attempting edits
+- TypeScript mock functions require explicit parameter types in their signatures to avoid implicit 'any' errors
+
 ### Session: 2025-09-11 15:43
 - **Git checkout conflicts**: When git checkout fails due to uncommitted changes, use `git stash` first to save local changes, then checkout and `git stash pop` to restore them
 - **Git pull with divergent branches**: When git pull shows "divergent branches" hint, use `git pull --rebase origin <branch>` to avoid merge commits, or `git pull --merge` if merge is preferred

@@ -3,6 +3,7 @@ import { execSync as nodeExecSync } from 'node:child_process';
 import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { getConfig as getConfigImpl } from '../lib/config';
+import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
 
 interface StatusLineInput {
   model?: {
@@ -16,6 +17,7 @@ interface StatusLineDeps {
   existsSync: typeof nodeExistsSync;
   readFileSync: typeof nodeReadFileSync;
   getConfig: typeof getConfigImpl;
+  getCurrentBranch: typeof getCurrentBranchImpl;
 }
 
 const defaultDeps: StatusLineDeps = {
@@ -23,6 +25,7 @@ const defaultDeps: StatusLineDeps = {
   existsSync: nodeExistsSync,
   readFileSync: nodeReadFileSync,
   getConfig: getConfigImpl,
+  getCurrentBranch: getCurrentBranchImpl,
 };
 
 /**
@@ -82,12 +85,7 @@ export function getUsageInfo(
  */
 export function getCurrentBranch(deps = defaultDeps): string {
   try {
-    return deps
-      .execSync('git branch --show-current', {
-        encoding: 'utf-8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
-      .trim();
+    return deps.getCurrentBranch(process.cwd());
   } catch {
     return '';
   }
@@ -112,14 +110,14 @@ export function getActiveTask(deps = defaultDeps): string {
     return '';
   }
 
-  const taskPath = taskMatch[0].replace('@', '');
-  if (!deps.existsSync(taskPath)) {
+  const taskFilePath = `.claude/tasks/${taskMatch[1]}`;
+  if (!deps.existsSync(taskFilePath)) {
     return '';
   }
 
-  const taskContent = deps.readFileSync(taskPath, 'utf-8');
-  const firstLine = taskContent.split('\n')[0];
-  return firstLine.replace(/^# /, '');
+  const taskContent = deps.readFileSync(taskFilePath, 'utf-8');
+  const titleMatch = taskContent.match(/^# (.+)$/m);
+  return titleMatch ? titleMatch[1] : '';
 }
 
 /**

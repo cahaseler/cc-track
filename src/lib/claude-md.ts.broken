@@ -1,0 +1,216 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+// Direct function exports - delegate to class-based implementation for consistency
+export function getActiveTaskFile(projectRoot: string, fileOps?: FileOps): string | null {
+  const helpers = new ClaudeMdHelpers(fileOps);
+  return helpers.getActiveTaskFile(projectRoot);
+}
+
+export function getActiveTaskId(projectRoot: string): string | null {
+  const taskFile = getActiveTaskFile(projectRoot);
+  if (!taskFile) {
+    return null;
+  }
+
+  const match = taskFile.match(/TASK_(\d+)\.md/);
+  return match ? `TASK_${match[1]}` : null;
+}
+
+export function getActiveTaskContent(projectRoot: string): string | null {
+  const taskFile = getActiveTaskFile(projectRoot);
+  if (!taskFile) {
+    return null;
+  }
+
+  const taskPath = join(projectRoot, '.claude', 'tasks', taskFile);
+  if (!existsSync(taskPath)) {
+    return null;
+  }
+
+  return readFileSync(taskPath, 'utf-8');
+}
+
+export function setActiveTask(projectRoot: string, taskId: string): void {
+  const claudeMdPath = join(projectRoot, 'CLAUDE.md');
+  if (!existsSync(claudeMdPath)) {
+    return;
+  }
+
+  let content = readFileSync(claudeMdPath, 'utf-8');
+
+  // Replace no_active_task.md or existing task
+  if (content.includes('@.claude/no_active_task.md')) {
+    content = content.replace('@.claude/no_active_task.md', `@.claude/tasks/${taskId}.md`);
+  } else {
+    content = content.replace(/@\.claude\/tasks\/TASK_\d+\.md/, `@.claude/tasks/${taskId}.md`);
+  }
+
+  writeFileSync(claudeMdPath, content);
+}
+
+export function clearActiveTask(projectRoot: string): void {
+  const claudeMdPath = join(projectRoot, 'CLAUDE.md');
+  if (!existsSync(claudeMdPath)) {
+    return;
+  }
+
+  let content = readFileSync(claudeMdPath, 'utf-8');
+  content = content.replace(/@\.claude\/tasks\/TASK_\d+\.md/, '@.claude/no_active_task.md');
+  writeFileSync(claudeMdPath, content);
+}
+
+export function hasActiveTask(projectRoot: string): boolean {
+  const claudeMdPath = join(projectRoot, 'CLAUDE.md');
+  if (!existsSync(claudeMdPath)) {
+    return false;
+  }
+
+  const content = readFileSync(claudeMdPath, 'utf-8');
+  return content.includes('@.claude/tasks/TASK_') && !content.includes('@.claude/no_active_task.md');
+}
+
+export function getActiveTaskDisplay(projectRoot: string): string {
+  const taskId = getActiveTaskId(projectRoot);
+  if (!taskId) {
+    const claudeMdPath = join(projectRoot, 'CLAUDE.md');
+    if (existsSync(claudeMdPath)) {
+      const content = readFileSync(claudeMdPath, 'utf-8');
+      if (content.includes('@.claude/no_active_task.md')) {
+        return 'No active task';
+      }
+    }
+    return '';
+  }
+
+  // Try to get task title from the file content
+  const taskContent = getActiveTaskContent(projectRoot);
+  if (taskContent) {
+    const titleMatch = taskContent.match(/^#\s+(.+?)(?:\s*\(TASK_\d+\))?\s*$/m);
+    if (titleMatch) {
+      const title = titleMatch[1].replace(/^TASK_\d+:\s*/, '').trim();
+      return `${taskId}: ${title}`;
+    }
+  }
+
+  return taskId;
+}
+
+// Interface for dependency injection (for testing)
+export interface FileOps {
+  existsSync: typeof existsSync;
+  readFileSync: typeof readFileSync;
+  writeFileSync: typeof writeFileSync;
+}
+
+export class ClaudeMdHelpers {
+  private fileOps: FileOps;
+
+  constructor(fileOps?: FileOps) {
+    this.fileOps = fileOps || { existsSync, readFileSync, writeFileSync };
+  }
+
+  getClaudeMdPath(projectRoot: string): string {
+    return join(projectRoot, 'CLAUDE.md');
+  }
+
+  getActiveTaskFile(projectRoot: string): string | null {
+    const claudeMdPath = this.getClaudeMdPath(projectRoot);
+    if (!this.fileOps.existsSync(claudeMdPath)) {
+      return null;
+    }
+
+    const content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
+    const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
+    return taskMatch ? taskMatch[1] : null;
+  }
+
+  getActiveTaskId(projectRoot: string): string | null {
+    const taskFile = this.getActiveTaskFile(projectRoot);
+    if (!taskFile) {
+      return null;
+    }
+
+    const match = taskFile.match(/TASK_(\d+)\.md/);
+    return match ? `TASK_${match[1]}` : null;
+  }
+
+  getActiveTaskContent(projectRoot: string): string | null {
+    const taskFile = this.getActiveTaskFile(projectRoot);
+    if (!taskFile) {
+      return null;
+    }
+
+    const taskPath = join(projectRoot, '.claude', 'tasks', taskFile);
+    if (!this.fileOps.existsSync(taskPath)) {
+      return null;
+    }
+
+    return this.fileOps.readFileSync(taskPath, 'utf-8');
+  }
+
+  setActiveTask(projectRoot: string, taskId: string): void {
+    const claudeMdPath = this.getClaudeMdPath(projectRoot);
+    if (!this.fileOps.existsSync(claudeMdPath)) {
+      return;
+    }
+
+    let content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
+
+    // Replace no_active_task.md or existing task
+    if (content.includes('@.claude/no_active_task.md')) {
+      content = content.replace('@.claude/no_active_task.md', `@.claude/tasks/${taskId}.md`);
+    } else {
+      content = content.replace(/@\.claude\/tasks\/TASK_\d+\.md/, `@.claude/tasks/${taskId}.md`);
+    }
+
+    this.fileOps.writeFileSync(claudeMdPath, content);
+  }
+
+  clearActiveTask(projectRoot: string): void {
+    const claudeMdPath = this.getClaudeMdPath(projectRoot);
+    if (!this.fileOps.existsSync(claudeMdPath)) {
+      return;
+    }
+
+    let content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
+    content = content.replace(/@\.claude\/tasks\/TASK_\d+\.md/, '@.claude/no_active_task.md');
+    this.fileOps.writeFileSync(claudeMdPath, content);
+  }
+
+  hasActiveTask(projectRoot: string): boolean {
+    const claudeMdPath = this.getClaudeMdPath(projectRoot);
+    if (!this.fileOps.existsSync(claudeMdPath)) {
+      return false;
+    }
+
+    const content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
+    return content.includes('@.claude/tasks/TASK_') && !content.includes('@.claude/no_active_task.md');
+  }
+
+  getActiveTaskDisplay(projectRoot: string): string {
+    const taskId = this.getActiveTaskId(projectRoot);
+    if (!taskId) {
+      const claudeMdPath = this.getClaudeMdPath(projectRoot);
+      if (this.fileOps.existsSync(claudeMdPath)) {
+        const content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
+        if (content.includes('@.claude/no_active_task.md')) {
+          return 'No active task';
+        }
+      }
+      return '';
+    }
+
+    // Try to get task title from the file content
+    const taskContent = this.getActiveTaskContent(projectRoot);
+    if (taskContent) {
+      const titleMatch = taskContent.match(/^#\s+(.+?)(?:\s*\(TASK_\d+\))?\s*$/m);
+      if (titleMatch) {
+        const title = titleMatch[1].replace(/^TASK_\d+:\s*/, '').trim();
+        return `${taskId}: ${title}`;
+      }
+    }
+
+    return taskId;
+  }
+}

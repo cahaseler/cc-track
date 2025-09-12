@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import type { ClaudeMdHelpers } from '../lib/claude-md';
 import { GitHelpers } from '../lib/git-helpers';
 import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';
 import {
   generateStopOutput,
-  hasUncommittedChanges,
-  isGitRepository,
   type ReviewResult,
   SessionReviewer,
   type StopReviewDependencies,
@@ -21,6 +20,21 @@ function createMockLogger(): ReturnType<typeof createLogger> {
     error: mock(() => {}),
     exception: mock(() => {}),
   } as unknown as ReturnType<typeof createLogger>;
+}
+
+// Create a ClaudeMdHelpers mock for active task
+function createMockClaudeMdHelpers(activeTaskId: string = 'TASK_001'): ClaudeMdHelpers {
+  const taskNumber = activeTaskId.replace('TASK_', '');
+  return {
+    getActiveTaskId: mock(() => activeTaskId),
+    getActiveTaskContent: mock(() => `# Test Task\n**Task ID:** ${taskNumber}\n**Status:** in-progress\nTest content`),
+    getActiveTaskFile: mock(() => `${activeTaskId}.md`),
+    getActiveTaskDisplay: mock(() => `${activeTaskId}: Test Task`),
+    hasActiveTask: mock(() => true),
+    setActiveTask: mock(() => {}),
+    clearActiveTask: mock(() => {}),
+    getClaudeMdPath: mock(() => '/project/CLAUDE.md'),
+  } as unknown as ClaudeMdHelpers;
 }
 
 // Type for fileOps in tests
@@ -39,39 +53,6 @@ describe('stop-review', () => {
 
   afterEach(() => {
     mock.restore();
-  });
-
-  describe('isGitRepository', () => {
-    test('returns true when in git repo', () => {
-      const mockExec = mock(() => '.git');
-      expect(isGitRepository('/project', mockExec)).toBe(true);
-    });
-
-    test('returns false when not in git repo', () => {
-      const mockExec = mock(() => {
-        throw new Error('Not a git repository');
-      });
-      expect(isGitRepository('/project', mockExec)).toBe(false);
-    });
-  });
-
-  describe('hasUncommittedChanges', () => {
-    test('returns true when changes exist', () => {
-      const mockExec = mock(() => 'M file.ts\nA new.ts');
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(true);
-    });
-
-    test('returns false when no changes', () => {
-      const mockExec = mock(() => '');
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(false);
-    });
-
-    test('returns false on error', () => {
-      const mockExec = mock(() => {
-        throw new Error('Git error');
-      });
-      expect(hasUncommittedChanges('/project', mockExec)).toBe(false);
-    });
   });
 
   describe('generateStopOutput', () => {
@@ -166,8 +147,9 @@ describe('stop-review', () => {
         const logger = createMockLogger();
 
         const reviewer = new SessionReviewer('/project', logger, {
-          execSync: mockExec,
-          fileOps,
+          execSync: mockExec as any,
+          fileOps: fileOps as any,
+          claudeMdHelpers: createMockClaudeMdHelpers('TASK_026'),
         });
 
         // Mock getRecentMessages to return something
@@ -775,8 +757,9 @@ def456 chore: cleanup`,
       };
 
       const deps: StopReviewDependencies = {
-        execSync: mockExec,
-        fileOps,
+        execSync: mockExec as any,
+        fileOps: fileOps as any,
+        claudeMdHelpers: createMockClaudeMdHelpers(),
         logger: createMockLogger(),
         isHookEnabled: () => true,
       };
@@ -851,8 +834,9 @@ def456 chore: cleanup`,
       };
 
       const result = await stopReviewHook(input, {
-        execSync: mockExec,
-        fileOps,
+        execSync: mockExec as any,
+        fileOps: fileOps as any,
+        claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
       });
       expect(result.decision).toBe('block');
@@ -926,8 +910,9 @@ def456 chore: cleanup`,
       };
 
       const result = await stopReviewHook(input, {
-        execSync: mockExec,
-        fileOps,
+        execSync: mockExec as any,
+        fileOps: fileOps as any,
+        claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
       });
 
@@ -997,8 +982,9 @@ def456 chore: cleanup`,
       };
 
       const result = await stopReviewHook(input, {
-        execSync: mockExec,
-        fileOps,
+        execSync: mockExec as any,
+        fileOps: fileOps as any,
+        claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
       });
 
@@ -1065,8 +1051,9 @@ def456 chore: cleanup`,
       };
 
       const result = await stopReviewHook(input, {
-        execSync: mockExec,
-        fileOps,
+        execSync: mockExec as any,
+        fileOps: fileOps as any,
+        claudeMdHelpers: createMockClaudeMdHelpers(),
         isHookEnabled: () => true,
       });
 

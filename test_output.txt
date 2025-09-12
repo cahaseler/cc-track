@@ -1,0 +1,471 @@
+bun test v1.2.8 (adab0f64)
+
+src/commands/statusline.test.ts:
+(pass) statusline > getTodaysCost > returns cost when ccusage returns valid data [1.59ms]
+(pass) statusline > getTodaysCost > returns 0.00 when ccusage fails [0.07ms]
+(pass) statusline > getTodaysCost > returns 0.00 when no data for today [0.03ms]
+(pass) statusline > getUsageInfo > extracts hourly rate, tokens, and API window [0.17ms]
+(pass) statusline > getUsageInfo > handles missing ccusage gracefully [0.04ms]
+(pass) statusline > getCurrentBranch > returns current git branch [0.03ms]
+(pass) statusline > getCurrentBranch > handles non-git directories [0.02ms]
+(pass) statusline > getActiveTask > extracts active task from CLAUDE.md [0.06ms]
+(pass) statusline > getActiveTask > shows "No active task" when no_active_task.md is referenced [0.02ms]
+(pass) statusline > getActiveTask > handles missing CLAUDE.md [0.02ms]
+(pass) statusline > getCostEmoji > returns correct emoji for different cost tiers [0.02ms]
+(pass) statusline > getCostEmoji > boundary values for cost tiers [0.02ms]
+(pass) statusline > generateStatusLine integration > generates complete two-line output with all features [0.18ms]
+(pass) statusline > generateStatusLine integration > handles minimal input gracefully [0.04ms]
+(pass) statusline > generateStatusLine integration > adds fire emoji for high hourly rate [0.06ms]
+(pass) statusline > generateStatusLine integration > shows timer for Sonnet in sonnet-only mode [0.04ms]
+(pass) statusline > generateStatusLine integration > hides timer for non-Sonnet in sonnet-only mode [0.04ms]
+(pass) statusline > statuslineCommand > has correct name and description [0.02ms]
+(pass) statusline > statuslineCommand > has no required arguments
+(pass) statusline > statuslineCommand > has no options
+(pass) statusline > statuslineCommand > has an action handler [0.02ms]
+
+src/commands/git-session.test.ts:
+(pass) git-session command > has correct name and description [0.01ms]
+(pass) git-session command > has expected subcommands [0.04ms]
+(pass) git-session command > subcommand descriptions are correct [0.04ms]
+(pass) git-session command > has correct command structure [0.04ms]
+
+src/commands/hook.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'setActiveTask' not found in module '/home/ubuntu/projects/cc-pars/src/lib/claude-md.ts'.
+-------------------------------
+
+
+src/commands/init.test.ts:
+(pass) init command > has correct name and description [0.02ms]
+(pass) init command > has expected options [0.02ms]
+(pass) init command > option descriptions are correct [0.02ms]
+
+src/commands/backlog.test.ts:
+(pass) backlog command > has correct name and description [0.02ms]
+(pass) backlog command > has expected options [0.02ms]
+(pass) backlog command > command structure is correct [0.01ms]
+(pass) backlog command > option descriptions are correct [0.03ms]
+
+src/commands/complete-task.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'clearActiveTask' not found in module '/home/ubuntu/projects/cc-pars/src/lib/claude-md.ts'.
+-------------------------------
+
+
+src/hooks/pre-compact.test.ts:
+(pass) pre-compact > ErrorPatternExtractor > isErrorEntry > detects string error in toolUseResult [0.11ms]
+(pass) pre-compact > ErrorPatternExtractor > isErrorEntry > detects failed in toolUseResult string [0.02ms]
+(pass) pre-compact > ErrorPatternExtractor > isErrorEntry > detects error in bash command stdout [0.02ms]
+(pass) pre-compact > ErrorPatternExtractor > isErrorEntry > detects error in message content array [0.04ms]
+(pass) pre-compact > ErrorPatternExtractor > isErrorEntry > returns false for non-error entries [0.02ms]
+(pass) pre-compact > ErrorPatternExtractor > formatToolCommand > formats Bash command [0.04ms]
+(pass) pre-compact > ErrorPatternExtractor > formatToolCommand > formats Read command [0.02ms]
+(pass) pre-compact > ErrorPatternExtractor > formatToolCommand > formats Grep command [0.01ms]
+(pass) pre-compact > ErrorPatternExtractor > formatToolCommand > handles unknown tools gracefully [0.01ms]
+(pass) pre-compact > ErrorPatternExtractor > extractResultOutput > extracts string toolUseResult [0.05ms]
+(pass) pre-compact > ErrorPatternExtractor > extractResultOutput > extracts stdout from object toolUseResult [0.02ms]
+(pass) pre-compact > ErrorPatternExtractor > extractResultOutput > extracts from message content tool_result [0.03ms]
+(pass) pre-compact > analyzeErrorPatterns > returns empty array when no interesting sequences [0.26ms]
+(pass) pre-compact > analyzeErrorPatterns > analyzes interesting sequences with Claude CLI [0.21ms]
+(pass) pre-compact > analyzeErrorPatterns > handles Claude CLI failure gracefully [0.11ms]
+(pass) pre-compact > analyzeErrorPatterns > merges with existing lessons [0.16ms]
+(pass) pre-compact > updateLearnedMistakes > updates existing mistakes file [1.80ms]
+(pass) pre-compact > updateLearnedMistakes > does nothing when no patterns provided [0.08ms]
+(pass) pre-compact > updateLearnedMistakes > creates new section when file exists but has no Error Patterns section [0.10ms]
+(pass) pre-compact > preCompactHook > returns success when hook is disabled [0.15ms]
+(pass) pre-compact > preCompactHook > returns error when transcript path is missing [0.14ms]
+(pass) pre-compact > preCompactHook > returns error when transcript doesn't exist [0.07ms]
+(pass) pre-compact > preCompactHook > handles extraction errors gracefully [0.38ms]
+(pass) pre-compact > preCompactHook > processes transcript and returns success message [12.04ms]
+(pass) pre-compact > preCompactHook > extracts and appends error patterns to learned_mistakes.md [1.68ms]
+
+src/hooks/capture-plan.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'setActiveTask' not found in module '/home/ubuntu/projects/cc-pars/src/lib/claude-md.ts'.
+-------------------------------
+
+
+src/hooks/edit-validation.test.ts:
+(pass) edit-validation > extractFilePaths > extracts path from Edit tool [0.76ms]
+(pass) edit-validation > extractFilePaths > extracts path from Write tool [0.02ms]
+(pass) edit-validation > extractFilePaths > extracts path from MultiEdit tool
+(pass) edit-validation > extractFilePaths > returns empty array for other tools
+(pass) edit-validation > extractFilePaths > returns empty array when no file_path
+(pass) edit-validation > filterTypeScriptFiles > filters .ts files [0.04ms]
+(pass) edit-validation > filterTypeScriptFiles > includes .tsx files
+(pass) edit-validation > filterTypeScriptFiles > includes .mts and .cts files
+(pass) edit-validation > filterTypeScriptFiles > returns empty array when no TypeScript files
+(pass) edit-validation > formatValidationResults > formats single file with errors [0.05ms]
+(pass) edit-validation > formatValidationResults > formats multiple files with errors [0.02ms]
+(pass) edit-validation > formatValidationResults > returns empty string for no results
+(pass) edit-validation > runTypeScriptCheck > returns empty array when typecheck is disabled [0.09ms]
+(pass) edit-validation > runTypeScriptCheck > returns empty array when TypeScript check passes [0.07ms]
+(pass) edit-validation > runTypeScriptCheck > extracts TypeScript errors from stderr [0.12ms]
+(pass) edit-validation > runTypeScriptCheck > rethrows timeout errors [0.05ms]
+(pass) edit-validation > runTypeScriptCheck > returns empty array for errors without stderr [0.02ms]
+(pass) edit-validation > runBiomeCheck > returns empty array when lint is disabled [0.06ms]
+(pass) edit-validation > runBiomeCheck > returns empty array when Biome check passes [0.02ms]
+(pass) edit-validation > runBiomeCheck > extracts Biome errors from stdout [0.08ms]
+(pass) edit-validation > runBiomeCheck > rethrows timeout errors [0.03ms]
+(pass) edit-validation > runBiomeCheck > returns empty array for errors without stdout [0.02ms]
+(pass) edit-validation > editValidationHook > returns continue when hook is disabled [0.28ms]
+(pass) edit-validation > editValidationHook > returns continue when tool execution failed [1.26ms]
+(pass) edit-validation > editValidationHook > returns continue when no TypeScript files [0.10ms]
+(pass) edit-validation > editValidationHook > handles errors gracefully [0.16ms]
+(pass) edit-validation > editValidationHook > blocks edit when TypeScript validation fails [0.15ms]
+(pass) edit-validation > editValidationHook > blocks edit when Biome linting fails [0.16ms]
+(pass) edit-validation > editValidationHook > allows edit when all validation passes [0.17ms]
+(pass) edit-validation > editValidationHook > uses configured commands from track.config.json [0.15ms]
+(pass) edit-validation > editValidationHook > handles MultiEdit with multiple files [0.15ms]
+(pass) edit-validation > editValidationHook > handles validation timeout [0.10ms]
+(pass) edit-validation > editValidationHook > handles file not found errors [0.09ms]
+
+src/hooks/stop-review.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'ClaudeMdHelpers' not found in module '/home/ubuntu/projects/cc-pars/src/lib/claude-md.ts'.
+-------------------------------
+
+
+src/hooks/post-compact.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'getActiveTaskFile' not found in module '/home/ubuntu/projects/cc-pars/src/lib/claude-md.ts'.
+-------------------------------
+
+
+src/lib/config.test.ts:
+(pass) config > getConfigPath > returns config path in .claude directory [0.04ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:28:22)
+
+(pass) config > getConfig > returns config with expected structure [0.12ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:34:22)
+
+(pass) config > getConfig > has default hooks configured [0.05ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:43:22)
+
+(pass) config > getConfig > has default features configured [0.02ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:55:14)
+
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:56:14)
+
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:57:14)
+
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:58:14)
+
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:59:14)
+
+(pass) config > isHookEnabled > returns expected values for default hooks [0.07ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:64:14)
+
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:65:14)
+
+(pass) config > isHookEnabled > returns expected values for features with defaults [0.02ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at isHookEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:132:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:70:14)
+
+(pass) config > isHookEnabled > returns true for unknown hook (default behavior) [0.01ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at getGitHubConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:201:18)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:77:22)
+
+(pass) config > getGitHubConfig > returns GitHub config structure from defaults [0.03ms]
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at getGitHubConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:201:18)
+      at isGitHubIntegrationEnabled (/home/ubuntu/projects/cc-pars/src/lib/config.ts:206:24)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/config.test.ts:88:14)
+
+(pass) config > isGitHubIntegrationEnabled > returns false by default [0.02ms]
+
+src/lib/github-helpers.test.ts:
+Error reading config file: 115 |     return DEFAULT_CONFIG;
+116 |   }
+117 | 
+118 |   try {
+119 |     const configContent = readFileSync(path, 'utf-8');
+120 |     const config = JSON.parse(configContent);
+                              ^
+SyntaxError: JSON Parse error: Unexpected EOF
+      at getConfig (/home/ubuntu/projects/cc-pars/src/lib/config.ts:120:25)
+      at getLogConfig (/home/ubuntu/projects/cc-pars/src/lib/logger.ts:92:20)
+      at new Logger (/home/ubuntu/projects/cc-pars/src/lib/logger.ts:60:34)
+      at createLogger (/home/ubuntu/projects/cc-pars/src/lib/logger.ts:199:10)
+      at /home/ubuntu/projects/cc-pars/src/lib/github-helpers.ts:5:16
+
+(pass) GitHubHelpers > isGitHubCLIAvailable > returns true when gh is available [0.03ms]
+(pass) GitHubHelpers > isGitHubCLIAvailable > returns false when gh is not available [0.02ms]
+(pass) GitHubHelpers > isGitHubRepoConnected > returns true when repo is connected [0.02ms]
+(pass) GitHubHelpers > isGitHubRepoConnected > returns false when repo is not connected [0.03ms]
+(pass) GitHubHelpers > getGitHubRepoInfo > returns repo info when available [0.05ms]
+(pass) GitHubHelpers > getGitHubRepoInfo > returns null on error [0.10ms]
+(pass) GitHubHelpers > createGitHubIssue > creates issue and returns data [0.14ms]
+(pass) GitHubHelpers > createGitHubIssue > returns null when URL extraction fails [0.04ms]
+(pass) GitHubHelpers > createGitHubIssue > returns null on error [0.06ms]
+(pass) GitHubHelpers > createIssueBranch > creates branch and returns name [0.05ms]
+(pass) GitHubHelpers > createIssueBranch > returns null on error [0.08ms]
+(pass) GitHubHelpers > createPullRequest > creates PR and returns data [0.09ms]
+(pass) GitHubHelpers > createPullRequest > includes draft flag when specified [0.05ms]
+(pass) GitHubHelpers > createPullRequest > returns null on error [0.05ms]
+(pass) GitHubHelpers > pushCurrentBranch > returns true on success [0.03ms]
+(pass) GitHubHelpers > pushCurrentBranch > returns false on error [0.03ms]
+(pass) GitHubHelpers > validateGitHubIntegration > returns valid when all checks pass [0.09ms]
+(pass) GitHubHelpers > validateGitHubIntegration > reports missing gh CLI [0.04ms]
+(pass) GitHubHelpers > validateGitHubIntegration > reports auth issues [0.03ms]
+(pass) GitHubHelpers > validateGitHubIntegration > reports disconnected repo [0.02ms]
+(pass) GitHubHelpers > formatTaskForGitHub > extracts title from heading [0.07ms]
+(pass) GitHubHelpers > formatTaskForGitHub > uses first line as title when no heading [0.01ms]
+(pass) GitHubHelpers > formatTaskForGitHub > handles empty content
+
+src/lib/git-helpers.test.ts:
+(pass) GitHelpers > getDefaultBranch > returns branch from origin HEAD if available [0.05ms]
+(pass) GitHelpers > getDefaultBranch > checks for local main branch if origin HEAD fails [0.04ms]
+(pass) GitHelpers > getDefaultBranch > falls back to master if main doesn't exist [0.02ms]
+(pass) GitHelpers > getDefaultBranch > defaults to main if neither main nor master exist [0.02ms]
+(pass) GitHelpers > hasUncommittedChanges > returns true when there are changes [0.02ms]
+(pass) GitHelpers > hasUncommittedChanges > returns false when working directory is clean [0.01ms]
+(pass) GitHelpers > hasUncommittedChanges > returns false on error [0.01ms]
+(pass) GitHelpers > getCurrentBranch > returns current branch name [0.02ms]
+(pass) GitHelpers > getCurrentBranch > returns empty string on error [0.02ms]
+Created and switched to branch: feature/new-feature
+(pass) GitHelpers > createTaskBranch > creates and switches to new branch [0.06ms]
+Failed to create branch existing-branch: 149 |       expect(execCalls[0].options.cwd).toBe('/test');
+150 |     });
+151 | 
+152 |     test('throws error on failure', () => {
+153 |       mockExec = mock(() => {
+154 |         throw new Error('Branch already exists');
+                    ^
+error: Branch already exists
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:154:15)
+      at createTaskBranch (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:192:12)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:159:20)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:160:10)
+
+(pass) GitHelpers > createTaskBranch > throws error on failure [0.08ms]
+Merged feature/task-001 into main
+(pass) GitHelpers > mergeTaskBranch > switches to default branch and merges [0.05ms]
+Failed to merge branch feature/task-001: 180 |       expect(commands[1]).toContain('git merge feature/task-001');
+181 |     });
+182 | 
+183 |     test('throws error on failure', () => {
+184 |       mockExec = mock(() => {
+185 |         throw new Error('Merge conflict');
+                    ^
+error: Merge conflict
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:185:15)
+      at mergeTaskBranch (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:206:12)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:190:20)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:191:10)
+
+(pass) GitHelpers > mergeTaskBranch > throws error on failure [0.04ms]
+(pass) GitHelpers > generateCommitMessage > returns generated commit message [0.21ms]
+(pass) GitHelpers > generateCommitMessage > extracts valid commit message from multi-line response [0.12ms]
+Failed to generate commit message: 209 |       expect(message).toBe('fix: resolve login bug');
+210 |     });
+211 | 
+212 |     test('returns fallback on error', async () => {
+213 |       mockExec = mock(() => {
+214 |         throw new Error('Claude API error');
+                    ^
+error: Claude API error
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:214:15)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:111:28)
+      at generateCommitMessage (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:94:31)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:218:40)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:212:39)
+
+(pass) GitHelpers > generateCommitMessage > returns fallback on error [0.10ms]
+(pass) GitHelpers > generateCommitMessage > truncates long diffs [0.13ms]
+(pass) GitHelpers > generateBranchName > returns generated branch name with task ID [0.19ms]
+(pass) GitHelpers > generateBranchName > extracts valid branch name from multi-line response [0.05ms]
+Failed to generate branch name: 254 |       expect(name).toBe('bug/fix-login-task_002');
+255 |     });
+256 | 
+257 |     test('returns fallback on error', async () => {
+258 |       mockExec = mock(() => {
+259 |         throw new Error('Claude API error');
+                    ^
+error: Claude API error
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:259:15)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:160:31)
+      at generateBranchName (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:139:28)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:263:37)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:257:39)
+
+(pass) GitHelpers > generateBranchName > returns fallback on error [0.10ms]
+Switched to branch: main
+(pass) GitHelpers > switchToBranch > switches to specified branch [0.05ms]
+Failed to switch to branch nonexistent: 282 |       expect(execCalls[0].options.cwd).toBe('/test');
+283 |     });
+284 | 
+285 |     test('throws error on failure', () => {
+286 |       mockExec = mock(() => {
+287 |         throw new Error('Branch not found');
+                    ^
+error: Branch not found
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:287:15)
+      at switchToBranch (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.ts:235:12)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:292:20)
+      at <anonymous> (/home/ubuntu/projects/cc-pars/src/lib/git-helpers.test.ts:293:10)
+
+(pass) GitHelpers > switchToBranch > throws error on failure [0.05ms]
+
+src/lib/logger.test.ts:
+(pass) Logger > constructor > creates log directory if it doesn't exist [0.04ms]
+(pass) Logger > constructor > doesn't create directory when logging disabled [0.01ms]
+(pass) Logger > log levels > respects log level filtering [0.05ms]
+(pass) Logger > log levels > logs all levels when set to TRACE [0.03ms]
+(pass) Logger > log entry format > creates proper log entry structure [0.03ms]
+(pass) Logger > log entry format > handles error objects properly [0.05ms]
+(pass) Logger > getLogFileName > generates correct log file name [0.02ms]
+(pass) Logger > log cleanup > removes old log files on initialization [0.05ms]
+(pass) Logger > createLogger factory > creates logger instance [0.02ms]
+(pass) Logger > disabled logging > doesn't write logs when disabled [0.01ms]
+
+5 tests failed:
+
+ 154 pass
+ 5 fail
+ 5 errors
+ 275 expect() calls
+Ran 159 tests across 15 files. [97.00ms]
