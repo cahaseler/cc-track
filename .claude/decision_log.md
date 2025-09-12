@@ -206,6 +206,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Proper GitHub integration with automatic issue-PR linking, cleaner separation of concerns, more maintainable code structure
 - **Reversibility:** Easy - could revert the changes, though the new structure is objectively better
 
+[2025-09-12 14:00] - Remove Unused Standalone Function Exports
+- **Context:** Knip was reporting 25+ unused exports, investigation revealed a dual export pattern (classes + standalone functions) where most standalone functions were never used
+- **Decision:** Remove all unused standalone function exports while keeping only the few that are actually imported (pushCurrentBranch, getDefaultBranch, getCurrentBranch, isWipCommit, getActiveTaskId, clearActiveTask)
+- **Rationale:** The standalone functions were added for backward compatibility but never adopted. The codebase consistently uses the class-based approach with dependency injection for testing. Keeping unused exports creates confusion about which pattern to use and adds unnecessary maintenance burden.
+- **Alternatives Considered:** 
+  - Keep both patterns and suppress warnings: Would perpetuate confusion about intended usage
+  - Migrate everything to standalone functions: Would require major refactor and lose dependency injection benefits
+  - Add to Knip ignore list: Would hide legitimate tech debt indicators
+- **Implications:** Cleaner codebase with clear architectural pattern. Class-based approach is now obviously the primary pattern. Reduced maintenance burden and potential for confusion.
+- **Reversibility:** Easy - could re-add standalone exports if needed, but unlikely given they weren't used over the project's lifetime
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

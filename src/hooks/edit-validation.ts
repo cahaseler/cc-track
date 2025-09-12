@@ -218,7 +218,6 @@ export function runBiomeCheck(
   return errors;
 }
 
-
 /**
  * Format validation results into a readable message
  */
