@@ -164,3 +164,8 @@
   Files: src/lib/git-helpers.ts, src/lib/git-helpers.test.ts, src/lib/config.ts, src/commands/complete-task.ts, .claude/track.config.json, .claude/commands/complete-task.md
   Key Achievement: Added git.defaultBranch configuration with smart fallback detection. Complete-task command now outputs detected branch for Claude instances. Phase 2 (actual migration to 'main') deferred for separate PR.
   Key Achievement: Private journal files now excluded from code review while remaining in git for backup. Fixed false positive "commits without an active task" warning. All 249 tests passing with proper mock isolation.
+
+[2025-09-12 23:15] - Completed: Task 032 - Make Log Directory Configurable and Move Outside Project
+  Details: Moved logs outside project directory to eliminate VS Code file change notifications that waste tokens
+  Files: src/lib/logger.ts, src/lib/logger.test.ts, src/lib/config.ts, .claude/track.config.json, .claude/system_patterns.md
+  Key Achievement: Logs now default to system-appropriate directories (XDG spec for Linux, Library/Logs for macOS, LOCALAPPDATA for Windows). Fully configurable via logging.directory. Eliminates token waste from file notifications.

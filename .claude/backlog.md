@@ -16,7 +16,6 @@
 - tutorial mode for cc-track. Possibly extra prompt content, possibly an entirely new 'output style'. Basically, when this is enabled, Claude has additional context on the intended cc-track workflow and nudges the user more explicitly with reminders of commands, using tasks, what the next step is, etc.
 - packaging and distribution, installer, initial installation flow.
 - [2025-09-10] revise review_stop hook to have a claude instance review recent chat messages for AI bullshit excuses like functional enough or not critical functionality when it's trying to avoid completing a task properly
-- [2025-09-10] investigate supressing file change notifications to certain folders like logs to avoid noise injection into context.
 - [2025-09-11] code review command that invokes long running code review agent, optionally using claude cli or codex cli
 - npm? or whatever bunx uses?
 - [2025-09-11] improve review system's ability to validate extremely large diffs via multi-tiered summary or other approaches
