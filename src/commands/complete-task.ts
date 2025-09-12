@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { clearActiveTask, getActiveTaskId } from '../lib/claude-md';
-import { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
+import { type EditValidationConfig, getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
 import { getDefaultBranch, isWipCommit } from '../lib/git-helpers';
 import { pushCurrentBranch } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
@@ -23,17 +23,24 @@ interface CompletionResult {
     typescript?: string;
     biome?: string;
     knip?: string;
+    preflightPassed?: boolean;
   };
   git: {
     squashed?: boolean;
     commitMessage?: string;
     branchMerged?: boolean;
     branchPushed?: boolean;
+    branchSwitched?: boolean;
     notes?: string;
     defaultBranch?: string;
+    safetyCommit?: boolean;
+    wipCommitCount?: number;
   };
   github?: {
     prWorkflow?: boolean;
+    prCreated?: boolean;
+    prExists?: boolean;
+    prUrl?: string;
     issueNumber?: number;
     branchName?: string;
   };
@@ -51,7 +58,12 @@ interface ValidationConfig {
 /**
  * Complete task command implementation
  */
-async function completeTaskAction(options: { noSquash?: boolean; noBranch?: boolean; message?: string }) {
+async function completeTaskAction(options: {
+  noSquash?: boolean;
+  noBranch?: boolean;
+  message?: string;
+  skipValidation?: boolean;
+}) {
   const result: CompletionResult = {
     success: false,
     updates: {},
@@ -64,6 +76,39 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
   const claudeDir = join(projectRoot, '.claude');
 
   try {
+    // 0. Run pre-flight validation check (unless skipped)
+    if (!options.skipValidation) {
+      logger.info('Running pre-flight validation check');
+      try {
+        const preflightResult = execSync('./dist/cc-track prepare-completion', {
+          encoding: 'utf-8',
+          cwd: projectRoot,
+        });
+        const preflightData = JSON.parse(preflightResult);
+
+        if (!preflightData.readyForCompletion) {
+          result.validation.preflightPassed = false;
+          result.error = 'Pre-flight validation failed. Run /prepare-completion to fix issues.';
+          if (preflightData.validation?.typescript?.errorCount) {
+            result.validation.typescript = `${preflightData.validation.typescript.errorCount} errors`;
+          }
+          if (preflightData.validation?.biome?.issueCount) {
+            result.validation.biome = `${preflightData.validation.biome.issueCount} issues`;
+          }
+          if (preflightData.validation?.tests?.failCount) {
+            result.warnings.push(`${preflightData.validation.tests.failCount} tests failing`);
+          }
+          console.log(JSON.stringify(result, null, 2));
+          process.exit(1);
+        }
+        result.validation.preflightPassed = true;
+        logger.info('Pre-flight validation passed');
+      } catch (error) {
+        logger.warn('Pre-flight validation check failed', { error });
+        result.warnings.push('Pre-flight validation check failed - continuing anyway');
+      }
+    }
+
     // 1. Validate prerequisites
     const claudeMdPath = join(projectRoot, 'CLAUDE.md');
     if (!existsSync(claudeMdPath)) {
@@ -149,11 +194,13 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
     };
 
     // Check if validation config exists in edit_validation hook config
-    if (config.hooks?.edit_validation) {
+    const editValidation = config.hooks?.edit_validation;
+    if (editValidation && 'typecheck' in editValidation) {
+      const editConfig = editValidation as EditValidationConfig;
       validationConfig = {
-        typecheck: config.hooks.edit_validation.typecheck || validationConfig.typecheck,
-        lint: config.hooks.edit_validation.lint || validationConfig.lint,
-        knip: config.hooks.edit_validation.knip || validationConfig.knip,
+        typecheck: editConfig.typecheck || validationConfig.typecheck,
+        lint: editConfig.lint || validationConfig.lint,
+        knip: editConfig.knip || validationConfig.knip,
       };
     }
 
@@ -223,12 +270,14 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
         // Check for uncommitted changes and commit them first
         const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
         if (gitStatus) {
-          // Commit any remaining changes (likely just documentation)
+          // Safety commit: commit any remaining changes (likely just documentation)
           try {
             execSync('git add -A', { cwd: projectRoot });
             const message = options.message || `docs: final ${result.taskId} documentation updates`;
             execSync(`git commit -m "${message}"`, { cwd: projectRoot });
+            result.git.safetyCommit = true;
             result.git.notes = 'Committed final changes before squashing';
+            logger.info('Created safety commit for uncommitted changes');
           } catch (_commitError) {
             result.warnings.push('Failed to commit final changes');
           }
@@ -266,6 +315,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
               execSync(`git reset --soft ${lastNonWipHash}`, { cwd: projectRoot });
               execSync(`git commit -m "${commitMessage}"`, { cwd: projectRoot });
               result.git.squashed = true;
+              result.git.wipCommitCount = wipCount;
               result.git.commitMessage = commitMessage;
             } catch (squashError) {
               result.warnings.push(`Failed to squash commits: ${squashError}`);
@@ -330,15 +380,75 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
               const pushSuccess = pushCurrentBranch(projectRoot);
               if (pushSuccess) {
                 result.git.branchPushed = true;
-                result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
-                result.git.defaultBranch = getDefaultBranch(projectRoot);
+                const defaultBranch = getDefaultBranch(projectRoot);
+                result.git.defaultBranch = defaultBranch;
 
-                // Set up GitHub workflow info
-                result.github = {
-                  prWorkflow: true,
-                  branchName,
-                  issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
-                };
+                // Check if PR already exists for this branch
+                try {
+                  const prListOutput = execSync(`gh pr list --head ${branchName} --json number,url,state`, {
+                    encoding: 'utf-8',
+                    cwd: projectRoot,
+                  });
+                  const existingPRs = JSON.parse(prListOutput) as Array<{ number: number; url: string; state: string }>;
+
+                  const openPR = existingPRs.find((pr) => pr.state === 'OPEN');
+                  if (openPR) {
+                    result.github = {
+                      prWorkflow: true,
+                      prExists: true,
+                      prUrl: openPR.url,
+                      branchName,
+                      issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                    };
+                    result.git.notes = `PR already exists: ${openPR.url}`;
+                  } else {
+                    // Create new PR
+                    try {
+                      const prTitle = `feat: complete ${result.taskId} - ${result.taskTitle}`;
+                      const prBody = `## Summary\nCompletes ${result.taskId}: ${result.taskTitle}\n\n🤖 Generated with [Claude Code](https://claude.ai/code)`;
+
+                      const prCreateCmd = `gh pr create --base ${defaultBranch} --head ${branchName} --title "${prTitle}" --body "${prBody}"`;
+                      const prUrl = execSync(prCreateCmd, {
+                        encoding: 'utf-8',
+                        cwd: projectRoot,
+                      }).trim();
+
+                      result.github = {
+                        prWorkflow: true,
+                        prCreated: true,
+                        prUrl,
+                        branchName,
+                        issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                      };
+                      result.git.notes = `Created PR: ${prUrl}`;
+                    } catch (prError) {
+                      result.warnings.push(`Failed to create PR: ${prError}`);
+                      result.git.notes = `Pushed ${branchName} to origin - ready for manual PR creation`;
+                      result.github = {
+                        prWorkflow: true,
+                        branchName,
+                        issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                      };
+                    }
+                  }
+                } catch (listError) {
+                  logger.warn('Failed to check for existing PRs', { error: listError });
+                  result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
+                  result.github = {
+                    prWorkflow: true,
+                    branchName,
+                    issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                  };
+                }
+
+                // Switch back to default branch and pull latest
+                try {
+                  execSync(`git checkout ${defaultBranch}`, { cwd: projectRoot });
+                  execSync(`git pull origin ${defaultBranch}`, { cwd: projectRoot });
+                  result.git.branchSwitched = true;
+                } catch (switchError) {
+                  logger.warn('Failed to switch to default branch', { error: switchError });
+                }
               } else {
                 result.warnings.push('Failed to push branch to origin');
                 result.git.branchPushed = false;
@@ -400,8 +510,79 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
     logger.error('Task completion failed', { error: err.message, taskId: result.taskId });
   }
 
-  // Output the result as JSON (for backward compatibility)
+  // Generate context-specific instructions for Claude
   console.log(JSON.stringify(result, null, 2));
+  console.log('\n## Your Tasks\n');
+
+  // 1. Check pre-flight validation
+  if (result.validation.preflightPassed === false) {
+    console.log('### ⚠️ Pre-flight Validation Failed\n');
+    console.log('The task is not ready for completion. Please inform the user:');
+    console.log('- Run `/prepare-completion` first to fix validation issues');
+    if (result.validation.typescript) {
+      console.log(`- TypeScript has ${result.validation.typescript}`);
+    }
+    if (result.validation.biome) {
+      console.log(`- Biome has ${result.validation.biome}`);
+    }
+    console.log('\n**Stop here - do not proceed with completion.**');
+    process.exit(1);
+  }
+
+  // 2. Handle GitHub PR if applicable
+  if (result.github?.prCreated && result.github.prUrl) {
+    console.log('### 1. Enhance the Pull Request\n');
+    console.log('A PR was created automatically. Enhance its description with comprehensive details:\n');
+    console.log('```bash');
+    console.log(`gh pr edit ${result.github.prUrl} --body "## Summary`);
+    console.log(`Completes ${result.taskId}: ${result.taskTitle}\n`);
+    console.log('## What Was Delivered');
+    console.log('[List the key deliverables from this task]\n');
+    console.log('## Technical Implementation');
+    console.log('[Describe important technical details, architecture decisions, patterns used]\n');
+    console.log('## Testing');
+    console.log('[Explain how changes were tested and the results]\n');
+    console.log('🤖 Generated with [Claude Code](https://claude.ai/code)"');
+    console.log('```\n');
+  } else if (result.github?.prExists && result.github.prUrl) {
+    console.log('### 1. Pull Request Already Exists\n');
+    console.log(`A PR already exists for this branch: ${result.github.prUrl}`);
+    console.log('No action needed - the duplicate prevention worked correctly.\n');
+  } else if (result.git?.branchPushed) {
+    console.log('### 1. Note About Pull Request\n');
+    console.log('The branch was pushed but PR creation failed or was skipped.');
+    console.log('Manual PR creation may be needed.\n');
+  }
+
+  // 3. Documentation updates
+  const docNumber = result.github?.prCreated ? 2 : 1;
+  console.log(`### ${docNumber}. Update Project Documentation\n`);
+  console.log('Update the following documentation files as needed:\n');
+  console.log(`**Progress Log** (\`.claude/progress_log.md\`):`);
+  console.log(`- Add entry: "${result.taskId} completed: ${result.taskTitle}"`);
+  console.log(`- Note key files changed (${result.filesChanged?.length || 0} files modified)`);
+  console.log('');
+  console.log('**Decision Log** (`.claude/decision_log.md`) - Only if significant decisions were made');
+  console.log('**System Patterns** (`.claude/system_patterns.md`) - Only if new patterns were established');
+  console.log('**Backlog** (`.claude/backlog.md`) - Remove this task if it was listed there\n');
+
+  // 4. Summary for user
+  const summaryNumber = result.github?.prCreated ? 3 : 2;
+  console.log(`### ${summaryNumber}. Provide Summary to User\n`);
+  console.log('Report the completion status including:');
+  console.log(`- Task ${result.taskId} completed: ${result.taskTitle}`);
+  if (result.git?.squashed) {
+    console.log(`- Git: ${result.git.wipCommitCount || 'Multiple'} WIP commits squashed successfully`);
+  }
+  if (result.github?.prUrl) {
+    console.log(`- PR: ${result.github.prUrl}`);
+  }
+  if (result.git?.branchSwitched) {
+    console.log(`- Switched to ${result.git.defaultBranch} branch`);
+  }
+  if (result.warnings.length > 0) {
+    console.log(`- Warnings: ${result.warnings.join(', ')}`);
+  }
 
   // Exit with appropriate code
   process.exit(result.success ? 0 : 1);
@@ -412,5 +593,6 @@ export const completeTaskCommand = new Command('complete-task')
   .description('Mark the active task as completed')
   .option('--no-squash', 'skip squashing WIP commits')
   .option('--no-branch', 'skip branch operations')
+  .option('--skip-validation', 'skip pre-flight validation check')
   .option('-m, --message <message>', 'custom completion commit message')
   .action(completeTaskAction);
