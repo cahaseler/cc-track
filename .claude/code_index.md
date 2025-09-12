@@ -49,6 +49,7 @@
 | src/commands/complete-task.ts | Automated task completion with git squashing |
 | src/commands/hook.ts | Unified hook dispatcher for all events |
 | src/commands/statusline.ts | Generate status line for Claude Code |
+| src/commands/parse-logs.ts | Parse and filter Claude Code JSONL logs |
 
 ### Slash Commands (.claude/commands/)
 | File | Purpose |
@@ -87,6 +88,7 @@
 | src/lib/git-helpers.ts | Git operations for branch management |
 | src/lib/github-helpers.ts | GitHub CLI wrapper functions |
 | src/lib/logger.ts | Centralized logging system with rotation |
+| src/lib/log-parser.ts | JSONL log parser with filtering and formatting |
 
 ---
 
@@ -96,3 +98,4 @@
 [2025-09-10 09:00] - Added backlog system files
 [2025-09-10 21:00] - Updated paths to reflect actual .claude/ structure, added missing files
 [2025-09-11 19:30] - Migrated all code to src/ directory, removed legacy .claude script locations
+[2025-09-12 21:30] - Added log parser library and parse-logs command

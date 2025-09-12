@@ -120,6 +120,16 @@
 - **Silent failures from optional features**: When adding "nice to have" features, they can break core functionality if they fail (e.g., label creation failing prevented issue creation)
 - **Assumption about user environments**: Don't assume users have customized GitHub repos with specific labels - tools should work with standard configurations
 
+### Session: 2025-09-12 21:20 (Log Parser Implementation)
+- **Parallel test contamination from mock.module()**: Used mock.module() for fs operations in log-parser tests, causing parallel test failures - this is the THIRD time making this exact mistake despite it being documented
+- **Correct dependency injection pattern for stream-based file operations**:
+  - Define FileOps interface: `{ createReadStream: typeof createReadStream }`
+  - Accept via constructor: `constructor(filePath: string, fileOps?: FileOps, logger?: Logger)`
+  - Create fresh mocks per test: `createMockFileOps(testData)` that returns `Readable.from(lines)`
+  - NEVER use mock.module() or global mocks for file operations
+- **Stream processing vs readline**: Direct stream processing with manual line buffering is more testable than readline.createInterface
+- **Test isolation**: Each test must create its own mock instances and call mock.restore() in beforeEach/afterEach
+
 ### Common Patterns (Consolidated)
 - **File has not been read yet**: Always use Read tool before Edit operations on files not in context
 - **String to replace not found**: When this occurs, Read the file first to get current content rather than relying on assumed state
