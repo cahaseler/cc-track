@@ -1,86 +1,125 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
-import { ClaudeLogParser, type LogEntry, type SimplifiedEntry } from './log-parser';
+import { ClaudeLogParser, type SimplifiedEntry, type FileOps } from './log-parser';
 
-// Mock the fs module
-mock.module('node:fs', () => ({
-  createReadStream: mock((path: string) => {
-    // Return a mock readable stream based on the path
-    if (path === '/test/empty.jsonl') {
-      return Readable.from([]);
-    }
-    if (path === '/test/malformed.jsonl') {
-      return Readable.from(['not json\n', '{"valid": "json"}\n', 'also not json\n']);
-    }
-    if (path === '/test/mixed.jsonl') {
-      const entries = [
-        JSON.stringify({
-          type: 'user',
-          timestamp: '2025-01-09T10:00:00Z',
-          uuid: 'user-1',
-          message: { role: 'user', content: 'Hello Claude' },
-        }),
-        JSON.stringify({
-          type: 'assistant',
-          timestamp: '2025-01-09T10:00:05Z',
-          uuid: 'assistant-1',
-          message: {
-            role: 'assistant',
-            content: [
-              { type: 'text', text: 'Hello! How can I help you today?' },
-            ],
-            model: 'claude-3-opus-20240229',
-            usage: { input_tokens: 10, output_tokens: 20 },
-          },
-        }),
-        JSON.stringify({
-          type: 'assistant',
-          timestamp: '2025-01-09T10:00:10Z',
-          uuid: 'assistant-2',
-          message: {
-            role: 'assistant',
-            content: [
-              { type: 'tool_use', name: 'Bash', id: 'tool-1', input: { command: 'ls -la' } },
-            ],
-          },
-        }),
-        JSON.stringify({
-          type: 'user',
-          timestamp: '2025-01-09T10:00:15Z',
-          uuid: 'user-2',
-          toolUseResult: { stdout: 'file1.txt\nfile2.txt', stderr: '' },
-        }),
-        JSON.stringify({
-          type: 'system',
-          timestamp: '2025-01-09T10:00:20Z',
-          uuid: 'system-1',
-          subtype: 'compact_boundary',
-          content: 'Conversation compacted',
-        }),
-        JSON.stringify({
-          type: 'user',
-          timestamp: '2025-01-09T10:00:25Z',
-          uuid: 'user-3',
-          toolUseResult: 'Error: Command not found',
-        }),
-      ];
-      return Readable.from(entries.map(e => e + '\n'));
-    }
-    return Readable.from([]);
-  }),
-}));
+// Helper to create mock file operations
+function createMockFileOps(mockData: Record<string, string[]>): FileOps {
+  return {
+    createReadStream: mock((path: string) => {
+      const lines = mockData[path] || [];
+      return Readable.from(lines);
+    }),
+  };
+}
 
-// Mock the logger
-mock.module('./logger', () => ({
-  createLogger: () => ({
-    info: mock(() => {}),
-    debug: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  }),
-}));
+// Test data
+const createTestData = () => ({
+  '/test/empty.jsonl': [],
+  '/test/malformed.jsonl': ['not json\n', '{"valid": "json"}\n', 'also not json\n'],
+  '/test/mixed.jsonl': [
+    JSON.stringify({
+      type: 'user',
+      timestamp: '2025-01-09T10:00:00Z',
+      uuid: 'user-1',
+      message: { role: 'user', content: 'Hello Claude' },
+    }) + '\n',
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2025-01-09T10:00:05Z',
+      uuid: 'assistant-1',
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'text', text: 'Hello! How can I help you today?' },
+        ],
+        model: 'claude-3-opus-20240229',
+        usage: { input_tokens: 10, output_tokens: 20 },
+      },
+    }) + '\n',
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2025-01-09T10:00:10Z',
+      uuid: 'assistant-2',
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'tool_use', name: 'Bash', id: 'tool-1', input: { command: 'ls -la' } },
+        ],
+      },
+    }) + '\n',
+    JSON.stringify({
+      type: 'user',
+      timestamp: '2025-01-09T10:00:15Z',
+      uuid: 'user-2',
+      toolUseResult: { stdout: 'file1.txt\nfile2.txt', stderr: '' },
+    }) + '\n',
+    JSON.stringify({
+      type: 'system',
+      timestamp: '2025-01-09T10:00:20Z',
+      uuid: 'system-1',
+      subtype: 'compact_boundary',
+      content: 'Conversation compacted',
+    }) + '\n',
+    JSON.stringify({
+      type: 'user',
+      timestamp: '2025-01-09T10:00:25Z',
+      uuid: 'user-3',
+      toolUseResult: 'Error: Command not found',
+    }) + '\n',
+  ],
+  '/test/tools.jsonl': [
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2025-01-09T10:00:00Z',
+      uuid: 'test-1',
+      message: {
+        role: 'assistant',
+        content: [
+          { 
+            type: 'tool_use', 
+            name: 'Read', 
+            input: { file_path: '/home/user/project/README.md' },
+          },
+        ],
+      },
+    }) + '\n',
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2025-01-09T10:00:05Z',
+      uuid: 'test-2',
+      message: {
+        role: 'assistant',
+        content: [
+          { 
+            type: 'tool_use', 
+            name: 'Grep', 
+            input: { 
+              pattern: 'function.*export.*async',
+              path: '/src',
+            },
+          },
+        ],
+      },
+    }) + '\n',
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2025-01-09T10:00:10Z',
+      uuid: 'test-3',
+      message: {
+        role: 'assistant',
+        content: [
+          { 
+            type: 'tool_use', 
+            name: 'WebSearch', 
+            input: { 
+              query: 'TypeScript best practices for error handling in async functions',
+            },
+          },
+        ],
+      },
+    }) + '\n',
+  ],
+});
 
 describe('ClaudeLogParser', () => {
   beforeEach(() => {
@@ -92,14 +131,18 @@ describe('ClaudeLogParser', () => {
   });
 
   test('parses empty log file', async () => {
-    const parser = new ClaudeLogParser('/test/empty.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/empty.jsonl', fileOps);
     const result = await parser.parse({ format: 'json' });
     
     expect(result).toEqual([]);
   });
 
   test('handles malformed lines gracefully', async () => {
-    const parser = new ClaudeLogParser('/test/malformed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/malformed.jsonl', fileOps);
     const result = await parser.parse({ format: 'json' });
     
     // Should only parse the valid JSON line
@@ -107,7 +150,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('parses and simplifies mixed entries', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
     
     expect(result).toHaveLength(6);
@@ -151,7 +196,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('filters by role', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'json',
       role: 'assistant',
@@ -163,7 +210,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('filters by time range', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'json',
       timeRange: {
@@ -179,7 +228,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('applies limit', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'json',
       limit: 3,
@@ -189,7 +240,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('excludes tools when requested', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'json',
       includeTools: false,
@@ -203,7 +256,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('formats as plaintext', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'plaintext',
       limit: 2,
@@ -218,7 +273,9 @@ describe('ClaudeLogParser', () => {
   });
 
   test('returns raw entries when simplifyResults is false', async () => {
-    const parser = new ClaudeLogParser('/test/mixed.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
     const result = await parser.parse({ 
       format: 'json',
       simplifyResults: false,
@@ -233,69 +290,9 @@ describe('ClaudeLogParser', () => {
 
 describe('ClaudeLogParser - Tool Parameter Summarization', () => {
   test('summarizes various tool parameters', async () => {
-    // Re-mock createReadStream for this specific test with tool examples
-    mock.module('node:fs', () => ({
-      createReadStream: mock((path: string) => {
-        if (path === '/test/tools.jsonl') {
-          const entries = [
-            JSON.stringify({
-              type: 'assistant',
-              timestamp: '2025-01-09T10:00:00Z',
-              uuid: 'test-1',
-              message: {
-                role: 'assistant',
-                content: [
-                  { 
-                    type: 'tool_use', 
-                    name: 'Read', 
-                    input: { file_path: '/home/user/project/README.md' },
-                  },
-                ],
-              },
-            }),
-            JSON.stringify({
-              type: 'assistant',
-              timestamp: '2025-01-09T10:00:05Z',
-              uuid: 'test-2',
-              message: {
-                role: 'assistant',
-                content: [
-                  { 
-                    type: 'tool_use', 
-                    name: 'Grep', 
-                    input: { 
-                      pattern: 'function.*export.*async',
-                      path: '/src',
-                    },
-                  },
-                ],
-              },
-            }),
-            JSON.stringify({
-              type: 'assistant',
-              timestamp: '2025-01-09T10:00:10Z',
-              uuid: 'test-3',
-              message: {
-                role: 'assistant',
-                content: [
-                  { 
-                    type: 'tool_use', 
-                    name: 'WebSearch', 
-                    input: { 
-                      query: 'TypeScript best practices for error handling in async functions',
-                    },
-                  },
-                ],
-              },
-            }),
-          ];
-          return Readable.from(entries.map(e => e + '\n'));
-        }
-        return Readable.from([]);
-      }),
-    }));
-
-    const parser = new ClaudeLogParser('/test/tools.jsonl');
+    const testData = createTestData();
+    const fileOps = createMockFileOps(testData);
+    const parser = new ClaudeLogParser('/test/tools.jsonl', fileOps);
     const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
 
     expect(result).toHaveLength(3);

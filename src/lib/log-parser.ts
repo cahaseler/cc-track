@@ -2,6 +2,15 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { createLogger } from './logger';
 
+// File system operations for dependency injection
+export interface FileOps {
+  createReadStream: typeof createReadStream;
+}
+
+const defaultFileOps: FileOps = {
+  createReadStream,
+};
+
 // Complete type definition for JSONL log entries
 export interface LogEntry {
   type: 'user' | 'assistant' | 'system' | 'summary';
@@ -80,10 +89,12 @@ export class ClaudeLogParser {
   private filePath: string;
   private logger: ReturnType<typeof createLogger>;
   private entries: LogEntry[] = [];
+  private fileOps: FileOps;
 
-  constructor(filePath: string) {
+  constructor(filePath: string, fileOps?: FileOps) {
     this.filePath = filePath;
     this.logger = createLogger('log-parser');
+    this.fileOps = fileOps || defaultFileOps;
   }
 
   /**
@@ -125,7 +136,7 @@ export class ClaudeLogParser {
    */
   private async loadEntries(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const fileStream = createReadStream(this.filePath);
+      const fileStream = this.fileOps.createReadStream(this.filePath);
       const rl = createInterface({
         input: fileStream,
         crlfDelay: Infinity,
