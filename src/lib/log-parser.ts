@@ -1,0 +1,428 @@
+import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
+import { createLogger } from './logger';
+
+// Complete type definition for JSONL log entries
+export interface LogEntry {
+  type: 'user' | 'assistant' | 'system' | 'summary';
+  timestamp: string;
+  uuid: string;
+  parentUuid?: string | null;
+  sessionId?: string;
+  cwd?: string;
+  version?: string;
+  gitBranch?: string;
+  userType?: string;
+  isSidechain?: boolean;
+  isCompactSummary?: boolean;
+  isMeta?: boolean;
+  isApiErrorMessage?: boolean;
+  isVisibleInTranscriptOnly?: boolean;
+  leafUuid?: string;
+  logicalParentUuid?: string;
+  requestId?: string;
+  toolUseID?: string;
+  toolUseResult?: unknown;
+  level?: string;
+  subtype?: string;
+  content?: string;
+  summary?: string;
+  compactMetadata?: unknown;
+  message?: {
+    role: 'user' | 'assistant' | 'system';
+    content?: unknown;
+    id?: string;
+    type?: string;
+    model?: string;
+    stop_reason?: string | null;
+    stop_sequence?: string | null;
+    usage?: {
+      input_tokens?: number;
+      cache_creation_input_tokens?: number;
+      cache_read_input_tokens?: number;
+      output_tokens?: number;
+      service_tier?: string;
+    };
+  };
+}
+
+// Simplified entry for output
+export interface SimplifiedEntry {
+  timestamp: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  type?: 'message' | 'tool_use' | 'tool_result' | 'system_event';
+  success?: boolean;
+  metadata?: {
+    model?: string;
+    tokens?: { input: number; output: number };
+    toolName?: string;
+    sessionId?: string;
+    uuid?: string;
+  };
+}
+
+// Options for parsing
+export interface ParseOptions {
+  timeRange?: {
+    start?: Date;
+    end?: Date;
+  };
+  role?: 'user' | 'assistant' | 'system' | 'all';
+  limit?: number;
+  format?: 'json' | 'plaintext';
+  includeTools?: boolean;
+  simplifyResults?: boolean;
+  outputFile?: string;
+}
+
+export class ClaudeLogParser {
+  private filePath: string;
+  private logger: ReturnType<typeof createLogger>;
+  private entries: LogEntry[] = [];
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+    this.logger = createLogger('log-parser');
+  }
+
+  /**
+   * Parse the log file with the given options
+   */
+  async parse(options: ParseOptions = {}): Promise<SimplifiedEntry[] | string> {
+    // Load all entries from file
+    await this.loadEntries();
+
+    // Apply filters
+    let filtered = this.entries;
+
+    if (options.timeRange) {
+      filtered = this.filterByTimeRange(filtered, options.timeRange);
+    }
+
+    if (options.role && options.role !== 'all') {
+      filtered = this.filterByRole(filtered, options.role);
+    }
+
+    // Simplify entries
+    const simplified = options.simplifyResults !== false 
+      ? filtered.map(e => this.simplifyEntry(e, options.includeTools ?? true))
+      : filtered.map(e => this.convertToSimplified(e));
+
+    // Apply limit
+    const limited = options.limit ? simplified.slice(0, options.limit) : simplified;
+
+    // Format output
+    if (options.format === 'json') {
+      return limited;
+    } else {
+      return this.formatPlaintext(limited);
+    }
+  }
+
+  /**
+   * Load all entries from the JSONL file
+   */
+  private async loadEntries(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const fileStream = createReadStream(this.filePath);
+      const rl = createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
+
+      rl.on('line', (line) => {
+        try {
+          const entry = JSON.parse(line) as LogEntry;
+          this.entries.push(entry);
+        } catch (e) {
+          // Skip malformed lines
+          this.logger.debug('Skipping malformed line', { error: e });
+        }
+      });
+
+      rl.on('close', () => {
+        this.logger.info(`Loaded ${this.entries.length} entries from log file`);
+        resolve();
+      });
+
+      rl.on('error', (error) => {
+        this.logger.error('Error reading log file', { error: error.message });
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Filter entries by time range
+   */
+  private filterByTimeRange(entries: LogEntry[], range: { start?: Date; end?: Date }): LogEntry[] {
+    return entries.filter(entry => {
+      const timestamp = new Date(entry.timestamp);
+      if (range.start && timestamp < range.start) return false;
+      if (range.end && timestamp > range.end) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Filter entries by role
+   */
+  private filterByRole(entries: LogEntry[], role: 'user' | 'assistant' | 'system'): LogEntry[] {
+    return entries.filter(entry => {
+      if (entry.type === role) return true;
+      if (entry.message?.role === role) return true;
+      return false;
+    });
+  }
+
+  /**
+   * Convert entry to simplified format without simplification
+   */
+  private convertToSimplified(entry: LogEntry): SimplifiedEntry {
+    const role = entry.type as 'user' | 'assistant' | 'system';
+    
+    return {
+      timestamp: entry.timestamp,
+      role,
+      content: JSON.stringify(entry.message?.content || entry.content || entry.summary || ''),
+      type: 'message',
+      metadata: {
+        sessionId: entry.sessionId,
+        uuid: entry.uuid,
+        model: entry.message?.model,
+      },
+    };
+  }
+
+  /**
+   * Simplify a log entry to extract the essential information
+   */
+  private simplifyEntry(entry: LogEntry, includeTools: boolean): SimplifiedEntry {
+    const role = entry.type as 'user' | 'assistant' | 'system';
+    
+    // Handle system messages
+    if (role === 'system') {
+      return this.simplifySystemEntry(entry);
+    }
+
+    // Handle tool results
+    if (entry.toolUseResult) {
+      if (!includeTools) {
+        // Skip tool results if not including tools
+        return {
+          timestamp: entry.timestamp,
+          role: 'system',
+          content: '[Tool result omitted]',
+          type: 'tool_result',
+        };
+      }
+      return this.simplifyToolResult(entry);
+    }
+
+    // Handle regular messages
+    if (entry.message) {
+      return this.simplifyMessage(entry, includeTools);
+    }
+
+    // Fallback for other types
+    return {
+      timestamp: entry.timestamp,
+      role,
+      content: entry.content || entry.summary || '[No content]',
+      type: 'message',
+      metadata: {
+        sessionId: entry.sessionId,
+        uuid: entry.uuid,
+      },
+    };
+  }
+
+  /**
+   * Simplify system entries
+   */
+  private simplifySystemEntry(entry: LogEntry): SimplifiedEntry {
+    let content = entry.content || '';
+    
+    if (entry.subtype === 'compact_boundary') {
+      content = '=== Session Compacted ===';
+    } else if (entry.subtype === 'informational') {
+      // Extract first line or key info
+      content = content.split('\n')[0] || 'System message';
+    }
+
+    return {
+      timestamp: entry.timestamp,
+      role: 'system',
+      content,
+      type: 'system_event',
+      metadata: {
+        sessionId: entry.sessionId,
+        uuid: entry.uuid,
+      },
+    };
+  }
+
+  /**
+   * Simplify tool results
+   */
+  private simplifyToolResult(entry: LogEntry): SimplifiedEntry {
+    const result = entry.toolUseResult;
+    let content = '';
+    let success = true;
+
+    if (typeof result === 'string') {
+      content = result.substring(0, 200);
+      success = !result.toLowerCase().includes('error');
+    } else if (Array.isArray(result) && result[0]?.type === 'text') {
+      content = result[0].text?.substring(0, 200) || '[Tool result]';
+    } else if (typeof result === 'object' && result !== null) {
+      const res = result as any;
+      if (res.stdout || res.stderr || res.output) {
+        content = (res.stdout || res.stderr || res.output || '').substring(0, 200);
+        success = !res.stderr && !content.toLowerCase().includes('error');
+      } else {
+        content = JSON.stringify(result).substring(0, 200);
+      }
+    }
+
+    return {
+      timestamp: entry.timestamp,
+      role: 'system',
+      content: `[Result: ${success ? 'success' : 'failure'}] ${content}`,
+      type: 'tool_result',
+      success,
+      metadata: {
+        sessionId: entry.sessionId,
+        uuid: entry.uuid,
+      },
+    };
+  }
+
+  /**
+   * Simplify regular messages
+   */
+  private simplifyMessage(entry: LogEntry, includeTools: boolean): SimplifiedEntry {
+    const message = entry.message!;
+    let content = '';
+    let type: 'message' | 'tool_use' = 'message';
+
+    // Extract content based on type
+    if (typeof message.content === 'string') {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      const parts: string[] = [];
+      
+      for (const item of message.content) {
+        if (item.type === 'text' && item.text) {
+          parts.push(item.text);
+        } else if (item.type === 'tool_use' && item.name) {
+          if (!includeTools) {
+            parts.push('[Tool use omitted]');
+          } else {
+            type = 'tool_use';
+            const params = item.input ? this.summarizeToolParams(item.input) : '';
+            parts.push(`[Tool: ${item.name}(${params})]`);
+          }
+        }
+      }
+      
+      content = parts.join(' ');
+    } else {
+      content = '[Complex content]';
+    }
+
+    return {
+      timestamp: entry.timestamp,
+      role: message.role as 'user' | 'assistant',
+      content,
+      type,
+      metadata: {
+        model: message.model,
+        tokens: message.usage ? {
+          input: (message.usage.input_tokens || 0) + 
+                 (message.usage.cache_creation_input_tokens || 0) + 
+                 (message.usage.cache_read_input_tokens || 0),
+          output: message.usage.output_tokens || 0,
+        } : undefined,
+        sessionId: entry.sessionId,
+        uuid: entry.uuid,
+      },
+    };
+  }
+
+  /**
+   * Summarize tool parameters for display
+   */
+  private summarizeToolParams(input: any): string {
+    if (typeof input === 'string') return input.substring(0, 50);
+    
+    if (typeof input === 'object' && input !== null) {
+      const params: string[] = [];
+      
+      // Extract key parameters
+      if (input.command) params.push(`cmd: "${input.command.substring(0, 30)}..."`);
+      if (input.file_path) params.push(`file: "${input.file_path}"`);
+      if (input.pattern) params.push(`pattern: "${input.pattern.substring(0, 20)}..."`);
+      if (input.query) params.push(`query: "${input.query.substring(0, 30)}..."`);
+      
+      return params.join(', ');
+    }
+    
+    return '';
+  }
+
+  /**
+   * Format entries as plaintext
+   */
+  private formatPlaintext(entries: SimplifiedEntry[]): string {
+    const lines: string[] = [];
+    
+    for (const entry of entries) {
+      const timestamp = new Date(entry.timestamp).toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      
+      const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
+      const prefix = `[${timestamp}] ${role}:`;
+      
+      // Format content with proper indentation for multi-line
+      const contentLines = entry.content.split('\n');
+      if (contentLines.length === 1) {
+        lines.push(`${prefix} ${entry.content}`);
+      } else {
+        lines.push(`${prefix}`);
+        for (const line of contentLines) {
+          lines.push(`  ${line}`);
+        }
+      }
+      
+      // Add metadata if relevant
+      if (entry.metadata?.model) {
+        lines.push(`  (Model: ${entry.metadata.model})`);
+      }
+      if (entry.metadata?.tokens) {
+        lines.push(`  (Tokens: ${entry.metadata.tokens.input} in, ${entry.metadata.tokens.output} out)`);
+      }
+    }
+    
+    return lines.join('\n');
+  }
+}
+
+/**
+ * Convenience function to parse a log file
+ */
+export async function parseClaudeLog(
+  filePath: string, 
+  options: ParseOptions = {}
+): Promise<SimplifiedEntry[] | string> {
+  const parser = new ClaudeLogParser(filePath);
+  return parser.parse(options);
+}

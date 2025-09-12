@@ -1,11 +1,11 @@
 import { execSync } from 'node:child_process';
-import { createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
-import { createInterface } from 'node:readline';
+import { type createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
+import { ClaudeLogParser } from '../lib/log-parser';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -176,58 +176,23 @@ export class SessionReviewer {
   }
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
-    const fs = this.deps.fileOps || { createReadStream };
-    const messages: string[] = [];
-
-    return new Promise((resolve) => {
-      const fileStream = fs.createReadStream(transcriptPath);
-      const rl = createInterface({
-        input: fileStream,
-        crlfDelay: Infinity,
+    try {
+      // Use the new log parser for better message extraction
+      const parser = new ClaudeLogParser(transcriptPath);
+      const entries = await parser.parse({
+        role: 'all',
+        limit,
+        format: 'plaintext',
+        includeTools: false, // Don't include tools in review context
+        simplifyResults: true,
       });
 
-      const allMessages: Array<{ message?: { role?: string; content?: unknown } }> = [];
-
-      rl.on('line', (line) => {
-        try {
-          const entry = JSON.parse(line);
-          if (entry.message?.role) {
-            allMessages.push(entry);
-          }
-        } catch (_e) {
-          // Skip malformed lines
-        }
-      });
-
-      rl.on('close', () => {
-        // Get last N messages
-        const recent = allMessages.slice(-limit);
-        for (const entry of recent) {
-          if (entry.message?.role === 'user') {
-            messages.push(`User: ${this.extractMessageContent(entry.message.content)}`);
-          } else if (entry.message?.role === 'assistant') {
-            messages.push(`Assistant: ${this.extractMessageContent(entry.message.content)}`);
-          }
-        }
-        resolve(messages.join('\n'));
-      });
-
-      rl.on('error', () => {
-        resolve('');
-      });
-    });
-  }
-
-  private extractMessageContent(content: unknown): string {
-    if (typeof content === 'string') return content.substring(0, 200);
-    if (Array.isArray(content)) {
-      for (const item of content) {
-        if (item.type === 'text' && item.text) {
-          return item.text.substring(0, 200);
-        }
-      }
+      // The parser returns plaintext format directly
+      return entries as string;
+    } catch (error) {
+      this.logger.warn('Failed to parse transcript with new parser, falling back to empty', { error });
+      return '';
     }
-    return '[complex content]';
   }
 
   getGitDiff(): string {

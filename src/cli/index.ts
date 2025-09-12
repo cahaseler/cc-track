@@ -6,6 +6,7 @@ import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
+import { parseLogsCommand } from '../commands/parse-logs';
 import { createPrepareCompletionCommand } from '../commands/prepare-completion';
 import { statuslineCommand } from '../commands/statusline';
 
@@ -29,6 +30,7 @@ program.addCommand(completeTaskCommand);
 program.addCommand(gitSessionCommand);
 program.addCommand(createPrepareCompletionCommand());
 program.addCommand(statuslineCommand);
+program.addCommand(parseLogsCommand);
 
 // Parse arguments
 program.parse();

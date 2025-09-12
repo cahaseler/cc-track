@@ -35,6 +35,31 @@ Across all modes, treat `.claude/tasks/TASK_###.md` as the source of truth for a
 - `code-reviews/` – Storage for review artifacts when operating in Reviewer mode.
 - `dist/` – Compiled binaries for the CLI and hooks.
 
+## Development Repo & Self‑Hosting
+
+- This repository is the development repo for cc-track and it self‑hosts cc-track to manage its own work.
+- The CLI is designed primarily for automated, rule‑based triggering by Claude Code hooks/commands (see `.claude/` and `reference/*`).
+- Codex CLI does not provide equivalent first‑class hooks; manual use is acceptable but a bit clunky. Treat the CLI as the source of truth for behavior, and use it to simulate hook flows when needed.
+
+### Manual Use from Codex CLI (Common Cases)
+
+- Prepare/complete a task manually:
+  - `dist/cc-track prepare-completion`
+  - `dist/cc-track complete-task`
+- Simulate hook events via stdin JSON:
+  - Edit validation (on save):
+    - `echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"src/lib/config.ts"}}' | dist/cc-track hook`
+  - Pre‑compact / Post‑compact:
+    - `echo '{"hook_event_name":"PreCompact"}' | dist/cc-track hook`
+    - `echo '{"hook_event_name":"SessionStart","source":"compact"}' | dist/cc-track hook`
+  - Stop review (end of a working block):
+    - `echo '{"hook_event_name":"Stop"}' | dist/cc-track hook`
+  - Capture plan (after planning approval):
+    - `echo '{"hook_event_name":"PostToolUse","tool_name":"ExitPlanMode","tool_input":{"plan":"..."},"tool_response":{"plan":"..."}}' | dist/cc-track hook`
+
+Notes:
+- Some flows (capture‑plan enrichment, GitHub PR/issue actions) require network/CLI tools; they may no‑op or warn in restricted environments. GitHub behavior is controlled by `.claude/track.config.json.features.github_integration`.
+
 ## Core Workflows
 
 High‑level lifecycle: Plan → Task Created → Development → Validation → Documentation → Completion → PR → Merge.
