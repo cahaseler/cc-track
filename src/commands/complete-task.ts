@@ -74,7 +74,7 @@ async function completeTaskAction(options: {
     if (!options.skipValidation) {
       logger.info('Running pre-flight validation check');
       try {
-        const preflightResult = execSync('./dist/cc-track prepare-completion', {
+        const preflightResult = execSync('./dist/cc-track validation-checks', {
           encoding: 'utf-8',
           cwd: projectRoot,
         });
@@ -486,17 +486,13 @@ async function completeTaskAction(options: {
     console.log('Manual PR creation may be needed.\n');
   }
 
-  // 3. Documentation updates
+  // 3. Post-completion updates
   const docNumber = result.github?.prCreated ? 2 : 1;
-  console.log(`### ${docNumber}. Update Project Documentation\n`);
-  console.log('Update the following documentation files as needed:\n');
-  console.log(`**Progress Log** (\`.claude/progress_log.md\`):`);
-  console.log(`- Add entry: "${result.taskId} completed: ${result.taskTitle}"`);
-  console.log(`- Note key files changed (${result.filesChanged?.length || 0} files modified)`);
-  console.log('');
-  console.log('**Decision Log** (`.claude/decision_log.md`) - Only if significant decisions were made');
-  console.log('**System Patterns** (`.claude/system_patterns.md`) - Only if new patterns were established');
-  console.log('**Backlog** (`.claude/backlog.md`) - Remove this task if it was listed there\n');
+  console.log(`### ${docNumber}. Post-Completion Updates\n`);
+  console.log('Update progress log with completion entry:\n');
+  console.log(`Add to \`.claude/progress_log.md\`:`);
+  console.log(`- "${result.taskId} completed: ${result.taskTitle}"`);
+  console.log(`- ${result.filesChanged?.length || 0} files modified\n`);
 
   // 4. Summary for user
   const summaryNumber = result.github?.prCreated ? 3 : 2;

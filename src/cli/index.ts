@@ -8,6 +8,7 @@ import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
 import { createPrepareCompletionCommand } from '../commands/prepare-completion';
 import { statuslineCommand } from '../commands/statusline';
+import { createValidationChecksCommand } from '../commands/validation-checks';
 
 // Version is hardcoded for compiled binary
 const VERSION = '1.0.0';
@@ -28,6 +29,7 @@ program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
 program.addCommand(gitSessionCommand);
 program.addCommand(createPrepareCompletionCommand());
+program.addCommand(createValidationChecksCommand());
 program.addCommand(statuslineCommand);
 
 // Parse arguments
