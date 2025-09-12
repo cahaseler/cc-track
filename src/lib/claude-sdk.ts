@@ -70,6 +70,14 @@ export class ClaudeSDK {
               outputTokens: message.usage.output_tokens || 0,
               costUSD: message.total_cost_usd
             };
+          } else if (message.subtype === 'error_max_turns' && responseText) {
+            // If we hit max turns but got a response, that's still success for simple prompts
+            success = true;
+            usage = {
+              inputTokens: message.usage.input_tokens || 0,
+              outputTokens: message.usage.output_tokens || 0,
+              costUSD: message.total_cost_usd
+            };
           } else {
             error = `Claude returned error: ${message.subtype}`;
           }
