@@ -1,3 +1,21 @@
+# [1.6.0](https://github.com/cahaseler/cc-track/compare/v1.5.0...v1.6.0) (2025-09-12)
+
+
+### Bug Fixes
+
+* handle max_turns error with valid response in Claude SDK ([0192205](https://github.com/cahaseler/cc-track/commit/01922050a358bfa14382407cc12f340f8b02ee52))
+* update model names to use generic versions instead of hardcoded ones ([ca7f503](https://github.com/cahaseler/cc-track/commit/ca7f503e1e8696d20dde6f228fcd40fd892f85c5))
+
+
+### Features
+
+* 039 implement Claude SDK wrapper and migrate GitHelpers ([c3bd3ba](https://github.com/cahaseler/cc-track/commit/c3bd3ba2e3ec92299f90310e8c6d4365e632dce7))
+* add advanced SDK test with commit message and code review capabilities ([193d1d9](https://github.com/cahaseler/cc-track/commit/193d1d96f62346966846c9ca2615dc56049236bf))
+* add Claude Code SDK dependency and test script ([3d92d69](https://github.com/cahaseler/cc-track/commit/3d92d69468d8eed32f2c5206defde182b597fef7))
+* complete Claude SDK integration with test mocking ([9c27f43](https://github.com/cahaseler/cc-track/commit/9c27f432599ee15e80630139a0be03efc2152090))
+* complete migration from Claude CLI to TypeScript SDK ([58e8383](https://github.com/cahaseler/cc-track/commit/58e83830126c293e7c8a5ba134fb725b5a5281a6))
+* migrate pre-compact hook to Claude SDK with proper mocking ([2197b1c](https://github.com/cahaseler/cc-track/commit/2197b1c95198cbf7bee88b2f750fbcd1b38a9d07))
+
 # [1.5.0](https://github.com/cahaseler/cc-track/compare/v1.4.2...v1.5.0) (2025-09-12)
 
 
