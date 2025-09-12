@@ -120,7 +120,7 @@ describe('edit-validation', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
-        typecheck: { enabled: false, command: 'tsc' },
+        typecheck: { enabled: false, command: 'bunx tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
 
@@ -134,26 +134,33 @@ describe('edit-validation', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
-        typecheck: { enabled: true, command: 'tsc --noEmit' },
+        typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
 
       const mockExec = mock(() => '');
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
+      // Verify it runs on the whole project, not individual file
+      expect(mockExec).toHaveBeenCalledWith(
+        'bunx tsc --noEmit --pretty false --incremental',
+        expect.objectContaining({ cwd: '/test' }),
+      );
     });
 
     test('extracts TypeScript errors from stderr', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
-        typecheck: { enabled: true, command: 'tsc --noEmit' },
+        typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
 
       const mockExec = mock(() => {
         const error = new Error('TypeScript failed');
-        (error as { stderr?: string }).stderr = "test.ts(10,5): error TS2304: Cannot find name 'foo'.";
+        // Now we filter for the specific file from full project output
+        (error as { stderr?: string }).stderr =
+          "/test/file.ts(10,5): error TS2304: Cannot find name 'foo'.\n/test/other.ts(5,1): error TS2304: Cannot find name 'bar'.";
         throw error;
       });
 
@@ -165,7 +172,7 @@ describe('edit-validation', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
-        typecheck: { enabled: true, command: 'tsc --noEmit' },
+        typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
 
@@ -184,7 +191,7 @@ describe('edit-validation', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
-        typecheck: { enabled: true, command: 'tsc --noEmit' },
+        typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
         lint: { enabled: false, command: 'biome' },
       };
 
@@ -194,6 +201,31 @@ describe('edit-validation', () => {
 
       const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
+    });
+
+    test('filters errors to only show target file', () => {
+      const config: EditValidationConfig = {
+        enabled: true,
+        description: 'test',
+        typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
+        lint: { enabled: false, command: 'biome' },
+      };
+
+      const mockExec = mock(() => {
+        const error = new Error('TypeScript failed');
+        // Simulate output with errors in multiple files
+        (error as { stderr?: string }).stderr = [
+          "/test/file.ts(10,5): error TS2304: Cannot find name 'foo'.",
+          "/test/other.ts(5,1): error TS2304: Cannot find name 'bar'.",
+          "/test/file.ts(15,10): error TS2339: Property 'baz' does not exist.",
+          "src/unrelated.ts(20,1): error TS2304: Cannot find name 'qux'.",
+        ].join('\n');
+        throw error;
+      });
+
+      const result = runTypeScriptCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+      // Should only include errors from /test/file.ts
+      expect(result).toEqual(["Line 10: Cannot find name 'foo'.", "Line 15: Property 'baz' does not exist."]);
     });
   });
 
@@ -355,7 +387,8 @@ describe('edit-validation', () => {
       const mockExec = mock((cmd: string) => {
         if (cmd.includes('tsc')) {
           const error = new Error('Command failed') as Error & { stderr?: string; stdout?: string };
-          error.stderr = "test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.";
+          // Error must include the full path to match our filtering logic
+          error.stderr = "/test/test.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.";
           throw error;
         }
         return '';
@@ -375,7 +408,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
@@ -412,7 +445,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
@@ -441,7 +474,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
@@ -477,17 +510,18 @@ describe('edit-validation', () => {
       });
 
       expect(result.continue).toBe(true);
-      // Verify the configured commands were used, not hardcoded ones
-      expect(executedCommands).toContain('bunx tsc --noEmit "/test/test.ts"');
+      // Verify the configured commands were used (now runs on whole project)
+      expect(executedCommands).toContain('bunx tsc --noEmit --pretty false --incremental');
       expect(executedCommands).toContain('bunx biome check --write "/test/test.ts" --reporter=compact');
     });
 
     test('handles MultiEdit with multiple files', async () => {
-      // Mock execSync - one file fails, one passes
+      // Mock execSync - TypeScript check fails for the file
       const mockExec = mock((cmd: string) => {
-        if (cmd.includes('file1.ts')) {
+        if (cmd.includes('tsc')) {
           const error = new Error('Command failed') as Error & { stderr?: string; stdout?: string };
-          error.stderr = "file1.ts(5,3): error TS2304: Cannot find name 'undefinedVar'.";
+          // Use full path to match our filtering logic
+          error.stderr = "/test/file1.ts(5,3): error TS2304: Cannot find name 'undefinedVar'.";
           throw error;
         }
         return '';
@@ -510,7 +544,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
@@ -543,7 +577,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
@@ -574,7 +608,7 @@ describe('edit-validation', () => {
         loadEditValidationConfig: () => ({
           enabled: true,
           description: 'test',
-          typecheck: { enabled: true, command: 'tsc' },
+          typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
           lint: { enabled: true, command: 'biome' },
         }),
       });
