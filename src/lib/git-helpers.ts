@@ -1,6 +1,6 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import { unlinkSync, writeFileSync } from 'node:fs';
 import { getGitConfig as defaultGetGitConfig } from './config';
+import { ClaudeSDK } from './claude-sdk';
 
 // Interface for dependency injection
 export type ExecFunction = (
@@ -8,30 +8,18 @@ export type ExecFunction = (
   options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string },
 ) => string;
 
-export interface FileOps {
-  writeFileSync: typeof writeFileSync;
-  unlinkSync: typeof unlinkSync;
-}
-
 export type GetGitConfigFunction = typeof defaultGetGitConfig;
 
 const defaultExec: ExecFunction = (command, options) => {
   return nodeExecSync(command, { encoding: 'utf-8', ...options });
 };
 
-const defaultFileOps: FileOps = {
-  writeFileSync,
-  unlinkSync,
-};
-
 export class GitHelpers {
   private exec: ExecFunction;
-  private fileOps: FileOps;
   private getGitConfig: GetGitConfigFunction;
 
-  constructor(exec?: ExecFunction, fileOps?: FileOps, getGitConfig?: GetGitConfigFunction) {
+  constructor(exec?: ExecFunction, getGitConfig?: GetGitConfigFunction) {
     this.exec = exec || defaultExec;
-    this.fileOps = fileOps || defaultFileOps;
     this.getGitConfig = getGitConfig || defaultGetGitConfig;
   }
 
@@ -100,33 +88,18 @@ export class GitHelpers {
   }
 
   /**
-   * Generate a commit message using Claude CLI Haiku with conventional commit format
+   * Generate a commit message using Claude SDK with conventional commit format
    */
   async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
     // Truncate diff if too long (Haiku has smaller context)
     const truncatedDiff = diff.substring(0, 3000);
 
     const taskContext = taskId ? `\nActive task: ${taskId}` : '';
-    const prompt = `Write a conventional commit message for these changes. Return only the commit message, nothing else.${taskContext}
-
-${truncatedDiff}
-
-Use format: type: description${taskId ? ` or type: ${taskId} description` : ''}
-Examples: ${taskId ? `feat: ${taskId} add user auth, fix: ${taskId} resolve parsing bug, docs: ${taskId} update readme` : 'feat: add user auth, fix: resolve parsing bug, docs: update readme'}`;
+    const changes = `${taskContext}\n\n${truncatedDiff}`;
 
     try {
-      // Write prompt to temp file to avoid shell escaping issues
-      const tempFile = `/tmp/commit_prompt_${Date.now()}.txt`;
-      this.fileOps.writeFileSync(tempFile, prompt);
-
-      const message = this.exec(`claude --model haiku --output-format text < "${tempFile}"`, {
-        timeout: 30000,
-        cwd: '/tmp', // Run from /tmp to avoid triggering hooks
-      }).trim();
-
-      // Clean up temp file
-      this.fileOps.unlinkSync(tempFile);
-
+      const message = await ClaudeSDK.generateCommitMessage(changes);
+      
       // Extract just the commit message if Claude added any wrapper text
       // Look for a line that matches conventional commit format
       const lines = message.split('\n');
@@ -136,7 +109,12 @@ Examples: ${taskId ? `feat: ${taskId} add user auth, fix: ${taskId} resolve pars
         }
       }
 
-      // If no proper format found, use a conventional commit fallback
+      // If no proper format found but we got something, use it
+      if (message) {
+        return message;
+      }
+
+      // Fallback if nothing works
       return 'chore: save work in progress';
     } catch (error) {
       console.error('Failed to generate commit message:', error);
@@ -145,44 +123,30 @@ Examples: ${taskId ? `feat: ${taskId} add user auth, fix: ${taskId} resolve pars
   }
 
   /**
-   * Generate a branch name using Claude CLI Haiku
+   * Generate a branch name using Claude SDK
    */
   async generateBranchName(plan: string, taskId: string, _cwd: string): Promise<string> {
     // Extract key parts of the plan
     const planSummary = plan.substring(0, 1500);
 
-    const prompt = `CRITICAL: Return ONLY a git branch name, nothing else. No explanation, no markdown, just the name.
-Based on this plan, generate a git branch name:
-
-${planSummary}
-
-Task ID: ${taskId}
-
-Format: feature/short-description OR bug/short-description
-Use lowercase, hyphens, max 4 words after type
-Examples: feature/add-auth, bug/fix-login, feature/user-dashboard
-RETURN ONLY THE BRANCH NAME`;
-
     try {
-      // Write prompt to temp file to avoid shell escaping issues
-      const tempFile = `/tmp/branch_prompt_${Date.now()}.txt`;
-      this.fileOps.writeFileSync(tempFile, prompt);
-
-      const branchName = this.exec(`claude --model haiku --output-format text < "${tempFile}"`, {
-        timeout: 30000,
-        cwd: '/tmp', // Run from /tmp to avoid triggering hooks
-      }).trim();
-
-      // Clean up temp file
-      this.fileOps.unlinkSync(tempFile);
-
+      const branchName = await ClaudeSDK.generateBranchName(planSummary, taskId);
+      
       // Extract just the branch name if Claude added any wrapper text
       const lines = branchName.split('\n');
       for (const line of lines) {
         if (line.match(/^(feature|bug)\//)) {
-          // Add task ID to make it unique
-          return `${line}-${taskId.toLowerCase()}`;
+          // Add task ID if not already present
+          if (!line.includes(taskId.toLowerCase())) {
+            return `${line}-${taskId.toLowerCase()}`;
+          }
+          return line;
         }
+      }
+
+      // If we got something that looks like a branch name, use it
+      if (branchName && !branchName.includes(' ')) {
+        return branchName;
       }
 
       // Fallback to a generic name with task ID
