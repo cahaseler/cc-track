@@ -91,9 +91,9 @@ export class ClaudeLogParser {
   private entries: LogEntry[] = [];
   private fileOps: FileOps;
 
-  constructor(filePath: string, fileOps?: FileOps) {
+  constructor(filePath: string, fileOps?: FileOps, logger?: ReturnType<typeof createLogger>) {
     this.filePath = filePath;
-    this.logger = createLogger('log-parser');
+    this.logger = logger || createLogger('log-parser');
     this.fileOps = fileOps || defaultFileOps;
   }
 

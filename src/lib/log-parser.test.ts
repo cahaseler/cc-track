@@ -12,6 +12,17 @@ function createMockFileOps(mockData: Record<string, string[]>): FileOps {
   };
 }
 
+// Helper to create mock logger
+function createMockLogger() {
+  return {
+    info: mock(() => {}),
+    debug: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+    exception: mock(() => {}),
+  };
+}
+
 // Test data
 const createTestData = () => ({
   '/test/empty.jsonl': [],
@@ -133,7 +144,8 @@ describe('ClaudeLogParser', () => {
   test('parses empty log file', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/empty.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/empty.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' });
     
     expect(result).toEqual([]);
@@ -142,7 +154,8 @@ describe('ClaudeLogParser', () => {
   test('handles malformed lines gracefully', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/malformed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/malformed.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' });
     
     // Should only parse the valid JSON line
@@ -152,7 +165,8 @@ describe('ClaudeLogParser', () => {
   test('parses and simplifies mixed entries', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
     
     expect(result).toHaveLength(6);
@@ -198,7 +212,8 @@ describe('ClaudeLogParser', () => {
   test('filters by role', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'json',
       role: 'assistant',
@@ -212,7 +227,8 @@ describe('ClaudeLogParser', () => {
   test('filters by time range', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'json',
       timeRange: {
@@ -230,7 +246,8 @@ describe('ClaudeLogParser', () => {
   test('applies limit', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'json',
       limit: 3,
@@ -242,7 +259,8 @@ describe('ClaudeLogParser', () => {
   test('excludes tools when requested', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'json',
       includeTools: false,
@@ -258,7 +276,8 @@ describe('ClaudeLogParser', () => {
   test('formats as plaintext', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'plaintext',
       limit: 2,
@@ -275,7 +294,8 @@ describe('ClaudeLogParser', () => {
   test('returns raw entries when simplifyResults is false', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
     const result = await parser.parse({ 
       format: 'json',
       simplifyResults: false,
@@ -292,7 +312,8 @@ describe('ClaudeLogParser - Tool Parameter Summarization', () => {
   test('summarizes various tool parameters', async () => {
     const testData = createTestData();
     const fileOps = createMockFileOps(testData);
-    const parser = new ClaudeLogParser('/test/tools.jsonl', fileOps);
+    const logger = createMockLogger();
+    const parser = new ClaudeLogParser('/test/tools.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
 
     expect(result).toHaveLength(3);
