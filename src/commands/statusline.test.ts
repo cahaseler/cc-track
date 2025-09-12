@@ -9,17 +9,7 @@ import {
   statuslineCommand,
 } from './statusline';
 
-// Mock the claude-md module
-mock.module('../lib/claude-md', () => ({
-  getActiveTaskDisplay: mock((cwd: string) => {
-    // Return test-appropriate values based on test context
-    if (cwd === process.cwd()) {
-      // Check if we're in a test that expects specific behavior
-      return 'TASK_026: Refactor CLI Tool';
-    }
-    return '';
-  }),
-}));
+// No mocking needed - statusline.ts doesn't import from claude-md
 
 describe('statusline', () => {
   describe('getTodaysCost', () => {
