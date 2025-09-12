@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/cahaseler/cc-track/compare/v1.1.0...v1.2.0) (2025-09-12)
+
+
+### Bug Fixes
+
+* TASK_030 use type import for ClaudeMdHelpers in test ([b15421a](https://github.com/cahaseler/cc-track/commit/b15421a544d8b3115aa34297d074fa442903af3f))
+
+
+### Features
+
+* improve hooks for better developer experience - filter private journal files from stop-review and verify test file skipping ([c5480b6](https://github.com/cahaseler/cc-track/commit/c5480b6cd02aa8d19e328dd192549dfbf50ab5b2))
+* TASK_030 improve hooks for better developer experience ([77e87f5](https://github.com/cahaseler/cc-track/commit/77e87f594ec23099518700bcf18735497eaf0d9c))
+
 # [1.1.0](https://github.com/cahaseler/cc-track/compare/v1.0.0...v1.1.0) (2025-09-12)
 
 
