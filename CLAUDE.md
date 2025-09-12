@@ -22,6 +22,9 @@
 ## User Context
 @.claude/user_context.md
 
+## Workflow Guide
+@.claude/cc-track-workflow.md
+
 Additional information can be found in the following files. Reference them as needed during research or planning.
 
 .claude/progress_log.md - project progress and updates over time
