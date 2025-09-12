@@ -194,3 +194,8 @@
   Details: Fixed backwards logic in capture-plan hook that prevented GitHub issues from being properly linked to branches
   Files: src/hooks/capture-plan.ts, src/hooks/capture-plan.test.ts
   Key Achievement: Refactored handleGitHubIntegration to return issue object, reordered operations to create issues before branches, and fixed condition logic. Now properly uses `gh issue develop` when configured, ensuring PRs automatically link to their issues.
+
+[2025-09-12 22:10] - Completed: Task 038 - Remove Unused Standalone Function Exports
+  Details: Cleaned up ~20 unused standalone function exports to clarify class-based architecture pattern
+  Files: src/lib/github-helpers.ts, src/lib/git-helpers.ts, src/lib/claude-md.ts, src/hooks/edit-validation.ts, knip.json
+  Key Achievement: Reduced Knip warnings from 25+ to just 2, removed redundant backward compatibility exports that were never used, made class-based pattern with dependency injection the clear primary approach. Kept only 6 standalone functions that are actually imported.
