@@ -24,4 +24,4 @@
 - [2025-09-11] break task completion into two phases to allow better automation of pre-completion cleanup and documentation, linting, fixes, etc, followed by a second phase with the automated git actions, file updates, etc. claude code commands system currently works by running scripts then passing results to claude for things that can't be easily scripted, but our workflow really needs script (for checks), claude (for fixes and documentation and reflection), then another script (for squash, push, branch swap). So breaking it into two commands seems the best approach.
 - [2025-09-11] clean up duplicated helper functions as documented in the task 028 code review from codex agent
 - [2025-09-11] investigate Claude Code typescript SDK as alternative to invoking cli tool, evaluate benefits, drawbacks, implement if reasonable
-- [2025-09-11] add hook for sessionStart that populates Claude context after using the /clear command in a similar way to the code that runs after /compact - or maybe just update that hook to handle both
+
