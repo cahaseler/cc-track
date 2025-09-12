@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/cahaseler/cc-track/compare/v1.4.2...v1.5.0) (2025-09-12)
+
+
+### Features
+
+* remove unused standalone function exports from helper libraries ([2a89af3](https://github.com/cahaseler/cc-track/commit/2a89af3cff056b38e6d912b548087a20b728a3b8))
+* remove unused standalone function exports from helper modules ([f80d78b](https://github.com/cahaseler/cc-track/commit/f80d78bd79e6d84132250e1f4bbff75bd2c36870))
+
 ## [1.4.2](https://github.com/cahaseler/cc-track/compare/v1.4.1...v1.4.2) (2025-09-12)
 
 
