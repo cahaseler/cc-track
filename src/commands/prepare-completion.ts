@@ -147,8 +147,9 @@ async function prepareCompletionAction() {
       console.log('**✅ Task is ready for completion!**\n');
     }
 
-    // Exit with appropriate code
-    process.exit(validationPassed ? 0 : 1);
+    // Always exit with success so the output is passed to Claude
+    // The command already outputs detailed feedback about what needs fixing
+    process.exit(0);
   } catch (error) {
     // Handle cases where validation-checks command fails completely
     console.log('## ❌ Validation Check Failed\n');
@@ -170,7 +171,8 @@ async function prepareCompletionAction() {
       }
     }
 
-    process.exit(1);
+    // Exit with 0 so Claude sees the error message
+    process.exit(0);
   }
 }
 
