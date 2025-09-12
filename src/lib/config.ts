@@ -1,21 +1,20 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+export interface ValidationConfig {
+  enabled: boolean;
+  command: string;
+}
+
+export interface EditValidationConfig extends HookConfig {
+  typecheck?: ValidationConfig;
+  lint?: ValidationConfig;
+  knip?: ValidationConfig;
+}
+
 interface HookConfig {
   enabled: boolean;
   description: string;
-  typecheck?: {
-    enabled: boolean;
-    command: string;
-  };
-  lint?: {
-    enabled: boolean;
-    command: string;
-  };
-  knip?: {
-    enabled: boolean;
-    command: string;
-  };
   display?: string;
   auto_create_issues?: boolean;
   use_issue_branches?: boolean;
@@ -39,7 +38,7 @@ interface LoggingConfig {
 
 interface InternalConfig {
   hooks: {
-    [key: string]: HookConfig;
+    [key: string]: HookConfig | EditValidationConfig;
   };
   features: {
     [key: string]: HookConfig;
@@ -238,7 +237,7 @@ export function getGitConfig(configPath?: string): GitConfig | null {
 export function getLoggingConfig(configPath?: string): LoggingConfig {
   const config = getConfig(configPath);
   // DEFAULT_CONFIG.logging is always defined, so this is safe
-  return config.logging || DEFAULT_CONFIG.logging as LoggingConfig;
+  return config.logging || (DEFAULT_CONFIG.logging as LoggingConfig);
 }
 
 export function clearConfigCache(): void {

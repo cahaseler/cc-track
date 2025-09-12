@@ -13,6 +13,7 @@ describe('complete-task command', () => {
 
     expect(optionNames).toContain('--no-squash');
     expect(optionNames).toContain('--no-branch');
+    expect(optionNames).toContain('--skip-validation');
     expect(optionNames).toContain('--message');
   });
 

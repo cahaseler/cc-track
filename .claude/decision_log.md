@@ -174,6 +174,16 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Reversibility:** Easy - just remove test exclusions from tsconfig.json, but we now know the cost
 - **Note:** The auto-branching feature meant the entire failed attempt stayed isolated on branch `bug/fix-typescript-test-errors-028`, requiring no cleanup.
 
+[2025-09-12 09:00] - Validation Checks as Library Function Rather Than CLI Command
+- **Context:** During implementation of two-phase task completion workflow (TASK_033), initially created validation-checks as a CLI command that other commands would execute via execSync
+- **Decision:** Move validation logic to src/lib/validation.ts as an exported function that commands call directly  
+- **Rationale:** No need for subprocess overhead when commands are already running within the same process. Direct function calls are cleaner, faster, and easier to test
+- **Alternatives Considered:** 
+  - Keep as CLI command: Unnecessary complexity and overhead for internal operations
+  - Make it both CLI and library: Adds maintenance burden for functionality only used internally
+- **Implications:** Simpler architecture, better performance, easier testing. Validation logic is now a reusable library function
+- **Reversibility:** Easy - could re-export as CLI command if ever needed externally
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

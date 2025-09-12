@@ -13,6 +13,13 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-12 08:53
+- **Hook rejection recovery**: When a hook blocks an edit with "The user doesn't want to proceed", the rejection message indicates what validation failed - fix the root cause rather than retrying the same edit
+- **Complex string replacements in YAML headers**: When editing YAML frontmatter with multiline strings, Edit operations may fail to find exact matches - use smaller, more unique portions of the string for replacement
+- **JSON parsing of CLI output**: When piping command output to `jq` fails with parse errors, the output likely isn't JSON - run the command without jq first to see the actual output format
+- **Truncated command output**: When command output appears cut off mid-JSON (ending with incomplete fields), the output exceeded buffer limits - use simpler output formats or specific flags to get complete results
+- **Git log on non-existent branches**: When `git log <branch>` fails, verify the branch exists first with `git branch -a` rather than assuming branch naming conventions
+
 ### Session: 2025-09-12 21:17
 - When git status shows "Your branch is ahead of origin" with uncommitted changes, commit first before pushing - the push will fail until changes are staged and committed
 - When tail truncates Biome check output mid-error, use head or specific line counts to see the beginning of error messages which contain the actual error details
