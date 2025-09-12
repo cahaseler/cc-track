@@ -80,7 +80,7 @@ export class GitHubHelpers {
       // Properly escape arguments to avoid shell interpretation
       const escapedTitle = title.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
       const escapedBody = body.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-      
+
       let command = `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`;
       if (labels && labels.length > 0) {
         const escapedLabels = labels.join(',').replace(/"/g, '\\"');
