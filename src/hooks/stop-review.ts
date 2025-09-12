@@ -3,7 +3,7 @@ import { createReadStream, existsSync, type readFileSync, unlinkSync, writeFileS
 import { createInterface } from 'node:readline';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
-import { GitHelpers, hasUncommittedChanges } from '../lib/git-helpers';
+import { GitHelpers } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 

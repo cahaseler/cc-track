@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { setActiveTask, ClaudeMdHelpers } from '../lib/claude-md';
+import { ClaudeMdHelpers } from '../lib/claude-md';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
@@ -256,11 +256,7 @@ export async function handleGitHubIntegration(
 /**
  * Update CLAUDE.md to point to new task
  */
-export function updateClaudeMd(
-  projectRoot: string,
-  taskId: string,
-  fileOps: CapturePlanDependencies['fileOps'],
-): void {
+export function updateClaudeMd(projectRoot: string, taskId: string, fileOps: CapturePlanDependencies['fileOps']): void {
   // Use the centralized function with proper dependency injection
   const claudeMdHelpers = new ClaudeMdHelpers(fileOps);
   claudeMdHelpers.setActiveTask(projectRoot, `TASK_${taskId}`);

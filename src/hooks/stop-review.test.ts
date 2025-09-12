@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { ClaudeMdHelpers } from '../lib/claude-md';
+import type { ClaudeMdHelpers } from '../lib/claude-md';
 import { GitHelpers } from '../lib/git-helpers';
 import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';

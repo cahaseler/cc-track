@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getActiveTaskFile as getActiveTaskFileFromClaudeMd } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -33,7 +32,7 @@ export function readImportedFiles(
   const fs = fileOps || { existsSync, readFileSync };
   const importPattern = /@(\.claude\/[^\s]+)/g;
   const imports: RegExpExecArray[] = [];
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = importPattern.exec(claudeMdContent)) !== null) {
     imports.push(match);
   }
