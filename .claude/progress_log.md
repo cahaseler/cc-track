@@ -189,3 +189,8 @@
   Details: Fixed the /prepare-completion slash command to properly pass validation feedback to Claude
   Files: src/commands/prepare-completion.ts
   Key Achievement: Command now exits with code 0 regardless of validation results, ensuring Claude receives validation feedback instead of "Bash command failed" errors. All detailed validation output preserved.
+
+[2025-09-12 21:30] - Completed: Task 037 - Fix GitHub Branch Linking Issue
+  Details: Fixed backwards logic in capture-plan hook that prevented GitHub issues from being properly linked to branches
+  Files: src/hooks/capture-plan.ts, src/hooks/capture-plan.test.ts
+  Key Achievement: Refactored handleGitHubIntegration to return issue object, reordered operations to create issues before branches, and fixed condition logic. Now properly uses `gh issue develop` when configured, ensuring PRs automatically link to their issues.
