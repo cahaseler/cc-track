@@ -32,9 +32,10 @@ export function readImportedFiles(
   const fs = fileOps || { existsSync, readFileSync };
   const importPattern = /@(\.claude\/[^\s]+)/g;
   const imports: RegExpExecArray[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = importPattern.exec(claudeMdContent)) !== null) {
+  let match: RegExpExecArray | null = importPattern.exec(claudeMdContent);
+  while (match !== null) {
     imports.push(match);
+    match = importPattern.exec(claudeMdContent);
   }
 
   let importedContent = '';
