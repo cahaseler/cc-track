@@ -141,9 +141,16 @@ export function runTypeScriptCheck(
       // Parse TypeScript errors and filter for our target file
       // Format: filepath(line,col): error TSxxxx: message
       const lines = output.split('\n');
+      
+      // Convert absolute path to relative path for matching
+      // TypeScript outputs paths relative to the project root
+      const relativePath = filePath.startsWith(cwd + '/') 
+        ? filePath.slice(cwd.length + 1) 
+        : filePath;
+      
       for (const line of lines) {
-        // Check if this error is for our target file
-        if (line.startsWith(filePath)) {
+        // Check if this error is for our target file (using relative path)
+        if (line.startsWith(relativePath) || line.startsWith(filePath)) {
           const match = line.match(/\((\d+),\d+\): error TS\d+: (.+)/);
           if (match) {
             errors.push(`Line ${match[1]}: ${match[2]}`);
