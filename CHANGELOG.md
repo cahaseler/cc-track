@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/cahaseler/cc-track/compare/v1.4.0...v1.4.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* make prepare-completion always exit with code 0 for Claude feedback ([14bd2ea](https://github.com/cahaseler/cc-track/commit/14bd2eabda486350612b25c0a986ca4b78d0c749))
+
 # [1.4.0](https://github.com/cahaseler/cc-track/compare/v1.3.0...v1.4.0) (2025-09-12)
 
 
