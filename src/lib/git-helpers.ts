@@ -1,6 +1,6 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import { getGitConfig as defaultGetGitConfig } from './config';
 import { ClaudeSDK } from './claude-sdk';
+import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
 export type ExecFunction = (
@@ -99,7 +99,7 @@ export class GitHelpers {
 
     try {
       const message = await ClaudeSDK.generateCommitMessage(changes);
-      
+
       // Extract just the commit message if Claude added any wrapper text
       // Look for a line that matches conventional commit format
       const lines = message.split('\n');
@@ -131,7 +131,7 @@ export class GitHelpers {
 
     try {
       const branchName = await ClaudeSDK.generateBranchName(planSummary, taskId);
-      
+
       // Extract just the branch name if Claude added any wrapper text
       const lines = branchName.split('\n');
       for (const line of lines) {

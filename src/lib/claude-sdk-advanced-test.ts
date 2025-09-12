@@ -35,7 +35,7 @@ Respond with JUST the commit message, no explanation.`;
         maxTurns: 1,
         // Could restrict tools if needed
         disallowedTools: ['*'], // No tools needed for text generation
-      }
+      },
     });
 
     for await (const message of response) {
@@ -70,7 +70,7 @@ Provide a brief analysis of any type safety issues.`;
         maxTurns: 1,
         // Restrict to read-only operations for safety
         allowedTools: ['Read', 'Grep', 'Glob'], // Only allow reading, no writing
-      }
+      },
     });
 
     for await (const message of response) {
@@ -79,11 +79,11 @@ Provide a brief analysis of any type safety issues.`;
         console.log('Code review result:');
         console.log(text);
       }
-      
+
       // Check if any tools were denied
       if (message.type === 'result' && message.permission_denials?.length > 0) {
         console.log('\nTools that were denied:');
-        message.permission_denials.forEach(denial => {
+        message.permission_denials.forEach((denial) => {
           console.log(`- ${denial.tool_name}: ${denial.tool_input}`);
         });
       }

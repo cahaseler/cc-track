@@ -13,7 +13,7 @@ async function testSDKWithProAuth() {
   try {
     // Create a simple query - just a basic math question to test connectivity
     const prompt = 'What is 2 + 2? Please respond with just the number.';
-    
+
     console.log(`Prompt: ${prompt}`);
     console.log('Sending request to Claude...\n');
 
@@ -23,9 +23,9 @@ async function testSDKWithProAuth() {
       prompt,
       options: {
         model: 'haiku', // Use haiku for quick test
-        maxTurns: 1,    // Single turn only
+        maxTurns: 1, // Single turn only
         // No API key specified - should use existing CLI auth
-      }
+      },
     });
 
     // The query returns an async generator, so we need to iterate
@@ -33,14 +33,14 @@ async function testSDKWithProAuth() {
     for await (const message of response) {
       // Log the message type for debugging
       console.log(`Received message type: ${message.type}`);
-      
+
       // Look for the assistant's response
       if (message.type === 'assistant') {
         console.log('\n✅ Success! Got response from Claude:');
         console.log(`Response: ${message.message.content[0]?.text || 'No text content'}`);
         gotResult = true;
       }
-      
+
       // Check for system messages that show authentication info
       if (message.type === 'system' && message.subtype === 'init') {
         console.log('\nAuthentication info:');
@@ -48,7 +48,7 @@ async function testSDKWithProAuth() {
         console.log(`- Model: ${message.model}`);
         console.log(`- Session ID: ${message.session_id}`);
       }
-      
+
       // Show the final result
       if (message.type === 'result') {
         console.log('\nFinal result:');
@@ -69,7 +69,6 @@ async function testSDKWithProAuth() {
     }
 
     console.log('\n🎉 SDK test successful! Pro subscription authentication is working.');
-    
   } catch (error) {
     console.error('❌ Error testing SDK:', error);
     console.error('\nThis might mean:');

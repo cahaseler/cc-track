@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { createReadStream, existsSync, type readFileSync, writeFileSync } from 'node:fs';
+import { createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { ClaudeSDK } from '../lib/claude-sdk';
@@ -408,7 +408,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
     try {
       // Use SDK to call Claude - no temp files needed!
       const response = await ClaudeSDK.prompt(prompt, 'sonnet');
-      
+
       if (!response.success) {
         throw new Error(response.error || 'SDK call failed');
       }

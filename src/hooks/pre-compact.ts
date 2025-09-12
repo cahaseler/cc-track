@@ -1,7 +1,7 @@
-import { execSync } from 'node:child_process';
-import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { ClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -324,7 +324,6 @@ export async function analyzeErrorPatterns(
   sequences: ErrorSequence[],
   projectRoot: string,
   logger: ReturnType<typeof createLogger>,
-  execFn: typeof execSync = execSync,
 ): Promise<string[]> {
   // Only analyze sequences that actually found a resolution after multiple attempts
   const interestingSequences = sequences.filter((seq) => seq.subsequentAttempts.length >= 2 && seq.errorOutput);
@@ -395,20 +394,8 @@ If there are no new lessons beyond the existing ones, respond with "NO NEW LESSO
 Output ONLY the bulleted list of new lessons, nothing else.`;
 
   try {
-    const tempFile = `/tmp/error_analysis_batch_${Date.now()}.txt`;
-    writeFileSync(tempFile, prompt);
-
-    const response = execFn(`claude --output-format text < "${tempFile}"`, {
-      encoding: 'utf-8',
-      timeout: 15000,
-      shell: '/bin/bash',
-      cwd: '/tmp',
-    }).trim();
-
-    // Clean up temp file
-    if (existsSync(tempFile)) {
-      unlinkSync(tempFile);
-    }
+    // Use SDK instead of CLI - no temp files needed!
+    const response = await ClaudeSDK.extractErrorPatterns(prompt);
 
     if (response === 'NO NEW LESSONS') {
       return [];
@@ -416,9 +403,9 @@ Output ONLY the bulleted list of new lessons, nothing else.`;
 
     const newLessons = response
       .split('\n')
-      .filter((line) => line.startsWith('- '))
-      .map((line) => line.substring(2).trim())
-      .filter((lesson) => lesson.length > 0 && lesson.length < 300);
+      .filter((line: string) => line.startsWith('- '))
+      .map((line: string) => line.substring(2).trim())
+      .filter((lesson: string) => lesson.length > 0 && lesson.length < 300);
 
     return newLessons;
   } catch (e) {
