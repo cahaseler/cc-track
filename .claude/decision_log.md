@@ -184,6 +184,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Simpler architecture, better performance, easier testing. Validation logic is now a reusable library function
 - **Reversibility:** Easy - could re-export as CLI command if ever needed externally
 
+[2025-09-12 16:45] - Run Full TypeScript Project Check Instead of Single File Validation
+- **Context:** Edit validation hook was producing false positive errors because `tsc filename.ts` ignores tsconfig.json settings by design
+- **Decision:** Run TypeScript on the entire project and filter output for the specific edited file
+- **Rationale:** This is the only way to respect tsconfig.json settings. TypeScript explicitly prevents mixing project config with individual file checking
+- **Alternatives Considered:** 
+  - Create temporary tsconfig for single file: Would miss global type declarations
+  - Use TypeScript Compiler API: Too complex for a simple validation hook
+  - Accept the limitation: Would continue producing false positives for valid code
+- **Implications:** Slightly slower validation (0.5s vs instant) but correct results. Incremental compilation reduces subsequent runs to 0.3s
+- **Reversibility:** Easy - could revert to single-file checking if TypeScript adds this feature in the future
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

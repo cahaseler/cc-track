@@ -35,11 +35,24 @@ Implement the project-wide TypeScript validation with file-specific output filte
 - Determine the best output parsing strategy for extracting file-specific errors
 - Consider fallback behavior if incremental compilation fails
 
+## Recent Progress
+
+Successfully fixed the TypeScript validation hook issue by implementing project-wide validation with file-specific filtering:
+
+1. **Root Cause Identified**: TypeScript ignores tsconfig.json when checking individual files (by design), causing false errors for modern JavaScript features like `import.meta` and Map iteration
+2. **Solution Implemented**: Modified `runTypeScriptCheck` to run TypeScript on entire project with `--noEmit --pretty false --incremental`, then filter output for target file
+3. **Path Matching Fixed**: Added logic to handle both absolute and relative paths since TypeScript outputs relative paths
+4. **Performance Verified**: Full project check takes ~0.5s, subsequent runs with incremental cache are ~0.3s
+5. **Testing Completed**: Confirmed real errors are caught while false positives are eliminated
+
+Key implementation details:
+- Used `--pretty false` for consistent, parseable output format
+- Added `--incremental` flag for better performance on repeated runs
+- Implemented path normalization to match TypeScript's relative path output
+- Updated all tests to reflect new behavior
+- Fixed linting issue with template literal
+
 ## Next Steps
-1. Find and examine the current TypeScript validation hook code
-2. Implement the new project-wide validation approach
-3. Add output filtering logic for file-specific errors
-4. Test with files that currently produce false positives
-5. Measure and validate performance impact
+Task is complete and ready for finalization.
 
 <!-- branch: bug/typescript-validation-hook-fix-035 -->
