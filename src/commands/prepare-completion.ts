@@ -140,12 +140,12 @@ async function prepareCompletionAction() {
     if (!validationPassed) {
       console.log('1. Fix the validation issues listed above');
       console.log('2. Update documentation and record insights');
-      console.log('3. Run `/prepare-completion` again to verify all issues are resolved');
-      console.log('4. Once all checks pass, run `/complete-task` to finalize\n');
+      console.log('3. Ask the user to run `/prepare-completion` again to verify all issues are resolved');
+      console.log('4. Once all checks pass, ask the user to run `/complete-task` to finalize\n');
     } else {
       console.log('1. Complete the documentation updates above');
       console.log('2. Record any insights in your journal');
-      console.log('3. Run `/complete-task` to finalize the task\n');
+      console.log('3. Ask the user to run `/complete-task` to finalize the task\n');
       console.log('**✅ Task is ready for completion!**\n');
     }
 

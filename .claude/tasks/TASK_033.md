@@ -9,35 +9,37 @@
 ## Requirements
 
 ### Phase 1: `/prepare-completion` Command
-- [x] Create `src/commands/prepare-completion.ts` script component
+- [x] Create `src/commands/validation-checks.ts` that returns structured JSON
 - [x] Implement validation checks (TypeScript, Biome, tests, Knip)
 - [x] Add git status reporting (uncommitted changes, modified files, WIP commits, branch check)
 - [x] Add task verification (active task exists, status is in_progress, extract ID/title)
 - [x] Return structured JSON report with all issues
+- [x] Create `src/commands/prepare-completion.ts` wrapper that generates dynamic instructions
 - [x] Create `.claude/commands/prepare-completion.md` Claude command
-- [x] Implement issue fixing logic in Claude command (TypeScript, linting, tests, unused code)
-- [x] Add idempotent journal reflection capability
-- [x] Add documentation updates (completion summary, deliverables, implementation details)
+- [x] Add documentation update instructions (shown regardless of validation status)
+- [x] Add journal reflection reminders
 - [x] Leverage stop-review hook for automatic commits
 
 ### Phase 2: Enhanced `/complete-task` Command
-- [ ] Update `src/commands/complete-task.ts` with pre-flight validation checks
-- [ ] Add PR existence check to prevent duplicates
-- [ ] Implement safety commit for uncommitted changes
-- [ ] Add WIP commit squashing functionality
-- [ ] Add automatic PR creation with basic title format
-- [ ] Add automatic branch switching and pull from origin
-- [ ] Return comprehensive completion report
-- [ ] Update `.claude/commands/complete-task.md` for minimal Claude responsibilities
-- [ ] Add PR enhancement using `gh pr edit`
-- [ ] Add post-merge documentation updates
+- [x] Update `src/commands/complete-task.ts` with pre-flight validation checks
+- [x] Add early exits with clear error messages for missing prerequisites
+- [x] Add PR existence check to prevent duplicates
+- [x] Implement safety commit for uncommitted changes
+- [x] WIP commit squashing functionality (already existed)
+- [x] Add automatic PR creation with basic title format
+- [x] Add automatic branch switching and pull from origin
+- [x] Generate dynamic instructions based on results
+- [x] Update `.claude/commands/complete-task.md` for minimal Claude responsibilities
+- [x] Add PR enhancement instructions using `gh pr edit`
+- [x] Simplify post-completion documentation to just progress log
 
 ### Integration & Setup
-- [ ] Register prepare-completion command in CLI (commander setup)
-- [ ] Update existing complete-task command registration if needed
+- [x] Register validation-checks command in CLI
+- [x] Register prepare-completion command in CLI
+- [x] Build and compile successfully
 - [ ] Test PR duplicate prevention logic
 - [ ] Test automatic branch management
-- [ ] Test idempotent documentation updates
+- [ ] Test the complete two-phase workflow end-to-end
 
 ## Success Criteria
 
@@ -58,24 +60,27 @@
 
 ## Recent Progress
 
-**Phase 1 Complete:** Successfully implemented the prepare-completion command with:
-- Full TypeScript validation with proper config type exports
-- Biome validation with auto-formatting (`--write` flag) 
-- Test runner integration
-- Knip unused code detection
-- Git status reporting (uncommitted changes, WIP commits, branch info)
-- Task verification and status checking
-- Structured JSON output for Claude processing
-- Claude instructions for fixing issues idempotently
+**Revised Architecture Implemented:** Instead of having prepare-completion do everything, we split it into:
+1. **validation-checks command**: Returns JSON with validation results (TypeScript, Biome, tests, Knip, git status)
+2. **prepare-completion wrapper**: Calls validation-checks and generates dynamic instructions based on results
+3. **complete-task enhancements**: Added early exits with clear error messages, pre-flight validation check
 
-Key improvements made:
-- Fixed TypeScript config types by properly exporting `EditValidationConfig` interface
-- Added auto-formatting to Biome check to reduce manual fixes
-- Comprehensive error reporting with counts and truncated details
+**Phase 1 Complete:** 
+- Created `validation-checks` command that runs all validation and returns structured JSON
+- Created new `prepare-completion` wrapper that generates context-specific instructions
+- Instructions now always include documentation/journal reminders regardless of validation status
+- Fixed complete-task.ts to have proper early exits when prerequisites fail
+
+**Phase 2 Complete:**
+- Enhanced complete-task with pre-flight validation (calls validation-checks)
+- Added PR duplicate prevention and creation
+- Implemented automatic branch switching after completion
+- Added safety commits for uncommitted changes
+- WIP commit squashing already existed and works
 
 ## Current Focus
 
-Move to Phase 2: Enhance the complete-task command with pre-flight checks, PR management, and automatic branch operations. Next immediate step is updating `src/commands/complete-task.ts`.
+Testing and finalizing the two-phase workflow. All major functionality is implemented.
 
 ## Open Questions & Blockers
 
