@@ -101,6 +101,8 @@ Three-phase approach starting with proof-of-concept validation:
 - ✅ **Codex completed remaining work**: All edge case SDK mocking issues resolved
 - ✅ **All test files verified**: Every test suite passes without hanging or real API calls
 - ✅ **SDK migration fully functional**: Production code works with Pro subscription, tests use mocks
+- ✅ **CRITICAL FIX**: Removed hardcoded outdated model versions (claude-3-5-*) from production code
+- ✅ **Future-proofed**: Now using generic model names ('haiku', 'sonnet', 'opus') for automatic latest versions
 
 ### Testing Status by File
 - ✅ `git-helpers.test.ts`: 24/24 tests passing, no timeouts
