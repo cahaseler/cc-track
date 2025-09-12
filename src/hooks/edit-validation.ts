@@ -119,8 +119,11 @@ export function runTypeScriptCheck(
   }
 
   try {
-    const command = `${config.typecheck.command} "${filePath}"`;
-    log.debug('Running TypeScript check', { command });
+    // Run TypeScript on the entire project to respect tsconfig.json
+    // Use --pretty false for consistent, parseable output
+    // Use --incremental for better performance on repeated runs
+    const command = `${config.typecheck.command} --pretty false --incremental`;
+    log.debug('Running TypeScript check on project', { command, targetFile: filePath });
 
     exec(command, {
       encoding: 'utf-8',
@@ -135,13 +138,28 @@ export function runTypeScriptCheck(
     }
     if (execError.stderr || execError.stdout) {
       const output = execError.stderr || execError.stdout || '';
-      // Parse TypeScript errors (format: file(line,col): error TSxxxx: message)
-      const lines = output.split('\n').filter((line: string) => line.includes('error TS'));
+      // Parse TypeScript errors and filter for our target file
+      // Format: filepath(line,col): error TSxxxx: message
+      const lines = output.split('\n');
       for (const line of lines) {
-        const match = line.match(/\((\d+),\d+\): error TS\d+: (.+)/);
-        if (match) {
-          errors.push(`Line ${match[1]}: ${match[2]}`);
+        // Check if this error is for our target file
+        if (line.startsWith(filePath)) {
+          const match = line.match(/\((\d+),\d+\): error TS\d+: (.+)/);
+          if (match) {
+            errors.push(`Line ${match[1]}: ${match[2]}`);
+          }
         }
+      }
+      
+      // Log if we found errors in other files (for debugging)
+      const totalErrors = lines.filter((l: string) => l.includes('error TS')).length;
+      const ourErrors = errors.length;
+      if (totalErrors > ourErrors) {
+        log.debug('Filtered TypeScript errors', {
+          totalErrors,
+          relevantErrors: ourErrors,
+          targetFile: filePath,
+        });
       }
     }
   }
