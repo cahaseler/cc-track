@@ -5,8 +5,8 @@ import {
   analyzeErrorPatterns,
   ErrorPatternExtractor,
   type ErrorSequence,
-  preCompactHook,
   type PreCompactDependencies,
+  preCompactHook,
   type TranscriptEntry,
   updateLearnedMistakes,
 } from './pre-compact';
@@ -621,7 +621,6 @@ describe('pre-compact', () => {
     });
 
     test('extracts and appends error patterns to learned_mistakes.md', async () => {
-
       let learnedMistakesContent = '# Learned Mistakes\n\n## Error Patterns\n';
 
       mock.module('node:fs', () => ({

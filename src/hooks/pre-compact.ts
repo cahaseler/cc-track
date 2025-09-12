@@ -2,8 +2,8 @@ import { createReadStream, existsSync, readFileSync, writeFileSync } from 'node:
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
-import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { isHookEnabled } from '../lib/config';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { GitHelpers } from '../lib/git-helpers';
-import type { GitHubHelpers } from '../lib/github-helpers';
 import type { createLogger } from '../lib/logger';
 import type { HookInput } from '../types';
 import {

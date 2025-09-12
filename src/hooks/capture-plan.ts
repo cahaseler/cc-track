@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFile
 import { join } from 'node:path';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
-import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
@@ -23,7 +23,10 @@ export interface CapturePlanDependencies {
   gitHelpers?: GitHelpers;
   githubHelpers?: GitHubHelpers;
   claudeSDK?: ClaudeSDKInterface & {
-    prompt: (text: string, model: 'haiku' | 'sonnet' | 'opus') => Promise<{ text: string; success: boolean; error?: string }>;
+    prompt: (
+      text: string,
+      model: 'haiku' | 'sonnet' | 'opus',
+    ) => Promise<{ text: string; success: boolean; error?: string }>;
   };
   logger?: ReturnType<typeof createLogger>;
   debugLog?: (msg: string) => void;

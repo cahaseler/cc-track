@@ -25,11 +25,7 @@ export class GitHelpers {
   private getGitConfig: GetGitConfigFunction;
   private claudeSDK: ClaudeSDKInterface;
 
-  constructor(
-    exec?: ExecFunction,
-    getGitConfig?: GetGitConfigFunction,
-    claudeSDK?: ClaudeSDKInterface,
-  ) {
+  constructor(exec?: ExecFunction, getGitConfig?: GetGitConfigFunction, claudeSDK?: ClaudeSDKInterface) {
     this.exec = exec || defaultExec;
     this.getGitConfig = getGitConfig || defaultGetGitConfig;
     this.claudeSDK = claudeSDK || DefaultClaudeSDK;

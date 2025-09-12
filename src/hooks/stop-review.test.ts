@@ -39,7 +39,7 @@ function createMockClaudeSDK() {
           success: true,
         };
       }
-      
+
       if (prompt.includes('verification') || prompt.includes('test')) {
         return {
           text: JSON.stringify({
@@ -50,7 +50,7 @@ function createMockClaudeSDK() {
           success: true,
         };
       }
-      
+
       // Default on_track response
       return {
         text: JSON.stringify({
@@ -549,8 +549,8 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { 
-          execSync: mockExec, 
+        const reviewer = new SessionReviewer('/project', logger, {
+          execSync: mockExec,
           fileOps,
           claudeSDK: createMockClaudeSDK(),
         });
@@ -580,8 +580,8 @@ def456 chore: cleanup`,
           error: mock(() => {}),
         };
 
-        const reviewer = new SessionReviewer('/project', logger, { 
-          execSync: mockExec, 
+        const reviewer = new SessionReviewer('/project', logger, {
+          execSync: mockExec,
           fileOps,
           claudeSDK: createMockClaudeSDK(),
         });

@@ -273,7 +273,7 @@ describe('GitHelpers', () => {
 
       // The SDK mock will be called with truncated diff
       const message = await gitHelpers.generateCommitMessage(longDiff, '/test');
-      
+
       // We get the expected fallback message since SDK mock doesn't recognize the pattern
       expect(message).toBe('chore: save work in progress');
     });

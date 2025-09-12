@@ -3,8 +3,8 @@ import { createReadStream, type existsSync, type readFileSync, writeFileSync } f
 import { createInterface } from 'node:readline';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
-import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { isHookEnabled } from '../lib/config';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -20,7 +20,10 @@ export interface StopReviewDependencies {
   gitHelpers?: GitHelpers;
   claudeMdHelpers?: ClaudeMdHelpers;
   claudeSDK?: ClaudeSDKInterface & {
-    prompt: (text: string, model: 'haiku' | 'sonnet' | 'opus') => Promise<{ text: string; success: boolean; error?: string }>;
+    prompt: (
+      text: string,
+      model: 'haiku' | 'sonnet' | 'opus',
+    ) => Promise<{ text: string; success: boolean; error?: string }>;
   };
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
@@ -410,7 +413,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
 
   async callClaudeForReview(prompt: string): Promise<ReviewResult> {
     const claudeSDK = this.deps.claudeSDK || DefaultClaudeSDK;
-    
+
     try {
       // Use SDK to call Claude - no temp files needed!
       const response = await claudeSDK.prompt(prompt, 'sonnet');
