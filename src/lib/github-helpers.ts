@@ -29,6 +29,13 @@ export class GitHubHelpers {
   }
 
   /**
+   * Escape shell arguments to prevent command injection
+   */
+  private escapeShellArgument(input: string): string {
+    return input.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  }
+
+  /**
    * Check if GitHub CLI is available
    */
   isGitHubCLIAvailable(): boolean {
@@ -45,9 +52,10 @@ export class GitHubHelpers {
    */
   isGitHubRepoConnected(cwd: string): boolean {
     try {
-      this.exec('gh repo view 2>/dev/null', { cwd });
+      this.exec('gh repo view', { cwd });
       return true;
-    } catch {
+    } catch (error) {
+      logger.debug('GitHub repo connection check failed', { error: (error as Error).message, cwd });
       return false;
     }
   }
@@ -76,9 +84,14 @@ export class GitHubHelpers {
     try {
       logger.info('Creating GitHub issue', { title, labels });
 
-      let command = `gh issue create --title "${title}" --body "${body}"`;
+      // Properly escape arguments to avoid shell interpretation
+      const escapedTitle = this.escapeShellArgument(title);
+      const escapedBody = this.escapeShellArgument(body);
+
+      let command = `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`;
       if (labels && labels.length > 0) {
-        command += ` --label "${labels.join(',')}"`;
+        const escapedLabels = this.escapeShellArgument(labels.join(','));
+        command += ` --label "${escapedLabels}"`;
       }
 
       const result = this.exec(command, { cwd });
