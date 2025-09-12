@@ -1,3 +1,22 @@
+# [1.1.0](https://github.com/cahaseler/cc-track/compare/v1.0.0...v1.1.0) (2025-09-12)
+
+
+### Bug Fixes
+
+* resolve ClaudeMdHelpers import in stop-review tests ([f1f71c4](https://github.com/cahaseler/cc-track/commit/f1f71c43707584a71a9226161be47ef966a21536))
+* standardize commit message format ([04d5553](https://github.com/cahaseler/cc-track/commit/04d555328d5cefd293de3f03f5b2d4e1bdb26841))
+
+
+### Features
+
+* consolidate duplicate helper functions across codebase ([a97e1f0](https://github.com/cahaseler/cc-track/commit/a97e1f02c6285709dcae05b353c5fdb6d2aa2cfa))
+* consolidate duplicate helper functions across codebase ([23bb0ca](https://github.com/cahaseler/cc-track/commit/23bb0ca3469e12cd916e039099f4d28c158e52d9))
+
+
+### Reverts
+
+* remove unrelated embedding file from consolidation task ([8c3b657](https://github.com/cahaseler/cc-track/commit/8c3b65770e827ebed5fb871630cb8ca246269a2d))
+
 # 1.0.0 (2025-09-11)
 
 
