@@ -163,7 +163,7 @@ export class SessionReviewer {
     return claudeMdHelpers.getActiveTaskContent(this.projectRoot);
   }
 
-  private getActiveTaskId(): string | null {
+  getActiveTaskId(): string | null {
     const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
     return claudeMdHelpers.getActiveTaskId(this.projectRoot);
   }
@@ -713,8 +713,10 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
       if (committed) {
         logger.info(`Auto-committed: ${review.commitMessage}`);
 
+        // Only suggest creating a task if there's NO active task
         // Check if this was a non-task commit and check recent history
-        if (!review.commitMessage.includes('TASK_')) {
+        const activeTaskId = reviewer.getActiveTaskId();
+        if (!activeTaskId && !review.commitMessage.includes('TASK_')) {
           const nonTaskCount = reviewer.checkRecentNonTaskCommits();
           // We just made a commit, so if there were 2+ before, we now have 3+
           if (nonTaskCount >= 2) {
