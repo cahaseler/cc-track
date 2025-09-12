@@ -335,54 +335,10 @@ export class GitHubHelpers {
   }
 }
 
-// Create default instance for backward compatibility
+// Create default instance for backward compatibility with pushCurrentBranch
 const defaultGitHubHelpers = new GitHubHelpers();
 
-// Export standalone functions that use the default instance
-export function isGitHubCLIAvailable(): boolean {
-  return defaultGitHubHelpers.isGitHubCLIAvailable();
-}
-
-export function isGitHubRepoConnected(cwd: string): boolean {
-  return defaultGitHubHelpers.isGitHubRepoConnected(cwd);
-}
-
-export function getGitHubRepoInfo(cwd: string): { owner: string; repo: string } | null {
-  return defaultGitHubHelpers.getGitHubRepoInfo(cwd);
-}
-
-export function createGitHubIssue(title: string, body: string, cwd: string): GitHubIssue | null {
-  return defaultGitHubHelpers.createGitHubIssue(title, body, cwd);
-}
-
-export function createIssueBranch(issueNumber: number, cwd: string): string | null {
-  return defaultGitHubHelpers.createIssueBranch(issueNumber, cwd);
-}
-
-export function createPullRequest(title: string, body: string, cwd: string, draft = false): GitHubPR | null {
-  return defaultGitHubHelpers.createPullRequest(title, body, cwd, draft);
-}
-
+// Keep only the standalone function that is actually used (in complete-task.ts)
 export function pushCurrentBranch(cwd: string): boolean {
   return defaultGitHubHelpers.pushCurrentBranch(cwd);
-}
-
-export function switchToBranch(branchName: string, cwd: string): boolean {
-  return defaultGitHubHelpers.switchToBranch(branchName, cwd);
-}
-
-export function createGitHubRepo(name: string, description: string, isPublic = true, cwd?: string): string | null {
-  return defaultGitHubHelpers.createGitHubRepo(name, description, isPublic, cwd);
-}
-
-export function connectToGitHubRepo(repoUrl: string, cwd: string): boolean {
-  return defaultGitHubHelpers.connectToGitHubRepo(repoUrl, cwd);
-}
-
-export function validateGitHubIntegration(cwd: string): { valid: boolean; errors: string[] } {
-  return defaultGitHubHelpers.validateGitHubIntegration(cwd);
-}
-
-export function formatTaskForGitHub(taskContent: string): { title: string; body: string } {
-  return defaultGitHubHelpers.formatTaskForGitHub(taskContent);
 }

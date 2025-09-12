@@ -13,6 +13,9 @@
     "templates/**",
     "docs/**"
   ],
-  "ignoreDependencies": [],
+  "ignoreDependencies": [
+    "ccusage",
+    "@semantic-release/github"
+  ],
   "ignoreExportsUsedInFile": true
 }

@@ -252,61 +252,18 @@ RETURN ONLY THE BRANCH NAME`;
   }
 }
 
-// Create a default instance for backward compatibility
+// Create a default instance for backward compatibility with the few functions still in use
 const defaultGitHelpers = new GitHelpers();
 
-// Export standalone functions that use the default instance
+// Keep only the standalone functions that are actually used
 export function getDefaultBranch(cwd: string): string {
   return defaultGitHelpers.getDefaultBranch(cwd);
-}
-
-export function hasUncommittedChanges(cwd: string): boolean {
-  return defaultGitHelpers.hasUncommittedChanges(cwd);
-}
-
-export async function generateCommitMessage(diff: string, cwd: string, taskId?: string): Promise<string> {
-  return defaultGitHelpers.generateCommitMessage(diff, cwd, taskId);
-}
-
-export async function generateBranchName(plan: string, taskId: string, cwd: string): Promise<string> {
-  return defaultGitHelpers.generateBranchName(plan, taskId, cwd);
-}
-
-export function createTaskBranch(branchName: string, cwd: string): void {
-  defaultGitHelpers.createTaskBranch(branchName, cwd);
-}
-
-export function mergeTaskBranch(branchName: string, defaultBranch: string, cwd: string): void {
-  defaultGitHelpers.mergeTaskBranch(branchName, defaultBranch, cwd);
 }
 
 export function getCurrentBranch(cwd: string): string {
   return defaultGitHelpers.getCurrentBranch(cwd);
 }
 
-export function switchToBranch(branchName: string, cwd: string): void {
-  defaultGitHelpers.switchToBranch(branchName, cwd);
-}
-
 export function isWipCommit(commitLine: string): boolean {
   return defaultGitHelpers.isWipCommit(commitLine);
-}
-
-export function isGitRepository(cwd: string): boolean {
-  try {
-    nodeExecSync('git rev-parse --git-dir', { cwd, encoding: 'utf-8' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getTaskBranch(taskId: string, cwd: string): string | null {
-  try {
-    const branches = nodeExecSync('git branch', { cwd, encoding: 'utf-8' });
-    const match = branches.match(new RegExp(`\\* (.*${taskId.toLowerCase()}.*)`));
-    return match ? match[1].trim() : null;
-  } catch {
-    return null;
-  }
 }
