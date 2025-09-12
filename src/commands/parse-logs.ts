@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { ClaudeLogParser, type ParseOptions } from '../lib/log-parser';
 import { createLogger } from '../lib/logger';
@@ -11,9 +10,9 @@ const logger = createLogger('parse-logs');
  */
 function parseDate(dateStr: string): Date | undefined {
   if (!dateStr) return undefined;
-  
+
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     throw new Error(`Invalid date format: ${dateStr}`);
   }
   return date;
@@ -86,9 +85,9 @@ export const parseLogsCommand = new Command('parse-logs')
         simplifyResults: !options.raw,
       };
 
-      logger.info('Parsing log file', { 
-        file: options.file, 
-        options: parseOptions 
+      logger.info('Parsing log file', {
+        file: options.file,
+        options: parseOptions,
       });
 
       // Parse the log
@@ -96,9 +95,7 @@ export const parseLogsCommand = new Command('parse-logs')
       const result = await parser.parse(parseOptions);
 
       // Output results
-      const output = typeof result === 'string' 
-        ? result 
-        : JSON.stringify(result, null, 2);
+      const output = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
 
       if (options.output) {
         writeFileSync(options.output, output);
@@ -106,7 +103,6 @@ export const parseLogsCommand = new Command('parse-logs')
       } else {
         console.log(output);
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`Error: ${errorMessage}`);

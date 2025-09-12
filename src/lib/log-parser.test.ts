@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { Readable } from 'node:stream';
-import { ClaudeLogParser, type SimplifiedEntry, type FileOps } from './log-parser';
+import { ClaudeLogParser, type FileOps, type SimplifiedEntry } from './log-parser';
 
 // Helper to create mock file operations
 function createMockFileOps(mockData: Record<string, string[]>): FileOps {
@@ -40,9 +40,7 @@ const createTestData = () => ({
       uuid: 'assistant-1',
       message: {
         role: 'assistant',
-        content: [
-          { type: 'text', text: 'Hello! How can I help you today?' },
-        ],
+        content: [{ type: 'text', text: 'Hello! How can I help you today?' }],
         model: 'claude-3-opus-20240229',
         usage: { input_tokens: 10, output_tokens: 20 },
       },
@@ -53,9 +51,7 @@ const createTestData = () => ({
       uuid: 'assistant-2',
       message: {
         role: 'assistant',
-        content: [
-          { type: 'tool_use', name: 'Bash', id: 'tool-1', input: { command: 'ls -la' } },
-        ],
+        content: [{ type: 'tool_use', name: 'Bash', id: 'tool-1', input: { command: 'ls -la' } }],
       },
     }) + '\n',
     JSON.stringify({
@@ -86,9 +82,9 @@ const createTestData = () => ({
       message: {
         role: 'assistant',
         content: [
-          { 
-            type: 'tool_use', 
-            name: 'Read', 
+          {
+            type: 'tool_use',
+            name: 'Read',
             input: { file_path: '/home/user/project/README.md' },
           },
         ],
@@ -101,10 +97,10 @@ const createTestData = () => ({
       message: {
         role: 'assistant',
         content: [
-          { 
-            type: 'tool_use', 
-            name: 'Grep', 
-            input: { 
+          {
+            type: 'tool_use',
+            name: 'Grep',
+            input: {
               pattern: 'function.*export.*async',
               path: '/src',
             },
@@ -119,10 +115,10 @@ const createTestData = () => ({
       message: {
         role: 'assistant',
         content: [
-          { 
-            type: 'tool_use', 
-            name: 'WebSearch', 
-            input: { 
+          {
+            type: 'tool_use',
+            name: 'WebSearch',
+            input: {
               query: 'TypeScript best practices for error handling in async functions',
             },
           },
@@ -147,7 +143,7 @@ describe('ClaudeLogParser', () => {
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/empty.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' });
-    
+
     expect(result).toEqual([]);
   });
 
@@ -157,7 +153,7 @@ describe('ClaudeLogParser', () => {
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/malformed.jsonl', fileOps, logger);
     const result = await parser.parse({ format: 'json' });
-    
+
     // Should only parse the valid JSON line
     expect(Array.isArray(result)).toBe(true);
   });
@@ -167,10 +163,10 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
-    
+    const result = (await parser.parse({ format: 'json' })) as SimplifiedEntry[];
+
     expect(result).toHaveLength(6);
-    
+
     // Check user message
     expect(result[0]).toEqual({
       timestamp: '2025-01-09T10:00:00Z',
@@ -182,27 +178,27 @@ describe('ClaudeLogParser', () => {
         uuid: 'user-1',
       },
     });
-    
+
     // Check assistant message with model info
     expect(result[1].role).toBe('assistant');
     expect(result[1].content).toBe('Hello! How can I help you today?');
     expect(result[1].metadata?.model).toBe('claude-3-opus-20240229');
     expect(result[1].metadata?.tokens).toEqual({ input: 10, output: 20 });
-    
+
     // Check tool use
     expect(result[2].content).toContain('[Tool: Bash(cmd: "ls -la...")]');
     expect(result[2].type).toBe('tool_use');
-    
+
     // Check successful tool result
     expect(result[3].content).toContain('[Result: success]');
     expect(result[3].content).toContain('file1.txt');
     expect(result[3].success).toBe(true);
-    
+
     // Check system message
     expect(result[4].role).toBe('system');
     expect(result[4].content).toBe('=== Session Compacted ===');
     expect(result[4].type).toBe('system_event');
-    
+
     // Check error tool result
     expect(result[5].content).toContain('[Result: failure]');
     expect(result[5].content).toContain('Error: Command not found');
@@ -214,14 +210,14 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'json',
       role: 'assistant',
-    }) as SimplifiedEntry[];
-    
+    })) as SimplifiedEntry[];
+
     // Should only return assistant messages
     expect(result).toHaveLength(2);
-    expect(result.every(e => e.role === 'assistant')).toBe(true);
+    expect(result.every((e) => e.role === 'assistant')).toBe(true);
   });
 
   test('filters by time range', async () => {
@@ -229,14 +225,14 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'json',
       timeRange: {
         start: new Date('2025-01-09T10:00:10Z'),
         end: new Date('2025-01-09T10:00:20Z'),
       },
-    }) as SimplifiedEntry[];
-    
+    })) as SimplifiedEntry[];
+
     // Should return entries between 10:00:10 and 10:00:20
     expect(result).toHaveLength(3); // assistant-2, user-2, system-1
     expect(result[0].timestamp).toBe('2025-01-09T10:00:10Z');
@@ -248,11 +244,11 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'json',
       limit: 3,
-    }) as SimplifiedEntry[];
-    
+    })) as SimplifiedEntry[];
+
     expect(result).toHaveLength(3);
   });
 
@@ -261,11 +257,11 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'json',
       includeTools: false,
-    }) as SimplifiedEntry[];
-    
+    })) as SimplifiedEntry[];
+
     // Tool use should be marked as omitted
     expect(result[2].content).toBe('[Tool use omitted]');
     // Tool result should be marked as omitted
@@ -278,11 +274,11 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'plaintext',
       limit: 2,
-    }) as string;
-    
+    })) as string;
+
     expect(typeof result).toBe('string');
     expect(result).toContain('[01/09/2025, 10:00:00] User: Hello Claude');
     expect(result).toContain('[01/09/2025, 10:00:05] Assistant:');
@@ -296,12 +292,12 @@ describe('ClaudeLogParser', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/mixed.jsonl', fileOps, logger);
-    const result = await parser.parse({ 
+    const result = (await parser.parse({
       format: 'json',
       simplifyResults: false,
       limit: 1,
-    }) as SimplifiedEntry[];
-    
+    })) as SimplifiedEntry[];
+
     expect(result).toHaveLength(1);
     // Raw content should be JSON stringified
     expect(result[0].content).toBe('"Hello Claude"');
@@ -314,7 +310,7 @@ describe('ClaudeLogParser - Tool Parameter Summarization', () => {
     const fileOps = createMockFileOps(testData);
     const logger = createMockLogger();
     const parser = new ClaudeLogParser('/test/tools.jsonl', fileOps, logger);
-    const result = await parser.parse({ format: 'json' }) as SimplifiedEntry[];
+    const result = (await parser.parse({ format: 'json' })) as SimplifiedEntry[];
 
     expect(result).toHaveLength(3);
     expect(result[0].content).toBe('[Tool: Read(file: "/home/user/project/README.md")]');

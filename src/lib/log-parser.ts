@@ -1,5 +1,4 @@
 import { createReadStream } from 'node:fs';
-import { createInterface } from 'node:readline';
 import { createLogger } from './logger';
 
 // File system operations for dependency injection
@@ -116,9 +115,10 @@ export class ClaudeLogParser {
     }
 
     // Simplify entries
-    const simplified = options.simplifyResults !== false 
-      ? filtered.map(e => this.simplifyEntry(e, options.includeTools ?? true))
-      : filtered.map(e => this.convertToSimplified(e));
+    const simplified =
+      options.simplifyResults !== false
+        ? filtered.map((e) => this.simplifyEntry(e, options.includeTools ?? true))
+        : filtered.map((e) => this.convertToSimplified(e));
 
     // Apply limit
     const limited = options.limit ? simplified.slice(0, options.limit) : simplified;
@@ -136,29 +136,59 @@ export class ClaudeLogParser {
    */
   private async loadEntries(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const fileStream = this.fileOps.createReadStream(this.filePath);
-      const rl = createInterface({
-        input: fileStream,
-        crlfDelay: Infinity,
-      });
+      const stream = this.fileOps.createReadStream(this.filePath) as unknown as NodeJS.ReadableStream & {
+        setEncoding?: (enc: string) => void;
+      };
 
-      rl.on('line', (line) => {
-        try {
-          const entry = JSON.parse(line) as LogEntry;
-          this.entries.push(entry);
-        } catch (e) {
-          // Skip malformed lines
-          this.logger.debug('Skipping malformed line', { error: e });
+      try {
+        // Ensure we receive strings
+        if (typeof stream.setEncoding === 'function') {
+          stream.setEncoding('utf8');
         }
+      } catch {
+        // Non-fatal; continue without forcing encoding
+      }
+
+      let buffer = '';
+
+      const processLines = (data?: string) => {
+        if (data) buffer += data;
+        let idx = buffer.indexOf('\n');
+        while (idx !== -1) {
+          const rawLine = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 1);
+          const line = rawLine.replace(/\r$/, '');
+          if (line.length > 0) {
+            try {
+              const entry = JSON.parse(line) as LogEntry;
+              this.entries.push(entry);
+            } catch (e) {
+              // Skip malformed lines
+              this.logger.debug('Skipping malformed line', { error: e });
+            }
+          }
+          idx = buffer.indexOf('\n');
+        }
+      };
+
+      stream.on('data', (chunk: unknown) => {
+        // chunk can be string or Buffer depending on producer
+        const data =
+          typeof chunk === 'string' ? chunk : Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk ?? '');
+        processLines(data);
       });
 
-      rl.on('close', () => {
+      stream.on('end', () => {
+        // Process any remaining data without trailing newline
+        if (buffer.length > 0) {
+          processLines('\n');
+        }
         this.logger.info(`Loaded ${this.entries.length} entries from log file`);
         resolve();
       });
 
-      rl.on('error', (error) => {
-        this.logger.error('Error reading log file', { error: error.message });
+      stream.on('error', (error: any) => {
+        this.logger.error('Error reading log file', { error: error?.message ?? String(error) });
         reject(error);
       });
     });
@@ -168,7 +198,7 @@ export class ClaudeLogParser {
    * Filter entries by time range
    */
   private filterByTimeRange(entries: LogEntry[], range: { start?: Date; end?: Date }): LogEntry[] {
-    return entries.filter(entry => {
+    return entries.filter((entry) => {
       const timestamp = new Date(entry.timestamp);
       if (range.start && timestamp < range.start) return false;
       if (range.end && timestamp > range.end) return false;
@@ -180,7 +210,7 @@ export class ClaudeLogParser {
    * Filter entries by role
    */
   private filterByRole(entries: LogEntry[], role: 'user' | 'assistant' | 'system'): LogEntry[] {
-    return entries.filter(entry => {
+    return entries.filter((entry) => {
       if (entry.type === role) return true;
       if (entry.message?.role === role) return true;
       return false;
@@ -192,7 +222,7 @@ export class ClaudeLogParser {
    */
   private convertToSimplified(entry: LogEntry): SimplifiedEntry {
     const role = entry.type as 'user' | 'assistant' | 'system';
-    
+
     return {
       timestamp: entry.timestamp,
       role,
@@ -211,7 +241,7 @@ export class ClaudeLogParser {
    */
   private simplifyEntry(entry: LogEntry, includeTools: boolean): SimplifiedEntry {
     const role = entry.type as 'user' | 'assistant' | 'system';
-    
+
     // Handle system messages
     if (role === 'system') {
       return this.simplifySystemEntry(entry);
@@ -254,7 +284,7 @@ export class ClaudeLogParser {
    */
   private simplifySystemEntry(entry: LogEntry): SimplifiedEntry {
     let content = entry.content || '';
-    
+
     if (entry.subtype === 'compact_boundary') {
       content = '=== Session Compacted ===';
     } else if (entry.subtype === 'informational') {
@@ -323,7 +353,7 @@ export class ClaudeLogParser {
       content = message.content;
     } else if (Array.isArray(message.content)) {
       const parts: string[] = [];
-      
+
       for (const item of message.content) {
         if (item.type === 'text' && item.text) {
           parts.push(item.text);
@@ -337,7 +367,7 @@ export class ClaudeLogParser {
           }
         }
       }
-      
+
       content = parts.join(' ');
     } else {
       content = '[Complex content]';
@@ -350,12 +380,15 @@ export class ClaudeLogParser {
       type,
       metadata: {
         model: message.model,
-        tokens: message.usage ? {
-          input: (message.usage.input_tokens || 0) + 
-                 (message.usage.cache_creation_input_tokens || 0) + 
-                 (message.usage.cache_read_input_tokens || 0),
-          output: message.usage.output_tokens || 0,
-        } : undefined,
+        tokens: message.usage
+          ? {
+              input:
+                (message.usage.input_tokens || 0) +
+                (message.usage.cache_creation_input_tokens || 0) +
+                (message.usage.cache_read_input_tokens || 0),
+              output: message.usage.output_tokens || 0,
+            }
+          : undefined,
         sessionId: entry.sessionId,
         uuid: entry.uuid,
       },
@@ -367,19 +400,19 @@ export class ClaudeLogParser {
    */
   private summarizeToolParams(input: any): string {
     if (typeof input === 'string') return input.substring(0, 50);
-    
+
     if (typeof input === 'object' && input !== null) {
       const params: string[] = [];
-      
+
       // Extract key parameters
       if (input.command) params.push(`cmd: "${input.command.substring(0, 30)}..."`);
       if (input.file_path) params.push(`file: "${input.file_path}"`);
       if (input.pattern) params.push(`pattern: "${input.pattern.substring(0, 20)}..."`);
       if (input.query) params.push(`query: "${input.query.substring(0, 30)}..."`);
-      
+
       return params.join(', ');
     }
-    
+
     return '';
   }
 
@@ -388,7 +421,7 @@ export class ClaudeLogParser {
    */
   private formatPlaintext(entries: SimplifiedEntry[]): string {
     const lines: string[] = [];
-    
+
     for (const entry of entries) {
       const timestamp = new Date(entry.timestamp).toLocaleString('en-US', {
         year: 'numeric',
@@ -399,10 +432,10 @@ export class ClaudeLogParser {
         second: '2-digit',
         hour12: false,
       });
-      
+
       const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
       const prefix = `[${timestamp}] ${role}:`;
-      
+
       // Format content with proper indentation for multi-line
       const contentLines = entry.content.split('\n');
       if (contentLines.length === 1) {
@@ -413,7 +446,7 @@ export class ClaudeLogParser {
           lines.push(`  ${line}`);
         }
       }
-      
+
       // Add metadata if relevant
       if (entry.metadata?.model) {
         lines.push(`  (Model: ${entry.metadata.model})`);
@@ -422,7 +455,7 @@ export class ClaudeLogParser {
         lines.push(`  (Tokens: ${entry.metadata.tokens.input} in, ${entry.metadata.tokens.output} out)`);
       }
     }
-    
+
     return lines.join('\n');
   }
 }
@@ -431,8 +464,8 @@ export class ClaudeLogParser {
  * Convenience function to parse a log file
  */
 export async function parseClaudeLog(
-  filePath: string, 
-  options: ParseOptions = {}
+  filePath: string,
+  options: ParseOptions = {},
 ): Promise<SimplifiedEntry[] | string> {
   const parser = new ClaudeLogParser(filePath);
   return parser.parse(options);
