@@ -1,3 +1,18 @@
+# [1.4.0](https://github.com/cahaseler/cc-track/compare/v1.3.0...v1.4.0) (2025-09-12)
+
+
+### Bug Fixes
+
+* implement conventional commit message generation ([7ef52dc](https://github.com/cahaseler/cc-track/commit/7ef52dca2768a5e69e4330299fec2d8036661180))
+* implement project-wide TypeScript validation with file filtering ([11f3347](https://github.com/cahaseler/cc-track/commit/11f334733219c6d0833a1834a09c20e3ec3b25d7))
+* resolve linting issues in edit-validation tests ([a83e772](https://github.com/cahaseler/cc-track/commit/a83e7728c2f4568d518cc6ece8ddedc9989d730b))
+
+
+### Features
+
+* implement project-wide typescript validation hook ([47be831](https://github.com/cahaseler/cc-track/commit/47be831dc03cc313c8857500443b13611b8a056b))
+* implement project-wide TypeScript validation with file filtering ([e066da2](https://github.com/cahaseler/cc-track/commit/e066da23ebb60a056f90d4322c542e2c945ca3a1))
+
 # [1.3.0](https://github.com/cahaseler/cc-track/compare/v1.2.1...v1.3.0) (2025-09-12)
 
 
