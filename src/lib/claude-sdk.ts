@@ -23,10 +23,11 @@ async function prompt(
   options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[] },
 ): Promise<ClaudeResponse> {
   try {
+    // Use generic model names - the API will use the latest versions
     const modelMap = {
-      haiku: 'claude-3-5-haiku-20241022',
-      sonnet: 'claude-3-5-sonnet-20241022',
-      opus: 'claude-3-opus-20240229',
+      haiku: 'haiku',
+      sonnet: 'sonnet',
+      opus: 'opus',
     } as const;
 
     const response = query({
@@ -173,7 +174,7 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
   return query({
     prompt: p,
     options: {
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'sonnet', // Use generic model name for latest version
       maxTurns: 10,
       allowedTools: ['Read', 'Grep', 'Glob', 'TodoWrite'],
     },
