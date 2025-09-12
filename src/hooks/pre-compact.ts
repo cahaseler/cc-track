@@ -1,7 +1,8 @@
 import { createReadStream, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { ClaudeSDK } from '../lib/claude-sdk';
+import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -324,6 +325,7 @@ export async function analyzeErrorPatterns(
   sequences: ErrorSequence[],
   projectRoot: string,
   logger: ReturnType<typeof createLogger>,
+  deps?: PreCompactDependencies,
 ): Promise<string[]> {
   // Only analyze sequences that actually found a resolution after multiple attempts
   const interestingSequences = sequences.filter((seq) => seq.subsequentAttempts.length >= 2 && seq.errorOutput);
@@ -395,7 +397,8 @@ Output ONLY the bulleted list of new lessons, nothing else.`;
 
   try {
     // Use SDK instead of CLI - no temp files needed!
-    const response = await ClaudeSDK.extractErrorPatterns(prompt);
+    const claudeSDK = deps?.claudeSDK || DefaultClaudeSDK;
+    const response = await claudeSDK.extractErrorPatterns(prompt);
 
     if (response === 'NO NEW LESSONS') {
       return [];
@@ -448,6 +451,9 @@ export async function updateLearnedMistakes(projectRoot: string, patterns: strin
 export interface PreCompactDependencies {
   isHookEnabled?: typeof isHookEnabled;
   logger?: ReturnType<typeof createLogger>;
+  claudeSDK?: ClaudeSDKInterface & {
+    extractErrorPatterns: (transcript: string) => Promise<string>;
+  };
 }
 
 /**
@@ -486,7 +492,7 @@ export async function preCompactHook(input: HookInput, deps: PreCompactDependenc
 
     // Analyze patterns and update learned mistakes
     if (sequences.length > 0) {
-      const patterns = await analyzeErrorPatterns(sequences, projectRoot, log);
+      const patterns = await analyzeErrorPatterns(sequences, projectRoot, log, deps);
       await updateLearnedMistakes(projectRoot, patterns);
 
       return {
