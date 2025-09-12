@@ -28,6 +28,15 @@ interface GitConfig {
   description?: string;
 }
 
+interface LoggingConfig {
+  enabled: boolean;
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+  retentionDays: number;
+  prettyPrint: boolean;
+  directory?: string;
+  description?: string;
+}
+
 interface InternalConfig {
   hooks: {
     [key: string]: HookConfig;
@@ -36,9 +45,17 @@ interface InternalConfig {
     [key: string]: HookConfig;
   };
   git?: GitConfig;
+  logging?: LoggingConfig;
 }
 
 const DEFAULT_CONFIG: InternalConfig = {
+  logging: {
+    enabled: true,
+    level: 'INFO',
+    retentionDays: 7,
+    prettyPrint: false,
+    description: 'Centralized logging system for debugging and monitoring',
+  },
   hooks: {
     capture_plan: {
       enabled: true,
@@ -216,6 +233,11 @@ export function isGitHubIntegrationEnabled(configPath?: string): boolean {
 export function getGitConfig(configPath?: string): GitConfig | null {
   const config = getConfig(configPath);
   return config.git || null;
+}
+
+export function getLoggingConfig(configPath?: string): LoggingConfig {
+  const config = getConfig(configPath);
+  return config.logging || DEFAULT_CONFIG.logging!;
 }
 
 export function clearConfigCache(): void {

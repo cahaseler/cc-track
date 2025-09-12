@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
+import * as os from 'node:os';
+import * as configModule from './config';
 import type { FileSystemOps, LogConfig, LogEntry } from './logger';
 import { createLogger, Logger } from './logger';
 
@@ -220,6 +222,121 @@ describe('Logger', () => {
       logger.error('error message');
 
       expect(appendedLines).toHaveLength(0);
+    });
+  });
+
+  describe('platform-specific log directories', () => {
+    test('uses configured directory when provided', () => {
+      const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
+      mockGetLoggingConfig.mockReturnValue({
+        enabled: true,
+        level: 'INFO',
+        retentionDays: 7,
+        prettyPrint: false,
+        directory: '/custom/log/path',
+      });
+
+      const logger = new Logger('test', undefined, undefined, mockFs);
+      const fileName = logger.getLogFileName();
+      
+      expect(fileName).toContain('/custom/log/path');
+      mockGetLoggingConfig.mockRestore();
+    });
+
+    test('expands tilde in configured path', () => {
+      const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
+      const mockHomedir = spyOn(os, 'homedir');
+      mockHomedir.mockReturnValue('/home/testuser');
+      
+      mockGetLoggingConfig.mockReturnValue({
+        enabled: true,
+        level: 'INFO',
+        retentionDays: 7,
+        prettyPrint: false,
+        directory: '~/.local/share/cc-track/logs',
+      });
+
+      const logger = new Logger('test', undefined, undefined, mockFs);
+      const fileName = logger.getLogFileName();
+      
+      expect(fileName).toContain('/home/testuser/.local/share/cc-track/logs');
+      
+      mockGetLoggingConfig.mockRestore();
+      mockHomedir.mockRestore();
+    });
+
+    test('uses Linux default when platform is linux', () => {
+      const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
+      const mockPlatform = spyOn(os, 'platform');
+      const mockHomedir = spyOn(os, 'homedir');
+      
+      mockGetLoggingConfig.mockReturnValue({
+        enabled: true,
+        level: 'INFO',
+        retentionDays: 7,
+        prettyPrint: false,
+      });
+      mockPlatform.mockReturnValue('linux');
+      mockHomedir.mockReturnValue('/home/testuser');
+
+      const logger = new Logger('test', undefined, undefined, mockFs);
+      const fileName = logger.getLogFileName();
+      
+      expect(fileName).toContain('/home/testuser/.local/share/cc-track/logs');
+      
+      mockGetLoggingConfig.mockRestore();
+      mockPlatform.mockRestore();
+      mockHomedir.mockRestore();
+    });
+
+    test('uses macOS default when platform is darwin', () => {
+      const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
+      const mockPlatform = spyOn(os, 'platform');
+      const mockHomedir = spyOn(os, 'homedir');
+      
+      mockGetLoggingConfig.mockReturnValue({
+        enabled: true,
+        level: 'INFO',
+        retentionDays: 7,
+        prettyPrint: false,
+      });
+      mockPlatform.mockReturnValue('darwin');
+      mockHomedir.mockReturnValue('/Users/testuser');
+
+      const logger = new Logger('test', undefined, undefined, mockFs);
+      const fileName = logger.getLogFileName();
+      
+      expect(fileName).toContain('/Users/testuser/Library/Logs/cc-track');
+      
+      mockGetLoggingConfig.mockRestore();
+      mockPlatform.mockRestore();
+      mockHomedir.mockRestore();
+    });
+
+    test('uses Windows default when platform is win32', () => {
+      const mockGetLoggingConfig = spyOn(configModule, 'getLoggingConfig');
+      const mockPlatform = spyOn(os, 'platform');
+      const mockHomedir = spyOn(os, 'homedir');
+      
+      mockGetLoggingConfig.mockReturnValue({
+        enabled: true,
+        level: 'INFO',
+        retentionDays: 7,
+        prettyPrint: false,
+      });
+      mockPlatform.mockReturnValue('win32');
+      mockHomedir.mockReturnValue('C:\\Users\\testuser');
+      process.env.LOCALAPPDATA = 'C:\\Users\\testuser\\AppData\\Local';
+
+      const logger = new Logger('test', undefined, undefined, mockFs);
+      const fileName = logger.getLogFileName();
+      
+      expect(fileName).toContain('cc-track');
+      
+      delete process.env.LOCALAPPDATA;
+      mockGetLoggingConfig.mockRestore();
+      mockPlatform.mockRestore();
+      mockHomedir.mockRestore();
     });
   });
 });

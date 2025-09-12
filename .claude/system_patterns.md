@@ -137,6 +137,18 @@
 - Complete-task command: `feat:` for task completion, `docs:` for final updates
 - Backward compatibility: Code recognizes both `[wip]` and `wip:` formats
 
+## Logging Configuration
+
+### Log Directory Location
+- Logs are written to system-appropriate directories outside the project to avoid VS Code file notifications
+- Configurable via `logging.directory` in track.config.json
+- Default locations follow platform conventions:
+  - **Linux/WSL**: `~/.local/share/cc-track/logs/` (XDG Base Directory spec)
+  - **macOS**: `~/Library/Logs/cc-track/`
+  - **Windows**: `%LOCALAPPDATA%\cc-track\logs\`
+- Supports tilde expansion and environment variables in configured paths
+- Log retention is automatically managed (default 7 days)
+
 ## Update Log
 
 [2025-01-09 16:35] - Initial patterns documented based on codebase analysis
@@ -144,3 +156,5 @@
 [2025-09-09 17:45] - Detected patterns: microservice
 
 [2025-09-11 16:00] - Added semantic release process and conventional commit patterns
+
+[2025-09-12] - Added configurable log directory pattern to keep logs outside project directory
