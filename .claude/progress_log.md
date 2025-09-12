@@ -199,3 +199,8 @@
   Details: Cleaned up ~20 unused standalone function exports to clarify class-based architecture pattern
   Files: src/lib/github-helpers.ts, src/lib/git-helpers.ts, src/lib/claude-md.ts, src/hooks/edit-validation.ts, knip.json
   Key Achievement: Reduced Knip warnings from 25+ to just 2, removed redundant backward compatibility exports that were never used, made class-based pattern with dependency injection the clear primary approach. Kept only 6 standalone functions that are actually imported.
+
+[2025-09-12 19:50] - Completed: Task 039 - Integrate Claude Code TypeScript SDK into cc-track
+  Details: Successfully replaced all CLI-based Claude interactions with the official TypeScript SDK
+  Files: src/lib/claude-sdk.ts (new), package.json, src/lib/git-helpers.ts, src/hooks/stop-review.ts, src/hooks/capture-plan.ts, src/hooks/pre-compact.ts, all associated test files
+  Key Achievement: SDK integration eliminates temp files, subprocess overhead, and the /tmp hack. Critical fix: removed hardcoded outdated model versions (claude-3-5-*) and replaced with generic names ('haiku', 'sonnet', 'opus') for automatic latest versions. All 245 tests passing with proper mocking.
