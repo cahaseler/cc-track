@@ -174,3 +174,8 @@
   Details: Implemented two-phase task completion workflow separating validation/preparation from mechanical completion
   Files: src/lib/validation.ts (new), src/commands/prepare-completion.ts, src/commands/complete-task.ts, .claude/commands/prepare-completion.md, .claude/commands/complete-task.md
   Key Achievement: Clean separation of concerns with prepare-completion providing dynamic instructions and complete-task handling mechanical operations. Validation logic refactored to library function for better performance. PR duplicate prevention and automatic branch management working correctly.
+
+[2025-09-12 15:15] - Completed: Task 034 - Fix GitHub Issue Creation Not Working
+  Details: Restored GitHub issue creation functionality by fixing validation and command escaping issues
+  Files: src/lib/github-helpers.ts (isGitHubRepoConnected and createGitHubIssue functions updated)
+  Key Achievement: Fixed two-layer problem: GitHub repo connection validation was failing due to stderr redirection issues, and issue creation was failing due to shell interpretation of backticks in markdown content. GitHub integration now fully operational for automatic issue creation during task planning.
