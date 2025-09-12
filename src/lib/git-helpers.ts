@@ -1,5 +1,6 @@
 import { execSync as nodeExecSync } from 'node:child_process';
 import { unlinkSync, writeFileSync } from 'node:fs';
+import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
 export type ExecFunction = (
@@ -11,6 +12,8 @@ export interface FileOps {
   writeFileSync: typeof writeFileSync;
   unlinkSync: typeof unlinkSync;
 }
+
+export type GetGitConfigFunction = typeof defaultGetGitConfig;
 
 const defaultExec: ExecFunction = (command, options) => {
   return nodeExecSync(command, { encoding: 'utf-8', ...options });
@@ -24,16 +27,24 @@ const defaultFileOps: FileOps = {
 export class GitHelpers {
   private exec: ExecFunction;
   private fileOps: FileOps;
+  private getGitConfig: GetGitConfigFunction;
 
-  constructor(exec?: ExecFunction, fileOps?: FileOps) {
+  constructor(exec?: ExecFunction, fileOps?: FileOps, getGitConfig?: GetGitConfigFunction) {
     this.exec = exec || defaultExec;
     this.fileOps = fileOps || defaultFileOps;
+    this.getGitConfig = getGitConfig || defaultGetGitConfig;
   }
 
   /**
    * Get the default branch name (main or master)
    */
   getDefaultBranch(cwd: string): string {
+    // First check if there's a configured default branch
+    const gitConfig = this.getGitConfig();
+    if (gitConfig?.defaultBranch) {
+      return gitConfig.defaultBranch;
+    }
+
     try {
       // Try to get the default branch from git config
       const defaultBranch = this.exec(

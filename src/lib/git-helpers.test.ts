@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { ExecFunction, FileOps } from './git-helpers';
+import type { ExecFunction, FileOps, GetGitConfigFunction } from './git-helpers';
 import { GitHelpers } from './git-helpers';
 
 describe('GitHelpers', () => {
@@ -30,7 +30,18 @@ describe('GitHelpers', () => {
   });
 
   describe('getDefaultBranch', () => {
-    test('returns branch from origin HEAD if available', () => {
+    test('returns configured default branch when available', () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => ({
+        defaultBranch: 'develop',
+      }));
+
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
+      const branch = gitHelpers.getDefaultBranch('/test');
+      expect(branch).toBe('develop');
+    });
+
+    test('falls back to git detection when config is null', () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
       mockExec = mock((command: string) => {
         if (command.includes('symbolic-ref')) {
           return 'main\n';
@@ -38,12 +49,27 @@ describe('GitHelpers', () => {
         throw new Error('Not found');
       });
 
-      gitHelpers = new GitHelpers(mockExec, mockFileOps);
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
+      const branch = gitHelpers.getDefaultBranch('/test');
+      expect(branch).toBe('main');
+    });
+
+    test('returns branch from origin HEAD if available', () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
+      mockExec = mock((command: string) => {
+        if (command.includes('symbolic-ref')) {
+          return 'main\n';
+        }
+        throw new Error('Not found');
+      });
+
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
       const branch = gitHelpers.getDefaultBranch('/test');
       expect(branch).toBe('main');
     });
 
     test('checks for local main branch if origin HEAD fails', () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
       mockExec = mock((command: string) => {
         if (command.includes('symbolic-ref')) {
           throw new Error('No origin');
@@ -54,12 +80,13 @@ describe('GitHelpers', () => {
         throw new Error('Not found');
       });
 
-      gitHelpers = new GitHelpers(mockExec, mockFileOps);
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
       const branch = gitHelpers.getDefaultBranch('/test');
       expect(branch).toBe('main');
     });
 
     test("falls back to master if main doesn't exist", () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
       mockExec = mock((command: string) => {
         if (command.includes('symbolic-ref')) {
           throw new Error('No origin');
@@ -73,17 +100,18 @@ describe('GitHelpers', () => {
         throw new Error('Not found');
       });
 
-      gitHelpers = new GitHelpers(mockExec, mockFileOps);
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
       const branch = gitHelpers.getDefaultBranch('/test');
       expect(branch).toBe('master');
     });
 
     test('defaults to main if neither main nor master exist', () => {
+      const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
       mockExec = mock(() => {
         throw new Error('No branches');
       });
 
-      gitHelpers = new GitHelpers(mockExec, mockFileOps);
+      gitHelpers = new GitHelpers(mockExec, mockFileOps, mockGetGitConfig);
       const branch = gitHelpers.getDefaultBranch('/test');
       expect(branch).toBe('main');
     });

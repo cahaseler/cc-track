@@ -30,6 +30,7 @@ interface CompletionResult {
     branchMerged?: boolean;
     branchPushed?: boolean;
     notes?: string;
+    defaultBranch?: string;
   };
   github?: {
     prWorkflow?: boolean;
@@ -330,6 +331,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
               if (pushSuccess) {
                 result.git.branchPushed = true;
                 result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
+                result.git.defaultBranch = getDefaultBranch(projectRoot);
 
                 // Set up GitHub workflow info
                 result.github = {
@@ -361,6 +363,7 @@ async function completeTaskAction(options: { noSquash?: boolean; noBranch?: bool
             if (currentBranch === branchName) {
               // Get default branch
               const defaultBranch = getDefaultBranch(projectRoot);
+              result.git.defaultBranch = defaultBranch;
 
               // Attempt to merge
               try {

@@ -23,6 +23,11 @@ interface HookConfig {
   repository_url?: string;
 }
 
+interface GitConfig {
+  defaultBranch?: string;
+  description?: string;
+}
+
 interface InternalConfig {
   hooks: {
     [key: string]: HookConfig;
@@ -30,6 +35,7 @@ interface InternalConfig {
   features: {
     [key: string]: HookConfig;
   };
+  git?: GitConfig;
 }
 
 const DEFAULT_CONFIG: InternalConfig = {
@@ -205,6 +211,11 @@ export function getGitHubConfig(configPath?: string): HookConfig | null {
 export function isGitHubIntegrationEnabled(configPath?: string): boolean {
   const githubConfig = getGitHubConfig(configPath);
   return githubConfig?.enabled || false;
+}
+
+export function getGitConfig(configPath?: string): GitConfig | null {
+  const config = getConfig(configPath);
+  return config.git || null;
 }
 
 export function clearConfigCache(): void {
