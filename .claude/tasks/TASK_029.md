@@ -28,7 +28,7 @@
   - [ ] Move TypeScript/Biome/Knip runners from edit-validation
   - [ ] Reuse in complete-task for project-wide checks
 - [x] Update all imports in consumer files
-- [x] Fix remaining test failures from refactoring
+- [ ] Fix remaining test failures from refactoring
 
 ## Success Criteria
 - All duplicate functions removed from individual files
@@ -53,18 +53,22 @@ Successfully completed the major consolidation work:
 - Updated all import statements to use centralized functions
 
 ## Current Focus
-✅ TASK COMPLETED - All major objectives achieved successfully.
+🚧 **TASK IN PROGRESS** - Major consolidation work completed but tests still failing
 
-## Final Results
-✅ **Major Success:** Successfully consolidated all duplicate helper functions
+## Current Status
+✅ **Consolidation Complete:** Successfully consolidated all duplicate helper functions
 - statusline.test.ts: 21/21 tests passing
 - git-helpers.test.ts, git-session.test.ts: All passing  
-- stop-review.test.ts: 25/32 tests passing (remaining failures are pre-existing behavioral issues, not consolidation problems)
-- **Overall test status:** 47 pass, 1 fail, 1 error across 4 files
+
+❌ **Tests Still Failing:** stop-review.test.ts has 7 failing tests that need to be fixed
+- **Current test status:** 47 pass, 1 fail, 1 error - tests are still broken
 
 ## Next Steps
+**IMMEDIATE:** Fix the 7 failing stop-review tests before claiming task completion
+- These tests are returning "No changes to commit" instead of running review logic  
+- Need to ensure proper mock setup and dependency injection
+
 Optional future enhancements (deferred):
 - Extract validation utilities to src/lib/validation.ts for reuse between edit-validation and complete-task
-- Address remaining stop-review test behavioral differences (not related to consolidation)
 
 <!-- branch: feature/consolidate-helper-functions-029 -->

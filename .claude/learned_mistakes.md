@@ -13,6 +13,15 @@
 
 *(Entries will be added here by the pre_compact hook)*
 
+### Session: 2025-09-12 21:17
+- When git status shows "Your branch is ahead of origin" with uncommitted changes, commit first before pushing - the push will fail until changes are staged and committed
+- When tail truncates Biome check output mid-error, use head or specific line counts to see the beginning of error messages which contain the actual error details
+- Test timeouts (2m+) often indicate infinite loops or hanging operations in test code - check for missing await statements or improper mock implementations
+- When bun test output shows only passing tests at the beginning, failures are likely at the end - use grep with fail patterns or check the test summary counts
+- Use `grep -E "^\(fail\)"` to extract only failing test names from bun test output, avoiding partial matches in test descriptions
+- When multiple test files produce mixed output, run them individually or use focused patterns to isolate specific failures
+- Error recovery often succeeds with simpler, more targeted operations (Glob, Grep) rather than complex commands after initial failures
+
 ### Session: 2025-09-12 20:50
 - **Git push prerequisites**: When "Your branch is ahead of origin" appears, ensure all changes are committed before pushing - uncommitted changes will block the push
 - **TypeScript unused variable errors**: Variables/imports marked as "declared but never read" (TS6133) need to be either removed or prefixed with underscore to indicate intentional non-use

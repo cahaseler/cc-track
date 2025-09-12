@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { createReadStream, existsSync, type readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { getActiveTaskContent, getActiveTaskId } from '../lib/claude-md';
+import { ClaudeMdHelpers } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
 import { GitHelpers, hasUncommittedChanges } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
@@ -17,6 +17,7 @@ export interface StopReviewDependencies {
     createReadStream: typeof createReadStream;
   };
   gitHelpers?: GitHelpers;
+  claudeMdHelpers?: ClaudeMdHelpers;
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
 }
@@ -158,11 +159,13 @@ export class SessionReviewer {
   }
 
   private getActiveTask(): string | null {
-    return getActiveTaskContent(this.projectRoot);
+    const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
+    return claudeMdHelpers.getActiveTaskContent(this.projectRoot);
   }
 
   private getActiveTaskId(): string | null {
-    return getActiveTaskId(this.projectRoot);
+    const claudeMdHelpers = this.deps.claudeMdHelpers || new ClaudeMdHelpers();
+    return claudeMdHelpers.getActiveTaskId(this.projectRoot);
   }
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
@@ -679,8 +682,17 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
   }
 
   // Quick check for changes after adding untracked files
-  if (!hasUncommittedChanges(projectRoot)) {
-    logger.info('No changes detected, exiting early');
+  try {
+    const status = exec('git status --porcelain', { cwd: projectRoot }).toString().trim();
+    if (!status) {
+      logger.info('No changes detected, exiting early');
+      return {
+        continue: true,
+        systemMessage: '✅ No changes to commit',
+      };
+    }
+  } catch {
+    logger.info('Failed to check git status, exiting early');
     return {
       continue: true,
       systemMessage: '✅ No changes to commit',
