@@ -6,7 +6,7 @@ import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../l
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
-import type { HookInput, HookOutput } from '../types';
+import type { GitHubIssue, HookInput, HookOutput } from '../types';
 
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
@@ -189,15 +189,14 @@ export async function handleGitHubIntegration(
   taskContent: string,
   taskId: string,
   projectRoot: string,
-  gitBranchingEnabled: boolean,
   deps: CapturePlanDependencies,
-): Promise<string> {
+): Promise<{ issue: GitHubIssue | null; infoString: string }> {
   const githubHelpers = deps.githubHelpers || new GitHubHelpers();
   const logger = deps.logger || createLogger('capture_plan');
   const checkGitHub = deps.isGitHubIntegrationEnabled || isGitHubIntegrationEnabled;
 
   if (!checkGitHub()) {
-    return '';
+    return { issue: null, infoString: '' };
   }
 
   try {
@@ -208,11 +207,11 @@ export async function handleGitHubIntegration(
       logger.warn('GitHub integration is enabled but validation failed', {
         errors: validation.errors,
       });
-      return '';
+      return { issue: null, infoString: '' };
     }
 
     if (!githubConfig?.auto_create_issues) {
-      return '';
+      return { issue: null, infoString: '' };
     }
 
     logger.info('Creating GitHub issue for task', { taskId });
@@ -225,7 +224,7 @@ export async function handleGitHubIntegration(
 
     if (!issue) {
       logger.error('Failed to create GitHub issue', { taskId });
-      return '';
+      return { issue: null, infoString: '' };
     }
 
     logger.info('GitHub issue created successfully', {
@@ -235,21 +234,14 @@ export async function handleGitHubIntegration(
     });
 
     // Build issue info string
-    let githubIssueInfo = `\n\n<!-- github_issue: ${issue.number} -->\n<!-- github_url: ${issue.url} -->`;
+    const githubIssueInfo = `\n\n<!-- github_issue: ${issue.number} -->\n<!-- github_url: ${issue.url} -->`;
 
-    // Create issue branch if enabled and not already using git branching
-    if (githubConfig?.use_issue_branches && !gitBranchingEnabled) {
-      const issueBranch = githubHelpers.createIssueBranch(issue.number, projectRoot);
-      if (issueBranch) {
-        githubIssueInfo += `\n<!-- issue_branch: ${issueBranch} -->`;
-        logger.info(`Created and switched to issue branch: ${issueBranch}`);
-      }
-    }
-
-    return githubIssueInfo;
+    // Return both the issue object and info string
+    // Branch creation will be handled in the main flow
+    return { issue, infoString: githubIssueInfo };
   } catch (error) {
     logger.error('GitHub integration failed', { error, taskId });
-    return '';
+    return { issue: null, infoString: '' };
   }
 }
 
@@ -358,15 +350,29 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
     let finalTaskContent = taskContent;
 
-    // Handle git branching if enabled
-    const branchName = await handleGitBranching(plan, taskId, projectRoot, deps);
-    if (branchName) {
-      finalTaskContent += `\n\n<!-- branch: ${branchName} -->`;
-    }
+    // Handle GitHub integration first (create issue before branching)
+    const githubResult = await handleGitHubIntegration(finalTaskContent, taskId, projectRoot, deps);
+    finalTaskContent += githubResult.infoString;
 
-    // Handle GitHub integration if enabled
-    const githubIssueInfo = await handleGitHubIntegration(finalTaskContent, taskId, projectRoot, !!branchName, deps);
-    finalTaskContent += githubIssueInfo;
+    // Handle branching - either issue branch or regular git branch
+    let branchName: string | null = null;
+    const githubConfig = getGitHubConfig();
+
+    if (githubResult.issue && githubConfig?.use_issue_branches) {
+      // Create issue-linked branch using gh issue develop
+      const githubHelpers = deps.githubHelpers || new GitHubHelpers();
+      branchName = githubHelpers.createIssueBranch(githubResult.issue.number, projectRoot);
+      if (branchName) {
+        finalTaskContent += `\n<!-- issue_branch: ${branchName} -->`;
+        logger.info(`Created and switched to issue branch: ${branchName}`);
+      }
+    } else {
+      // Fall back to regular git branching if no issue or issue branches disabled
+      branchName = await handleGitBranching(plan, taskId, projectRoot, deps);
+      if (branchName) {
+        finalTaskContent += `\n\n<!-- branch: ${branchName} -->`;
+      }
+    }
 
     // Write final task file
     fileOps.writeFileSync(taskPath, finalTaskContent);

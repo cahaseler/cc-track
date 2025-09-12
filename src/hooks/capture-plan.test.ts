@@ -195,9 +195,10 @@ describe('capture-plan', () => {
   });
 
   describe('handleGitHubIntegration', () => {
-    test('returns empty string when GitHub integration is disabled', async () => {
-      const result = await handleGitHubIntegration('content', '001', '/project', false, {});
-      expect(result).toBe('');
+    test('returns empty result when GitHub integration is disabled', async () => {
+      const result = await handleGitHubIntegration('content', '001', '/project', {});
+      expect(result.issue).toBe(null);
+      expect(result.infoString).toBe('');
     });
 
     test('creates issue and returns info when enabled', async () => {
@@ -221,13 +222,17 @@ describe('capture-plan', () => {
         logger,
       };
 
-      const result = await handleGitHubIntegration('content', '001', '/project', false, deps);
+      const result = await handleGitHubIntegration('content', '001', '/project', deps);
 
-      expect(result).toContain('<!-- github_issue: 42 -->');
-      expect(result).toContain('<!-- github_url: https://github.com/test/repo/issues/42 -->');
+      expect(result.issue).toEqual({
+        number: 42,
+        url: 'https://github.com/test/repo/issues/42',
+      });
+      expect(result.infoString).toContain('<!-- github_issue: 42 -->');
+      expect(result.infoString).toContain('<!-- github_url: https://github.com/test/repo/issues/42 -->');
     });
 
-    test('creates issue branch when configured', async () => {
+    test('returns issue object without branch info', async () => {
       const mockGitHubHelpers = {
         validateGitHubIntegration: mock(() => ({ valid: true, errors: [] })),
         formatTaskForGitHub: mock(() => ({
@@ -238,7 +243,6 @@ describe('capture-plan', () => {
           number: 42,
           url: 'https://github.com/test/repo/issues/42',
         })),
-        createIssueBranch: mock(() => 'issue-42'),
       };
 
       const logger = createMockLogger();
@@ -248,9 +252,14 @@ describe('capture-plan', () => {
         logger,
       };
 
-      const result = await handleGitHubIntegration('content', '001', '/project', false, deps);
+      const result = await handleGitHubIntegration('content', '001', '/project', deps);
 
-      expect(result).toContain('<!-- issue_branch: issue-42 -->');
+      expect(result.issue).toEqual({
+        number: 42,
+        url: 'https://github.com/test/repo/issues/42',
+      });
+      // Branch creation is now handled in main flow, not in this function
+      expect(result.infoString).not.toContain('<!-- issue_branch');
     });
   });
 
