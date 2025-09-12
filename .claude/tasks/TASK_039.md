@@ -2,7 +2,7 @@
 
 **Purpose:** Replace CLI-based Claude interactions with the official TypeScript SDK to improve performance, reliability, and enable advanced features like controlled agents
 
-**Status:** completed
+**Status:** in_progress
 **Started:** 2025-09-12 14:28
 **Task ID:** 039
 
@@ -21,6 +21,7 @@
 - [x] Update capture-plan hook to use new SDK wrapper
 - [x] Update pre-compact hook to use new SDK wrapper
 - [x] Ensure all functionality works identically to CLI version
+- [ ] **CRITICAL: Mock all SDK calls in test files to prevent real API calls**
 
 ## Success Criteria
 - SDK installed successfully without errors
@@ -50,10 +51,17 @@ Migrating existing CLI calls to use the SDK wrapper. GitHelpers migration comple
 - ✅ Migrated GitHelpers to use SDK instead of CLI
 - ✅ Migrated all hooks (stop-review, capture-plan, pre-compact) to use SDK
 - ✅ Fixed TypeScript and linting issues
-- ✅ Tested all functionality - working correctly
-- ✅ Removed temp file handling - no longer needed with SDK!
+- ❌ **FAILED: Tests hang because SDK is not mocked - making real API calls!**
+- 🔴 **BLOCKER: Must mock ClaudeSDK in all test files before task can be completed**
 
-## Completion Summary
+## CRITICAL ISSUE DISCOVERED
+
+### Tests are hanging because they're making real SDK calls!
+- The `bun test` command hangs at 96% CPU because test files are trying to call the real Claude SDK
+- This is the SAME issue we had with the CLI - tests MUST mock all external calls
+- Task is NOT complete until all SDK usage is properly mocked in test files
+
+## Current Status
 
 ### What Was Accomplished
 - Successfully migrated all Claude CLI calls to the TypeScript SDK

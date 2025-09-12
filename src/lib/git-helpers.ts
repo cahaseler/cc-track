@@ -1,5 +1,5 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import { ClaudeSDK } from './claude-sdk';
+import { ClaudeSDK as DefaultClaudeSDK } from './claude-sdk';
 import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
@@ -10,6 +10,12 @@ export type ExecFunction = (
 
 export type GetGitConfigFunction = typeof defaultGetGitConfig;
 
+// SDK interface for dependency injection
+export interface ClaudeSDKInterface {
+  generateCommitMessage(changes: string): Promise<string>;
+  generateBranchName(taskTitle: string, taskId: string): Promise<string>;
+}
+
 const defaultExec: ExecFunction = (command, options) => {
   return nodeExecSync(command, { encoding: 'utf-8', ...options });
 };
@@ -17,10 +23,16 @@ const defaultExec: ExecFunction = (command, options) => {
 export class GitHelpers {
   private exec: ExecFunction;
   private getGitConfig: GetGitConfigFunction;
+  private claudeSDK: ClaudeSDKInterface;
 
-  constructor(exec?: ExecFunction, getGitConfig?: GetGitConfigFunction) {
+  constructor(
+    exec?: ExecFunction,
+    getGitConfig?: GetGitConfigFunction,
+    claudeSDK?: ClaudeSDKInterface,
+  ) {
     this.exec = exec || defaultExec;
     this.getGitConfig = getGitConfig || defaultGetGitConfig;
+    this.claudeSDK = claudeSDK || DefaultClaudeSDK;
   }
 
   /**
@@ -98,7 +110,7 @@ export class GitHelpers {
     const changes = `${taskContext}\n\n${truncatedDiff}`;
 
     try {
-      const message = await ClaudeSDK.generateCommitMessage(changes);
+      const message = await this.claudeSDK.generateCommitMessage(changes);
 
       // Extract just the commit message if Claude added any wrapper text
       // Look for a line that matches conventional commit format
@@ -130,7 +142,7 @@ export class GitHelpers {
     const planSummary = plan.substring(0, 1500);
 
     try {
-      const branchName = await ClaudeSDK.generateBranchName(planSummary, taskId);
+      const branchName = await this.claudeSDK.generateBranchName(planSummary, taskId);
 
       // Extract just the branch name if Claude added any wrapper text
       const lines = branchName.split('\n');

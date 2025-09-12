@@ -2,7 +2,8 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeMdHelpers } from '../lib/claude-md';
-import { ClaudeSDK } from '../lib/claude-sdk';
+import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
+import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
@@ -21,6 +22,9 @@ export interface CapturePlanDependencies {
   };
   gitHelpers?: GitHelpers;
   githubHelpers?: GitHubHelpers;
+  claudeSDK?: ClaudeSDKInterface & {
+    prompt: (text: string, model: 'haiku' | 'sonnet' | 'opus') => Promise<{ text: string; success: boolean; error?: string }>;
+  };
   logger?: ReturnType<typeof createLogger>;
   debugLog?: (msg: string) => void;
   isHookEnabled?: typeof isHookEnabled;
@@ -107,10 +111,11 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
  */
 export async function enrichPlanWithClaude(prompt: string, deps: CapturePlanDependencies): Promise<string> {
   const logger = deps.logger || createLogger('capture_plan');
+  const claudeSDK = deps.claudeSDK || DefaultClaudeSDK;
 
   try {
     // Use SDK instead of CLI - no temp files or /tmp hack needed!
-    const response = await ClaudeSDK.prompt(prompt, 'sonnet');
+    const response = await claudeSDK.prompt(prompt, 'sonnet');
 
     if (!response.success) {
       throw new Error(response.error || 'SDK call failed');

@@ -94,52 +94,52 @@ describe('capture-plan', () => {
   });
 
   describe('enrichPlanWithClaude', () => {
-    test('successfully enriches plan using Claude CLI', async () => {
-      const mockExecSync = mock(() => '# Enriched Task\n\nTask content here');
-      const fileOps = {
-        writeFileSync: mock(() => {}),
-        existsSync: mock(() => true),
-        unlinkSync: mock(() => {}),
+    test('successfully enriches plan using Claude SDK', async () => {
+      const mockClaudeSDK = {
+        generateCommitMessage: mock(async () => 'feat: test'),
+        generateBranchName: mock(async () => 'feature/test'),
+        prompt: mock(async () => ({
+          text: '# Enriched Task\n\nTask content here',
+          success: true,
+        })),
       };
       const logger = createMockLogger();
 
       const deps: CapturePlanDependencies = {
-        execSync: mockExecSync,
-        fileOps,
+        claudeSDK: mockClaudeSDK,
         logger,
         isHookEnabled: () => true,
         isGitHubIntegrationEnabled: () => false,
       };
 
-      const result = await enrichPlanWithClaude('test prompt', '/tmp/prompt.txt', deps);
+      const result = await enrichPlanWithClaude('test prompt', deps);
 
       expect(result).toBe('# Enriched Task\n\nTask content here');
-      expect(fileOps.writeFileSync).toHaveBeenCalledWith('/tmp/prompt.txt', 'test prompt');
-      expect(fileOps.unlinkSync).toHaveBeenCalledWith('/tmp/prompt.txt');
+      expect(mockClaudeSDK.prompt).toHaveBeenCalledWith('test prompt', 'sonnet');
     });
 
-    test('cleans up temp file even on error', async () => {
-      const mockExecSync = mock(() => {
-        throw new Error('Claude CLI failed');
-      });
-      const fileOps = {
-        writeFileSync: mock(() => {}),
-        existsSync: mock(() => true),
-        unlinkSync: mock(() => {}),
+    test('handles SDK error gracefully', async () => {
+      const mockClaudeSDK = {
+        generateCommitMessage: mock(async () => 'feat: test'),
+        generateBranchName: mock(async () => 'feature/test'),
+        prompt: mock(async () => ({
+          text: '',
+          success: false,
+          error: 'Claude SDK failed',
+        })),
       };
       const logger = createMockLogger();
 
       const deps: CapturePlanDependencies = {
-        execSync: mockExecSync,
-        fileOps,
+        claudeSDK: mockClaudeSDK,
         logger,
         isHookEnabled: () => true,
         isGitHubIntegrationEnabled: () => false,
       };
 
-      await expect(enrichPlanWithClaude('test prompt', '/tmp/prompt.txt', deps)).rejects.toThrow('Claude CLI failed');
+      await expect(enrichPlanWithClaude('test prompt', deps)).rejects.toThrow('Claude SDK failed');
 
-      expect(fileOps.unlinkSync).toHaveBeenCalledWith('/tmp/prompt.txt');
+      expect(mockClaudeSDK.prompt).toHaveBeenCalledWith('test prompt', 'sonnet');
     });
   });
 
