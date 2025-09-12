@@ -1,3 +1,20 @@
+# [1.3.0](https://github.com/cahaseler/cc-track/compare/v1.2.1...v1.3.0) (2025-09-12)
+
+
+### Bug Fixes
+
+* address Biome linting issues ([fca2bae](https://github.com/cahaseler/cc-track/commit/fca2baee36cd21c1b8acbc375026d25d2f6fc372))
+* escape backticks in GitHub issue content to prevent shell interpretation ([fffe0df](https://github.com/cahaseler/cc-track/commit/fffe0df3eb90bd7712619f7b4a37d5532ff676c4))
+* handle bun dependency messages in prepare-completion validation output ([8a4e075](https://github.com/cahaseler/cc-track/commit/8a4e075c7c7576dc4f3733748db2565b90af3b37))
+* improve complete-task error handling with early exits ([d3f55b3](https://github.com/cahaseler/cc-track/commit/d3f55b3a88018da35a293758931aa548325d5f28))
+* resolve GitHub issue creation validation and shell escaping ([c6b8d2d](https://github.com/cahaseler/cc-track/commit/c6b8d2dc133fe581423efbe35e74dcb37dc18630))
+* resolve minor type inconsistencies in codebase ([f63ef70](https://github.com/cahaseler/cc-track/commit/f63ef70992ef9e19b97cc5ed443db8e5b86ccf21))
+
+
+### Features
+
+* make log directory configurable and move outside project ([cf033f2](https://github.com/cahaseler/cc-track/commit/cf033f2312372c269a080f21813ec15f73a5fec0))
+
 ## [1.2.1](https://github.com/cahaseler/cc-track/compare/v1.2.0...v1.2.1) (2025-09-12)
 
 
