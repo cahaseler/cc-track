@@ -4,9 +4,9 @@
  * and weasel-word completions
  */
 
-import { createLogger } from '../lib/logger';
 import { ClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
+import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
 const logger = createLogger('task-validation');
@@ -71,11 +71,7 @@ export function extractDiffInfo(
 /**
  * Build the validation prompt for Claude
  */
-export function buildValidationPrompt(
-  filePath: string,
-  oldContent: string,
-  newContent: string,
-): string {
+export function buildValidationPrompt(filePath: string, oldContent: string, newContent: string): string {
   return `You are a strict task file validator for the cc-track system. Review this edit to a task file and determine if it should be blocked.
 
 TASK FILE: ${filePath}
@@ -117,10 +113,7 @@ If the edit is acceptable, respond with JSON:
 /**
  * Main task validation hook function
  */
-export async function taskValidationHook(
-  input: HookInput,
-  deps: TaskValidationDependencies = {},
-): Promise<HookOutput> {
+export async function taskValidationHook(input: HookInput, deps: TaskValidationDependencies = {}): Promise<HookOutput> {
   const sdk = deps.claudeSDK || ClaudeSDK;
   const log = deps.logger || logger;
   const checkEnabled = deps.isHookEnabled || isHookEnabled;
@@ -157,11 +150,7 @@ export async function taskValidationHook(
     log.info('Validating task file edit', { filePath: diffInfo.filePath });
 
     // Build validation prompt
-    const prompt = buildValidationPrompt(
-      diffInfo.filePath,
-      diffInfo.oldContent,
-      diffInfo.newContent,
-    );
+    const prompt = buildValidationPrompt(diffInfo.filePath, diffInfo.oldContent, diffInfo.newContent);
 
     // Call Claude SDK for validation
     const response = await sdk.prompt(prompt, 'sonnet', {

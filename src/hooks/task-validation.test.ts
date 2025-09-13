@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { taskValidationHook, isTaskFile, extractDiffInfo, buildValidationPrompt } from './task-validation';
 import type { HookInput } from '../types';
+import { buildValidationPrompt, extractDiffInfo, isTaskFile, taskValidationHook } from './task-validation';
 
 describe('task-validation', () => {
   beforeEach(() => {
@@ -68,11 +68,7 @@ describe('task-validation', () => {
 
   describe('buildValidationPrompt', () => {
     test('includes all required elements', () => {
-      const prompt = buildValidationPrompt(
-        '.claude/tasks/TASK_001.md',
-        'Status: in_progress',
-        'Status: completed',
-      );
+      const prompt = buildValidationPrompt('.claude/tasks/TASK_001.md', 'Status: in_progress', 'Status: completed');
 
       expect(prompt).toContain('TASK FILE: .claude/tasks/TASK_001.md');
       expect(prompt).toContain('OLD CONTENT:\nStatus: in_progress');
