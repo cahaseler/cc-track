@@ -221,7 +221,9 @@ export class ClaudeLogParser {
    * Convert entry to simplified format without simplification
    */
   private convertToSimplified(entry: LogEntry): SimplifiedEntry {
-    const role = entry.type as 'user' | 'assistant' | 'system';
+    const roleRaw = entry.type;
+    const role: 'user' | 'assistant' | 'system' =
+      roleRaw === 'user' || roleRaw === 'assistant' || roleRaw === 'system' ? roleRaw : 'system';
 
     return {
       timestamp: entry.timestamp,
@@ -240,7 +242,9 @@ export class ClaudeLogParser {
    * Simplify a log entry to extract the essential information
    */
   private simplifyEntry(entry: LogEntry, includeTools: boolean): SimplifiedEntry {
-    const role = entry.type as 'user' | 'assistant' | 'system';
+    const roleRaw = entry.type;
+    const role: 'user' | 'assistant' | 'system' =
+      roleRaw === 'user' || roleRaw === 'assistant' || roleRaw === 'system' ? roleRaw : 'system';
 
     // Handle system messages
     if (role === 'system') {
@@ -433,7 +437,8 @@ export class ClaudeLogParser {
         hour12: false,
       });
 
-      const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
+      const roleSafe = (entry.role || 'system') as 'user' | 'assistant' | 'system';
+      const role = roleSafe.charAt(0).toUpperCase() + roleSafe.slice(1);
       const prefix = `[${timestamp}] ${role}:`;
 
       // Format content with proper indentation for multi-line

@@ -23,6 +23,7 @@ export interface StopReviewDependencies {
     prompt: (
       text: string,
       model: 'haiku' | 'sonnet' | 'opus',
+      options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number },
     ) => Promise<{ text: string; success: boolean; error?: string }>;
   };
   logger?: ReturnType<typeof createLogger>;
