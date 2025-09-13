@@ -1,3 +1,17 @@
+# [1.10.0](https://github.com/cahaseler/cc-track/compare/v1.9.0...v1.10.0) (2025-09-13)
+
+
+### Bug Fixes
+
+* handle markdown code blocks in task validation response parsing ([1672fc4](https://github.com/cahaseler/cc-track/commit/1672fc400588c044d4489b69f7615b634a8f788f))
+
+
+### Features
+
+* add PreToolUse hook for task file edit validation ([a7de30e](https://github.com/cahaseler/cc-track/commit/a7de30e91c686c9fc0ae469476bb5ab4a874886f))
+* implement PreToolUse task validation hook with Claude SDK ([c6374d0](https://github.com/cahaseler/cc-track/commit/c6374d0b08b2d04f1f6fd8ef87fe1d14a88d7c61))
+* improve task validation prompt clarity ([b672b96](https://github.com/cahaseler/cc-track/commit/b672b968852c74b2ce8c56cfe5c24cb94d8120b7))
+
 # [1.9.0](https://github.com/cahaseler/cc-track/compare/v1.8.0...v1.9.0) (2025-09-13)
 
 
