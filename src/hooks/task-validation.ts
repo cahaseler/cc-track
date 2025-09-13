@@ -164,10 +164,17 @@ export async function taskValidationHook(input: HookInput, deps: TaskValidationD
       return { continue: true };
     }
 
-    // Parse the response
+    // Parse the response (handle markdown code blocks if present)
     let validationResult: { shouldBlock: boolean; reason: string };
     try {
-      validationResult = JSON.parse(response.text);
+      // Remove markdown code blocks if present
+      let jsonText = response.text.trim();
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
+      } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/^```\s*\n?/, '').replace(/\n?```\s*$/, '');
+      }
+      validationResult = JSON.parse(jsonText);
     } catch (parseError) {
       log.error('Failed to parse validation response', {
         response: response.text,
