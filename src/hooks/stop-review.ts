@@ -178,6 +178,17 @@ export class SessionReviewer {
 
   async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
     try {
+      // Validate transcript path before parsing to avoid EISDIR and similar
+      const fs = this.deps.fileOps || ({} as any);
+      if (!transcriptPath || typeof transcriptPath !== 'string') {
+        this.logger.warn('No transcript path provided; skipping transcript context');
+        return '';
+      }
+      if (fs.existsSync && !fs.existsSync(transcriptPath)) {
+        this.logger.warn('Transcript path does not exist; skipping transcript context', { transcriptPath });
+        return '';
+      }
+
       // Use the new log parser for better message extraction
       const parser = new ClaudeLogParser(transcriptPath);
       const entries = await parser.parse({
