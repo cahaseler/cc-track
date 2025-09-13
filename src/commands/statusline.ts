@@ -33,7 +33,9 @@ const defaultDeps: StatusLineDeps = {
  */
 export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): string {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    // Use local date instead of UTC to match user's timezone
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const result = deps.execSync('bunx ccusage daily --json', {
       encoding: 'utf-8',
       input: JSON.stringify(input),
