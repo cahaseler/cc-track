@@ -21,17 +21,7 @@ export interface ClaudeResponse {
 
 // Find the Claude Code executable using 'which' command
 function findClaudeCodeExecutable(): string | undefined {
-  // 1) Explicit env var overrides
-  const fromEnv =
-    process.env.CC_TRACK_CLAUDE_EXECUTABLE || process.env.CLAUDE_CODE_EXECUTABLE || undefined;
-  if (fromEnv && existsSync(fromEnv)) return fromEnv;
-
-  // 2) Local project install (preferred in compiled binary contexts)
-  try {
-    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-code/cli.js`;
-    if (existsSync(localCli)) return localCli;
-  } catch {}
-
+  // Prefer system-installed claude (often a compiled binary and faster)
   try {
     // First try to find the 'claude' command in PATH
     const claudePath = execSync('which claude', { encoding: 'utf8' }).trim();
@@ -48,15 +38,21 @@ function findClaudeCodeExecutable(): string | undefined {
   } catch {
     // which command failed, claude is not in PATH
   }
-  
-  // If no system claude found, return undefined and let SDK auto-detect
+
+  // Fallback to local project install
+  try {
+    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-code/cli.js`;
+    if (existsSync(localCli)) return localCli;
+  } catch {}
+
+  // If none found, return undefined and let SDK auto-detect
   return undefined;
 }
 
 async function prompt(
   text: string,
   model: 'haiku' | 'sonnet' | 'opus' = 'haiku',
-  options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[] },
+  options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number },
 ): Promise<ClaudeResponse> {
   try {
     // Use generic model names - the API will use the latest versions
@@ -69,7 +65,7 @@ async function prompt(
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
 
-    const response = query({
+    const stream = query({
       prompt: text,
       options: {
         model: modelMap[model],
@@ -84,34 +80,61 @@ async function prompt(
     let success = false;
     let usage: ClaudeResponse['usage'];
     let error: string | undefined;
+    let timedOut = false;
 
-    for await (const message of response) {
-      if (message.type === 'assistant') {
-        const content = message.message.content[0];
-        if (content && 'text' in content) {
-          responseText = content.text;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    if (options?.timeoutMs && options.timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        timedOut = true;
+        try {
+          // Politely signal completion to underlying process
+          void (stream as AsyncGenerator<SDKMessage, void>).return(undefined as any);
+        } catch {
+          // ignore
+        }
+      }, options.timeoutMs);
+    }
+
+    try {
+      for await (const message of stream) {
+        if (message.type === 'assistant') {
+          const content = message.message.content[0];
+          if (content && 'text' in content) {
+            responseText = content.text;
+          }
+        }
+
+        if (message.type === 'result') {
+          if (message.subtype === 'success') {
+            success = true;
+            usage = {
+              inputTokens: message.usage.input_tokens || 0,
+              outputTokens: message.usage.output_tokens || 0,
+              costUSD: message.total_cost_usd,
+            };
+          } else if (message.subtype === 'error_max_turns' && responseText) {
+            success = true;
+            usage = {
+              inputTokens: message.usage.input_tokens || 0,
+              outputTokens: message.usage.output_tokens || 0,
+              costUSD: message.total_cost_usd,
+            };
+          } else {
+            error = `Claude returned error: ${message.subtype}`;
+          }
         }
       }
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
 
-      if (message.type === 'result') {
-        if (message.subtype === 'success') {
-          success = true;
-          usage = {
-            inputTokens: message.usage.input_tokens || 0,
-            outputTokens: message.usage.output_tokens || 0,
-            costUSD: message.total_cost_usd,
-          };
-        } else if (message.subtype === 'error_max_turns' && responseText) {
-          success = true;
-          usage = {
-            inputTokens: message.usage.input_tokens || 0,
-            outputTokens: message.usage.output_tokens || 0,
-            costUSD: message.total_cost_usd,
-          };
-        } else {
-          error = `Claude returned error: ${message.subtype}`;
-        }
-      }
+    if (!success && timedOut) {
+      return {
+        text: responseText.trim(),
+        success: false,
+        error: `timeout after ${options?.timeoutMs}ms`,
+        usage,
+      };
     }
 
     return { text: responseText.trim(), success, error, usage };
@@ -135,7 +158,7 @@ Requirements:
 - Focus on the "what" and "why", not the "how"
 - Respond with JUST the commit message, no explanation`;
 
-  const response = await prompt(p, 'haiku');
+  const response = await prompt(p, 'haiku', { timeoutMs: 20000 });
   if (!response.success) throw new Error(`Failed to generate commit message: ${response.error}`);
   return response.text;
 }
@@ -152,7 +175,7 @@ Requirements:
 - Types: feature, bug, chore, docs
 - Respond with JUST the branch name`;
 
-  const response = await prompt(p, 'haiku');
+  const response = await prompt(p, 'haiku', { timeoutMs: 20000 });
   if (!response.success) throw new Error(`Failed to generate branch name: ${response.error}`);
   return response.text;
 }
@@ -173,7 +196,7 @@ Respond in JSON format:
   "review": "Brief explanation of any issues or confirmation that requirements are met"
 }`;
 
-  const response = await prompt(p, 'sonnet');
+  const response = await prompt(p, 'sonnet', { timeoutMs: 60000 });
   if (!response.success) throw new Error(`Failed to review code: ${response.error}`);
 
   try {
@@ -195,7 +218,7 @@ Focus on:
 
 Format as markdown with clear headers. Be concise.`;
 
-  const response = await prompt(p, 'haiku');
+  const response = await prompt(p, 'haiku', { timeoutMs: 20000 });
   if (!response.success) return '<!-- Error pattern extraction failed -->';
   return response.text;
 }

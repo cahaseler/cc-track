@@ -380,8 +380,14 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
     const claudeSDK = this.deps.claudeSDK || DefaultClaudeSDK;
 
     try {
-      // Use SDK to call Claude - no temp files needed!
-      const response = await claudeSDK.prompt(prompt, 'sonnet');
+      // Use Sonnet explicitly for review quality and speed
+      const model: 'haiku' | 'sonnet' | 'opus' = 'sonnet';
+
+      const t0 = Date.now();
+      const timeoutMs = 60000;
+      const response = await claudeSDK.prompt(prompt, model, { timeoutMs });
+      const dt = Date.now() - t0;
+      this.logger.debug('Claude review call completed', { model, duration_ms: dt, timeout_ms: timeoutMs });
 
       if (!response.success) {
         throw new Error(response.error || 'SDK call failed');
