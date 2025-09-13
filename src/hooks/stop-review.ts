@@ -5,7 +5,7 @@ import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
-import { ClaudeLogParser } from '../lib/log-parser';
+import { ClaudeLogParser, type SimplifiedEntry } from '../lib/log-parser';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -175,20 +175,56 @@ export class SessionReviewer {
     return claudeMdHelpers.getActiveTaskId(this.projectRoot);
   }
 
-  async getRecentMessages(transcriptPath: string, limit: number = 10): Promise<string> {
+  async getRecentMessages(transcriptPath: string, limit: number = 20): Promise<string> {
     try {
-      // Use the new log parser for better message extraction
-      const parser = new ClaudeLogParser(transcriptPath);
-      const entries = await parser.parse({
-        role: 'all',
-        limit,
-        format: 'plaintext',
-        includeTools: false, // Don't include tools in review context
-        simplifyResults: true,
-      });
+      if (!transcriptPath || typeof transcriptPath !== 'string') {
+        this.logger.warn('No transcript path provided; skipping transcript context');
+        return '';
+      }
 
-      // The parser returns plaintext format directly
-      return entries as string;
+      // Determine start time from the most recent commit
+      const exec = this.deps.execSync || execSync;
+      let since: Date | undefined;
+      try {
+        const iso = exec('git log -1 --format=%cI', { cwd: this.projectRoot, encoding: 'utf-8' }).trim();
+        if (iso) since = new Date(iso);
+      } catch {
+        // If git info is unavailable, proceed without time filtering
+      }
+
+      // Parse entries as JSON, filter by time, then take the most recent `limit`
+      const parser = new ClaudeLogParser(transcriptPath);
+      const parsed = (await parser.parse({
+        role: 'all',
+        format: 'json',
+        includeTools: false,
+        simplifyResults: true,
+        timeRange: since ? { start: since } : undefined,
+      })) as SimplifiedEntry[];
+
+      const used = parsed.slice(-limit);
+
+      // Format minimal plaintext for prompt
+      const lines: string[] = [];
+      for (const entry of used) {
+        const ts = new Date(entry.timestamp).toISOString().replace('T', ' ').replace('Z', '');
+        const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
+        const contentLines = String(entry.content || '').split('\n');
+        if (contentLines.length === 1) {
+          lines.push(`[${ts}] ${role}: ${contentLines[0]}`);
+        } else {
+          lines.push(`[${ts}] ${role}:`);
+          for (const line of contentLines) lines.push(`  ${line}`);
+        }
+      }
+
+      const result = lines.join('\n');
+      this.logger.debug('Recent transcript messages fetched', {
+        since_commit: since ? since.toISOString() : null,
+        total_after_filter: parsed.length,
+        used_count: used.length,
+      });
+      return result;
     } catch (error) {
       this.logger.warn('Failed to parse transcript with new parser, falling back to empty', { error });
       return '';
