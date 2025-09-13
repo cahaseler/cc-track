@@ -1,3 +1,18 @@
+# [1.7.0](https://github.com/cahaseler/cc-track/compare/v1.6.0...v1.7.0) (2025-09-13)
+
+
+### Bug Fixes
+
+* **claude-sdk:** simplify stream termination by removing AbortController ([a5349c3](https://github.com/cahaseler/cc-track/commit/a5349c34c777afa29766b415b090848df98eed46))
+* **hooks:** add fallback branching for issue branch creation failure ([0c8d725](https://github.com/cahaseler/cc-track/commit/0c8d725801de3254fc4d0fd5445c144103459702))
+* merge stop-review improvements with validation ([336c1e3](https://github.com/cahaseler/cc-track/commit/336c1e374555dd8363871bbd89bb10cd9e58b6d1))
+* resolve linting issues and improve pre-push hook ([4b6c791](https://github.com/cahaseler/cc-track/commit/4b6c791a46f34e53d58540e185840baf19077c63))
+
+
+### Features
+
+* add object manipulation, async function example, and expanded console logging in test file ([43924bb](https://github.com/cahaseler/cc-track/commit/43924bb2bea621233b7fda649e31e5f72916af22))
+
 # [1.6.0](https://github.com/cahaseler/cc-track/compare/v1.5.0...v1.6.0) (2025-09-12)
 
 
