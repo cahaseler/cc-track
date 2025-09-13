@@ -2,7 +2,7 @@
 
 **Purpose:** Create a new PreToolUse hook that validates edits to task files using Claude SDK to prevent premature completion claims and weasel words, ensuring tasks are only marked complete via `/complete-task` command.
 
-**Status:** completed
+**Status:** planning
 **Started:** 2025-09-13 18:57
 **Task ID:** 044
 

@@ -97,17 +97,15 @@ IMPORTANT: The cc-track library has STRICT requirements:
 - 100% of type checks must pass
 - No exceptions or excuses are acceptable
 
-If the edit violates these rules, respond with JSON:
-{
-  "shouldBlock": true,
-  "reason": "Complete explanation of why this edit is blocked, what should be done instead, and remind that the next step is to fix the issues described or discuss with the user. Emphasize that 100% of tests, lints, and type checks must pass."
-}
+CRITICAL: You MUST respond with ONLY valid JSON. Do not include any explanatory text before or after the JSON. Do not wrap the JSON in markdown code blocks. Output ONLY the raw JSON object.
 
-If the edit is acceptable, respond with JSON:
-{
-  "shouldBlock": false,
-  "reason": "Edit is acceptable"
-}`;
+If the edit violates these rules, output EXACTLY this structure:
+{"shouldBlock":true,"reason":"Complete explanation of why this edit is blocked, what should be done instead, and remind that the next step is to fix the issues described or discuss with the user. Emphasize that 100% of tests, lints, and type checks must pass."}
+
+If the edit is acceptable, output EXACTLY this structure:
+{"shouldBlock":false,"reason":"Edit is acceptable"}
+
+REMEMBER: Output ONLY the JSON object. No other text. No markdown. Just JSON.`;
 }
 
 /**
@@ -164,17 +162,31 @@ export async function taskValidationHook(input: HookInput, deps: TaskValidationD
       return { continue: true };
     }
 
-    // Parse the response (handle markdown code blocks if present)
+    // Parse the response (handle various formats)
     let validationResult: { shouldBlock: boolean; reason: string };
     try {
-      // Remove markdown code blocks if present
       let jsonText = response.text.trim();
-      if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
-      } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/^```\s*\n?/, '').replace(/\n?```\s*$/, '');
+
+      // Try to extract JSON from the response
+      // First, check if it's already valid JSON
+      try {
+        validationResult = JSON.parse(jsonText);
+      } catch {
+        // If not, try to extract JSON from various formats
+
+        // Remove markdown code blocks
+        if (jsonText.includes('```')) {
+          jsonText = jsonText.replace(/```json\s*\n?/g, '').replace(/```\s*\n?/g, '');
+        }
+
+        // Find JSON object in the text (looking for {...})
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[0];
+        }
+
+        validationResult = JSON.parse(jsonText);
       }
-      validationResult = JSON.parse(jsonText);
     } catch (parseError) {
       log.error('Failed to parse validation response', {
         response: response.text,
