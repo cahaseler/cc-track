@@ -486,36 +486,6 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
       return false;
     }
   }
-
-  checkRecentNonTaskCommits(): number {
-    const exec = this.deps.execSync || execSync;
-    try {
-      // Get recent commit messages (last 10)
-      const recentCommits = exec('git log --oneline -10', {
-        cwd: this.projectRoot,
-        encoding: 'utf-8',
-      }).trim();
-
-      if (!recentCommits) return 0;
-
-      // Count consecutive non-task commits from most recent
-      const commits = recentCommits.split('\n');
-      let count = 0;
-
-      for (const commit of commits) {
-        if (!commit.includes('TASK_')) {
-          count++;
-        } else {
-          // Stop counting when we hit a task commit
-          break;
-        }
-      }
-
-      return count;
-    } catch {
-      return 0;
-    }
-  }
 }
 
 /**
@@ -533,11 +503,7 @@ export function isGitRepository(projectRoot: string, exec: typeof execSync = exe
 /**
  * Generate stop hook output based on review
  */
-export function generateStopOutput(
-  review: ReviewResult,
-  inStopHook: boolean,
-  nonTaskSuggestion: string | null,
-): HookOutput {
+export function generateStopOutput(review: ReviewResult, inStopHook: boolean): HookOutput {
   const output: HookOutput = {};
 
   // If already in a stop hook, always allow stop regardless of review
@@ -546,9 +512,6 @@ export function generateStopOutput(
     output.systemMessage = `📝 Review: ${review.message}`;
     if (review.details) {
       output.systemMessage += `\n\nDetails: ${review.details}`;
-    }
-    if (nonTaskSuggestion) {
-      output.systemMessage += `\n\n${nonTaskSuggestion}`;
     }
     return output;
   }
@@ -561,9 +524,6 @@ export function generateStopOutput(
       output.systemMessage = `🛤️ Project is on track. ${review.message}`;
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
-      }
-      if (nonTaskSuggestion) {
-        output.systemMessage += `\n\n${nonTaskSuggestion}`;
       }
       break;
 
@@ -699,27 +659,15 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
     const review = await reviewer.review(input.transcript_path || '');
 
     // Handle commit if needed
-    let nonTaskSuggestion: string | null = null;
     if (review.commitMessage) {
       const committed = await reviewer.commitChanges(review.commitMessage);
       if (committed) {
         logger.info(`Auto-committed: ${review.commitMessage}`);
-
-        // Only suggest creating a task if there's NO active task
-        // Check if this was a non-task commit and check recent history
-        const activeTaskId = reviewer.getActiveTaskId();
-        if (!activeTaskId && !review.commitMessage.includes('TASK_')) {
-          const nonTaskCount = reviewer.checkRecentNonTaskCommits();
-          // We just made a commit, so if there were 2+ before, we now have 3+
-          if (nonTaskCount >= 2) {
-            nonTaskSuggestion = `💡 I notice you've made ${nonTaskCount + 1} commits without an active task. Consider using planning mode (shift-tab) to create a task for better tracking.`;
-          }
-        }
       }
     }
 
     // Generate output based on review
-    const output = generateStopOutput(review, inStopHook, nonTaskSuggestion);
+    const output = generateStopOutput(review, inStopHook);
 
     logger.info('Review complete', { status: review.status, message: review.message });
     logger.debug('Sending output', { output_preview: JSON.stringify(output).substring(0, 100) });
