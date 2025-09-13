@@ -122,10 +122,13 @@ export class GitHubHelpers {
     try {
       logger.info('Creating issue branch', { issueNumber });
 
+      // Resolve explicit repo to avoid ambiguity with remotes
+      const repoInfo = this.getGitHubRepoInfo(cwd);
+      const repoFlag = repoInfo ? `-R ${repoInfo.owner}/${repoInfo.repo}` : '';
+      const command = `gh issue develop ${issueNumber} --checkout ${repoFlag} 2>&1`;
+
       // Use gh issue develop to create and checkout a branch linked to the issue
-      this.exec(`gh issue develop ${issueNumber} --checkout 2>&1`, {
-        cwd,
-      });
+      this.exec(command, { cwd });
 
       // Get the current branch name
       const branchName = this.exec('git branch --show-current', { cwd }).trim();
@@ -133,7 +136,14 @@ export class GitHubHelpers {
       logger.info('Issue branch created successfully', { issueNumber, branchName });
       return branchName;
     } catch (error) {
-      logger.error('Failed to create issue branch', { error, issueNumber });
+      const err = error as unknown as { message?: string; stdout?: string; stderr?: string };
+      logger.error('Failed to create issue branch', {
+        error: err?.message || String(error),
+        stdout: err?.stdout,
+        stderr: err?.stderr,
+        issueNumber,
+        context: { cwd },
+      });
       return null;
     }
   }
