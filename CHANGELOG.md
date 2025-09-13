@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/cahaseler/cc-track/compare/v1.8.0...v1.9.0) (2025-09-13)
+
+
+### Features
+
+* TASK_043 integrate DiffSummary compression into stop-review hook ([6716baf](https://github.com/cahaseler/cc-track/commit/6716bafb08c7711bb20ceeeda3594f63d8e7d59f))
+
 # [1.8.0](https://github.com/cahaseler/cc-track/compare/v1.7.0...v1.8.0) (2025-09-13)
 
 
