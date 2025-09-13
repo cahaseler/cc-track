@@ -24,5 +24,4 @@
 - [2025-09-12] add enforcement mechanism to stop-review hook to flag when AI updates task files or otherwise claims task completion when there are obviously still open issues like failing tests, lint errors, etc
 - improve pre-compaction tools substantially to automatically update task list, potentially write journal entry too to avoid post-compact confusion.
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
-- [2025-09-12] whenever the stop review hook makes a commit it should unobtrusively notify claude
 - [2025-09-12] make sure builds done in github bake the right version number into the executable
