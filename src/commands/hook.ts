@@ -5,6 +5,7 @@ import { editValidationHook } from '../hooks/edit-validation';
 import { postCompactHook } from '../hooks/post-compact';
 import { preCompactHook } from '../hooks/pre-compact';
 import { stopReviewHook } from '../hooks/stop-review';
+import { taskValidationHook } from '../hooks/task-validation';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -18,6 +19,13 @@ export function determineHookType(input: HookInput): string | null {
 
   // Map event types to hook handlers
   switch (hook_event_name) {
+    case 'PreToolUse':
+      // Check if this is an Edit/MultiEdit event for task validation
+      if (tool_name === 'Edit' || tool_name === 'MultiEdit') {
+        return 'task-validation';
+      }
+      return null;
+
     case 'PostToolUse':
       // Check if this is an Edit/Write/MultiEdit event for edit-validation
       if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
@@ -67,6 +75,7 @@ const hookHandlers: Record<string, (input: HookInput) => Promise<HookOutput>> = 
   'pre-compact': preCompactHook,
   'post-compact': postCompactHook,
   'stop-review': stopReviewHook,
+  'task-validation': taskValidationHook,
 };
 
 /**

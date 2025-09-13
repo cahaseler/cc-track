@@ -26,6 +26,9 @@ export interface HookOutput {
   hookSpecificOutput?: {
     hookEventName: string;
     additionalContext?: string;
+    // PreToolUse specific fields
+    permissionDecision?: 'allow' | 'deny' | 'ask';
+    permissionDecisionReason?: string;
   };
 }
 

@@ -34,6 +34,10 @@
     },
     "test": {
       "enabled": true
+    },
+    "task_validation": {
+      "enabled": true,
+      "description": "Validates edits to task files to prevent inappropriate status changes and weasel-word completions"
     }
   },
   "git": {
