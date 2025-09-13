@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { type createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
+import { DiffSummary } from '../lib/diff-summary';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { ClaudeLogParser, type SimplifiedEntry } from '../lib/log-parser';
@@ -25,6 +26,7 @@ export interface StopReviewDependencies {
       options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number },
     ) => Promise<{ text: string; success: boolean; error?: string }>;
   };
+  diffSummary?: DiffSummary;
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
 }
@@ -152,7 +154,21 @@ export class SessionReviewer {
 
     // Prepare review prompt with filtered diff (code changes only)
     try {
-      const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, filteredDiff, hasDocChanges);
+      // Compress the diff if it's large
+      const compressedDiff = await this.compressDiffForReview(filteredDiff);
+      const isCompressed = compressedDiff.includes('### Change Set');
+
+      if (isCompressed) {
+        this.logger.info('Using compressed diff for review');
+      }
+
+      const reviewPrompt = this.buildReviewPrompt(
+        activeTask,
+        recentMessages,
+        compressedDiff,
+        hasDocChanges,
+        isCompressed,
+      );
 
       // Use Claude CLI to review
       this.logger.debug('Starting Claude review call');
@@ -349,7 +365,111 @@ export class SessionReviewer {
     return result;
   }
 
-  buildReviewPrompt(task: string, messages: string, diff: string, hasDocChanges: boolean = false): string {
+  /**
+   * Split a large diff into chunks suitable for parallel summarization
+   */
+  private splitDiffIntoChunks(diff: string, maxChunkSize: number = 8000): string[] {
+    const chunks: string[] = [];
+    const lines = diff.split('\n');
+    let currentChunk: string[] = [];
+    let currentSize = 0;
+
+    for (const line of lines) {
+      // Start of new file
+      if (line.startsWith('diff --git')) {
+        // If current chunk is large enough, save it and start new one
+        if (currentSize > maxChunkSize && currentChunk.length > 0) {
+          chunks.push(currentChunk.join('\n'));
+          currentChunk = [];
+          currentSize = 0;
+        }
+      }
+
+      currentChunk.push(line);
+      currentSize += line.length + 1; // +1 for newline
+    }
+
+    // Add remaining chunk
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk.join('\n'));
+    }
+
+    return chunks;
+  }
+
+  /**
+   * Compress a large diff using the DiffSummary tool with Haiku model
+   */
+  async compressDiffForReview(diff: string): Promise<string> {
+    // If diff is small, don't compress
+    if (diff.length < 5000) {
+      this.logger.debug('Diff is small, skipping compression', { diffLength: diff.length });
+      return diff;
+    }
+
+    const diffSummaryTool = this.deps.diffSummary || new DiffSummary();
+
+    try {
+      this.logger.info('Starting diff compression', { originalSize: diff.length });
+
+      // Split into manageable chunks
+      const chunks = this.splitDiffIntoChunks(diff);
+      this.logger.debug('Split diff into chunks', { chunkCount: chunks.length });
+
+      // Summarize in parallel (max 5 concurrent to avoid rate limits)
+      const batchSize = 5;
+      const summaries: string[] = [];
+
+      let failedCount = 0;
+      for (let i = 0; i < chunks.length; i += batchSize) {
+        const batch = chunks.slice(i, i + batchSize);
+        this.logger.debug('Processing batch', { batchIndex: i / batchSize, batchSize: batch.length });
+
+        const batchSummaries = await Promise.all(
+          batch.map((chunk, idx) =>
+            diffSummaryTool.summarizeDiff(chunk).catch((err) => {
+              this.logger.warn('Failed to summarize chunk', { chunkIndex: i + idx, error: err });
+              failedCount++;
+              return `• Failed to summarize chunk ${i + idx + 1}`;
+            }),
+          ),
+        );
+        summaries.push(...batchSummaries);
+      }
+
+      // If all chunks failed, fallback to truncated original
+      if (failedCount === chunks.length) {
+        this.logger.warn('All chunks failed to compress, using truncated original');
+        return diff.substring(0, 10000);
+      }
+
+      // Combine summaries with clear separators
+      const combined = summaries.map((s, i) => `### Change Set ${i + 1}:\n${s}`).join('\n\n');
+
+      const compressionRatio = ((1 - combined.length / diff.length) * 100).toFixed(1);
+      this.logger.info('Diff compression complete', {
+        originalSize: diff.length,
+        compressedSize: combined.length,
+        compressionRatio: `${compressionRatio}%`,
+        chunkCount: chunks.length,
+        failedChunks: failedCount,
+      });
+
+      return combined;
+    } catch (error) {
+      this.logger.warn('Diff compression failed, using truncated original', { error });
+      // Fallback to truncated original
+      return diff.substring(0, 10000);
+    }
+  }
+
+  buildReviewPrompt(
+    task: string,
+    messages: string,
+    diff: string,
+    hasDocChanges: boolean = false,
+    isCompressed: boolean = false,
+  ): string {
     // Log prompt size for debugging
     const sizes = {
       task: task.length,
@@ -369,6 +489,11 @@ export class SessionReviewer {
       ? '\n\n## Important Note:\nChanges to .md (markdown) documentation files have been filtered out from the diff below and are always acceptable. Focus only on the code changes shown.'
       : '';
 
+    // Different presentation for compressed vs raw diffs
+    const diffSection = isCompressed
+      ? `## Compressed Git Diff Summary (generated by Haiku model):\n${diff}`
+      : `## Git Diff (code changes only, documentation excluded):\n\`\`\`diff\n${diff.substring(0, 10000)}\n\`\`\``;
+
     const prompt = `You are reviewing an AI assistant's work on a coding task. Analyze if the work is on track or has deviated.
 ${docNote}
 
@@ -378,10 +503,7 @@ ${task.substring(0, 2000)}
 ## Recent Conversation (last 10 messages):
 ${messages.substring(0, 2000)}
 
-## Git Diff (code changes only, documentation excluded):
-\`\`\`diff
-${diff.substring(0, 10000)}
-\`\`\`
+${diffSection}
 
 ## Review Categories:
 1. **on_track**: Work aligns with task requirements, waiting for user input
@@ -398,7 +520,7 @@ ${diff.substring(0, 10000)}
 ## IMPORTANT:
 - Documentation updates (.md files) are ALWAYS acceptable and have been filtered out
 - Focus only on code changes when determining if work is on track
-- Updates to files like learned_mistakes.md, progress_log.md, etc. are normal and expected
+- Updates to files like learned_mistakes.md, progress_log.md, etc. are normal and expected${isCompressed ? '\n- The diff has been compressed into summaries to save tokens - focus on the high-level changes described' : ''}
 
 CRITICAL: You MUST respond with ONLY a valid JSON object. No other text before or after.
 The response MUST be valid JSON that can be parsed with JSON.parse().

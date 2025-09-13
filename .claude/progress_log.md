@@ -204,3 +204,8 @@
   Details: Successfully replaced all CLI-based Claude interactions with the official TypeScript SDK
   Files: src/lib/claude-sdk.ts (new), package.json, src/lib/git-helpers.ts, src/hooks/stop-review.ts, src/hooks/capture-plan.ts, src/hooks/pre-compact.ts, all associated test files
   Key Achievement: SDK integration eliminates temp files, subprocess overhead, and the /tmp hack. Critical fix: removed hardcoded outdated model versions (claude-3-5-*) and replaced with generic names ('haiku', 'sonnet', 'opus') for automatic latest versions. All 245 tests passing with proper mocking.
+
+[2025-09-13 19:00] - Completed: Task 043 - Integrate DiffSummary into Stop-Review Hook for Token Reduction
+  Details: Successfully integrated DiffSummary tool to compress large git diffs before sending to Sonnet, achieving ~80% token reduction
+  Files: src/hooks/stop-review.ts, src/hooks/stop-review.test.ts, src/lib/diff-summary.ts
+  Key Achievement: Two-stage review process using Haiku for compression ($0.25/M tokens) then Sonnet for deviation detection ($3/M tokens). Smart diff splitting at file boundaries, parallel processing with batching, graceful fallback to truncated original on failure. All 37 stop-review tests passing.
