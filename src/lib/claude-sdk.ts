@@ -6,7 +6,9 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { query, type SDKMessage } from '@anthropic-ai/claude-code';
+// Defer importing '@anthropic-ai/claude-code' until needed to avoid any
+// bundling-time side effects in compiled binaries.
+type SDKMessage = any;
 
 export interface ClaudeResponse {
   text: string;
@@ -65,6 +67,7 @@ async function prompt(
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
 
+    const { query } = await import('@anthropic-ai/claude-code');
     const stream = query({
       prompt: text,
       options: {
@@ -237,7 +240,7 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
 
   // Find Claude Code executable
   const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
-
+  const { query } = await import('@anthropic-ai/claude-code');
   return query({
     prompt: p,
     options: {

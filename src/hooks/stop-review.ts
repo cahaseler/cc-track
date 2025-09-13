@@ -1,7 +1,6 @@
 import { execSync } from 'node:child_process';
 import { type createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
 import { ClaudeMdHelpers } from '../lib/claude-md';
-import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
@@ -78,8 +77,11 @@ export class SessionReviewer {
       // Generate a meaningful commit message using Haiku (use filtered diff to focus on code)
       let commitMessage: string;
       try {
+        this.logger.debug('About to instantiate GitHelpers');
         const gitHelpers = this.deps.gitHelpers || new GitHelpers();
+        this.logger.debug('GitHelpers instantiated');
         const taskId = this.getActiveTaskId();
+        this.logger.debug('Resolved active task id', { taskId });
         this.logger.debug('Generating commit message via SDK');
         commitMessage = await gitHelpers.generateCommitMessage(
           filteredDiff || fullDiff,
@@ -394,7 +396,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
   }
 
   async callClaudeForReview(prompt: string): Promise<ReviewResult> {
-    const claudeSDK = this.deps.claudeSDK || DefaultClaudeSDK;
+    const claudeSDK = this.deps.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
 
     try {
       // Use Sonnet explicitly for review quality and speed

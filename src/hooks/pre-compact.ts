@@ -1,7 +1,6 @@
 import { createReadStream, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
@@ -397,7 +396,7 @@ Output ONLY the bulleted list of new lessons, nothing else.`;
 
   try {
     // Use SDK instead of CLI - no temp files needed!
-    const claudeSDK = deps?.claudeSDK || DefaultClaudeSDK;
+    const claudeSDK = deps?.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
     const response = await claudeSDK.extractErrorPatterns(prompt);
 
     if (response === 'NO NEW LESSONS') {

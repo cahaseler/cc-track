@@ -2,7 +2,6 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeMdHelpers } from '../lib/claude-md';
-import { ClaudeSDK as DefaultClaudeSDK } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
@@ -114,7 +113,7 @@ Respond with ONLY the markdown content for the task file, no explanations.`;
  */
 export async function enrichPlanWithClaude(prompt: string, deps: CapturePlanDependencies): Promise<string> {
   const logger = deps.logger || createLogger('capture_plan');
-  const claudeSDK = deps.claudeSDK || DefaultClaudeSDK;
+  const claudeSDK = deps.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
 
   try {
     // Use SDK instead of CLI - no temp files or /tmp hack needed!

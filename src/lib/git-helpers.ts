@@ -1,5 +1,4 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import { ClaudeSDK as DefaultClaudeSDK } from './claude-sdk';
 import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
@@ -23,12 +22,19 @@ const defaultExec: ExecFunction = (command, options) => {
 export class GitHelpers {
   private exec: ExecFunction;
   private getGitConfig: GetGitConfigFunction;
-  private claudeSDK: ClaudeSDKInterface;
+  private claudeSDK?: ClaudeSDKInterface;
 
   constructor(exec?: ExecFunction, getGitConfig?: GetGitConfigFunction, claudeSDK?: ClaudeSDKInterface) {
     this.exec = exec || defaultExec;
     this.getGitConfig = getGitConfig || defaultGetGitConfig;
-    this.claudeSDK = claudeSDK || DefaultClaudeSDK;
+    this.claudeSDK = claudeSDK;
+  }
+
+  private async ensureClaudeSDK(): Promise<ClaudeSDKInterface> {
+    if (this.claudeSDK) return this.claudeSDK;
+    const mod = await import('./claude-sdk');
+    this.claudeSDK = (mod as unknown as { ClaudeSDK: ClaudeSDKInterface }).ClaudeSDK;
+    return this.claudeSDK;
   }
 
   /**
@@ -106,7 +112,11 @@ export class GitHelpers {
     const changes = `${taskContext}\n\n${truncatedDiff}`;
 
     try {
-      const message = await this.claudeSDK.generateCommitMessage(changes);
+      if (process.env.CC_TRACK_DISABLE_SDK === '1') {
+        return 'chore: save work in progress';
+      }
+      const sdk = await this.ensureClaudeSDK();
+      const message = await sdk.generateCommitMessage(changes);
 
       // Extract just the commit message if Claude added any wrapper text
       // Look for a line that matches conventional commit format
@@ -138,7 +148,11 @@ export class GitHelpers {
     const planSummary = plan.substring(0, 1500);
 
     try {
-      const branchName = await this.claudeSDK.generateBranchName(planSummary, taskId);
+      if (process.env.CC_TRACK_DISABLE_SDK === '1') {
+        return `feature/task-${taskId.toLowerCase()}`;
+      }
+      const sdk = await this.ensureClaudeSDK();
+      const branchName = await sdk.generateBranchName(planSummary, taskId);
 
       // Extract just the branch name if Claude added any wrapper text
       const lines = branchName.split('\n');
@@ -225,17 +239,21 @@ export class GitHelpers {
 }
 
 // Create a default instance for backward compatibility with the few functions still in use
-const defaultGitHelpers = new GitHelpers();
+let _defaultGitHelpers: GitHelpers | null = null;
+function getDefaultGitHelpers(): GitHelpers {
+  if (!_defaultGitHelpers) _defaultGitHelpers = new GitHelpers();
+  return _defaultGitHelpers;
+}
 
 // Keep only the standalone functions that are actually used
 export function getDefaultBranch(cwd: string): string {
-  return defaultGitHelpers.getDefaultBranch(cwd);
+  return getDefaultGitHelpers().getDefaultBranch(cwd);
 }
 
 export function getCurrentBranch(cwd: string): string {
-  return defaultGitHelpers.getCurrentBranch(cwd);
+  return getDefaultGitHelpers().getCurrentBranch(cwd);
 }
 
 export function isWipCommit(commitLine: string): boolean {
-  return defaultGitHelpers.isWipCommit(commitLine);
+  return getDefaultGitHelpers().isWipCommit(commitLine);
 }
