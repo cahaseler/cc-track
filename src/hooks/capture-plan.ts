@@ -356,6 +356,13 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
       if (branchName) {
         finalTaskContent += `\n<!-- issue_branch: ${branchName} -->`;
         logger.info(`Created and switched to issue branch: ${branchName}`);
+      } else {
+        // Fallback to regular git branching if gh issue develop fails
+        logger.warn('Issue branch creation failed; falling back to regular git branching');
+        branchName = await handleGitBranching(plan, taskId, projectRoot, deps);
+        if (branchName) {
+          finalTaskContent += `\n\n<!-- branch: ${branchName} -->`;
+        }
       }
     } else {
       // Fall back to regular git branching if no issue or issue branches disabled
