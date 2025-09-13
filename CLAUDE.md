@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.claude/tasks/TASK_044.md
+@.claude/no_active_task.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
