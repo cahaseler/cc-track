@@ -1,5 +1,5 @@
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 function sh(cmd: string, cwd: string) {
@@ -22,11 +22,7 @@ async function main() {
 
   // Minimal repo structure with an active task
   mkdirSync(join(tmp, '.claude', 'tasks'), { recursive: true });
-  writeFileSync(
-    join(tmp, 'CLAUDE.md'),
-    `# Active Task\n\n@.claude/tasks/TASK_001.md\n`,
-    'utf8',
-  );
+  writeFileSync(join(tmp, 'CLAUDE.md'), `# Active Task\n\n@.claude/tasks/TASK_001.md\n`, 'utf8');
   writeFileSync(
     join(tmp, '.claude', 'tasks', 'TASK_001.md'),
     `# Test Task\n\n**Task ID:** 001\n\n## Requirements\n- [ ] Do something\n`,
@@ -90,4 +86,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-

@@ -8,9 +8,10 @@ import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createLogger } from './logger';
+
 // Defer importing '@anthropic-ai/claude-code' until needed to avoid any
 // bundling-time side effects in compiled binaries.
-type SDKMessage = any;
+type SDKMessage = unknown;
 
 export interface ClaudeResponse {
   text: string;
@@ -110,7 +111,7 @@ async function prompt(
         timedOut = true;
         try {
           // Politely signal completion to underlying process
-          void (stream as AsyncGenerator<SDKMessage, void>).return(undefined as any);
+          void (stream as AsyncGenerator<SDKMessage, void>).return(undefined);
         } catch {
           // ignore
         }

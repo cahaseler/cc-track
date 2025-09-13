@@ -1212,6 +1212,5 @@ diff --git a/src/more.ts b/src/more.ts
       // When no active task, doesn't call Claude for review
       expect(result.systemMessage).toContain('Project is on track');
     });
-
   });
 });

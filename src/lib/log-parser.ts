@@ -187,8 +187,8 @@ export class ClaudeLogParser {
         resolve();
       });
 
-      stream.on('error', (error: any) => {
-        this.logger.error('Error reading log file', { error: error?.message ?? String(error) });
+      stream.on('error', (error: unknown) => {
+        this.logger.error('Error reading log file', { error: (error as Error)?.message ?? String(error) });
         reject(error);
       });
     });
@@ -322,7 +322,7 @@ export class ClaudeLogParser {
     } else if (Array.isArray(result) && result[0]?.type === 'text') {
       content = result[0].text?.substring(0, 200) || '[Tool result]';
     } else if (typeof result === 'object' && result !== null) {
-      const res = result as any;
+      const res = result as { stdout?: string; stderr?: string; output?: string };
       if (res.stdout || res.stderr || res.output) {
         content = (res.stdout || res.stderr || res.output || '').substring(0, 200);
         success = !res.stderr && !content.toLowerCase().includes('error');
@@ -348,7 +348,7 @@ export class ClaudeLogParser {
    * Simplify regular messages
    */
   private simplifyMessage(entry: LogEntry, includeTools: boolean): SimplifiedEntry {
-    const message = entry.message!;
+    const message = entry.message || { role: 'unknown' as const, content: '' };
     let content = '';
     let type: 'message' | 'tool_use' = 'message';
 
@@ -383,16 +383,17 @@ export class ClaudeLogParser {
       content,
       type,
       metadata: {
-        model: message.model,
-        tokens: message.usage
-          ? {
-              input:
-                (message.usage.input_tokens || 0) +
-                (message.usage.cache_creation_input_tokens || 0) +
-                (message.usage.cache_read_input_tokens || 0),
-              output: message.usage.output_tokens || 0,
-            }
-          : undefined,
+        model: 'model' in message ? message.model : undefined,
+        tokens:
+          'usage' in message && message.usage
+            ? {
+                input:
+                  (message.usage.input_tokens || 0) +
+                  (message.usage.cache_creation_input_tokens || 0) +
+                  (message.usage.cache_read_input_tokens || 0),
+                output: message.usage.output_tokens || 0,
+              }
+            : undefined,
         sessionId: entry.sessionId,
         uuid: entry.uuid,
       },
@@ -402,17 +403,18 @@ export class ClaudeLogParser {
   /**
    * Summarize tool parameters for display
    */
-  private summarizeToolParams(input: any): string {
+  private summarizeToolParams(input: unknown): string {
     if (typeof input === 'string') return input.substring(0, 50);
 
     if (typeof input === 'object' && input !== null) {
       const params: string[] = [];
 
       // Extract key parameters
-      if (input.command) params.push(`cmd: "${input.command.substring(0, 30)}..."`);
-      if (input.file_path) params.push(`file: "${input.file_path}"`);
-      if (input.pattern) params.push(`pattern: "${input.pattern.substring(0, 20)}..."`);
-      if (input.query) params.push(`query: "${input.query.substring(0, 30)}..."`);
+      const obj = input as Record<string, unknown>;
+      if (obj.command && typeof obj.command === 'string') params.push(`cmd: "${obj.command.substring(0, 30)}..."`);
+      if (obj.file_path && typeof obj.file_path === 'string') params.push(`file: "${obj.file_path}"`);
+      if (obj.pattern && typeof obj.pattern === 'string') params.push(`pattern: "${obj.pattern.substring(0, 20)}..."`);
+      if (obj.query && typeof obj.query === 'string') params.push(`query: "${obj.query.substring(0, 30)}..."`);
 
       return params.join(', ');
     }

@@ -28,13 +28,13 @@ const createTestData = () => ({
   '/test/empty.jsonl': [],
   '/test/malformed.jsonl': ['not json\n', '{"valid": "json"}\n', 'also not json\n'],
   '/test/mixed.jsonl': [
-    JSON.stringify({
+    `${JSON.stringify({
       type: 'user',
       timestamp: '2025-01-09T10:00:00Z',
       uuid: 'user-1',
       message: { role: 'user', content: 'Hello Claude' },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'assistant',
       timestamp: '2025-01-09T10:00:05Z',
       uuid: 'assistant-1',
@@ -44,8 +44,8 @@ const createTestData = () => ({
         model: 'claude-3-opus-20240229',
         usage: { input_tokens: 10, output_tokens: 20 },
       },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'assistant',
       timestamp: '2025-01-09T10:00:10Z',
       uuid: 'assistant-2',
@@ -53,29 +53,29 @@ const createTestData = () => ({
         role: 'assistant',
         content: [{ type: 'tool_use', name: 'Bash', id: 'tool-1', input: { command: 'ls -la' } }],
       },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'user',
       timestamp: '2025-01-09T10:00:15Z',
       uuid: 'user-2',
       toolUseResult: { stdout: 'file1.txt\nfile2.txt', stderr: '' },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'system',
       timestamp: '2025-01-09T10:00:20Z',
       uuid: 'system-1',
       subtype: 'compact_boundary',
       content: 'Conversation compacted',
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'user',
       timestamp: '2025-01-09T10:00:25Z',
       uuid: 'user-3',
       toolUseResult: 'Error: Command not found',
-    }) + '\n',
+    })}\n`,
   ],
   '/test/tools.jsonl': [
-    JSON.stringify({
+    `${JSON.stringify({
       type: 'assistant',
       timestamp: '2025-01-09T10:00:00Z',
       uuid: 'test-1',
@@ -89,8 +89,8 @@ const createTestData = () => ({
           },
         ],
       },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'assistant',
       timestamp: '2025-01-09T10:00:05Z',
       uuid: 'test-2',
@@ -107,8 +107,8 @@ const createTestData = () => ({
           },
         ],
       },
-    }) + '\n',
-    JSON.stringify({
+    })}\n`,
+    `${JSON.stringify({
       type: 'assistant',
       timestamp: '2025-01-09T10:00:10Z',
       uuid: 'test-3',
@@ -124,7 +124,7 @@ const createTestData = () => ({
           },
         ],
       },
-    }) + '\n',
+    })}\n`,
   ],
 });
 
