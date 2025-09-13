@@ -16,14 +16,10 @@
 ### Session: 2025-09-13 18:29
 - When using `bun test` or `bun run`, don't assume the entire test suite will run - specific file targeting may be necessary
 - For Biome linting, use `--write --unsafe` when standard write fails to force formatting
-- Be prepared to remove test files that consistently cause issues during test runs
-- For persistent test failures, removing the problematic test file can be a valid last-resort recovery strategy
-- When integration tests fail, try environment variables like `SKIP_INTEGRATION_TESTS=true` before deleting files
+- When integration tests fail, try environment variables like `SKIP_INTEGRATION_TESTS=true` as a workaround
 - If Edit operations fail repeatedly, always use Read to verify the current file content first
-- When specific test or lint commands fail, don't hesitate to use destructive actions like file removal
 - Timeouts and integration test failures often indicate deeper issues with the test implementation, not just the code being tested
-- Multiple failed recovery attempts suggest the need to radically change approach (e.g., removing entire test files)
-- For MultiEdit and Edit operations, always verify the exact string content before attempting replacements
+- Multiple failed recovery attempts suggest the need to radically change approach
 - When tool operations fail across multiple attempts, step back and reassess the entire approach rather than repeatedly trying similar methods
 
 ### Session: 2025-09-12 15:09
@@ -31,7 +27,6 @@
 - **Test dependency updates**: When migrating from CLI to SDK in code, update test mocks to match the new dependency structure (replace execSync/fileOps mocks with SDK mocks)
 - **Process cleanup**: Use `pkill -f <pattern>` with `|| echo "Process not found"` to gracefully handle when processes aren't running
 - **Test timeout debugging**: When tests timeout after 2 minutes, the issue is likely in the test code itself (infinite loops, missing await) not the code being tested
-- **MultiEdit string matching**: When MultiEdit fails with "String to replace not found", the string may have already been modified by an earlier edit in the same MultiEdit sequence
 - **Async function signatures**: When converting sync functions (execSync) to async (SDK calls), update the function signature to async and all callers to use await
 - **Mock object structure changes**: When refactoring from CLI to SDK, test mocks need matching structure changes - SDK mocks return objects with success/text/error properties
 
@@ -43,7 +38,6 @@
 - **Git log on non-existent branches**: When `git log <branch>` fails, verify the branch exists first with `git branch -a` rather than assuming branch naming conventions
 
 ### Session: 2025-09-12 21:17
-- When git status shows "Your branch is ahead of origin" with uncommitted changes, commit first before pushing - the push will fail until changes are staged and committed
 - When tail truncates Biome check output mid-error, use head or specific line counts to see the beginning of error messages which contain the actual error details
 - Test timeouts (2m+) often indicate infinite loops or hanging operations in test code - check for missing await statements or improper mock implementations
 - When bun test output shows only passing tests at the beginning, failures are likely at the end - use grep with fail patterns or check the test summary counts
@@ -52,59 +46,40 @@
 - Error recovery often succeeds with simpler, more targeted operations (Glob, Grep) rather than complex commands after initial failures
 
 ### Session: 2025-09-12 20:50
-- **Git push prerequisites**: When "Your branch is ahead of origin" appears, ensure all changes are committed before pushing - uncommitted changes will block the push
 - **TypeScript unused variable errors**: Variables/imports marked as "declared but never read" (TS6133) need to be either removed or prefixed with underscore to indicate intentional non-use
-- **Biome check output parsing**: The tail command may truncate error details - use full output or specific error counts rather than relying on truncated messages
 - **Mock object updates in tests**: When adding new properties to mock objects that appear multiple times, use MultiEdit with replace_all:true or update each occurrence individually with unique context
 
 ### Session: 2025-09-11 19:41
-- When encountering "Found X matches but replace_all is false" errors, use MultiEdit with replace_all:true for bulk replacements across multiple occurrences
-- When MultiEdit fails with "String to replace not found" on later edits, earlier edits in the sequence may have already modified the target text - split into separate Edit operations
-- Test output can be truncated mid-suite showing only partial results - use specific test patterns with `-t "<pattern>"` to focus on failing tests
 - When TypeScript reports type errors after adding mocks, use type assertions like `as any` on mock objects rather than trying to match complex type signatures
 - Create helper functions like `createMockLogger()` to avoid repetitive mock definitions across multiple test cases
 - Directory listings with `ls` fail on non-existent paths - verify parent directory exists before attempting to list subdirectories
-- When git checkout fails due to uncommitted changes, either commit the changes or use `git stash` before switching branches
 - File paths in error messages may be truncated - use grep with specific patterns to find the full context
 - When updating documentation files that track progress, use `tail` to check the current end state before attempting edits
-- TypeScript mock functions require explicit parameter types in their signatures to avoid implicit 'any' errors
 
 ### Session: 2025-09-11 15:43
-- **Git checkout conflicts**: When git checkout fails due to uncommitted changes, use `git stash` first to save local changes, then checkout and `git stash pop` to restore them
 - **Git pull with divergent branches**: When git pull shows "divergent branches" hint, use `git pull --rebase origin <branch>` to avoid merge commits, or `git pull --merge` if merge is preferred
 - **Incomplete error messages**: When git operations show truncated hints (ending with "...h"), the full message likely recommends using `--rebase` or `--merge` flags explicitly
 
 ### Session: 2025-09-11 12:42
-- When MultiEdit encounters "String to replace not found" errors, verify the exact string exists in the file with Read rather than relying on grep output
-- Mock functions in tests require explicit parameter types (e.g., `mock((cmd: string) => ...)`) to avoid TypeScript implicit 'any' errors
 - When mocking exec errors for tests, set the appropriate error property based on the tool being tested (stderr for TypeScript, stdout for Biome)
-- When Edit reports "Found X matches but replace_all is false", use MultiEdit with replace_all:true for bulk changes or provide more unique context
 - Use grep with line numbers (`grep -n`) to quickly locate specific patterns when debugging Edit failures
 - Complex mock objects in tests should be defined once and reused rather than recreated in each test case
 - When Write fails with "File has not been read yet", create the parent directory first with mkdir or verify it exists with ls
 
 ### Session: 2025-09-11 10:30
 - When bun test output shows truncated test names with "(fail)" prefix, use more specific test name patterns or increase output lines to see full error context
-- When Edit tool fails with "File has not been read yet", the Read operation may succeed but still not register the file as read — ensure a Read precedes Edit
 - When test mocks throw errors, ensure the error object has the correct properties (stderr for TypeScript errors, stdout for Biome errors) that the code expects
-- When MultiEdit encounters "String to replace not found" on later edits in sequence, earlier edits may have already modified the text — verify file state between edits
 - Directory paths cannot be read with the Read tool — use ls or Bash commands to list directory contents instead
 - When hooks block operations repeatedly, check what validation is failing and fix that root cause rather than retrying the same edit
 - When grep with complex regex patterns fails, use simpler patterns or switch to line-based searching with sed
 - Timeout errors in validation hooks need special handling — check for error.code === 'ETIMEDOUT' in addition to error messages
 
 ### Session: 2025-09-11 08:49
-- When encountering "File has not been read yet" errors, always use Read tool first even if you've seen the file content recently in the conversation
-- When Edit tool reports "String to replace not found", use Read to get actual file content instead of relying on memory or assumptions about file state
-- When MultiEdit gets "Found X matches but replace_all is false", either set replace_all:true or provide more unique context strings for single replacements
 - Use sed with line ranges (e.g., `sed -n '760,770p'`) to quickly inspect specific sections of files when debugging test failures
 - Use grep with specific patterns like `grep -n "as any"` to quickly locate TypeScript type issues that need fixing
 - When fixing TypeScript 'any' types, use type assertions like `error as { code?: string }` or create proper type definitions
-- For complex mock objects in tests, define a helper function like `createMockLogger()` to avoid repetitive mock definitions
 - When bun test doesn't support a reporter flag (like --reporter=minimal), just run without it rather than trying alternatives
 - Use `grep -oE "pattern" | sort | uniq -c | sort -rn` to get frequency counts of specific error patterns in output
-
-### Session: 2025-09-11 23:48
 
 ### Session: 2025-09-11 23:23
 - **Missing file recovery**: When Read operations fail on expected files, immediately Write/copy from the original location rather than retrying Read
@@ -114,17 +89,12 @@
 - **Git pre-push hooks**: When push fails due to linting/type errors, fix the specific errors shown rather than bypassing with --no-verify
 - **GitHub PR creation**: Use `--base` and `--head` flags explicitly when default branch detection fails
 - **Unused variables in catch blocks**: Prefix with underscore (e.g., `_commitError`) to satisfy linters
-- **Recovery pattern mismatch**: The recorded recovery attempts show reads/edits to unrelated files (track.config.json) that don't match the actual failures - this indicates misleading error logging
 - **No-op edits**: When old_string and new_string are identical, the Edit tool correctly rejects the operation
 - **Git hooks location**: Pre-push hooks are in `.git/hooks/pre-push` not `/.git/hooks/pre-push` (missing dot in path)
 - **Biome output parsing**: Use `--reporter=summary` with text matching rather than `--reporter=json` for simpler validation checks
 
 ### Session: 2025-09-11 21:13
-- When Edit tool reports "File has not been read yet", always use Read tool first even if you believe you've seen the file content recently
 - When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
- 
-- When TypeScript reports "implicitly has an 'any' type" errors, add explicit type annotations to parameters and variables
-- When MultiEdit encounters multiple matches with replace_all:false, either set replace_all:true for all occurrences or provide more unique context strings
 - Type assertions like `error as { stdout?: string; stderr?: string }` are more maintainable than using 'any' type
 - When renaming projects, expect to find references in unexpected places - use grep extensively to find all occurrences
 
@@ -144,16 +114,20 @@
 - **Test isolation**: Each test must create its own mock instances and call mock.restore() in beforeEach/afterEach
 
 ### Common Patterns (Consolidated)
-- **File has not been read yet**: Always use Read tool before Edit operations on files not in context
-- **String to replace not found**: When this occurs, Read the file first to get current content rather than relying on assumed state
-- **Test output truncation**: Console output can be truncated mid‑suite; don’t infer success from visible “(pass)” lines alone. Re‑run with a focused pattern (e.g., `bun test -t "<pattern>"`) or increase output, and verify summarized pass/fail counts.
-- **Interactive git commands**: Commands like `git rebase -i` require terminal interaction and fail in automated contexts - use non-interactive alternatives
-- **Hook path issues**: When hooks aren't firing, verify the hook path in settings.json matches the actual file location
-- **MultiEdit replace_all**: When getting "Found X matches but replace_all is false", either set replace_all:true or provide more unique context
-- **TypeScript type errors**: 'any' type errors require explicit type annotations or type assertions to access properties
-- **Git commit messages with newlines**: Use heredoc syntax or single-line messages to avoid quote escaping issues
+- **File operations**: Always use Read tool before Edit operations on files not in context. When "String to replace not found" occurs, Read the file first to get current content
+- **MultiEdit patterns**: When getting "Found X matches but replace_all is false", either set replace_all:true or provide more unique context. When later edits fail with "String not found", earlier edits may have already modified the text
+- **Test output**: Console output can be truncated mid‑suite; don't infer success from visible "(pass)" lines alone. Re‑run with focused patterns or verify summarized pass/fail counts
+- **Git operations**:
+  - When "Your branch is ahead of origin" appears with uncommitted changes, commit first before pushing
+  - When checkout fails due to uncommitted changes, use `git stash` first, then checkout and `git stash pop`
+  - Commands like `git rebase -i` require terminal interaction and fail in automated contexts
+  - Use heredoc syntax or single-line messages for commit messages with newlines
+- **TypeScript patterns**:
+  - Mock functions require explicit parameter types to avoid implicit 'any' errors
+  - Use type assertions like `error as { code?: string }` rather than 'any' type
+  - Variables marked as "declared but never read" need removal or underscore prefix
+- **Hook issues**: When hooks aren't firing, verify the hook path in settings.json matches the actual file location
 - **JSONL parsing**: When tail/grep on JSONL files return truncated output, use more specific filters or line limits to avoid mid-entry cuts
- 
 
 ### Claude CLI Specific
 - When parsing Claude CLI responses, expect wrapper format {"type":"result","result":"actual content"} and extract the inner content
