@@ -6,6 +6,8 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { createLogger } from './logger';
 // Defer importing '@anthropic-ai/claude-code' until needed to avoid any
 // bundling-time side effects in compiled binaries.
 type SDKMessage = any;
@@ -56,6 +58,7 @@ async function prompt(
   model: 'haiku' | 'sonnet' | 'opus' = 'haiku',
   options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number },
 ): Promise<ClaudeResponse> {
+  const logger = createLogger('claude-sdk');
   try {
     // Use generic model names - the API will use the latest versions
     const modelMap = {
@@ -68,6 +71,12 @@ async function prompt(
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
 
     const { query } = await import('@anthropic-ai/claude-code');
+    logger.debug('ClaudeSDK.prompt start', {
+      model: modelMap[model],
+      timeout_ms: options?.timeoutMs,
+      pathToClaudeCodeExecutable,
+    });
+    const abortController = new AbortController();
     const stream = query({
       prompt: text,
       options: {
@@ -76,6 +85,17 @@ async function prompt(
         allowedTools: options?.allowedTools,
         disallowedTools: options?.disallowedTools ?? ['*'],
         pathToClaudeCodeExecutable,
+        // Critical: run in a temp directory to avoid triggering project hooks
+        cwd: tmpdir(),
+        abortController,
+        stderr: (data: string) => {
+          try {
+            const s = typeof data === 'string' ? data : String(data);
+            logger.debug('Claude Code stderr', { data: s.substring(0, 500) });
+          } catch {
+            // ignore
+          }
+        },
       },
     });
 
@@ -92,6 +112,12 @@ async function prompt(
         try {
           // Politely signal completion to underlying process
           void (stream as AsyncGenerator<SDKMessage, void>).return(undefined as any);
+        } catch {
+          // ignore
+        }
+        try {
+          abortController.abort();
+          logger.error('ClaudeSDK.prompt aborted due to timeout', { timeout_ms: options?.timeoutMs });
         } catch {
           // ignore
         }
@@ -132,6 +158,7 @@ async function prompt(
     }
 
     if (!success && timedOut) {
+      logger.error('ClaudeSDK.prompt timeout', { timeout_ms: options?.timeoutMs });
       return {
         text: responseText.trim(),
         success: false,
@@ -140,9 +167,12 @@ async function prompt(
       };
     }
 
+    logger.debug('ClaudeSDK.prompt done', { success, usage });
     return { text: responseText.trim(), success, error, usage };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    const logger = createLogger('claude-sdk');
+    logger.error('ClaudeSDK.prompt error', { error: msg });
     return {
       text: '',
       success: false,
@@ -161,7 +191,8 @@ Requirements:
 - Focus on the "what" and "why", not the "how"
 - Respond with JUST the commit message, no explanation`;
 
-  const response = await prompt(p, 'haiku', { timeoutMs: 20000 });
+  const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
+  const response = await prompt(p, 'haiku', { timeoutMs });
   if (!response.success) throw new Error(`Failed to generate commit message: ${response.error}`);
   return response.text;
 }
@@ -178,7 +209,8 @@ Requirements:
 - Types: feature, bug, chore, docs
 - Respond with JUST the branch name`;
 
-  const response = await prompt(p, 'haiku', { timeoutMs: 20000 });
+  const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
+  const response = await prompt(p, 'haiku', { timeoutMs });
   if (!response.success) throw new Error(`Failed to generate branch name: ${response.error}`);
   return response.text;
 }
@@ -241,6 +273,8 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
   // Find Claude Code executable
   const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
   const { query } = await import('@anthropic-ai/claude-code');
+  const logger = createLogger('claude-sdk');
+  logger.debug('ClaudeSDK.createValidationAgent start', { pathToClaudeCodeExecutable });
   return query({
     prompt: p,
     options: {
@@ -248,6 +282,17 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
       maxTurns: 10,
       allowedTools: ['Read', 'Grep', 'Glob', 'TodoWrite'],
       pathToClaudeCodeExecutable,
+      // Allow the agent to read the repository while preventing hook recursion
+      cwd: tmpdir(),
+      additionalDirectories: [codebasePath],
+      stderr: (data: string) => {
+        try {
+          const s = typeof data === 'string' ? data : String(data);
+          logger.debug('Claude Code stderr', { data: s.substring(0, 500) });
+        } catch {
+          // ignore
+        }
+      },
     },
   });
 }

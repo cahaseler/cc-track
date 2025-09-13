@@ -112,11 +112,19 @@ export class GitHelpers {
     const changes = `${taskContext}\n\n${truncatedDiff}`;
 
     try {
+      const fallbackMessage = 'chore: save work in progress';
       if (process.env.CC_TRACK_DISABLE_SDK === '1') {
-        return 'chore: save work in progress';
+        return fallbackMessage;
       }
-      const sdk = await this.ensureClaudeSDK();
-      const message = await sdk.generateCommitMessage(changes);
+      const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
+      const sdkPromise = (async () => {
+        const sdk = await this.ensureClaudeSDK();
+        return sdk.generateCommitMessage(changes);
+      })();
+      const timeoutPromise = new Promise<string>((resolve) => {
+        setTimeout(() => resolve(fallbackMessage), timeoutMs);
+      });
+      const message = await Promise.race<string>([sdkPromise, timeoutPromise]);
 
       // Extract just the commit message if Claude added any wrapper text
       // Look for a line that matches conventional commit format
@@ -133,7 +141,7 @@ export class GitHelpers {
       }
 
       // Fallback if nothing works
-      return 'chore: save work in progress';
+      return fallbackMessage;
     } catch (error) {
       console.error('Failed to generate commit message:', error);
       return 'chore: save work in progress';
