@@ -83,11 +83,15 @@ export class SessionReviewer {
         const taskId = this.getActiveTaskId();
         this.logger.debug('Resolved active task id', { taskId });
         this.logger.debug('Generating commit message via SDK');
-        commitMessage = await gitHelpers.generateCommitMessage(
+        const { message, source } = await gitHelpers.generateCommitMessageWithMeta(
           filteredDiff || fullDiff,
           this.projectRoot,
           taskId || undefined,
         );
+        commitMessage = message;
+        if (source !== 'sdk') {
+          this.logger.debug('Commit message fallback used', { source });
+        }
         this.logger.debug('Commit message generated');
       } catch {
         // Fallback to generic message if generation fails

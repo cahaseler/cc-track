@@ -105,6 +105,18 @@ export class GitHelpers {
    * Generate a commit message using Claude SDK with conventional commit format
    */
   async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
+    const result = await this.generateCommitMessageWithMeta(diff, _cwd, taskId);
+    return result.message;
+  }
+
+  /**
+   * Generate a commit message with source metadata
+   */
+  async generateCommitMessageWithMeta(
+    diff: string,
+    _cwd: string,
+    taskId?: string,
+  ): Promise<{ message: string; source: 'sdk' | 'timeout' | 'error' }> {
     // Truncate diff if too long (Haiku has smaller context)
     const truncatedDiff = diff.substring(0, 3000);
 
@@ -113,10 +125,7 @@ export class GitHelpers {
 
     try {
       const fallbackMessage = 'chore: save work in progress';
-      if (process.env.CC_TRACK_DISABLE_SDK === '1') {
-        return fallbackMessage;
-      }
-      const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
+      const timeoutMs = 10000; // Bounded SDK wait; hardcoded per project practice
       const sdkPromise = (async () => {
         const sdk = await this.ensureClaudeSDK();
         return sdk.generateCommitMessage(changes);
@@ -131,20 +140,20 @@ export class GitHelpers {
       const lines = message.split('\n');
       for (const line of lines) {
         if (line.match(/^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\([^)]+\))?:/)) {
-          return line;
+          return { message: line, source: message === fallbackMessage ? 'timeout' : 'sdk' };
         }
       }
 
       // If no proper format found but we got something, use it
       if (message) {
-        return message;
+        return { message, source: message === fallbackMessage ? 'timeout' : 'sdk' };
       }
 
       // Fallback if nothing works
-      return fallbackMessage;
+      return { message: fallbackMessage, source: 'timeout' };
     } catch (error) {
       console.error('Failed to generate commit message:', error);
-      return 'chore: save work in progress';
+      return { message: 'chore: save work in progress', source: 'error' };
     }
   }
 
@@ -156,9 +165,6 @@ export class GitHelpers {
     const planSummary = plan.substring(0, 1500);
 
     try {
-      if (process.env.CC_TRACK_DISABLE_SDK === '1') {
-        return `feature/task-${taskId.toLowerCase()}`;
-      }
       const sdk = await this.ensureClaudeSDK();
       const branchName = await sdk.generateBranchName(planSummary, taskId);
 

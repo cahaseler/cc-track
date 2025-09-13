@@ -185,8 +185,7 @@ Requirements:
 - Focus on the "what" and "why", not the "how"
 - Respond with JUST the commit message, no explanation`;
 
-  const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
-  const response = await prompt(p, 'haiku', { timeoutMs });
+  const response = await prompt(p, 'haiku', { timeoutMs: 10000 });
   if (!response.success) throw new Error(`Failed to generate commit message: ${response.error}`);
   return response.text;
 }
@@ -203,8 +202,7 @@ Requirements:
 - Types: feature, bug, chore, docs
 - Respond with JUST the branch name`;
 
-  const timeoutMs = Number(process.env.CC_TRACK_SDK_TIMEOUT_MS || '5000');
-  const response = await prompt(p, 'haiku', { timeoutMs });
+  const response = await prompt(p, 'haiku', { timeoutMs: 10000 });
   if (!response.success) throw new Error(`Failed to generate branch name: ${response.error}`);
   return response.text;
 }
