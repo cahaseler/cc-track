@@ -19,13 +19,24 @@ export function determineHookType(input: HookInput): string | null {
   // Map event types to hook handlers
   switch (hook_event_name) {
     case 'PostToolUse':
-      // Check if this is an ExitPlanMode event for capture-plan
-      if (tool_name === 'ExitPlanMode') {
-        return 'capture-plan';
-      }
       // Check if this is an Edit/Write/MultiEdit event for edit-validation
       if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
         return 'edit-validation';
+      }
+      // Heuristic: capture-plan on explicit ExitPlanMode or when a plan payload is present
+      if (
+        tool_name === 'ExitPlanMode' ||
+        (typeof tool_name === 'string' && /ExitPlan/i.test(tool_name)) ||
+        (input.tool_response !== undefined &&
+          input.tool_response !== null &&
+          typeof input.tool_response === 'object' &&
+          'plan' in (input.tool_response as Record<string, unknown>)) ||
+        (input.tool_input !== undefined &&
+          input.tool_input !== null &&
+          typeof input.tool_input === 'object' &&
+          'plan' in (input.tool_input as Record<string, unknown>))
+      ) {
+        return 'capture-plan';
       }
       return null;
 

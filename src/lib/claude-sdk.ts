@@ -4,6 +4,8 @@
  * Uses Pro subscription authentication (no API key required)
  */
 
+import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { query, type SDKMessage } from '@anthropic-ai/claude-code';
 
 export interface ClaudeResponse {
@@ -15,6 +17,40 @@ export interface ClaudeResponse {
     outputTokens: number;
     costUSD: number;
   };
+}
+
+// Find the Claude Code executable using 'which' command
+function findClaudeCodeExecutable(): string | undefined {
+  // 1) Explicit env var overrides
+  const fromEnv =
+    process.env.CC_TRACK_CLAUDE_EXECUTABLE || process.env.CLAUDE_CODE_EXECUTABLE || undefined;
+  if (fromEnv && existsSync(fromEnv)) return fromEnv;
+
+  // 2) Local project install (preferred in compiled binary contexts)
+  try {
+    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-code/cli.js`;
+    if (existsSync(localCli)) return localCli;
+  } catch {}
+
+  try {
+    // First try to find the 'claude' command in PATH
+    const claudePath = execSync('which claude', { encoding: 'utf8' }).trim();
+    if (claudePath) {
+      // The claude command itself is typically a symlink or wrapper
+      // The SDK might need the actual cli.js file, so let's resolve it
+      try {
+        const realPath = execSync(`readlink -f "${claudePath}"`, { encoding: 'utf8' }).trim();
+        return realPath || claudePath;
+      } catch {
+        return claudePath;
+      }
+    }
+  } catch {
+    // which command failed, claude is not in PATH
+  }
+  
+  // If no system claude found, return undefined and let SDK auto-detect
+  return undefined;
 }
 
 async function prompt(
@@ -30,6 +66,9 @@ async function prompt(
       opus: 'opus',
     } as const;
 
+    // Find Claude Code executable
+    const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
+
     const response = query({
       prompt: text,
       options: {
@@ -37,6 +76,7 @@ async function prompt(
         maxTurns: options?.maxTurns ?? 1,
         allowedTools: options?.allowedTools,
         disallowedTools: options?.disallowedTools ?? ['*'],
+        pathToClaudeCodeExecutable,
       },
     });
 
@@ -76,10 +116,11 @@ async function prompt(
 
     return { text: responseText.trim(), success, error, usage };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     return {
       text: '',
       success: false,
-      error: err instanceof Error ? err.message : String(err),
+      error: msg,
     };
   }
 }
@@ -171,12 +212,16 @@ ${validationRules}
 
 You can read files but cannot modify them. Provide a detailed analysis.`;
 
+  // Find Claude Code executable
+  const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
+
   return query({
     prompt: p,
     options: {
       model: 'sonnet', // Use generic model name for latest version
       maxTurns: 10,
       allowedTools: ['Read', 'Grep', 'Glob', 'TodoWrite'],
+      pathToClaudeCodeExecutable,
     },
   });
 }
