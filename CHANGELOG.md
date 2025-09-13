@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/cahaseler/cc-track/compare/v1.7.0...v1.8.0) (2025-09-13)
+
+
+### Features
+
+* add git diff summary utility with Claude SDK integration ([721204a](https://github.com/cahaseler/cc-track/commit/721204a9471c462c60377800a258791d4b3f2760))
+* implement git diff summary utility with Claude SDK integration ([a38dbdb](https://github.com/cahaseler/cc-track/commit/a38dbdbf1845532107720f73c2815e1a63e8791d))
+
 # [1.7.0](https://github.com/cahaseler/cc-track/compare/v1.6.0...v1.7.0) (2025-09-13)
 
 
