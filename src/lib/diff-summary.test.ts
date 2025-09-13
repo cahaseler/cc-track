@@ -26,7 +26,10 @@ function createMockClaudeSDK(): ClaudeSDKInterface {
         return { text: '• Added user authentication\n• Updated security middleware', success: true };
       }
       if (text.includes('Diff 1') && text.includes('Diff 2')) {
-        return { text: 'Added authentication system with login/logout functionality and updated security middleware to enforce access controls.', success: true };
+        return {
+          text: 'Added authentication system with login/logout functionality and updated security middleware to enforce access controls.',
+          success: true,
+        };
       }
       if (text.includes('truncated')) {
         return { text: '• Large changes truncated for processing', success: true };
@@ -64,8 +67,8 @@ describe('DiffSummary', () => {
         'haiku',
         expect.objectContaining({
           timeoutMs: 15000,
-          disallowedTools: ['*']
-        })
+          disallowedTools: ['*'],
+        }),
       );
     });
 
@@ -89,12 +92,12 @@ describe('DiffSummary', () => {
     test('truncates very large diffs', async () => {
       const largeDiff = 'a'.repeat(4000); // Exceeds MAX_DIFF_LENGTH
 
-      const summary = await diffSummary.summarizeDiff(largeDiff);
+      const _summary = await diffSummary.summarizeDiff(largeDiff);
 
       expect(mockClaudeSDK.prompt).toHaveBeenCalledWith(
         expect.stringContaining('... (diff truncated)'),
         'haiku',
-        expect.any(Object)
+        expect.any(Object),
       );
 
       // Verify the diff was actually truncated in the prompt
@@ -107,12 +110,14 @@ describe('DiffSummary', () => {
         prompt: mock(async () => ({
           text: '',
           success: false,
-          error: 'API rate limit exceeded'
-        }))
+          error: 'API rate limit exceeded',
+        })),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
-      await expect(diffSummary.summarizeDiff('some diff')).rejects.toThrow('Diff summary failed: API rate limit exceeded');
+      await expect(diffSummary.summarizeDiff('some diff')).rejects.toThrow(
+        'Diff summary failed: API rate limit exceeded',
+      );
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to summarize diff', { error: 'API rate limit exceeded' });
     });
 
@@ -120,7 +125,7 @@ describe('DiffSummary', () => {
       mockClaudeSDK = {
         prompt: mock(async () => {
           throw new Error('Network timeout');
-        })
+        }),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
@@ -132,8 +137,8 @@ describe('DiffSummary', () => {
       mockClaudeSDK = {
         prompt: mock(async () => ({
           text: '',
-          success: true
-        }))
+          success: true,
+        })),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
@@ -144,10 +149,7 @@ describe('DiffSummary', () => {
 
   describe('summarizeDiffs', () => {
     test('summarizes multiple diffs into unified summary', async () => {
-      const diffs = [
-        'diff --git a/auth.ts\n+login function',
-        'diff --git a/middleware.ts\n+security checks'
-      ];
+      const diffs = ['diff --git a/auth.ts\n+login function', 'diff --git a/middleware.ts\n+security checks'];
 
       const summary = await diffSummary.summarizeDiffs(diffs);
 
@@ -157,8 +159,8 @@ describe('DiffSummary', () => {
         'haiku',
         expect.objectContaining({
           timeoutMs: 30000, // Double timeout for multiple diffs
-          disallowedTools: ['*']
-        })
+          disallowedTools: ['*'],
+        }),
       );
     });
 
@@ -197,8 +199,8 @@ describe('DiffSummary', () => {
       mockClaudeSDK = {
         prompt: mock(async () => ({
           text: '• First change\n• Second change\n• Third change',
-          success: true
-        }))
+          success: true,
+        })),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
@@ -210,10 +212,7 @@ describe('DiffSummary', () => {
     });
 
     test('truncates large diffs in multi-diff summary', async () => {
-      const diffs = [
-        'a'.repeat(4000),
-        'b'.repeat(4000)
-      ];
+      const diffs = ['a'.repeat(4000), 'b'.repeat(4000)];
 
       await diffSummary.summarizeDiffs(diffs);
 
@@ -227,8 +226,8 @@ describe('DiffSummary', () => {
         prompt: mock(async () => ({
           text: '',
           success: false,
-          error: 'Model overloaded'
-        }))
+          error: 'Model overloaded',
+        })),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
@@ -242,8 +241,8 @@ describe('DiffSummary', () => {
       mockClaudeSDK = {
         prompt: mock(async () => ({
           text: '',
-          success: true
-        }))
+          success: true,
+        })),
       };
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
@@ -260,14 +259,16 @@ describe('DiffSummary', () => {
       const diffSummaryNoSDK = new DiffSummary(undefined, mockLogger);
 
       // Mock the dynamic import
-      const mockImport = mock(() => Promise.resolve({
-        ClaudeSDK: {
-          prompt: mock(async () => ({
-            text: '• Lazy loaded SDK response',
-            success: true
-          }))
-        }
-      }));
+      const _mockImport = mock(() =>
+        Promise.resolve({
+          ClaudeSDK: {
+            prompt: mock(async () => ({
+              text: '• Lazy loaded SDK response',
+              success: true,
+            })),
+          },
+        }),
+      );
 
       // Replace import in the test context (this is a simplified test)
       // In real usage, the import would load the actual SDK

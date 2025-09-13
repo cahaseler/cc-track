@@ -83,10 +83,10 @@ index 0000000..1234567
     const lowerSummary = summary.toLowerCase();
     expect(
       lowerSummary.includes('user') ||
-      lowerSummary.includes('type') ||
-      lowerSummary.includes('return') ||
-      lowerSummary.includes('map') ||
-      lowerSummary.includes('method')
+        lowerSummary.includes('type') ||
+        lowerSummary.includes('return') ||
+        lowerSummary.includes('map') ||
+        lowerSummary.includes('method'),
     ).toBe(true);
   }, 30000); // 30 second timeout for API call
 
@@ -108,9 +108,9 @@ index 0000000..1234567
     const lowerSummary = summary.toLowerCase();
     expect(
       lowerSummary.includes('express') ||
-      lowerSummary.includes('server') ||
-      lowerSummary.includes('dependency') ||
-      lowerSummary.includes('package')
+        lowerSummary.includes('server') ||
+        lowerSummary.includes('dependency') ||
+        lowerSummary.includes('package'),
     ).toBe(true);
   }, 45000); // 45 second timeout for multiple API calls
 

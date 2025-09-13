@@ -45,9 +45,9 @@ export class DiffSummary implements DiffSummaryInterface {
     const truncated = diff.substring(0, MAX_DIFF_LENGTH);
     const lastNewline = truncated.lastIndexOf('\n');
     if (lastNewline > MAX_DIFF_LENGTH * 0.8) {
-      return truncated.substring(0, lastNewline) + '\n... (diff truncated)';
+      return `${truncated.substring(0, lastNewline)}\n... (diff truncated)`;
     }
-    return truncated + '\n... (diff truncated)';
+    return `${truncated}\n... (diff truncated)`;
   }
 
   private buildSingleDiffPrompt(diff: string): string {
@@ -64,9 +64,7 @@ Respond with ONLY bullet points (use • character), no headers or explanations.
   }
 
   private buildMultipleDiffPrompt(diffs: string[]): string {
-    const truncatedDiffs = diffs.map((diff, i) =>
-      `=== Diff ${i + 1} ===\n${this.truncateDiff(diff)}`
-    ).join('\n\n');
+    const truncatedDiffs = diffs.map((diff, i) => `=== Diff ${i + 1} ===\n${this.truncateDiff(diff)}`).join('\n\n');
 
     return `You are a git diff summarizer. Your ONLY job is to summarize code changes.
 DO NOT mention any tools, commands, or actions you might take.
@@ -95,7 +93,7 @@ Be specific about what was added/fixed/improved but stay concise. Do not mention
 
       const response = await sdk.prompt(prompt, 'haiku', {
         timeoutMs: DEFAULT_TIMEOUT_MS,
-        disallowedTools: ['*']
+        disallowedTools: ['*'],
       });
 
       if (!response.success) {
@@ -121,7 +119,7 @@ Be specific about what was added/fixed/improved but stay concise. Do not mention
     }
 
     // Filter out empty diffs
-    const nonEmptyDiffs = diffs.filter(d => d && d.trim().length > 0);
+    const nonEmptyDiffs = diffs.filter((d) => d && d.trim().length > 0);
 
     if (nonEmptyDiffs.length === 0) {
       this.logger.debug('All diffs were empty, returning default message');
@@ -143,7 +141,7 @@ Be specific about what was added/fixed/improved but stay concise. Do not mention
 
       const response = await sdk.prompt(prompt, 'haiku', {
         timeoutMs: DEFAULT_TIMEOUT_MS * 2, // Allow more time for multiple diffs
-        disallowedTools: ['*']
+        disallowedTools: ['*'],
       });
 
       if (!response.success) {
