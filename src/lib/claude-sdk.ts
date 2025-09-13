@@ -76,7 +76,7 @@ async function prompt(
       timeout_ms: options?.timeoutMs,
       pathToClaudeCodeExecutable,
     });
-    const abortController = new AbortController();
+    // Note: we rely on stream.return() and a bounded timeout; avoid AbortController to keep types simple
     const stream = query({
       prompt: text,
       options: {
@@ -87,7 +87,6 @@ async function prompt(
         pathToClaudeCodeExecutable,
         // Critical: run in a temp directory to avoid triggering project hooks
         cwd: tmpdir(),
-        abortController,
         stderr: (data: string) => {
           try {
             const s = typeof data === 'string' ? data : String(data);
@@ -115,12 +114,7 @@ async function prompt(
         } catch {
           // ignore
         }
-        try {
-          abortController.abort();
-          logger.error('ClaudeSDK.prompt aborted due to timeout', { timeout_ms: options?.timeoutMs });
-        } catch {
-          // ignore
-        }
+        // We already requested stream termination; child will exit shortly.
       }, options.timeoutMs);
     }
 
