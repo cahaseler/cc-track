@@ -51,6 +51,7 @@ export class SessionReviewer {
   async review(transcriptPath: string): Promise<ReviewResult> {
     // Get active task
     const activeTask = this.getActiveTask();
+    this.logger.debug('Active task check', { hasActiveTask: Boolean(activeTask) });
     if (!activeTask) {
       // Get filtered git diff for generating a meaningful commit message
       const { fullDiff, filteredDiff, docOnlyChanges } = this.getFilteredGitDiff();
@@ -79,17 +80,20 @@ export class SessionReviewer {
       try {
         const gitHelpers = this.deps.gitHelpers || new GitHelpers();
         const taskId = this.getActiveTaskId();
+        this.logger.debug('Generating commit message via SDK');
         commitMessage = await gitHelpers.generateCommitMessage(
           filteredDiff || fullDiff,
           this.projectRoot,
           taskId || undefined,
         );
+        this.logger.debug('Commit message generated');
       } catch {
         // Fallback to generic message if generation fails
         const taskId = this.getActiveTaskId();
         commitMessage = taskId
           ? `wip: ${taskId} exploratory work and improvements`
           : 'chore: exploratory work and improvements';
+        this.logger.debug('Commit message fallback used');
       }
 
       return {
@@ -145,6 +149,7 @@ export class SessionReviewer {
       const reviewPrompt = this.buildReviewPrompt(activeTask, recentMessages, filteredDiff, hasDocChanges);
 
       // Use Claude CLI to review
+      this.logger.debug('Starting Claude review call');
       const review = await this.callClaudeForReview(reviewPrompt);
 
       return review;
