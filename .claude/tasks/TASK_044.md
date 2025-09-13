@@ -7,23 +7,23 @@
 **Task ID:** 044
 
 ## Requirements
-- [ ] Create new task validation hook (`src/hooks/task-validation.ts`)
-- [ ] Implement PreToolUse validation for Edit/MultiEdit operations on task files
-- [ ] Use Claude SDK's `prompt` function with Sonnet model for validation
-- [ ] Check if file path matches `.claude/tasks/TASK_*.md` pattern
-- [ ] Extract old/new content from tool_input for validation
-- [ ] Pass diff to Claude for review with strict validation instructions
-- [ ] Update hook dispatcher (`src/commands/hook.ts`) to add PreToolUse case
-- [ ] Import and register the new task-validation hook
-- [ ] Route Edit/MultiEdit PreToolUse events to task validation
-- [ ] Configure PreToolUse in settings (`/.claude/settings.json`)
-- [ ] Add PreToolUse configuration for Edit and MultiEdit matchers
-- [ ] Point to the cc-track hook command with appropriate timeout
-- [ ] Add configuration support (`/.claude/track.config.json`)
-- [ ] Add `task_validation` section under hooks with enabled flag
-- [ ] Update types if needed for PreToolUse HookOutput interface
-- [ ] Implement proper error handling and timeouts (allow edit on error)
-- [ ] Add logging for validation decisions
+- [x] Create new task validation hook (`src/hooks/task-validation.ts`)
+- [x] Implement PreToolUse validation for Edit/MultiEdit operations on task files
+- [x] Use Claude SDK's `prompt` function with Sonnet model for validation
+- [x] Check if file path matches `.claude/tasks/TASK_*.md` pattern
+- [x] Extract old/new content from tool_input for validation
+- [x] Pass diff to Claude for review with strict validation instructions
+- [x] Update hook dispatcher (`src/commands/hook.ts`) to add PreToolUse case
+- [x] Import and register the new task-validation hook
+- [x] Route Edit/MultiEdit PreToolUse events to task validation
+- [x] Configure PreToolUse in settings (`/.claude/settings.json`)
+- [x] Add PreToolUse configuration for Edit and MultiEdit matchers
+- [x] Point to the cc-track hook command with appropriate timeout
+- [x] Add configuration support (`/.claude/track.config.json`)
+- [x] Add `task_validation` section under hooks with enabled flag
+- [x] Update types if needed for PreToolUse HookOutput interface
+- [x] Implement proper error handling and timeouts (allow edit on error)
+- [x] Add logging for validation decisions
 
 ## Success Criteria
 - PreToolUse hook blocks edits that set task status to "complete"
@@ -57,6 +57,26 @@ Start by creating the core task validation hook with Claude SDK integration and 
 3. Add diff extraction logic from Edit/MultiEdit tool inputs
 4. Create validation prompt template for Claude SDK
 5. Update hook dispatcher to register PreToolUse validation
+
+## Recent Progress
+
+Successfully implemented a PreToolUse validation hook that uses Claude SDK to intelligently validate edits to task files. The hook:
+
+- Intercepts Edit/MultiEdit operations on task files before they execute
+- Uses Claude SDK with Sonnet model to analyze whether edits violate completion rules
+- Blocks attempts to change status to "completed" (reserved for /complete-task command)
+- Detects and blocks weasel words that claim completion while admitting failures
+- Handles robust JSON parsing to extract responses even when wrapped in markdown
+- Provides clear explanations when blocking edits
+- Allows legitimate documentation of completed work
+
+Key implementation challenges solved:
+- Fixed TypeScript types to match PreToolUse hook specification
+- Improved JSON parsing to handle various response formats from Claude
+- Refined validation prompt to distinguish between legitimate documentation and inappropriate completion claims
+- Added comprehensive test coverage for all validation scenarios
+
+All tests pass, TypeScript checks pass, and Biome linting passes. The hook is actively protecting task files from inappropriate edits.
 
 <!-- github_issue: 29 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/29 -->

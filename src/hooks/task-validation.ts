@@ -83,13 +83,15 @@ NEW CONTENT:
 ${newContent}
 
 VALIDATION RULES:
-1. BLOCK if the edit changes the task status to "completed" - only the /complete-task command should do this
-2. BLOCK if the edit uses weasel words to claim completion without finishing work, such as:
-   - "Most tests pass" or "majority of tests pass" (ALL tests must pass)
-   - "Lint/type checks mostly pass" or "acceptable lint issues" (ALL checks must pass)
-   - "Environment issues" or "test framework problems" as excuses for failures
-   - "Good enough" or "functional enough" or "not critical" for incomplete work
-   - Any language that implies partial completion is acceptable
+1. BLOCK if the edit changes the task status field to "completed" - only the /complete-task command should do this
+2. BLOCK if the edit uses weasel words that claim completion WHILE ADMITTING to incomplete work, such as:
+   - Marking as complete while saying "Most tests pass" or "majority of tests pass"
+   - Marking as complete while saying "Lint/type checks mostly pass" or "acceptable lint issues"
+   - Marking as complete while blaming "Environment issues" or "test framework problems" for failures
+   - Marking as complete with "Good enough" or "functional enough" or "not critical" language
+   - Any language that claims completion while simultaneously admitting work is incomplete
+
+IMPORTANT: Do NOT block legitimate documentation of completed work. If requirements are being marked as complete without any admission of failure or incompleteness, that's normal task documentation and should be ALLOWED.
 
 IMPORTANT: The cc-track library has STRICT requirements:
 - 100% of tests must pass when run together
