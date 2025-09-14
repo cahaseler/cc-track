@@ -168,10 +168,20 @@ function preparePush(message?: string) {
   if (existsSync(join(projectRoot, 'package.json'))) {
     const pkg = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf-8'));
 
+    // Detect package manager
+    let runCommand = 'npm run';
+    if (existsSync(join(projectRoot, 'bun.lockb'))) {
+      runCommand = 'bun run';
+    } else if (existsSync(join(projectRoot, 'yarn.lock'))) {
+      runCommand = 'yarn run';
+    } else if (existsSync(join(projectRoot, 'pnpm-lock.yaml'))) {
+      runCommand = 'pnpm run';
+    }
+
     if (pkg.scripts?.lint) {
       console.log('\n2. Running lint...');
       try {
-        execSync('npm run lint', { stdio: 'inherit', cwd: projectRoot });
+        execSync(`${runCommand} lint`, { stdio: 'inherit', cwd: projectRoot });
       } catch {
         console.error('⚠️ Lint failed - fix before pushing');
       }
@@ -181,7 +191,7 @@ function preparePush(message?: string) {
     if (pkg.scripts?.test) {
       console.log('\n3. Running tests...');
       try {
-        execSync('npm test', { stdio: 'inherit', cwd: projectRoot });
+        execSync(`${runCommand} test`, { stdio: 'inherit', cwd: projectRoot });
       } catch {
         console.error('⚠️ Tests failed - fix before pushing');
       }
