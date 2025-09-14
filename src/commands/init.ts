@@ -24,7 +24,7 @@ export const initCommand = new Command('init')
       console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
     } else {
       const setupCommandContent = `---
-allowed-tools: Bash(npx cc-track:*), Bash(git:*), Bash(gh:*), Write, Read, Edit, Grep, Glob
+allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Bash(git init), Write, Read, Edit, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 ---
 
