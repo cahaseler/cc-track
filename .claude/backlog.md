@@ -20,8 +20,8 @@
 - npm? or whatever bunx uses?
 - [2025-09-11] investigate consistent issues with pre-compaction hook when invoked on manual compaction
 - Add automatic file header summaries for all TypeScript files. Each file should start with a block comment containing a one-sentence ai-written summary plus an auto-generated `@exports` list of functions/classes with line numbers. Use the TypeScript compiler API in a Node script to parse ASTs, extract exports, and update headers. Wire it into a pre-commit or post-edit hook so the `@exports` section stays current without manual edits. This makes files self-describing in the first 20 lines for AI tools and repo navigation.
-- improve pre-compaction tools substantially to automatically update task list, potentially write journal entry too to avoid post-compact confusion.
+- ✅ [COMPLETED in TASK_045] improve pre-compaction tools substantially to automatically update task list, potentially write journal entry too to avoid post-compact confusion.
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-12] make sure builds done in github bake the right version number into the executable
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
-- [2025-09-13] Remove learned_mistakes.md from pre-compact hook - failed experiment due to quality issues, dangerous advice being captured
+- ✅ [COMPLETED in TASK_045] Remove learned_mistakes.md from pre-compact hook - failed experiment due to quality issues, dangerous advice being captured
