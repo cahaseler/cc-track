@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/cahaseler/cc-track/compare/v1.11.0...v1.12.0) (2025-09-14)
+
+
+### Features
+
+* inject build version using semantic-release environment variables ([5837306](https://github.com/cahaseler/cc-track/commit/583730665a4eab64f052e70191649703fb1e92a5))
+
 # [1.11.0](https://github.com/cahaseler/cc-track/compare/v1.10.0...v1.11.0) (2025-09-14)
 
 
