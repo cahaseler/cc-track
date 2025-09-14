@@ -198,13 +198,41 @@ Add or update the statusLine configuration:
 \`\`\`
 
 ### For hooks (based on what's enabled):
-Add to the hooks section (preserve any existing hooks):
+Add to the hooks section (preserve any existing hooks). Each hook type should be an array containing objects with a "hooks" array:
 
-- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "npx cc-track hook"
-- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "npx cc-track hook"
-- If stop_review enabled: Add Stop hook → command "npx cc-track hook"
-- If pre_compact enabled: Add PreCompact hook → command "npx cc-track hook"
-- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "npx cc-track hook"
+Example structure:
+\`\`\`json
+"hooks": {
+  "PostToolUse": [
+    {
+      "matcher": "ExitPlanMode",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx cc-track hook"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx cc-track hook"
+        }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+Add these based on what's enabled:
+- If capture_plan enabled: Add to PostToolUse array with matcher "ExitPlanMode"
+- If edit_validation enabled: Add to PostToolUse array with matcher "Edit|Write|MultiEdit"
+- If stop_review enabled: Add to Stop array (no matcher needed)
+- If pre_compact enabled: Add to PreCompact array (no matcher needed)
+- If post_compact enabled: Add to SessionStart array with matcher "compact"
 
 Use the Edit tool to make these changes, merging with any existing configuration.
 
