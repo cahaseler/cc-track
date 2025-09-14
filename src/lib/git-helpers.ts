@@ -102,6 +102,17 @@ export class GitHelpers {
   }
 
   /**
+   * Get the merge base between two branches
+   */
+  getMergeBase(branch1: string, branch2: string, cwd: string): string {
+    try {
+      return this.exec(`git merge-base ${branch1} ${branch2}`, { cwd }).trim();
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * Generate a commit message using Claude SDK with conventional commit format
    */
   async generateCommitMessage(diff: string, _cwd: string, taskId?: string): Promise<string> {
@@ -270,4 +281,8 @@ export function getCurrentBranch(cwd: string): string {
 
 export function isWipCommit(commitLine: string): boolean {
   return getDefaultGitHelpers().isWipCommit(commitLine);
+}
+
+export function getMergeBase(branch1: string, branch2: string, cwd: string): string {
+  return getDefaultGitHelpers().getMergeBase(branch1, branch2, cwd);
 }

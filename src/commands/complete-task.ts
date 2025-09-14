@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { clearActiveTask, getActiveTaskId } from '../lib/claude-md';
 import { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
-import { getDefaultBranch, isWipCommit } from '../lib/git-helpers';
+import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { pushCurrentBranch } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
 import { runValidationChecks } from '../lib/validation';
@@ -201,70 +201,77 @@ async function completeTaskAction(options: {
           }
         }
 
-        // Look for WIP commits
-        const gitLog = execSync('git log --oneline -20', { encoding: 'utf-8', cwd: projectRoot });
-        const lines = gitLog.split('\n').filter((line) => line.trim());
+        // Get current branch and default branch
+        const currentBranch = getCurrentBranch(projectRoot);
+        const defaultBranch = getDefaultBranch(projectRoot);
 
-        let wipCount = 0;
-        let lastNonWipIndex = -1;
+        if (currentBranch && currentBranch !== defaultBranch) {
+          // We're on a feature/task branch - check if we can squash
+          const mergeBase = getMergeBase(currentBranch, defaultBranch, projectRoot);
 
-        for (let i = 0; i < lines.length; i++) {
-          if (isWipCommit(lines[i])) {
-            wipCount++;
-          } else if (lastNonWipIndex === -1) {
-            lastNonWipIndex = i;
-            break;
-          }
-        }
-
-        if (wipCount > 0 && lastNonWipIndex > 0) {
-          // We have WIP commits that can be squashed
-          const lastNonWipHash = lines[lastNonWipIndex].split(' ')[0];
-
-          // Check if all commits between HEAD and lastNonWip are WIPs
-          const recentCommits = lines.slice(0, lastNonWipIndex);
-          const allWips = recentCommits.every((line) => isWipCommit(line));
-
-          if (allWips && !gitStatus) {
-            // Safe to squash
-            const commitMessage = options.message || `feat: complete ${result.taskId} - ${result.taskTitle}`;
-
-            try {
-              execSync(`git reset --soft ${lastNonWipHash}`, { cwd: projectRoot });
-              execSync(`git commit -m "${commitMessage}"`, { cwd: projectRoot });
-              result.git.squashed = true;
-              result.git.wipCommitCount = wipCount;
-              result.git.commitMessage = commitMessage;
-            } catch (squashError) {
-              result.warnings.push(`Failed to squash commits: ${squashError}`);
-              result.git.notes = 'Squash attempted but failed';
-            }
-          } else if (!allWips) {
-            result.git.notes = `Found ${wipCount} WIP commits mixed with regular commits - manual review needed`;
-          } else {
-            result.git.notes = 'Uncommitted changes prevent automatic squashing';
-          }
-        } else if (wipCount === 0) {
-          result.git.notes = 'No WIP commits found';
-        } else {
-          result.git.notes = 'All recent commits are WIPs - nothing to squash to';
-        }
-
-        // Get list of changed files
-        try {
-          const diffFiles = execSync(
-            `git diff --name-only ${lastNonWipIndex >= 0 ? lines[lastNonWipIndex].split(' ')[0] : 'HEAD~1'}..HEAD`,
-            {
+          if (mergeBase) {
+            // Count commits since merge base
+            const commitCount = execSync(`git rev-list --count ${mergeBase}..HEAD`, {
               encoding: 'utf-8',
               cwd: projectRoot,
-            },
-          )
-            .trim()
-            .split('\n')
-            .filter((f) => f);
-          result.filesChanged = diffFiles;
-        } catch {
-          // Ignore if we can't get the file list
+            }).trim();
+
+            const numCommits = parseInt(commitCount, 10);
+
+            if (numCommits > 1) {
+              // Multiple commits to squash
+              const commitMessage = options.message || `feat: complete ${result.taskId} - ${result.taskTitle}`;
+
+              try {
+                execSync(`git reset --soft ${mergeBase}`, { cwd: projectRoot });
+                execSync(`git commit -m "${commitMessage}"`, { cwd: projectRoot });
+                result.git.squashed = true;
+                result.git.wipCommitCount = numCommits; // Keep this field for compatibility
+                result.git.commitMessage = commitMessage;
+                result.git.notes = `Squashed ${numCommits} commits from branch into single commit`;
+                logger.info(`Squashed ${numCommits} commits into single commit`);
+              } catch (squashError) {
+                result.warnings.push(`Failed to squash commits: ${squashError}`);
+                result.git.notes = 'Squash attempted but failed';
+              }
+            } else if (numCommits === 1) {
+              result.git.notes = 'Only one commit on branch - no squashing needed';
+            } else {
+              result.git.notes = 'No commits to squash on this branch';
+            }
+
+            // Get list of changed files
+            try {
+              const diffFiles = execSync(`git diff --name-only ${mergeBase}..HEAD`, {
+                encoding: 'utf-8',
+                cwd: projectRoot,
+              })
+                .trim()
+                .split('\n')
+                .filter((f) => f);
+              result.filesChanged = diffFiles;
+            } catch {
+              // Ignore if we can't get the file list
+            }
+          } else {
+            result.git.notes = 'Could not determine merge base with default branch';
+          }
+        } else {
+          result.git.notes = 'Already on default branch - no squashing needed';
+
+          // Get list of changed files from last commit
+          try {
+            const diffFiles = execSync('git diff --name-only HEAD~1..HEAD', {
+              encoding: 'utf-8',
+              cwd: projectRoot,
+            })
+              .trim()
+              .split('\n')
+              .filter((f) => f);
+            result.filesChanged = diffFiles;
+          } catch {
+            // Ignore if we can't get the file list
+          }
         }
       } catch (gitError) {
         const error = gitError as Error;
