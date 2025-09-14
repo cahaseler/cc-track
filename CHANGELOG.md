@@ -1,3 +1,11 @@
+# [1.11.0](https://github.com/cahaseler/cc-track/compare/v1.10.0...v1.11.0) (2025-09-14)
+
+
+### Features
+
+* replace error pattern extraction with task progress updates in pre-compact hook ([4a619b6](https://github.com/cahaseler/cc-track/commit/4a619b6f795f80af6ae6aefbbd1c8ea1d4abb8b0))
+* replace error patterns with task progress updates in pre-compact hook ([2257084](https://github.com/cahaseler/cc-track/commit/2257084154b70567a86da65adf8e84ef1f48da21))
+
 # [1.10.0](https://github.com/cahaseler/cc-track/compare/v1.9.0...v1.10.0) (2025-09-13)
 
 
