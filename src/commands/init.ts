@@ -172,7 +172,7 @@ Based on your analysis, update:
 
 Now configure the settings.json file based on enabled features:
 
-1. Read the existing settings.json file (create if it doesn't exist)
+1. Read the existing .claude/settings.json file (create if it doesn't exist)
 2. Based on what features were enabled in track.config.json, update settings.json:
 
 ### For statusline (if enabled):
@@ -196,14 +196,49 @@ Add to the hooks section (preserve any existing hooks):
 
 Use the Edit tool to make these changes, merging with any existing configuration.
 
-## Step 6: Final Steps
+## Step 6: Update CLAUDE.md
 
-1. Update the main CLAUDE.md file with the actual project name
-2. Test that enabled features work (e.g., \`bunx cc-track statusline\` if enabled)
-3. Show the user what was configured and explain the key features:
-   - How task tracking works (if enabled)
-   - What the hooks do (for enabled features)
-   - How to use the slash commands
+Update the main CLAUDE.md file to include cc-track context references:
+
+1. Read the existing CLAUDE.md file
+2. Add the cc-track section with @ imports (if not already present):
+
+\`\`\`markdown
+# Project: [Update with actual project name]
+
+## Active Task
+@.claude/no_active_task.md
+<!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
+
+## Product Vision
+@.claude/product_context.md
+
+## System Patterns
+@.claude/system_patterns.md
+
+## Decision Log
+@.claude/decision_log.md
+
+## Code Index
+@.claude/code_index.md
+
+## User Context
+@.claude/user_context.md
+\`\`\`
+
+3. If the existing CLAUDE.md is already large (>100 lines):
+   - Suggest: "Your CLAUDE.md is quite extensive. Would you like me to move some of the existing content to the appropriate context files (product_context, system_patterns, etc.)?"
+   - If yes, help reorganize content into the appropriate files
+
+4. Preserve any existing content that doesn't fit the cc-track structure
+
+## Step 7: Final Summary
+
+Show the user what was configured and explain the key features:
+- How task tracking works (if enabled)
+- What the hooks do (for enabled features)
+- How to use the slash commands
+- Remind them to restart Claude Code for settings.json changes to take effect
 
 ## Important Instructions
 
