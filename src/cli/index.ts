@@ -5,7 +5,6 @@ import { completeTaskCommand } from '../commands/complete-task';
 import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
-import { initCommand } from '../commands/init';
 import { parseLogsCommand } from '../commands/parse-logs';
 import { createPrepareCompletionCommand } from '../commands/prepare-completion';
 import { statuslineCommand } from '../commands/statusline';
@@ -24,7 +23,6 @@ program
 
 // Add commands
 program.addCommand(hookCommand);
-program.addCommand(initCommand);
 program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
 program.addCommand(gitSessionCommand);
