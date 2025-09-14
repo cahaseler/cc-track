@@ -78,38 +78,55 @@ The \`.claude/track.config.json\` file has been created with all features disabl
 }
 \`\`\`
 
-### Now enable features based on environment:
+### Configure features based on environment and needs:
 
-1. **If git is available**:
-   - Ask: "Would you like automatic code review and commits at stop points? This helps track your work with WIP commits."
-   - If yes, enable \`stop_review: true\`
-   - Ask: "Would you like automatic git branch creation for tasks?"
-   - If yes, enable \`git_branching: true\`
+1. **Core Task Management System**:
+   - Explain: "The primary functionality of cc-track involves capturing the output of planning mode to generate TASKs, and then validating changes made against those tasks. This requires at minimum a local git repository."
 
-2. **If git is NOT available**:
-   - Ask: "This doesn't appear to be a git repository. Would you like help setting up git?"
-   - If yes, run \`git init\` and help configure
+   **If git is NOT available**:
+   - Ask: "This doesn't appear to be a git repository. Would you like me to set up git for task tracking?"
+   - If yes: run \`git init\`, help configure user.name and user.email
 
-3. **If GitHub CLI is authenticated**:
-   - Ask: "Would you like GitHub integration for automatic issue and PR creation?"
+   **If git IS available**:
+   - Ask: "Would you like to enable the core task management features (plan capture and change validation)?"
+   - If yes: enable \`capture_plan: true\` and \`stop_review: true\`
+
+   **Additional git features**:
+   - Ask: "Would you like automatic git branch creation/merging for each task?"
+   - If yes: enable \`git_branching: true\`
+
+2. **GitHub Integration** (if git enabled):
+   **If GitHub CLI is authenticated and remote exists**:
+   - Ask: "Would you like GitHub integration for automatic issue and PR management?"
    - If yes, enable \`github_integration.enabled: true\` and ask:
-     - "Should tasks automatically create GitHub issues?" → \`auto_create_issues: true\`
-     - "Should branches be linked to GitHub issues (uses gh issue develop)?" → \`use_issue_branches: true\`
-     - "Should completed tasks create PRs instead of merging directly?" → \`auto_create_prs: true\`
+     - "Create GitHub issues for each task?" → \`auto_create_issues: true\`
+     - "Link branches to GitHub issues?" → \`use_issue_branches: true\`
+     - "Create PRs instead of direct merges?" → \`auto_create_prs: true\`
 
-4. **If GitHub CLI is NOT authenticated**:
-   - Mention: "GitHub CLI is not authenticated. If you want GitHub integration later, run \`gh auth login\`"
+   **If GitHub CLI NOT authenticated or no remote**:
+   - Explain: "GitHub integration enables automatic issue and PR management, which is very useful for tracking work."
+   - If no gh auth: "Would you like help setting up GitHub CLI? (run \`gh auth login\`)"
+   - If no remote: "Would you like help adding a GitHub remote repository?"
 
-5. **Based on project type** (from package.json, etc.):
-   - If TypeScript/JavaScript project with lint/typecheck commands:
-     - Ask: "Would you like real-time validation when editing TypeScript/JavaScript files?"
-     - If yes, enable \`edit_validation: true\`
+3. **Optional Features**:
 
-6. **Always ask**:
-   - "Would you like to automatically create task files when exiting planning mode?" → \`capture_plan: true\`
-   - "Would you like context preservation before compaction?" → \`pre_compact: true\` and \`post_compact: true\`
-   - "Would you like a custom status line showing costs and task info?" → \`statusline: true\`
-   - If statusline enabled: "How should API rate limit timers be shown? (hide/show/sonnet-only - recommend sonnet-only)" → \`api_timer.display\`
+   **Edit Validation** (if TypeScript/JavaScript project detected):
+   - Ask: "Would you like real-time validation when editing files?"
+   - If yes: enable \`edit_validation: true\`
+   - If lint/typecheck commands unclear, ask: "What command runs your linter? What command runs type checking?"
+
+   **Context Preservation**:
+   - Ask: "Would you like automatic task documentation updates before compaction?"
+   - If yes: enable \`pre_compact: true\` and \`post_compact: true\`
+
+   **Status Line**:
+   - Ask: "Would you like a custom status line showing current branch, task, costs, and context usage?"
+   - If yes: enable \`statusline: true\`
+   - Then ask: "Do you typically use Opus or Sonnet?"
+     - If Opus: set \`api_timer.display: "sonnet-only"\` (only show timer when using Sonnet)
+     - If Sonnet: ask "Would you like to see the API rate limit timer?"
+       - Yes: \`api_timer.display: "show"\`
+       - No: \`api_timer.display: "hide"\`
 
 Update the config file with the user's choices.
 
