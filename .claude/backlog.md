@@ -27,3 +27,4 @@
 - [2025-09-12] make sure builds done in github bake the right version number into the executable
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
 - [2025-09-13] special handling for edit-validation hook for edits to task definition files to block edits that set completion status, completion status should only be set as part of the task completion command
+- [2025-09-14] debug stop-review hook error_max_turns review system error
