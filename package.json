@@ -26,11 +26,12 @@
   "license": "MIT",
   "scripts": {
     "init": "bun run scripts/init-templates.ts",
+    "embed": "bun run scripts/embed-resources.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome format --write .",
     "fix": "biome check --write .",
-    "check": "bun run typecheck && bun run lint",
+    "check": "bun run embed && bun run typecheck && bun run lint",
     "test": "bun test",
     "prebuild": "bun run scripts/embed-resources.ts",
     "build": "bun build src/cli/index.ts --compile --outfile dist/cc-track",
