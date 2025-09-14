@@ -29,7 +29,7 @@ cd your-project
 npx cc-track init
 ```
 
-This creates a single `/setup-cc-track` Claude Code command inside your project. Start up Claude Code, run this command, and Claude will walk you through the installation and configuration. The command itself 
+This creates a single `/setup-cc-track` Claude Code command inside your project. Start up Claude Code, run this command, and Claude will walk you through the installation and configuration. The command itself checks some things like your git status, and creates some template files, but will still require your permission and approval before enabling any features or doing anything that might be destructive.
 
 ### Optional: Pin a specific version
 If you want to ensure consistency across your team, you can install cc-track as a dev dependency:
@@ -53,10 +53,10 @@ When you run `cc-track init`, it creates a single slash command (`/setup-cc-trac
 
 ### 2. Core Task Management Workflow
 
-1. **Plan Capture**: When you exit planning mode, cc-track automatically creates a task file with requirements
+1. **Plan Capture**: When you exit planning mode, cc-track automatically creates a task file with requirements, generates a new branch, and creates a github issue (if configured)
 2. **Change Validation**: The stop-review hook validates every change against the active task
-3. **Automatic Commits**: Creates WIP commits that get squashed when tasks complete
-4. **Task Completion**: Smart completion process that validates all requirements are met
+3. **Automatic Commits**: Creates WIP commits that get squashed when tasks complete, which can be very helpful to revert bad changes
+4. **Task Completion**: Smart completion process that validates all requirements are met and handles PR creation and git branch operations.
 
 ### 3. Context Preservation
 
@@ -69,7 +69,7 @@ cc-track maintains several context files that Claude automatically references:
 
 ## Features
 
-### Core Features (Recommended)
+### Core Features
 - **Task Management** - Capture plans, validate changes, track progress
 - **Git Integration** - Automatic WIP commits and branch management
 - **Context Preservation** - Maintain critical information across sessions
@@ -109,8 +109,8 @@ Claude Code's hook configuration (managed by cc-track based on your config)
 
 ### Slash Commands (in Claude Code)
 - `/setup-cc-track` - Initial setup wizard
-- `/complete-task` - Complete the current task with validation
 - `/prepare-completion` - Check if task is ready for completion
+- `/complete-task` - Complete the current task
 - `/add-to-backlog` - Add items to backlog without disruption
 - `/config-track` - Modify configuration
 
@@ -118,8 +118,8 @@ Claude Code's hook configuration (managed by cc-track based on your config)
 - `cc-track init` - Initialize in a new project
 - `cc-track setup-templates` - Install context templates
 - `cc-track setup-commands` - Install slash commands
-- `cc-track statusline` - Generate status line (called by Claude Code)
-- `cc-track hook` - Hook dispatcher (called by Claude Code)
+- `cc-track statusline` - Generate status line (point Claude Code's configuration to this command)
+- `cc-track hook` - Hook dispatcher (point Claude Code's configuration to this command)
 
 ## Project Structure
 
@@ -128,9 +128,8 @@ After initialization, cc-track creates:
 your-project/
 ├── .claude/
 │   ├── commands/          # Slash commands
-│   ├── tasks/             # Task files (TASK_001.md, etc.)
-│   ├── plans/             # Captured plans
-│   ├── logs/              # Centralized logs
+│   ├── tasks/             # Task files (TASK_001.md, etc.) - structured files generated from plans
+│   ├── plans/             # Captured plans - raw outputs from planning mode
 │   ├── track.config.json  # Feature configuration
 │   ├── product_context.md # Project vision
 │   ├── system_patterns.md # Technical patterns
@@ -182,7 +181,3 @@ MIT
 
 - **Issues**: [GitHub Issues](https://github.com/cahaseler/cc-track/issues)
 - **Documentation**: [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code)
-
----
-
-Built with 🚀 by developers who got tired of repeating themselves to Claude
