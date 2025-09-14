@@ -124,7 +124,8 @@ function showWip() {
   } else {
     console.log(`Found ${wipCommits.length} WIP commits:`);
     try {
-      execSync('git log --oneline | grep "\\[wip\\]"', { stdio: 'inherit' });
+      // Use git's grep feature instead of shell piping
+      execSync('git log --oneline --grep="\\[wip\\]"', { stdio: 'inherit' });
     } catch {
       console.log('Error displaying WIP commits');
     }

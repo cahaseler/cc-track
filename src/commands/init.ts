@@ -99,14 +99,11 @@ function createNoActiveTask(claudeDir: string, templatesDir: string) {
 }
 
 /**
- * Create settings.json with proper template selection
+ * Create settings.json from template
  */
-function createSettings(claudeDir: string, templatesDir: string, withStop: boolean) {
+function createSettings(claudeDir: string, templatesDir: string) {
   const settingsPath = join(claudeDir, 'claude_code_settings.json');
-
-  // Choose template based on --with-stop flag
-  const templateFile = withStop ? 'settings_with_stop.json' : 'settings.json';
-  const templatePath = join(templatesDir, templateFile);
+  const templatePath = join(templatesDir, 'settings.json');
 
   if (existsSync(settingsPath)) {
     console.log('Settings file already exists, merging configurations...');
@@ -126,14 +123,14 @@ function createSettings(claudeDir: string, templatesDir: string, withStop: boole
     console.log('✓ Updated claude_code_settings.json with cc-track hooks');
   } else {
     copyFileSync(templatePath, settingsPath);
-    console.log(`✓ Created claude_code_settings.json ${withStop ? 'with stop hook enabled' : ''}`);
+    console.log('✓ Created claude_code_settings.json');
   }
 }
 
 /**
  * Initialize cc-track in a project
  */
-async function initAction(options: { force?: boolean; noBackup?: boolean; withStop?: boolean }) {
+async function initAction(options: { force?: boolean; noBackup?: boolean }) {
   try {
     const projectRoot = process.cwd();
     logger.info('Initializing cc-track', { projectRoot });
@@ -195,18 +192,19 @@ async function initAction(options: { force?: boolean; noBackup?: boolean; withSt
     // Handle CLAUDE.md with smart merging
     updateClaudeMd(projectRoot, templatesDir, options.force, options.noBackup);
 
-    // Create settings file with proper template
-    createSettings(claudeDir, templatesDir, !!options.withStop);
+    // Create settings file from template
+    createSettings(claudeDir, templatesDir);
 
-    // Copy command templates (new feature in refactor - improvement)
+    // Copy command templates from src
     const commandsDir = join(projectRoot, '.claude/commands');
-    const templateCommandsDir = join(ccTrackRoot, '.claude/commands');
+    const templateCommandsDir = join(ccTrackRoot, 'src/commands/slash-commands');
 
     if (existsSync(templateCommandsDir)) {
       console.log('\nCopying command templates:');
       const commandFiles = [
         'init-track.md',
         'complete-task.md',
+        'prepare-completion.md',
         'add-to-backlog.md',
         'config-track.md',
         'view-logs.md',
@@ -241,5 +239,4 @@ export const initCommand = new Command('init')
   .description('Initialize cc-track in the current project')
   .option('-f, --force', 'overwrite existing files')
   .option('--no-backup', 'skip backing up existing files')
-  .option('--with-stop', 'enable stop review hook')
   .action(initAction);

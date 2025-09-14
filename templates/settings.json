@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
+            "command": "cc-track hook",
             "timeout": 10000
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
+            "command": "cc-track hook",
             "timeout": 5000
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
+            "command": "cc-track hook",
             "timeout": 30000
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
+            "command": "cc-track hook",
             "timeout": 5000
           }
         ]
@@ -48,7 +48,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/home/ubuntu/projects/cc-pars/dist/cc-track statusline",
+    "command": "cc-track statusline",
     "padding": 0
   }
 }

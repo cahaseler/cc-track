@@ -24,24 +24,32 @@ export interface ClaudeResponse {
   };
 }
 
-// Find the Claude Code executable using 'which' command
+// Find the Claude Code executable cross-platform
 function findClaudeCodeExecutable(): string | undefined {
   // Prefer system-installed claude (often a compiled binary and faster)
   try {
-    // First try to find the 'claude' command in PATH
-    const claudePath = execSync('which claude', { encoding: 'utf8' }).trim();
+    // Use 'command -v' which is POSIX standard, or 'where' on Windows
+    const isWindows = process.platform === 'win32';
+    const findCommand = isWindows ? 'where claude' : 'command -v claude';
+    const claudePath = execSync(findCommand, { encoding: 'utf8' }).trim();
+
     if (claudePath) {
-      // The claude command itself is typically a symlink or wrapper
-      // The SDK might need the actual cli.js file, so let's resolve it
-      try {
-        const realPath = execSync(`readlink -f "${claudePath}"`, { encoding: 'utf8' }).trim();
-        return realPath || claudePath;
-      } catch {
-        return claudePath;
+      // On Windows, 'where' might return multiple lines, take the first
+      const firstPath = claudePath.split('\n')[0].trim();
+
+      // On Unix, try to resolve symlinks (skip on Windows)
+      if (!isWindows) {
+        try {
+          const realPath = execSync(`readlink -f "${firstPath}"`, { encoding: 'utf8' }).trim();
+          return realPath || firstPath;
+        } catch {
+          return firstPath;
+        }
       }
+      return firstPath;
     }
   } catch {
-    // which command failed, claude is not in PATH
+    // Command failed, claude is not in PATH
   }
 
   // Fallback to local project install
