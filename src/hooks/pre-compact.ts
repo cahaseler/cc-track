@@ -142,7 +142,7 @@ Begin by reading the task file, then make appropriate updates based on the trans
       const claudeSDK = deps.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
 
       const response = await claudeSDK.prompt(prompt, 'sonnet', {
-        maxTurns: 1,
+        maxTurns: 20, // Allow many turns for thorough investigation
         allowedTools: ['Read', 'Grep', 'Edit'],
         disallowedTools: ['Write', 'MultiEdit', 'Bash', 'TodoWrite'],
         timeoutMs: 120000, // 2 minutes
@@ -158,6 +158,10 @@ Begin by reading the task file, then make appropriate updates based on the trans
         };
       }
 
+      log.debug('Claude response', {
+        text: response.text.substring(0, 500), // Log first 500 chars
+        fullLength: response.text.length
+      });
       log.info('Task file updated successfully');
       return {
         continue: true,

@@ -57,7 +57,7 @@ function findClaudeCodeExecutable(): string | undefined {
 async function prompt(
   text: string,
   model: 'haiku' | 'sonnet' | 'opus' = 'haiku',
-  options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number },
+  options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number; cwd?: string },
 ): Promise<ClaudeResponse> {
   const logger = createLogger('claude-sdk');
   try {
@@ -86,8 +86,8 @@ async function prompt(
         allowedTools: options?.allowedTools,
         disallowedTools: options?.disallowedTools ?? ['*'],
         pathToClaudeCodeExecutable,
-        // Critical: run in a temp directory to avoid triggering project hooks
-        cwd: tmpdir(),
+        // Use provided cwd or default to temp directory to avoid triggering project hooks
+        cwd: options?.cwd || tmpdir(),
         stderr: (data: string) => {
           try {
             const s = typeof data === 'string' ? data : String(data);
