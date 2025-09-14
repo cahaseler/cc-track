@@ -22,17 +22,25 @@ cc-track solves these problems by:
 ## Installation
 
 ```bash
-# Install globally via npm
-npm install -g cc-track
-
 # Navigate to your project
 cd your-project
 
-# Initialize cc-track
-cc-track init
+# Initialize cc-track (no installation needed!)
+npx cc-track init
 
 # Follow the instructions to run /setup-cc-track in Claude Code
 ```
+
+### Optional: Pin a specific version
+If you want to ensure consistency across your team, you can install cc-track as a dev dependency:
+
+```bash
+npm install --save-dev cc-track
+# or
+bun add -d cc-track
+```
+
+But this is entirely optional - the hooks will use `npx` which works with or without local installation.
 
 ## How It Works
 

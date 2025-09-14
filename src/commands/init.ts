@@ -24,7 +24,7 @@ export const initCommand = new Command('init')
       console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
     } else {
       const setupCommandContent = `---
-allowed-tools: Bash(bunx cc-track:*), Bash(git:*), Bash(gh:*), Write, Read, Edit, Grep, Glob
+allowed-tools: Bash(npx cc-track:*), Bash(git:*), Bash(gh:*), Write, Read, Edit, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 ---
 
@@ -34,8 +34,8 @@ You are setting up cc-track (Task Review And Context Keeper) for this project. F
 
 ## Step 1: Installation of Templates and Commands
 
-!\`bunx cc-track setup-templates\`
-!\`bunx cc-track setup-commands\`
+!\`npx cc-track setup-templates\`
+!\`npx cc-track setup-commands\`
 
 ## Step 2: Quick Environment Check
 
@@ -180,7 +180,7 @@ Add or update the statusLine configuration:
 \`\`\`json
 "statusLine": {
   "type": "command",
-  "command": "cc-track statusline",
+  "command": "npx cc-track statusline",
   "padding": 0
 }
 \`\`\`
@@ -188,11 +188,11 @@ Add or update the statusLine configuration:
 ### For hooks (based on what's enabled):
 Add to the hooks section (preserve any existing hooks):
 
-- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "cc-track hook"
-- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "cc-track hook"
-- If stop_review enabled: Add Stop hook → command "cc-track hook"
-- If pre_compact enabled: Add PreCompact hook → command "cc-track hook"
-- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "cc-track hook"
+- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "npx cc-track hook"
+- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "npx cc-track hook"
+- If stop_review enabled: Add Stop hook → command "npx cc-track hook"
+- If pre_compact enabled: Add PreCompact hook → command "npx cc-track hook"
+- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "npx cc-track hook"
 
 Use the Edit tool to make these changes, merging with any existing configuration.
 
