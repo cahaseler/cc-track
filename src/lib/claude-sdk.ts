@@ -57,7 +57,13 @@ function findClaudeCodeExecutable(): string | undefined {
 async function prompt(
   text: string,
   model: 'haiku' | 'sonnet' | 'opus' = 'haiku',
-  options?: { maxTurns?: number; allowedTools?: string[]; disallowedTools?: string[]; timeoutMs?: number; cwd?: string },
+  options?: {
+    maxTurns?: number;
+    allowedTools?: string[];
+    disallowedTools?: string[];
+    timeoutMs?: number;
+    cwd?: string;
+  },
 ): Promise<ClaudeResponse> {
   const logger = createLogger('claude-sdk');
   try {

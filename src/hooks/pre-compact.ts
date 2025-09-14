@@ -160,7 +160,7 @@ Begin by reading the task file, then make appropriate updates based on the trans
 
       log.debug('Claude response', {
         text: response.text.substring(0, 500), // Log first 500 chars
-        fullLength: response.text.length
+        fullLength: response.text.length,
       });
       log.info('Task file updated successfully');
       return {

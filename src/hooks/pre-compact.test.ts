@@ -182,7 +182,7 @@ describe('preCompactHook', () => {
       expect.stringContaining('TASK FILE PATH: /test/project/.claude/tasks/TASK_045.md'),
       'sonnet',
       {
-        maxTurns: 1,
+        maxTurns: 20,
         allowedTools: ['Read', 'Grep', 'Edit'],
         disallowedTools: ['Write', 'MultiEdit', 'Bash', 'TodoWrite'],
         timeoutMs: 120000,
