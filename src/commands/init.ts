@@ -95,11 +95,13 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - Ask: "Would you like automatic git branch creation/merging for each task?"
    - If yes: enable \`git_branching: true\`
 
+   - If the user doesn't want to set up git or enable the task management system, they can still use the edit validation feature, but most other features won't work.
+
 2. **GitHub Integration** (if git enabled):
    **If GitHub CLI is authenticated and remote exists**:
    - Ask: "Would you like GitHub integration for automatic issue and PR management?"
    - If yes, enable \`github_integration.enabled: true\` and ask:
-     - "Create GitHub issues for each task?" → \`auto_create_issues: true\`
+     - "Autoatically create GitHub issues for each task?" → \`auto_create_issues: true\`
      - "Link branches to GitHub issues?" → \`use_issue_branches: true\`
      - "Create PRs instead of direct merges?" → \`auto_create_prs: true\`
 
@@ -111,12 +113,12 @@ The \`.claude/track.config.json\` file has been created with all features disabl
 3. **Optional Features**:
 
    **Edit Validation** (if TypeScript/JavaScript project detected):
-   - Ask: "Would you like real-time validation when editing files?"
+   - Ask: "Would you like real-time validation when editing files? This gives Claude instant feedback on lint or type issues to help fix errors as they happen."
    - If yes: enable \`edit_validation: true\`
    - If lint/typecheck commands unclear, ask: "What command runs your linter? What command runs type checking?"
 
    **Context Preservation**:
-   - Ask: "Would you like automatic task documentation updates before compaction?"
+   - Ask: "Would you like automatic task documentation updates before compaction? This triggers an attempt to update the Task file before compaction to preserve progress."
    - If yes: enable \`pre_compact: true\` and \`post_compact: true\`
 
    **Status Line**:
@@ -166,15 +168,15 @@ Based on your analysis, update:
 - Ask: "Are there team conventions I should know about?"
 - Use journal search to find any existing preferences
 
-## Step 5: Help User Configure settings.json
+## Step 5: Configure settings.json
 
-Now help the user configure their settings.json file. Check if it exists first:
+Now configure the settings.json file based on enabled features:
 
-1. Read the existing settings.json file (if it exists)
-2. Based on what features were enabled in track.config.json, show the user what to add:
+1. Read the existing settings.json file (create if it doesn't exist)
+2. Based on what features were enabled in track.config.json, update settings.json:
 
 ### For statusline (if enabled):
-"To enable the custom status line, add this to your settings.json:"
+Add or update the statusLine configuration:
 \`\`\`json
 "statusLine": {
   "type": "command",
@@ -184,14 +186,15 @@ Now help the user configure their settings.json file. Check if it exists first:
 \`\`\`
 
 ### For hooks (based on what's enabled):
-"To enable the cc-track hooks, add these to your settings.json hooks section:"
+Add to the hooks section (preserve any existing hooks):
 
-- If capture_plan enabled: PostToolUse hook for ExitPlanMode
-- If edit_validation enabled: PostToolUse hook for Edit|Write|MultiEdit
-- If stop_review enabled: Stop hook
-- Always recommend: PreCompact and SessionStart hooks for context preservation
+- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "cc-track hook"
+- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "cc-track hook"
+- If stop_review enabled: Add Stop hook → command "cc-track hook"
+- If pre_compact enabled: Add PreCompact hook → command "cc-track hook"
+- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "cc-track hook"
 
-Show them the complete hooks configuration they need, merged with any existing hooks.
+Use the Edit tool to make these changes, merging with any existing configuration.
 
 ## Step 6: Final Steps
 
