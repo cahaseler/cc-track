@@ -131,6 +131,17 @@ The \`.claude/track.config.json\` file has been created with all features disabl
        - Yes: \`api_timer.display: "show"\`
        - No: \`api_timer.display: "hide"\`
 
+   **Private Journal MCP**:
+   - Check if you see tools starting with \`mcp__private-journal__\` in your available tools
+   - If available:
+     - Ask: "I see you have the Private Journal MCP available. Would you like cc-track to use it for preserving context and insights across sessions?"
+     - If yes: enable \`private_journal: true\`
+     - Explain: "This will enhance context preservation after compaction and help track technical learnings."
+   - If not available:
+     - Inform: "The Private Journal MCP could enhance cc-track's context preservation capabilities. You can install it from: https://github.com/modelcontextprotocol/servers (look for 'private-journal')"
+     - Ask: "Would you like to configure cc-track to use it once installed?"
+     - If yes: enable \`private_journal: true\` with a note that it will activate once the MCP is available
+
 Update the config file with the user's choices.
 
 ## Step 4: Populate Context Files
@@ -167,7 +178,7 @@ Based on your analysis, update:
 **user_context.md**:
 - Ask: "Any specific preferences for how I should work with you?"
 - Ask: "Are there team conventions I should know about?"
-- Use journal search to find any existing preferences
+- If private_journal is enabled: Use journal search to find any existing preferences about this user
 
 ## Step 5: Configure settings.json
 
