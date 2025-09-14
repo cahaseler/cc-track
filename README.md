@@ -1,96 +1,180 @@
-# cc-track
+# cc-track 🚅
 
-**Keep your vibe coding on track**
+**Task Review And Context Keeper - Keep your vibe coding on track**
 
-cc-track (Task Review And Context Keeper) is a comprehensive context management and workflow optimization system for Claude Code. It provides flexible guardrails that keep AI-assisted development fast and focused without being prescriptive.
+cc-track is a comprehensive context management and workflow optimization system for [Claude Code](https://claude.ai/code). It solves the fundamental problem of context loss in AI-assisted development by providing intelligent task tracking, automatic validation, and persistent memory across sessions.
+
+## Why cc-track?
+
+When working with Claude Code, you face several challenges:
+- **Context loss during compaction** - Important details get lost when conversations are compressed
+- **"Close enough" syndrome** - AI declares tasks complete when they're not quite right
+- **Pattern drift** - AI forgets your project's conventions and patterns
+- **No task continuity** - Losing track of what you were working on between sessions
+
+cc-track solves these problems by:
+- 📝 **Capturing plans** from Claude's planning mode and turning them into tracked tasks
+- ✅ **Validating changes** against task requirements in real-time
+- 🧠 **Preserving context** through compaction cycles
+- 🚀 **Automating workflow** with git commits, GitHub issues, and PR management
+- 📊 **Tracking costs** with a custom status line showing usage and limits
 
 ## Installation
 
 ```bash
+# Install globally via npm
+npm install -g cc-track
+
+# Navigate to your project
+cd your-project
+
+# Initialize cc-track
+cc-track init
+
+# Follow the instructions to run /setup-cc-track in Claude Code
+```
+
+## How It Works
+
+### 1. Smart Setup Process
+When you run `cc-track init`, it creates a single slash command (`/setup-cc-track`) that Claude uses to:
+- Analyze your project structure
+- Configure features based on your needs
+- Set up git/GitHub integration if desired
+- Create context files tailored to your project
+
+### 2. Core Task Management Workflow
+
+1. **Plan Capture**: When you exit planning mode, cc-track automatically creates a task file with requirements
+2. **Change Validation**: The stop-review hook validates every change against the active task
+3. **Automatic Commits**: Creates WIP commits that get squashed when tasks complete
+4. **Task Completion**: Smart completion process that validates all requirements are met
+
+### 3. Context Preservation
+
+cc-track maintains several context files that Claude automatically references:
+- **Product Context** - Project vision, goals, and features
+- **System Patterns** - Technical patterns and conventions
+- **Decision Log** - Architectural decisions and rationale
+- **Code Index** - Codebase structure and key files
+- **User Context** - Your preferences and working style
+
+## Features
+
+### Core Features (Recommended)
+- **Task Management** - Capture plans, validate changes, track progress
+- **Git Integration** - Automatic WIP commits and branch management
+- **Context Preservation** - Maintain critical information across sessions
+
+### Optional Features
+- **GitHub Integration** - Automatic issue creation and PR management
+- **Edit Validation** - Real-time TypeScript/linting feedback
+- **Custom Status Line** - Shows current task, costs, and API limits
+- **API Timer Display** - Configurable rate limit visibility
+
+## Configuration
+
+After setup, cc-track uses two configuration files:
+
+### `.claude/track.config.json`
+Controls which features are enabled:
+```json
+{
+  "capture_plan": true,
+  "stop_review": true,
+  "edit_validation": false,
+  "statusline": true,
+  "git_branching": true,
+  "github_integration": {
+    "enabled": true,
+    "auto_create_issues": true,
+    "use_issue_branches": true,
+    "auto_create_prs": true
+  }
+}
+```
+
+### `.claude/settings.json`
+Claude Code's hook configuration (managed by cc-track based on your config)
+
+## Commands
+
+### Slash Commands (in Claude Code)
+- `/setup-cc-track` - Initial setup wizard
+- `/complete-task` - Complete the current task with validation
+- `/prepare-completion` - Check if task is ready for completion
+- `/add-to-backlog` - Add items to backlog without disruption
+- `/config-track` - Modify configuration
+
+### CLI Commands
+- `cc-track init` - Initialize in a new project
+- `cc-track setup-templates` - Install context templates
+- `cc-track setup-commands` - Install slash commands
+- `cc-track statusline` - Generate status line (called by Claude Code)
+- `cc-track hook` - Hook dispatcher (called by Claude Code)
+
+## Project Structure
+
+After initialization, cc-track creates:
+```
+your-project/
+├── .claude/
+│   ├── commands/          # Slash commands
+│   ├── tasks/             # Task files (TASK_001.md, etc.)
+│   ├── plans/             # Captured plans
+│   ├── logs/              # Centralized logs
+│   ├── track.config.json  # Feature configuration
+│   ├── product_context.md # Project vision
+│   ├── system_patterns.md # Technical patterns
+│   ├── decision_log.md    # Architectural decisions
+│   ├── code_index.md      # Codebase map
+│   └── user_context.md    # User preferences
+└── CLAUDE.md              # Main context file with imports
+```
+
+## Requirements
+
+- [Claude Code](https://claude.ai/code) subscription
+- Node.js 18+ for npm installation
+- Git (for task management features)
+- GitHub CLI (optional, for GitHub integration)
+
+## Philosophy
+
+cc-track is designed to be:
+- **Non-invasive** - Start with everything disabled, enable what you need
+- **Transparent** - You see exactly what's being configured
+- **Flexible** - Works with any language or framework
+- **Intelligent** - Adapts to your project's needs
+
+## Development
+
+To contribute or run from source:
+
+```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/cahaseler/cc-track.git
 cd cc-track
 
 # Install dependencies
 bun install
 
-# Initialize cc-track in your project
-bun run init
+# Build the project
+bun run build
+
+# Run tests
+bun test
 ```
-
-## Development
-
-### TypeScript and Code Quality
-
-This project uses TypeScript with strict type checking and Biome for linting and formatting.
-
-#### Available Scripts
-
-```bash
-# Type checking only
-bun run typecheck
-
-# Linting only
-bun run lint
-
-# Format code
-bun run format
-
-# Fix linting issues automatically
-bun run fix
-
-# Run both type checking and linting
-bun run check
-```
-
-#### TypeScript Configuration
-
-The project uses strict TypeScript settings for maximum type safety:
-- All strict mode flags enabled
-- No implicit `any` types allowed
-- Unused variables and parameters flagged
-- No implicit returns
-
-See `tsconfig.json` for full configuration.
-
-#### Linting with Biome
-
-Biome provides fast, modern linting and formatting:
-- ESLint + Prettier replacement
-- Bun-optimized performance
-- Automatic import organization
-- Consistent code style enforcement
-
-See `biome.json` for linting rules.
-
-### Project Structure
-
-```
-cc-track/
-├── .claude/          # Project context and state
-│   ├── hooks/        # Claude Code event handlers
-│   ├── lib/          # Shared utilities
-│   ├── scripts/      # CLI scripts
-│   └── *.md          # Context documentation
-├── commands/         # Slash commands for Claude Code
-├── docs/            # Research and documentation
-└── templates/       # Project templates
-```
-
-## Features
-
-- **Context Management**: Preserves critical context through compaction cycles
-- **Task Tracking**: Captures plans and manages active tasks
-- **Quality Assurance**: Automated code review with deviation detection
-- **Developer Experience**: Custom status line with cost tracking
-
-## Contributing
-
-1. Run `bun run check` before committing to ensure code quality
-2. Fix any TypeScript or linting errors
-3. Follow existing code patterns and conventions
-4. Update documentation as needed
 
 ## License
 
-[License information to be added]
+MIT
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/cahaseler/cc-track/issues)
+- **Documentation**: [Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code)
+
+---
+
+Built with 🚀 by developers who got tired of repeating themselves to Claude
