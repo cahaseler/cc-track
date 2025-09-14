@@ -1,3 +1,17 @@
+# [1.13.0](https://github.com/cahaseler/cc-track/compare/v1.12.0...v1.13.0) (2025-09-14)
+
+
+### Bug Fixes
+
+* address Copilot review feedback on cross-platform support ([d79f82a](https://github.com/cahaseler/cc-track/commit/d79f82ac8d5c740b124f3290cfaf5ef658f24c7f))
+
+
+### Features
+
+* implement cross-platform installation support ([dbdec6b](https://github.com/cahaseler/cc-track/commit/dbdec6b4c56c17c0d329b528d9bcfd64d577b628))
+* make cc-track cross-platform compatible ([c8d6c9c](https://github.com/cahaseler/cc-track/commit/c8d6c9ccc1cc3a48f29cd637ba73dff2a1aa437a))
+* remove init command and fix cross-platform paths for TASK_047 ([b2c4e12](https://github.com/cahaseler/cc-track/commit/b2c4e124f9af6bf4fa8c1f94ba157d582c1b2841))
+
 # [1.12.0](https://github.com/cahaseler/cc-track/compare/v1.11.0...v1.12.0) (2025-09-14)
 
 
