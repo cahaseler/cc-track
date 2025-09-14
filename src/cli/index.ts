@@ -10,8 +10,8 @@ import { parseLogsCommand } from '../commands/parse-logs';
 import { createPrepareCompletionCommand } from '../commands/prepare-completion';
 import { statuslineCommand } from '../commands/statusline';
 
-// Version is hardcoded for compiled binary
-const VERSION = '1.0.0';
+// Version injected at build time, fallback for local development
+const VERSION = process.env.BUILD_VERSION || '1.0.0-dev';
 
 // Create main program
 const program = new Command();

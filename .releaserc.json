@@ -7,7 +7,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "bun run build:cross-platform"
+        "prepareCmd": "bun build src/cli/index.ts --compile --target=bun-linux-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-linux && bun build src/cli/index.ts --compile --target=bun-windows-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-windows.exe"
       }
     ],
     [
