@@ -1,3 +1,27 @@
+# [1.14.0](https://github.com/cahaseler/cc-track/compare/v1.13.0...v1.14.0) (2025-09-14)
+
+
+### Bug Fixes
+
+* configure settings.json with Edit tool in setup command ([9286810](https://github.com/cahaseler/cc-track/commit/928681071fe50a96a80f634e14e4baa3e53d7210))
+* correct hooks configuration structure in setup instructions ([a08f1d3](https://github.com/cahaseler/cc-track/commit/a08f1d3060fbfc213e241268eb391a3be73b43e4))
+* correct instruction text for Claude Code startup ([787d8d7](https://github.com/cahaseler/cc-track/commit/787d8d783b3913f601840d2f4431c16c321e3178))
+* remove learned_mistakes.md from npm package resources ([4ab5e68](https://github.com/cahaseler/cc-track/commit/4ab5e6852a2da10b7675ba99db00cacaea468227))
+* update embed-resources to read from src/commands/slash-commands ([9c2ab96](https://github.com/cahaseler/cc-track/commit/9c2ab96efb02491a2eec6195e715eb8c5d757928))
+* update model identifier to claude-sonnet-4-20250514 ([fb57b96](https://github.com/cahaseler/cc-track/commit/fb57b96442db057a085c94119b034c0f56a0b76b))
+* update test calls to include hasPrivateJournal parameter ([2c25542](https://github.com/cahaseler/cc-track/commit/2c255423f1cc0c903bda345a07dc134a4d1c41e5))
+
+
+### Features
+
+* add complete CLAUDE.md configuration with @ imports to setup ([1038aa4](https://github.com/cahaseler/cc-track/commit/1038aa4ae30bb71037d5f5ecfafb14cb3be442aa))
+* add optional private journal MCP configuration and conditional integration ([775f0ea](https://github.com/cahaseler/cc-track/commit/775f0ea625849037d980f56c34066b9427e556cd))
+* add pre-push hooks suggestion for stop-review workflow ([e68c90f](https://github.com/cahaseler/cc-track/commit/e68c90fa1b3488c23a608e932c41557fbeb840d5))
+* configure npm package for global installation with compiled binary ([4cfa982](https://github.com/cahaseler/cc-track/commit/4cfa98200fa2b4bc6baf27196fd5cd447599fa93))
+* enable private journal MCP integration in cc-track config ([8064b80](https://github.com/cahaseler/cc-track/commit/8064b80f0294aa3749938741b8981f1784f08589))
+* implement build-time resource embedding for npm package ([3d69cad](https://github.com/cahaseler/cc-track/commit/3d69cad8e8b8456c3a56d60697f36b5b01cbe297))
+* restrict setup command to specific safe operations ([2d964d3](https://github.com/cahaseler/cc-track/commit/2d964d3aba5debdaf99507f314b859978dab67d9))
+
 # [1.13.0](https://github.com/cahaseler/cc-track/compare/v1.12.0...v1.13.0) (2025-09-14)
 
 

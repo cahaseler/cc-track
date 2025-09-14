@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isHookEnabled } from '../lib/config';
+import { getConfig, isHookEnabled } from '../lib/config';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -90,6 +90,7 @@ export function generatePostCompactionInstructions(
   claudeMdContent: string,
   importedContent: string,
   activeTaskFile: string,
+  hasPrivateJournal: boolean,
 ): string {
   let instructions = `📋 POST-COMPACTION CONTEXT RESTORATION
 
@@ -102,15 +103,24 @@ ${claudeMdContent}
 ${importedContent}
 
 Now that you can see the current state of the project documentation:
+`;
 
+  if (hasPrivateJournal) {
+    instructions += `
 1. First, review your recent journal entries to recall important context:
    - Use mcp__private-journal__list_recent_entries to see your last 5-10 entries
    - Pay special attention to technical_insights, project_notes, and user_context
    - Note any struggles, breakthroughs, or important realizations
 
 2. Review the compaction summary above combined with your journal insights
-   
+
 3. Update the project documentation to reflect the current state:`;
+  } else {
+    instructions += `
+1. Review the compaction summary above
+
+2. Update the project documentation to reflect the current state:`;
+  }
 
   if (activeTaskFile) {
     instructions += `
@@ -124,8 +134,9 @@ Now that you can see the current state of the project documentation:
       - Update "## Open Questions & Blockers" if any were resolved or discovered`;
   }
 
-  instructions += `
-   
+  if (hasPrivateJournal) {
+    instructions += `
+
    c) If any significant technical decisions were made (check your journal!), append them to .claude/decision_log.md
    d) If any new patterns or conventions were established, update .claude/system_patterns.md
    e) If the task is now complete, update its status to "completed" and create a summary entry in .claude/progress_log.md
@@ -134,7 +145,20 @@ Now that you can see the current state of the project documentation:
 4. After updating the documentation, provide a brief summary of:
    - What you updated
    - Key insights from your journal that influenced the updates
-   - Any unresolved issues or concerns noted in your journal
+   - Any unresolved issues or concerns noted in your journal`;
+  } else {
+    instructions += `
+
+   c) If any significant technical decisions were made, append them to .claude/decision_log.md
+   d) If any new patterns or conventions were established, update .claude/system_patterns.md
+   e) If the task is now complete, update its status to "completed" and create a summary entry in .claude/progress_log.md
+
+3. After updating the documentation, provide a brief summary of:
+   - What you updated
+   - Any unresolved issues or concerns`;
+  }
+
+  instructions += `
 
 Please do this now before proceeding with any new work.`;
 
@@ -195,11 +219,20 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
     // Combine imported content with task content for Claude
     const fullImportedContent = importedContent + taskContent;
 
+    // Check if private journal is enabled
+    const config = getConfig();
+    const hasPrivateJournal = config.features?.private_journal?.enabled === true;
+
     // Generate brief summary for user
     const userSummary = generateUserSummary(importedFiles, activeTaskFile);
 
     // Generate full instructions for Claude
-    const instructions = generatePostCompactionInstructions(claudeMdContent, fullImportedContent, activeTaskFile);
+    const instructions = generatePostCompactionInstructions(
+      claudeMdContent,
+      fullImportedContent,
+      activeTaskFile,
+      hasPrivateJournal,
+    );
 
     // Return with brief systemMessage for user, full additionalContext for Claude
     return {

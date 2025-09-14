@@ -19,9 +19,6 @@
 ## Code Index
 @.claude/code_index.md
 
-## Learned Mistakes
-@.claude/learned_mistakes.md
-
 ## User Context
 @.claude/user_context.md
 

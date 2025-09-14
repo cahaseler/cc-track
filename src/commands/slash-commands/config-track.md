@@ -12,8 +12,8 @@ If called without parameters, show the current configuration and ask what they'd
 
 **Hooks:**
 - `capture_plan` - Creates task files from planning mode
-- `pre_compact` - Extracts error patterns before compaction
-- `post_compact` - Restores context after compaction  
+- `pre_compact` - Updates task documentation before compaction
+- `post_compact` - Restores context after compaction
 - `stop_review` - Reviews changes and auto-commits with [wip]
 - `edit_validation` - Runs TypeScript/Biome checks on edited files
 
@@ -26,3 +26,4 @@ If called without parameters, show the current configuration and ask what they'd
   - `use_issue_branches` - Use gh issue develop for branches
   - `auto_create_prs` - Open PRs instead of merging
   - `repository_url` - GitHub repo URL
+- `private_journal` - Use private journal MCP for enhanced context preservation

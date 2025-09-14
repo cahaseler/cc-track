@@ -228,6 +228,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Pre-compact hook now provides real value by updating task files automatically. Learned mistakes file becomes manual-only, preventing dangerous auto-generated advice from polluting context
 - **Reversibility:** Easy - could restore error extraction code from git history, though unlikely given the quality issues discovered
 
+[2025-09-14 21:00] - Build-Time Resource Embedding Over Runtime Path Resolution for NPM Package
+- **Context:** NPM global package installation needed to bundle templates and commands with the binary, but runtime path resolution across different npm installation locations (global, npx cache, local node_modules) was complex and fragile
+- **Decision:** Embed all templates and commands as TypeScript string literals at build time using a pre-compilation script (embed-resources.ts)
+- **Rationale:** Build-time embedding completely eliminates runtime path resolution complexity. Resources become part of the compiled binary, work identically regardless of installation method (npm global, npx, bunx), and require no filesystem operations at runtime
+- **Alternatives Considered:**
+  - Use import.meta.dir for runtime resolution: Would fail in different npm installation contexts
+  - Package resources as separate npm files: Would require complex path resolution logic
+  - Use pkg or similar bundlers: Adds build complexity and another dependency
+- **Implications:** Larger binary size (includes all templates/commands as strings), but completely reliable resource access. Simple build process with just Bun compilation. No runtime filesystem dependencies for core functionality
+- **Reversibility:** Easy - could switch to runtime resolution if needed, but unlikely given the reliability benefits
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

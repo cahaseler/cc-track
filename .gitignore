@@ -9,6 +9,9 @@ build/
 *.d.ts
 *.map
 
+# Generated files
+src/lib/embedded-resources.ts
+
 # IDE
 .vscode/
 .idea/
