@@ -2,7 +2,7 @@
 
 **Purpose:** Update the build process to inject the actual release version into binaries instead of showing hardcoded "1.0.0", using semantic-release environment variables at build time.
 
-**Status:** planning
+**Status:** completed
 **Started:** 2025-09-14 21:21
 **Task ID:** 046
 
@@ -25,7 +25,8 @@
 Use Bun's `--define` flag to inject `BUILD_VERSION` environment variable at compile time. Modify the CLI to read from `process.env.BUILD_VERSION` with fallback to development version. Update semantic-release configuration to pass the version during the prepare step using `--define BUILD_VERSION='"${nextRelease.version}"'`.
 
 ## Current Focus
-Task completed - version injection successfully implemented.
+
+Task completed on 2025-09-14
 
 ## Open Questions & Blockers
 None - all issues resolved.
