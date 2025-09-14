@@ -267,7 +267,7 @@ Show the user what was configured and explain the key features:
 
     console.log('\n🚅 cc-track initialization started!\n');
     console.log('Next steps:');
-    console.log('1. Restart Claude Code (or reload if already running)');
+    console.log('1. Start Claude Code (or restart if already running)');
     console.log('2. Run the slash command: /setup-cc-track');
     console.log('3. Claude will guide you through the complete setup\n');
     console.log('This transparent setup process lets you see exactly what\'s being configured.');
