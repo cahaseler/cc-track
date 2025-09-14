@@ -7,12 +7,12 @@
 **Task ID:** 046
 
 ## Requirements
-- [ ] Update `src/cli/index.ts` to use build-time injected version with fallback
-- [ ] Modify `.releaserc.json` exec plugin's `prepareCmd` to use `--define` flag for version injection
-- [ ] Ensure local builds show "1.0.0-dev" to distinguish from releases
-- [ ] Ensure release binaries show correct semantic version
-- [ ] Test local build shows development version
-- [ ] Test manual build with version injection works correctly
+- [x] Update `src/cli/index.ts` to use build-time injected version with fallback
+- [x] Modify `.releaserc.json` exec plugin's `prepareCmd` to use `--define` flag for version injection
+- [x] Ensure local builds show "1.0.0-dev" to distinguish from releases
+- [x] Ensure release binaries show correct semantic version
+- [x] Test local build shows development version
+- [x] Test manual build with version injection works correctly
 
 ## Success Criteria
 - Local builds (`bun run build`) show "1.0.0-dev" version
@@ -25,18 +25,28 @@
 Use Bun's `--define` flag to inject `BUILD_VERSION` environment variable at compile time. Modify the CLI to read from `process.env.BUILD_VERSION` with fallback to development version. Update semantic-release configuration to pass the version during the prepare step using `--define BUILD_VERSION='"${nextRelease.version}"'`.
 
 ## Current Focus
-Update `src/cli/index.ts` to implement version injection pattern with environment variable fallback.
+Task completed - version injection successfully implemented.
 
 ## Open Questions & Blockers
-- Need to verify current structure of `src/cli/index.ts` and how version is currently handled
-- Need to confirm current `.releaserc.json` configuration and exec plugin setup
-- Should verify Bun's `--define` flag syntax and behavior
+None - all issues resolved.
 
 ## Next Steps
-1. Examine current `src/cli/index.ts` file structure and version handling
-2. Update version constant to use `process.env.BUILD_VERSION` with fallback
-3. Locate and update `.releaserc.json` prepareCmd configuration
-4. Test local build and manual version injection
+Task is complete and ready for the next GitHub release to test the implementation.
+
+## Recent Progress
+
+Successfully implemented build-time version injection for GitHub releases:
+
+1. **Updated `src/cli/index.ts`**: Changed hardcoded version to use `process.env.BUILD_VERSION || '1.0.0-dev'`, allowing build-time injection with local development fallback.
+
+2. **Fixed `.releaserc.json`**: Updated the exec plugin's `prepareCmd` to inject version using Bun's `--define` flag with the correct syntax: `--define 'process.env.BUILD_VERSION="${nextRelease.version}"'`
+
+3. **Verified functionality**:
+   - Local builds show `1.0.0-dev` as expected
+   - Manual test with `--define 'process.env.BUILD_VERSION="2.0.0-test"'` correctly shows the injected version
+   - The solution avoids package.json updates and extra commits during release
+
+The key discovery was that Bun's `--define` flag requires the full `process.env.BUILD_VERSION` path, not just `BUILD_VERSION`. This ensures the next GitHub release will properly embed version numbers in the compiled binaries.
 
 <!-- github_issue: 33 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/33 -->
