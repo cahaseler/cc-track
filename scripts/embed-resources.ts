@@ -17,6 +17,9 @@ const templates: Record<string, string> = {};
 const templateFiles = readdirSync(templatesDir).filter(f => f.endsWith('.md') || f.endsWith('.json'));
 
 for (const file of templateFiles) {
+  // Skip learned_mistakes.md as it's no longer used
+  if (file === 'learned_mistakes.md') continue;
+
   const content = readFileSync(join(templatesDir, file), 'utf-8');
   templates[file] = content;
 }
