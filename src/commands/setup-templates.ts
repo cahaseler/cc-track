@@ -1,6 +1,6 @@
-import { Command } from 'commander';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Command } from 'commander';
 import { embeddedTemplates } from '../lib/embedded-resources';
 
 export const setupTemplatesCommand = new Command('setup-templates')
@@ -55,7 +55,7 @@ export const setupTemplatesCommand = new Command('setup-templates')
           console.log('📝 Updating CLAUDE.md with cc-track imports...');
 
           // Merge by adding cc-track sections if not present
-          const mergedContent = existingContent + '\n\n# cc-track Context Management\n\n' + claudeMdContent;
+          const mergedContent = `${existingContent}\n\n# cc-track Context Management\n\n${claudeMdContent}`;
           writeFileSync(claudeMdTarget, mergedContent);
           console.log('✅ Updated CLAUDE.md');
         } else {

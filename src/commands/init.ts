@@ -1,29 +1,27 @@
-import { Command } from 'commander';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Command } from 'commander';
 
-export const initCommand = new Command('init')
-  .description('Initialize cc-track in your project')
-  .action(() => {
-    // Create .claude/commands directory if it doesn't exist
-    const claudeDir = join(process.cwd(), '.claude');
-    const commandsDir = join(claudeDir, 'commands');
+export const initCommand = new Command('init').description('Initialize cc-track in your project').action(() => {
+  // Create .claude/commands directory if it doesn't exist
+  const claudeDir = join(process.cwd(), '.claude');
+  const commandsDir = join(claudeDir, 'commands');
 
-    if (!existsSync(claudeDir)) {
-      mkdirSync(claudeDir, { recursive: true });
-    }
+  if (!existsSync(claudeDir)) {
+    mkdirSync(claudeDir, { recursive: true });
+  }
 
-    if (!existsSync(commandsDir)) {
-      mkdirSync(commandsDir, { recursive: true });
-    }
+  if (!existsSync(commandsDir)) {
+    mkdirSync(commandsDir, { recursive: true });
+  }
 
-    // Create the setup slash command
-    const setupCommandPath = join(commandsDir, 'setup-cc-track.md');
+  // Create the setup slash command
+  const setupCommandPath = join(commandsDir, 'setup-cc-track.md');
 
-    if (existsSync(setupCommandPath)) {
-      console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
-    } else {
-      const setupCommandContent = `---
+  if (existsSync(setupCommandPath)) {
+    console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
+  } else {
+    const setupCommandContent = `---
 allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 model: claude-sonnet-4-20250514
@@ -301,14 +299,14 @@ Show the user what was configured and explain the key features:
 - Make sure gh CLI is installed and authenticated before enabling GitHub features
 `;
 
-      writeFileSync(setupCommandPath, setupCommandContent);
-      console.log('✅ Created .claude/commands/setup-cc-track.md');
-    }
+    writeFileSync(setupCommandPath, setupCommandContent);
+    console.log('✅ Created .claude/commands/setup-cc-track.md');
+  }
 
-    console.log('\n🚅 cc-track initialization started!\n');
-    console.log('Next steps:');
-    console.log('1. Start Claude Code (or restart if already running)');
-    console.log('2. Run the slash command: /setup-cc-track');
-    console.log('3. Claude will guide you through the complete setup\n');
-    console.log('This transparent setup process lets you see exactly what\'s being configured.');
-  });
+  console.log('\n🚅 cc-track initialization started!\n');
+  console.log('Next steps:');
+  console.log('1. Start Claude Code (or restart if already running)');
+  console.log('2. Run the slash command: /setup-cc-track');
+  console.log('3. Claude will guide you through the complete setup\n');
+  console.log("This transparent setup process lets you see exactly what's being configured.");
+});

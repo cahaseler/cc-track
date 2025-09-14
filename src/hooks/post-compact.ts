@@ -227,7 +227,12 @@ export async function postCompactHook(input: HookInput, deps: PostCompactDepende
     const userSummary = generateUserSummary(importedFiles, activeTaskFile);
 
     // Generate full instructions for Claude
-    const instructions = generatePostCompactionInstructions(claudeMdContent, fullImportedContent, activeTaskFile, hasPrivateJournal);
+    const instructions = generatePostCompactionInstructions(
+      claudeMdContent,
+      fullImportedContent,
+      activeTaskFile,
+      hasPrivateJournal,
+    );
 
     // Return with brief systemMessage for user, full additionalContext for Claude
     return {

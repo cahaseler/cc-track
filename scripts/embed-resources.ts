@@ -14,7 +14,7 @@ const outputFile = join(projectRoot, 'src', 'lib', 'embedded-resources.ts');
 
 // Read all template files
 const templates: Record<string, string> = {};
-const templateFiles = readdirSync(templatesDir).filter(f => f.endsWith('.md') || f === 'track.config.json');
+const templateFiles = readdirSync(templatesDir).filter((f) => f.endsWith('.md') || f === 'track.config.json');
 
 for (const file of templateFiles) {
   // Skip learned_mistakes.md as it's no longer used
@@ -26,7 +26,7 @@ for (const file of templateFiles) {
 
 // Read all command files
 const commands: Record<string, string> = {};
-const commandFiles = readdirSync(commandsDir).filter(f => f.endsWith('.md'));
+const commandFiles = readdirSync(commandsDir).filter((f) => f.endsWith('.md'));
 
 for (const file of commandFiles) {
   // Skip setup-cc-track.md as it's created by init

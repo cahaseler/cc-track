@@ -1,6 +1,6 @@
-import { Command } from 'commander';
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Command } from 'commander';
 import { embeddedCommands } from '../lib/embedded-resources';
 
 export const setupCommandsCommand = new Command('setup-commands')
