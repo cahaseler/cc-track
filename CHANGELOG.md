@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/cahaseler/cc-track/compare/v1.14.0...v1.15.0) (2025-09-14)
+
+
+### Features
+
+* **embedded-resources:** add initial templates and configuration for tracking system state ([915626d](https://github.com/cahaseler/cc-track/commit/915626deb2a12595ffae00ce3fdba19106f268a5))
+
 # [1.14.0](https://github.com/cahaseler/cc-track/compare/v1.13.0...v1.14.0) (2025-09-14)
 
 
