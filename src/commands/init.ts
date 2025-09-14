@@ -32,7 +32,7 @@ description: Complete cc-track setup with Claude's assistance
 
 You are setting up cc-track (Task Review And Context Keeper) for this project. Follow these steps carefully.
 
-## Step 1: Install Templates and Commands
+## Step 1: Installation of Templates and Commands
 
 !\`bunx cc-track setup-templates\`
 !\`bunx cc-track setup-commands\`
@@ -47,22 +47,29 @@ Check what tools and configurations are available:
 Read key files to understand the project:
 - Check for package.json, requirements.txt, Cargo.toml, go.mod, etc.
 - Look for test commands, lint commands, type checking commands
-- Check for .gitignore, README.md, LICENSE
 
 ## Step 3: Configure track.config.json
 
-Create \`.claude/track.config.json\` with minimal defaults (most features off). Then selectively enable based on the environment and user preferences:
+The \`.claude/track.config.json\` file has been created with all features disabled by default. Now update it based on the environment and user preferences:
 
-### Start with minimal config:
+### Current minimal config (already created):
 \`\`\`json
 {
   "capture_plan": false,
   "stop_review": false,
   "edit_validation": false,
+  "pre_compact": false,
+  "post_compact": false,
   "statusline": false,
   "git_branching": false,
+  "api_timer": {
+    "display": "hide"
+  },
   "github_integration": {
-    "enabled": false
+    "enabled": false,
+    "auto_create_issues": false,
+    "use_issue_branches": false,
+    "auto_create_prs": false
   },
   "logging": {
     "level": "info",
@@ -85,7 +92,10 @@ Create \`.claude/track.config.json\` with minimal defaults (most features off). 
 
 3. **If GitHub CLI is authenticated**:
    - Ask: "Would you like GitHub integration for automatic issue and PR creation?"
-   - If yes, enable \`github_integration.enabled: true\` and ask about sub-features
+   - If yes, enable \`github_integration.enabled: true\` and ask:
+     - "Should tasks automatically create GitHub issues?" → \`auto_create_issues: true\`
+     - "Should branches be linked to GitHub issues (uses gh issue develop)?" → \`use_issue_branches: true\`
+     - "Should completed tasks create PRs instead of merging directly?" → \`auto_create_prs: true\`
 
 4. **If GitHub CLI is NOT authenticated**:
    - Mention: "GitHub CLI is not authenticated. If you want GitHub integration later, run \`gh auth login\`"
@@ -96,9 +106,10 @@ Create \`.claude/track.config.json\` with minimal defaults (most features off). 
      - If yes, enable \`edit_validation: true\`
 
 6. **Always ask**:
-   - "Would you like to automatically create task files when exiting planning mode?" → \`capture_plan\`
-   - "Would you like a custom status line showing costs and task info?" → \`statusline\`
-   - If statusline enabled: "How should API rate limit timers be shown? (hide/show/sonnet-only - recommend sonnet-only)"
+   - "Would you like to automatically create task files when exiting planning mode?" → \`capture_plan: true\`
+   - "Would you like context preservation before compaction?" → \`pre_compact: true\` and \`post_compact: true\`
+   - "Would you like a custom status line showing costs and task info?" → \`statusline: true\`
+   - If statusline enabled: "How should API rate limit timers be shown? (hide/show/sonnet-only - recommend sonnet-only)" → \`api_timer.display\`
 
 Update the config file with the user's choices.
 
