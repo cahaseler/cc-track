@@ -14,7 +14,7 @@ const outputFile = join(projectRoot, 'src', 'lib', 'embedded-resources.ts');
 
 // Read all template files
 const templates: Record<string, string> = {};
-const templateFiles = readdirSync(templatesDir).filter(f => f.endsWith('.md') || f.endsWith('.json'));
+const templateFiles = readdirSync(templatesDir).filter(f => f.endsWith('.md') || f === 'track.config.json');
 
 for (const file of templateFiles) {
   // Skip learned_mistakes.md as it's no longer used

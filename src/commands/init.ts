@@ -24,74 +24,163 @@ export const initCommand = new Command('init')
       console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
     } else {
       const setupCommandContent = `---
-allowed-tools: Bash(bunx cc-track:*), Write, Read, Grep, Glob
+allowed-tools: Bash(bunx cc-track:*), Bash(git:*), Bash(gh:*), Write, Read, Edit, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 ---
 
-# Setup cc-track
+# Setup cc-track for this project
 
-Welcome! I'll help you set up cc-track (Task Review And Context Keeper) for your project. This system will help keep your vibe coding on track with intelligent context management and task tracking.
+You are setting up cc-track (Task Review And Context Keeper) for this project. Follow these steps carefully.
 
 ## Step 1: Install Templates and Commands
 
-First, I'll install all the necessary templates and slash commands:
-
 !\`bunx cc-track setup-templates\`
-
 !\`bunx cc-track setup-commands\`
 
-## Step 2: Analyze Your Project
+## Step 2: Quick Environment Check
 
-Now I'll explore your repository to understand what kind of project this is. Let me check:
+Check what tools and configurations are available:
 
-1. **Project type and structure** - Look for package.json, requirements.txt, Cargo.toml, etc.
-2. **Directory layout** - Identify source folders, test structure, documentation
-3. **Existing conventions** - Check for linters, formatters, style guides
-4. **Tech stack** - Languages, frameworks, databases, deployment
+!\`git status 2>&1\`
+!\`gh auth status 2>&1\`
 
-## Step 3: Configure Context Files
+Read key files to understand the project:
+- Check for package.json, requirements.txt, Cargo.toml, go.mod, etc.
+- Look for test commands, lint commands, type checking commands
+- Check for .gitignore, README.md, LICENSE
 
-Based on my analysis, I'll populate the context files in \`.claude/\`:
+## Step 3: Configure track.config.json
 
-### product_context.md
-- Ask you about the project's main purpose and vision
-- Document target users and core features
-- Note the technical stack I discovered
+Create \`.claude/track.config.json\` with minimal defaults (most features off). Then selectively enable based on the environment and user preferences:
 
-### system_patterns.md
-- Document architectural patterns (MVC, microservices, etc.)
-- Record coding conventions from config files
-- Note testing frameworks and strategies
-- Ask about your tool preferences
+### Start with minimal config:
+\`\`\`json
+{
+  "capture_plan": false,
+  "stop_review": false,
+  "edit_validation": false,
+  "statusline": false,
+  "git_branching": false,
+  "github_integration": {
+    "enabled": false
+  },
+  "logging": {
+    "level": "info",
+    "retention_days": 7
+  }
+}
+\`\`\`
 
-### code_index.md
-- Create a clear directory structure map
-- List key files and their purposes
-- Document important classes/functions
-- Note configuration and environment setup
+### Now enable features based on environment:
 
-### user_context.md
-- Ask about your working style and preferences
-- Document any team conventions
-- Note communication preferences
+1. **If git is available**:
+   - Ask: "Would you like automatic code review and commits at stop points? This helps track your work with WIP commits."
+   - If yes, enable \`stop_review: true\`
+   - Ask: "Would you like automatic git branch creation for tasks?"
+   - If yes, enable \`git_branching: true\`
 
-## Step 4: Configure Hooks and Settings
+2. **If git is NOT available**:
+   - Ask: "This doesn't appear to be a git repository. Would you like help setting up git?"
+   - If yes, run \`git init\` and help configure
 
-I'll set up the appropriate hooks based on your project:
-- Edit validation for real-time TypeScript/linting checks
-- Stop review for automatic code review and commits
-- Plan capture for task management
-- Pre/post compaction for context preservation
+3. **If GitHub CLI is authenticated**:
+   - Ask: "Would you like GitHub integration for automatic issue and PR creation?"
+   - If yes, enable \`github_integration.enabled: true\` and ask about sub-features
 
-## Step 5: Final Setup
+4. **If GitHub CLI is NOT authenticated**:
+   - Mention: "GitHub CLI is not authenticated. If you want GitHub integration later, run \`gh auth login\`"
 
-- Configure track.config.json with appropriate features
-- Update CLAUDE.md with your project name and imports
-- Set up the custom status line for better visibility
+5. **Based on project type** (from package.json, etc.):
+   - If TypeScript/JavaScript project with lint/typecheck commands:
+     - Ask: "Would you like real-time validation when editing TypeScript/JavaScript files?"
+     - If yes, enable \`edit_validation: true\`
 
-## Let's Begin!
+6. **Always ask**:
+   - "Would you like to automatically create task files when exiting planning mode?" → \`capture_plan\`
+   - "Would you like a custom status line showing costs and task info?" → \`statusline\`
+   - If statusline enabled: "How should API rate limit timers be shown? (hide/show/sonnet-only - recommend sonnet-only)"
 
-I'll start by exploring your project structure to understand what we're working with.
+Update the config file with the user's choices.
+
+## Step 4: Populate Context Files
+
+### For NEW/EMPTY projects:
+Ask the user:
+- "What is the main purpose of this project?"
+- "Who are the target users?"
+- "What are the core features you're planning?"
+- "What tech stack are you planning to use?"
+- "Any specific patterns or conventions you want to follow?"
+
+### For EXISTING projects:
+Based on your analysis, update:
+
+**product_context.md**:
+- Main purpose (infer from README or ask)
+- Target users (infer or ask)
+- Core features (analyze codebase structure)
+- Technical stack (from package files)
+
+**system_patterns.md**:
+- Architecture patterns you discovered
+- Coding conventions from config files
+- Testing approach from test structure
+- Git conventions from commit history
+
+**code_index.md**:
+- Complete directory tree
+- Key files and their purposes
+- Important functions/classes
+- Environment variables and configs
+
+**user_context.md**:
+- Ask: "Any specific preferences for how I should work with you?"
+- Ask: "Are there team conventions I should know about?"
+- Use journal search to find any existing preferences
+
+## Step 5: Help User Configure settings.json
+
+Now help the user configure their settings.json file. Check if it exists first:
+
+1. Read the existing settings.json file (if it exists)
+2. Based on what features were enabled in track.config.json, show the user what to add:
+
+### For statusline (if enabled):
+"To enable the custom status line, add this to your settings.json:"
+\`\`\`json
+"statusLine": {
+  "type": "command",
+  "command": "cc-track statusline",
+  "padding": 0
+}
+\`\`\`
+
+### For hooks (based on what's enabled):
+"To enable the cc-track hooks, add these to your settings.json hooks section:"
+
+- If capture_plan enabled: PostToolUse hook for ExitPlanMode
+- If edit_validation enabled: PostToolUse hook for Edit|Write|MultiEdit
+- If stop_review enabled: Stop hook
+- Always recommend: PreCompact and SessionStart hooks for context preservation
+
+Show them the complete hooks configuration they need, merged with any existing hooks.
+
+## Step 6: Final Steps
+
+1. Update the main CLAUDE.md file with the actual project name
+2. Test that enabled features work (e.g., \`bunx cc-track statusline\` if enabled)
+3. Show the user what was configured and explain the key features:
+   - How task tracking works (if enabled)
+   - What the hooks do (for enabled features)
+   - How to use the slash commands
+
+## Important Instructions
+
+- Be specific when asking questions - reference what you found
+- For existing projects, show what you discovered before asking for confirmation
+- Explain each feature's benefit when asking about it
+- If the user seems unsure, recommend sensible defaults
+- Make sure gh CLI is installed and authenticated before enabling GitHub features
 `;
 
       writeFileSync(setupCommandPath, setupCommandContent);
