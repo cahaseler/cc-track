@@ -27,10 +27,9 @@ cd your-project
 
 # Initialize cc-track
 npx cc-track init
-# Or just 'npx cc-track init' and confirm when prompted
-
-# Follow the instructions to run /setup-cc-track in Claude Code
 ```
+
+This creates a single `/setup-cc-track` Claude Code command inside your project. Start up Claude Code, run this command, and Claude will walk you through the installation and configuration. The command itself 
 
 ### Optional: Pin a specific version
 If you want to ensure consistency across your team, you can install cc-track as a dev dependency:

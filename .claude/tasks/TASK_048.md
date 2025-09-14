@@ -39,6 +39,13 @@
 - Two-phase installation: npm global install + Claude setup
 - Resource bundling preserves npm package directory structure
 
+## Recent Progress
+- Defined comprehensive NPM global installation approach with Claude-driven setup
+- Designed two-phase installation: `npm install -g cc-track` + `cc-track init` + Claude setup
+- Clarified resource bundling strategy using npm "files" field and import.meta.dir
+- Planned Claude-driven setup via setup-cc-track.md slash command for transparency
+- Established technical approach using Bun-compiled binary with bundled resources
+
 ## Current Focus
 Update package.json configuration and create init command structure
 
