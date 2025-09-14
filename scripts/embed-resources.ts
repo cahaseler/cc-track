@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 const projectRoot = join(import.meta.dir, '..');
 const templatesDir = join(projectRoot, 'templates');
-const commandsDir = join(projectRoot, '.claude', 'commands');
+const commandsDir = join(projectRoot, 'src', 'commands', 'slash-commands');
 const outputFile = join(projectRoot, 'src', 'lib', 'embedded-resources.ts');
 
 // Read all template files
