@@ -3,6 +3,29 @@
   "version": "1.0.0",
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
+  "bin": {
+    "cc-track": "./dist/cc-track"
+  },
+  "files": [
+    "dist/",
+    "templates/",
+    ".claude/commands/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cahaseler/cc-track.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "context-management",
+    "task-tracking",
+    "ai-development",
+    "workflow",
+    "productivity"
+  ],
+  "author": "Craig",
+  "license": "MIT",
   "scripts": {
     "init": "bun run scripts/init-templates.ts",
     "typecheck": "tsc --noEmit",
@@ -16,6 +39,7 @@
     "build:windows": "bun build src/cli/index.ts --compile --target=bun-windows-x64 --outfile dist/cc-track-windows.exe",
     "build:cross-platform": "bun run build:linux && bun run build:windows",
     "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done",
+    "prepublishOnly": "bun run build",
     "release": "semantic-release"
   },
   "devDependencies": {

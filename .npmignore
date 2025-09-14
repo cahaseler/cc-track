@@ -1,0 +1,47 @@
+# Source files (only need compiled binary)
+src/
+*.test.ts
+
+# Development files
+.github/
+docs/
+old_roopars_documents/
+
+# Project-specific context
+.claude/tasks/
+.claude/plans/
+.claude/hooks/
+.claude/utils/
+.claude/*.md
+!.claude/commands/
+
+# Test files
+tests/
+*.test.js
+
+# Config files not needed for npm package
+.releaserc.json
+biome.json
+tsconfig.json
+bun.lockb
+
+# Build artifacts not for npm
+dist/cc-track-linux
+dist/cc-track-windows.exe
+dist/hooks/
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.backup-*
