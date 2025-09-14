@@ -26,7 +26,8 @@ cc-track solves these problems by:
 cd your-project
 
 # Initialize cc-track (no installation needed!)
-npx cc-track init
+npx -y cc-track init
+# Or just 'npx cc-track init' and confirm when prompted
 
 # Follow the instructions to run /setup-cc-track in Claude Code
 ```
