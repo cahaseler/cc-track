@@ -124,8 +124,10 @@ function showWip() {
   } else {
     console.log(`Found ${wipCommits.length} WIP commits:`);
     try {
-      // Use git's grep feature instead of shell piping
-      execSync('git log --oneline --grep="\\[wip\\]"', { stdio: 'inherit' });
+      // Display each WIP commit using its hash for consistency
+      for (const hash of wipCommits) {
+        execSync(`git log --oneline -1 ${hash}`, { stdio: 'inherit' });
+      }
     } catch {
       console.log('Error displaying WIP commits');
     }
@@ -143,6 +145,22 @@ function diffSession() {
   } catch {
     console.log('No changes found');
   }
+}
+
+/**
+ * Detect the package manager being used in the project
+ */
+function detectPackageManager(projectRoot: string): string {
+  if (existsSync(join(projectRoot, 'bun.lockb'))) {
+    return 'bun run';
+  }
+  if (existsSync(join(projectRoot, 'yarn.lock'))) {
+    return 'yarn run';
+  }
+  if (existsSync(join(projectRoot, 'pnpm-lock.yaml'))) {
+    return 'pnpm run';
+  }
+  return 'npm run';
 }
 
 /**
@@ -167,16 +185,7 @@ function preparePush(message?: string) {
   // 2. Run lint if available
   if (existsSync(join(projectRoot, 'package.json'))) {
     const pkg = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf-8'));
-
-    // Detect package manager
-    let runCommand = 'npm run';
-    if (existsSync(join(projectRoot, 'bun.lockb'))) {
-      runCommand = 'bun run';
-    } else if (existsSync(join(projectRoot, 'yarn.lock'))) {
-      runCommand = 'yarn run';
-    } else if (existsSync(join(projectRoot, 'pnpm-lock.yaml'))) {
-      runCommand = 'pnpm run';
-    }
+    const runCommand = detectPackageManager(projectRoot);
 
     if (pkg.scripts?.lint) {
       console.log('\n2. Running lint...');
