@@ -1,34 +1,11 @@
 import { Command } from 'commander';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { embeddedTemplates } from '../lib/embedded-resources';
 
 export const setupTemplatesCommand = new Command('setup-templates')
   .description('Copy cc-track templates to your project')
   .action(() => {
-    // Get the directory where this compiled binary is located
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-
-    // For compiled binary, templates are in the cc-track package root
-    // When installed via npm, they'll be in node_modules/cc-track/templates
-    // For local testing, they're in the project root
-    let templatesDir: string;
-
-    // Check if we're in a compiled binary (dist/) or npm package
-    if (__dirname.includes('/dist')) {
-      // Local development: go up from dist/ to project root
-      const projectRoot = join(__dirname, '..');
-      templatesDir = join(projectRoot, 'templates');
-    } else if (__dirname.includes('node_modules/cc-track')) {
-      // npm installation: templates are in the package
-      const packageRoot = __dirname.split('node_modules/cc-track')[0] + 'node_modules/cc-track';
-      templatesDir = join(packageRoot, 'templates');
-    } else {
-      // Fallback: assume templates are relative to binary
-      templatesDir = join(__dirname, 'templates');
-    }
-
     // Target directory is .claude in current working directory
     const targetDir = join(process.cwd(), '.claude');
 
@@ -37,65 +14,48 @@ export const setupTemplatesCommand = new Command('setup-templates')
       mkdirSync(targetDir, { recursive: true });
     }
 
-    // List of templates to copy
-    const templates = [
-      'active_task.md',
-      'product_context.md',
-      'system_patterns.md',
-      'decision_log.md',
-      'progress_log.md',
-      'code_index.md',
-      'no_active_task.md',
-      'learned_mistakes.md',
-      'user_context.md',
-      'settings.json'
-    ];
-
     let copiedCount = 0;
     let skippedCount = 0;
 
-    for (const template of templates) {
-      const sourcePath = join(templatesDir, template);
-      const targetPath = join(targetDir, template);
+    // Write each embedded template to the target directory
+    for (const [filename, content] of Object.entries(embeddedTemplates)) {
+      // Skip CLAUDE.md as it needs special handling
+      if (filename === 'CLAUDE.md') continue;
 
-      if (!existsSync(sourcePath)) {
-        console.log(`⚠️  Template ${template} not found in package. Skipping.`);
-        continue;
-      }
+      const targetPath = join(targetDir, filename);
 
       if (existsSync(targetPath)) {
         // If file exists, create a backup
         const backupPath = `${targetPath}.backup-${Date.now()}`;
         copyFileSync(targetPath, backupPath);
-        console.log(`📦 Backed up existing ${template} to ${backupPath}`);
+        console.log(`📦 Backed up existing ${filename}`);
       }
 
-      copyFileSync(sourcePath, targetPath);
+      writeFileSync(targetPath, content);
       copiedCount++;
-      console.log(`✅ Copied ${template}`);
+      console.log(`✅ Created ${filename}`);
     }
 
     // Special handling for CLAUDE.md - need to merge if it exists
-    const claudeMdSource = join(templatesDir, 'CLAUDE.md');
-    const claudeMdTarget = join(targetDir, '..', 'CLAUDE.md');
+    const claudeMdTarget = join(process.cwd(), 'CLAUDE.md');
+    const claudeMdContent = embeddedTemplates['CLAUDE.md'];
 
-    if (existsSync(claudeMdSource)) {
+    if (claudeMdContent) {
       if (existsSync(claudeMdTarget)) {
         // Create backup
         const backupPath = `${claudeMdTarget}.backup-${Date.now()}`;
         copyFileSync(claudeMdTarget, backupPath);
-        console.log(`📦 Backed up existing CLAUDE.md to ${backupPath}`);
+        console.log(`📦 Backed up existing CLAUDE.md`);
 
         // Read existing content
         const existingContent = readFileSync(claudeMdTarget, 'utf-8');
-        const templateContent = readFileSync(claudeMdSource, 'utf-8');
 
         // If the existing file doesn't have cc-track imports, add them
         if (!existingContent.includes('## Active Task')) {
           console.log('📝 Updating CLAUDE.md with cc-track imports...');
 
           // Merge by adding cc-track sections if not present
-          let mergedContent = existingContent + '\n\n# cc-track Context Management\n\n' + templateContent;
+          const mergedContent = existingContent + '\n\n# cc-track Context Management\n\n' + claudeMdContent;
           writeFileSync(claudeMdTarget, mergedContent);
           console.log('✅ Updated CLAUDE.md');
         } else {
@@ -103,12 +63,12 @@ export const setupTemplatesCommand = new Command('setup-templates')
           skippedCount++;
         }
       } else {
-        copyFileSync(claudeMdSource, claudeMdTarget);
+        writeFileSync(claudeMdTarget, claudeMdContent);
         console.log('✅ Created CLAUDE.md');
         copiedCount++;
       }
     }
 
-    console.log(`\n📊 Setup complete: ${copiedCount} files copied, ${skippedCount} skipped`);
+    console.log(`\n📊 Setup complete: ${copiedCount} files created, ${skippedCount} skipped`);
     console.log('📝 Templates are ready for Claude to configure!');
   });
