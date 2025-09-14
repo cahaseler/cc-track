@@ -244,7 +244,19 @@ Update the main CLAUDE.md file to include cc-track context references:
 
 4. Preserve any existing content that doesn't fit the cc-track structure
 
-## Step 7: Final Summary
+## Step 7: Git Hooks Recommendation (if stop_review enabled)
+
+If stop_review was enabled:
+- Explain: "The stop-review hook creates frequent WIP commits as you work. This can conflict with pre-commit hooks that run linting/tests."
+- Ask: "Would you like me to help you convert any pre-commit hooks to pre-push hooks instead?"
+- If yes and .git/hooks/pre-commit exists:
+  - Show them what's in the pre-commit hook
+  - Help them move it to pre-push: \`mv .git/hooks/pre-commit .git/hooks/pre-push\`
+  - Explain: "This way, validation happens before pushing to remote, not on every WIP commit"
+- If using husky or similar:
+  - Suggest: "Consider moving validation from pre-commit to pre-push in your husky configuration"
+
+## Step 8: Final Summary
 
 Show the user what was configured and explain the key features:
 - How task tracking works (if enabled)
