@@ -19,7 +19,7 @@
 - [x] Allow only Read, Grep, Edit tools for Claude
 - [x] Create prompt that updates task progress sections only
 - [x] Ensure status field is never changed by the hook
-- [ ] Update hook configuration in track.config.json
+- [x] Update hook configuration in track.config.json
 - [x] Add Claude SDK dependency with proper type interface
 - [x] Create mock tests for all scenarios (no task, success, timeout, errors)
 - [x] Update `src/hooks/pre-compact.test.ts` for new functionality
@@ -53,15 +53,22 @@ Complete rewrite of `src/hooks/pre-compact.ts` to:
 - Removed learned_mistakes.md from CLAUDE.md to prevent automatic context inclusion
 - Reorganized learned_mistakes.md by topics instead of sessions for better organization
 - Added backlog item to remove error pattern extraction from pre-compact hook entirely
+- Fixed critical bug: Added cwd parameter support to Claude SDK (was hardcoded to tmpdir())
+- Increased maxTurns from 1 to 20 to allow Claude sufficient turns for file investigation
+- Added debug logging to track Claude's full output for better debugging
+- Successfully tested hook with real transcript - it updated task file correctly
 
 ## Current Focus
-Implementing new pre-compact hook design that uses log parser to get last 50 messages and passes them to Claude SDK for task progress updates, with active task checking and early exit functionality.
+Task is functionally complete. All requirements and success criteria have been met. The pre-compact hook has been successfully rewritten to use the log parser and Claude SDK for automatic task progress updates. Ready for final validation and completion.
 
 ## Lessons Learned
 - The log parser returns a single string when format is 'plaintext', not an array
 - Claude SDK needs sufficient context in transcript to identify meaningful progress
 - The hook works correctly but may not always make visible updates if progress isn't clear from transcript
 - Stop-review hook auto-commits changes, making git diff appear empty after updates
+- Critical SDK limitation discovered: Was hardcoded to run in tmpdir(), preventing project file access
+- maxTurns must be set high (20+) to allow Claude to investigate files thoroughly before editing
+- Debug logging is essential for understanding what Claude is doing inside the SDK
 
 <!-- github_issue: 31 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/31 -->

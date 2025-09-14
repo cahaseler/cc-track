@@ -210,12 +210,23 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Context:** Knip was reporting 25+ unused exports, investigation revealed a dual export pattern (classes + standalone functions) where most standalone functions were never used
 - **Decision:** Remove all unused standalone function exports while keeping only the few that are actually imported (pushCurrentBranch, getDefaultBranch, getCurrentBranch, isWipCommit, getActiveTaskId, clearActiveTask)
 - **Rationale:** The standalone functions were added for backward compatibility but never adopted. The codebase consistently uses the class-based approach with dependency injection for testing. Keeping unused exports creates confusion about which pattern to use and adds unnecessary maintenance burden.
-- **Alternatives Considered:** 
+- **Alternatives Considered:**
   - Keep both patterns and suppress warnings: Would perpetuate confusion about intended usage
   - Migrate everything to standalone functions: Would require major refactor and lose dependency injection benefits
   - Add to Knip ignore list: Would hide legitimate tech debt indicators
 - **Implications:** Cleaner codebase with clear architectural pattern. Class-based approach is now obviously the primary pattern. Reduced maintenance burden and potential for confusion.
 - **Reversibility:** Easy - could re-add standalone exports if needed, but unlikely given they weren't used over the project's lifetime
+
+[2025-09-14 20:45] - Replace Error Pattern Extraction with Task Progress Updates in Pre-Compact Hook
+- **Context:** The learned mistakes auto-extraction was capturing dangerous advice (like "delete test files") and nonsensical patterns, making it a failed experiment that could harm future Claude instances
+- **Decision:** Completely rewrite pre-compact hook to remove error pattern extraction and replace with automatic task progress updates using log parser and Claude SDK
+- **Rationale:** Task progress updates provide immediate value by keeping documentation current, while error pattern extraction was producing harmful "lessons" that told future Claude to do things like delete tests when they fail
+- **Alternatives Considered:**
+  - Keep error extraction but filter better: Too hard to reliably identify good vs bad patterns automatically
+  - Manual curation of learned mistakes: Defeats purpose of automation, high maintenance burden
+  - Disable pre-compact hook entirely: Would lose opportunity for useful automation at compaction time
+- **Implications:** Pre-compact hook now provides real value by updating task files automatically. Learned mistakes file becomes manual-only, preventing dangerous auto-generated advice from polluting context
+- **Reversibility:** Easy - could restore error extraction code from git history, though unlikely given the quality issues discovered
 
 ### Template Entry
 ```
