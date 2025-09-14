@@ -1,5 +1,7 @@
 import { execSync } from 'node:child_process';
 import { type createReadStream, type existsSync, type readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { isHookEnabled } from '../lib/config';
 import { DiffSummary } from '../lib/diff-summary';
@@ -544,7 +546,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
     // Also save the full prompt for inspection if it's huge
     if (prompt.length > 20000) {
       const fs = this.deps.fileOps || { writeFileSync };
-      const debugFile = `/tmp/stop_review_prompt_${Date.now()}.txt`;
+      const debugFile = join(tmpdir(), `stop_review_prompt_${Date.now()}.txt`);
       fs.writeFileSync(debugFile, prompt);
       this.logger.info(`Large prompt saved to: ${debugFile}`);
     }
