@@ -1,0 +1,23 @@
+{
+  "capture_plan": false,
+  "stop_review": false,
+  "edit_validation": false,
+  "pre_compact": false,
+  "post_compact": false,
+  "statusline": false,
+  "git_branching": false,
+  "private_journal": false,
+  "api_timer": {
+    "display": "hide"
+  },
+  "github_integration": {
+    "enabled": false,
+    "auto_create_issues": false,
+    "use_issue_branches": false,
+    "auto_create_prs": false
+  },
+  "logging": {
+    "level": "info",
+    "retention_days": 7
+  }
+}

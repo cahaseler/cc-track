@@ -127,7 +127,7 @@ describe('post-compact', () => {
       const imported = '## Imported files';
       const activeTask = 'TASK_001.md';
 
-      const result = generatePostCompactionInstructions(claudeMd, imported, activeTask);
+      const result = generatePostCompactionInstructions(claudeMd, imported, activeTask, true);
 
       expect(result).toContain('POST-COMPACTION CONTEXT RESTORATION');
       expect(result).toContain('# Project content');
@@ -142,7 +142,7 @@ describe('post-compact', () => {
       const imported = '## Imported files';
       const activeTask = '';
 
-      const result = generatePostCompactionInstructions(claudeMd, imported, activeTask);
+      const result = generatePostCompactionInstructions(claudeMd, imported, activeTask, false);
 
       expect(result).toContain('POST-COMPACTION CONTEXT RESTORATION');
       expect(result).not.toContain('Review the active task file');
@@ -150,7 +150,7 @@ describe('post-compact', () => {
     });
 
     test('includes all required sections', () => {
-      const result = generatePostCompactionInstructions('', '', '');
+      const result = generatePostCompactionInstructions('', '', '', true);
 
       // Check for all major sections
       expect(result).toContain('1. First, review your recent journal entries');

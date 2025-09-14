@@ -1,8 +1,29 @@
 {
   "name": "cc-track",
-  "version": "1.0.0",
+  "version": "1.13.0",
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
+  "bin": {
+    "cc-track": "dist/cc-track"
+  },
+  "files": [
+    "dist/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cahaseler/cc-track.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "context-management",
+    "task-tracking",
+    "ai-development",
+    "workflow",
+    "productivity"
+  ],
+  "author": "Craig",
+  "license": "MIT",
   "scripts": {
     "init": "bun run scripts/init-templates.ts",
     "typecheck": "tsc --noEmit",
@@ -11,11 +32,13 @@
     "fix": "biome check --write .",
     "check": "bun run typecheck && bun run lint",
     "test": "bun test",
+    "prebuild": "bun run scripts/embed-resources.ts",
     "build": "bun build src/cli/index.ts --compile --outfile dist/cc-track",
-    "build:linux": "bun build src/cli/index.ts --compile --target=bun-linux-x64 --outfile dist/cc-track-linux",
-    "build:windows": "bun build src/cli/index.ts --compile --target=bun-windows-x64 --outfile dist/cc-track-windows.exe",
+    "build:linux": "bun run prebuild && bun build src/cli/index.ts --compile --target=bun-linux-x64 --outfile dist/cc-track-linux",
+    "build:windows": "bun run prebuild && bun build src/cli/index.ts --compile --target=bun-windows-x64 --outfile dist/cc-track-windows.exe",
     "build:cross-platform": "bun run build:linux && bun run build:windows",
     "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done",
+    "prepublishOnly": "bun run build",
     "release": "semantic-release"
   },
   "devDependencies": {
@@ -24,6 +47,7 @@
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.6",
+    "@semantic-release/npm": "^12.0.2",
     "@types/bun": "^1.2.21",
     "@types/node": "^20.0.0",
     "semantic-release": "^24.2.8",

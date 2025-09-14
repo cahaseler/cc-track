@@ -107,6 +107,10 @@ const DEFAULT_CONFIG: InternalConfig = {
       auto_create_prs: true,
       repository_url: '',
     },
+    private_journal: {
+      enabled: false,
+      description: 'Use private journal MCP for context preservation and learning',
+    },
   },
 };
 

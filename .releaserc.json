@@ -7,9 +7,10 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "bun build src/cli/index.ts --compile --target=bun-linux-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-linux && bun build src/cli/index.ts --compile --target=bun-windows-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-windows.exe"
+        "prepareCmd": "bun run scripts/embed-resources.ts && bun build src/cli/index.ts --compile --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track && bun build src/cli/index.ts --compile --target=bun-linux-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-linux && bun build src/cli/index.ts --compile --target=bun-windows-x64 --define 'process.env.BUILD_VERSION=\"${nextRelease.version}\"' --outfile dist/cc-track-windows.exe"
       }
     ],
+    "@semantic-release/npm",
     [
       "@semantic-release/github",
       {

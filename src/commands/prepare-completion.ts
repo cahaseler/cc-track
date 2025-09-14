@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { getConfig } from '../lib/config';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
 
 /**
@@ -127,12 +128,17 @@ async function prepareCompletionAction() {
     console.log('3. Document any new patterns in system_patterns.md');
     console.log('4. Let the stop-review hook automatically commit your changes\n');
 
-    // Journal reflection reminder
-    console.log('### Journal Reflection\n');
-    console.log('Consider recording insights about:');
-    console.log('- Technical challenges encountered and solutions');
-    console.log('- Patterns that worked well or poorly');
-    console.log('- Any learnings for future tasks\n');
+    // Journal reflection reminder (only if private journal is enabled)
+    const config = getConfig();
+    const hasPrivateJournal = config.features?.private_journal?.enabled === true;
+
+    if (hasPrivateJournal) {
+      console.log('### Journal Reflection\n');
+      console.log('Consider recording insights about:');
+      console.log('- Technical challenges encountered and solutions');
+      console.log('- Patterns that worked well or poorly');
+      console.log('- Any learnings for future tasks\n');
+    }
 
     console.log('### Next Steps\n');
     if (!validationPassed) {
@@ -142,8 +148,12 @@ async function prepareCompletionAction() {
       console.log('4. Once all checks pass, ask the user to run `/complete-task` to finalize\n');
     } else {
       console.log('1. Complete the documentation updates above');
-      console.log('2. Record any insights in your journal');
-      console.log('3. Ask the user to run `/complete-task` to finalize the task\n');
+      if (hasPrivateJournal) {
+        console.log('2. Record any insights in your journal');
+        console.log('3. Ask the user to run `/complete-task` to finalize the task\n');
+      } else {
+        console.log('2. Ask the user to run `/complete-task` to finalize the task\n');
+      }
       console.log('**✅ Task is ready for completion!**\n');
     }
 
