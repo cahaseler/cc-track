@@ -26,6 +26,12 @@
 
 ## Log Entries
 
+[2025-09-14] - TASK_046 completed: Fix GitHub Build Version Numbers
+- Fixed issue where GitHub release binaries showed hardcoded '1.0.0' instead of actual version
+- Implemented build-time version injection using Bun's --define flag
+- Local builds now show '1.0.0-dev', release builds will show correct version
+- 2 files modified (src/cli/index.ts, .releaserc.json)
+
 [2025-09-14 21:00] - Completed: TASK_045 - Improve Pre-Compaction Hook for Task Progress Updates
   Details: Complete rewrite replacing error pattern extraction with automatic task progress updates using Claude SDK
   Files: src/hooks/pre-compact.ts, src/hooks/pre-compact.test.ts, src/lib/claude-sdk.ts
