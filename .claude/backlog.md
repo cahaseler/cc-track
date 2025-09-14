@@ -22,3 +22,10 @@
 - Add automatic file header summaries for all TypeScript files. Each file should start with a block comment containing a one-sentence ai-written summary plus an auto-generated `@exports` list of functions/classes with line numbers. Use the TypeScript compiler API in a Node script to parse ASTs, extract exports, and update headers. Wire it into a pre-commit or post-edit hook so the `@exports` section stays current without manual edits. This makes files self-describing in the first 20 lines for AI tools and repo navigation.
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
+- [2025-09-14] Create proper installation system to replace removed init command - handle global installs, templates bundling, cross-platform paths
+- [2025-09-14] Consider creating a Windows-specific test suite to verify all cross-platform changes work correctly
+- [2025-09-14] Add CI/CD tests for Windows builds using GitHub Actions Windows runners
+- [2025-09-14] Document installation process for global cc-track installation on different platforms
+- [2025-09-14] Consider creating a Homebrew formula for macOS installation
+- [2025-09-14] Create PowerShell install script for Windows users (similar to Unix curl install scripts)
+- [2025-09-14] Add validation that all slash commands exist and are properly formatted during build process
