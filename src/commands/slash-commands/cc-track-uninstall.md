@@ -1,7 +1,7 @@
 ---
 shortname: cc-track-uninstall
 description: Safely uninstall cc-track from this project
-model: sonnet
+model: claude-sonnet-4-20250514
 ---
 
 # Uninstall cc-track

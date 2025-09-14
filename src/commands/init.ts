@@ -26,7 +26,7 @@ export const initCommand = new Command('init')
       const setupCommandContent = `---
 allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
-model: claude-3-5-sonnet-20241022
+model: claude-sonnet-4-20250514
 ---
 
 # Setup cc-track for this project
