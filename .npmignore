@@ -1,5 +1,7 @@
 # Source files (only need compiled binary)
 src/
+scripts/
+templates/
 *.test.ts
 
 # Development files
@@ -8,12 +10,7 @@ docs/
 old_roopars_documents/
 
 # Project-specific context
-.claude/tasks/
-.claude/plans/
-.claude/hooks/
-.claude/utils/
-.claude/*.md
-!.claude/commands/
+.claude/
 
 # Test files
 tests/

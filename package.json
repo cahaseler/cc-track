@@ -1,19 +1,17 @@
 {
   "name": "cc-track",
-  "version": "1.0.0",
+  "version": "1.0.0-dev.1",
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
   "bin": {
-    "cc-track": "./dist/cc-track"
+    "cc-track": "dist/cc-track"
   },
   "files": [
-    "dist/",
-    "templates/",
-    ".claude/commands/"
+    "dist/"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cahaseler/cc-track.git"
+    "url": "git+https://github.com/cahaseler/cc-track.git"
   },
   "keywords": [
     "claude",
