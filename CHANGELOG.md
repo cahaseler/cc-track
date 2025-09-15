@@ -1,3 +1,10 @@
+## [1.15.2](https://github.com/cahaseler/cc-track/compare/v1.15.1...v1.15.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* add maxTurns parameter to stop-review hook Claude SDK call ([cb3d038](https://github.com/cahaseler/cc-track/commit/cb3d038d79da51d6c331035a74491787b22eb3e5))
+
 ## [1.15.1](https://github.com/cahaseler/cc-track/compare/v1.15.0...v1.15.1) (2025-09-15)
 
 
