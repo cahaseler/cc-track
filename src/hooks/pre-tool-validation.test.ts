@@ -296,6 +296,45 @@ describe('pre-tool-validation', () => {
       exception: mock(() => {}),
     });
 
+    const createMockGitHelpers = (currentBranch: string) => {
+      // Create a mock that matches the GitHelpers class interface
+      const gitHelpers = {
+        getCurrentBranch: mock(() => currentBranch),
+        getDefaultBranch: mock(() => 'main'),
+        hasUncommittedChanges: mock(() => false),
+        isWipCommit: mock(() => false),
+        getMergeBase: mock(() => ''),
+        generateCommitMessage: mock(async () => 'test'),
+        generateCommitMessageWithMeta: mock(async () => ({ message: 'test', source: 'sdk' as const })),
+        generateBranchName: mock(async () => 'feature/test'),
+        createTaskBranch: mock(() => {}),
+        mergeTaskBranch: mock(() => {}),
+        switchToBranch: mock(() => {}),
+      };
+      return gitHelpers as any; // Cast to any to avoid type issues with the class
+    };
+
+    const createMockConfig = (
+      branchProtectionEnabled: boolean,
+      options: {
+        protectedBranches?: string[];
+        allowGitignored?: boolean;
+      } = {},
+    ) => ({
+      hooks: {
+        pre_tool_validation: { enabled: true, description: 'test' },
+      },
+      features: {
+        branch_protection: {
+          enabled: branchProtectionEnabled,
+          description: 'test',
+          protected_branches: options.protectedBranches || ['main', 'master'],
+          allow_gitignored: options.allowGitignored !== false,
+        },
+      },
+      logging: { enabled: false, level: 'INFO' as const, retentionDays: 7, prettyPrint: false },
+    });
+
     const createMockClaudeSDK = (response: { shouldBlock: boolean; reason: string }) => ({
       prompt: mock(async () => ({
         text: JSON.stringify(response),
@@ -322,6 +361,8 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         logger: createMockLogger(),
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       expect(result).toEqual({ continue: true });
@@ -347,6 +388,8 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
@@ -374,6 +417,8 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
@@ -400,6 +445,8 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       expect(result).toEqual({ continue: true });
@@ -434,6 +481,8 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger,
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       // Should allow edit on error
@@ -469,6 +518,8 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger,
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       // Should allow edit on parse error
@@ -508,6 +559,8 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         logger: createMockLogger(),
+        getConfig: () => createMockConfig(false),
+        gitHelpers: createMockGitHelpers('feature/test'),
       });
 
       expect(result).toEqual({ continue: true });
