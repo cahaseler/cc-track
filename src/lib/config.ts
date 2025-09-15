@@ -245,6 +245,16 @@ export function isGitHubIntegrationEnabled(configPath?: string): boolean {
   return githubConfig?.enabled || false;
 }
 
+export function getCodeReviewConfig(configPath?: string): HookConfig | null {
+  const config = getConfig(configPath);
+  return config.features?.code_review || null;
+}
+
+export function isCodeReviewEnabled(configPath?: string): boolean {
+  const codeReviewConfig = getCodeReviewConfig(configPath);
+  return codeReviewConfig?.enabled || false;
+}
+
 export function getGitConfig(configPath?: string): GitConfig | null {
   const config = getConfig(configPath);
   return config.git || null;

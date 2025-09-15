@@ -73,7 +73,7 @@ export function loadEditValidationConfig(cwd: string): EditValidationConfig {
     },
     lint: {
       enabled: true,
-      command: 'bunx biome check',
+      command: 'bunx biome check --error-on-warnings',
     },
   };
 

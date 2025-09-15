@@ -75,6 +75,10 @@
       "description": "Block edits on protected branches to enforce feature branch workflow",
       "protected_branches": ["main", "master"],
       "allow_gitignored": true
+    },
+    "code_review": {
+      "enabled": true,
+      "description": "Run comprehensive code review using Claude SDK before task completion"
     }
   },
   "logging": {
