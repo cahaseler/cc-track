@@ -1,3 +1,19 @@
+# [1.19.0](https://github.com/cahaseler/cc-track/compare/v1.18.0...v1.19.0) (2025-09-15)
+
+
+### Bug Fixes
+
+* resolve relative paths in canUseTool validation ([3547c9f](https://github.com/cahaseler/cc-track/commit/3547c9ffd82a808467c2ce8e78a9babfbb45164f))
+* resolve Write tool paths relative to project root ([bb122eb](https://github.com/cahaseler/cc-track/commit/bb122eb72823d2c95f5c2d96458c3dcdb10f30e1))
+
+
+### Features
+
+* complete TASK_053 - Enhance capture-plan hook to handle active tasks and set in_progress status ([5da986d](https://github.com/cahaseler/cc-track/commit/5da986d42d3fb0af53adc3b3c7efe3d931ecf688))
+* complete TASK_054 - Add Comprehensive Code Review Feature to cc-track ([8e552f3](https://github.com/cahaseler/cc-track/commit/8e552f31c5cb630fd66823833ce7c259e959abda))
+* complete TASK_055 - Enhance Task Creation with Comprehensive Research Capabilities ([93156c5](https://github.com/cahaseler/cc-track/commit/93156c5909b723737c078afa0ac6d9f7b0714011))
+* complete TASK_056 - Fix GitHub Actions Deployment Failures with Dependency Injection ([513bac6](https://github.com/cahaseler/cc-track/commit/513bac68aac35e1fcbeed436b68c1c78bcc83200))
+
 # [1.18.0](https://github.com/cahaseler/cc-track/compare/v1.17.0...v1.18.0) (2025-09-15)
 
 
