@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/cahaseler/cc-track/compare/v1.16.0...v1.17.0) (2025-09-15)
+
+
+### Features
+
+* complete TASK_051 - Branch Protection Implementation - Extend PreToolUse Hook ([2e987ac](https://github.com/cahaseler/cc-track/commit/2e987acd86a58c12b084d2657e5952310cabefbb))
+
 # [1.16.0](https://github.com/cahaseler/cc-track/compare/v1.15.2...v1.16.0) (2025-09-15)
 
 
