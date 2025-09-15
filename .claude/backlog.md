@@ -20,3 +20,4 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
 - [2025-09-14] debug stop-review hook error_max_turns review system error
+- [2025-09-15] adjust task completion and prep prompts to do all doc updates like progress log and clearing backlog item after the prep, rather than after the task completion, to avoid having to make documentation merges on main
