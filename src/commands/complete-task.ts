@@ -490,16 +490,8 @@ async function completeTaskAction(options: {
     console.log('Manual PR creation may be needed.\n');
   }
 
-  // 3. Post-completion updates
-  const docNumber = result.github?.prCreated ? 2 : 1;
-  console.log(`### ${docNumber}. Post-Completion Updates\n`);
-  console.log('Update progress log with completion entry:\n');
-  console.log(`Add to \`.claude/progress_log.md\`:`);
-  console.log(`- "${result.taskId} completed: ${result.taskTitle}"`);
-  console.log(`- ${result.filesChanged?.length || 0} files modified\n`);
-
-  // 4. Summary for user
-  const summaryNumber = result.github?.prCreated ? 3 : 2;
+  // 3. Summary for user
+  const summaryNumber = result.github?.prCreated ? 2 : 1;
   console.log(`### ${summaryNumber}. Provide Summary to User\n`);
   console.log('Report the completion status including:');
   console.log(`- Task ${result.taskId} completed: ${result.taskTitle}`);

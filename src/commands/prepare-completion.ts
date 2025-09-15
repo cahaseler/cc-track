@@ -116,23 +116,23 @@ async function prepareCompletionAction() {
       console.log("**Note:** This won't block completion but is unusual.\n");
     }
 
-    // Documentation update reminder
-    console.log('### Documentation Updates\n');
-    if (!validationPassed) {
-      console.log('After fixing validation issues, update the task documentation:');
-    } else {
+    // Documentation update reminder - only if validation passed
+    if (validationPassed) {
+      console.log('### Documentation Updates\n');
       console.log('Update the task documentation:');
+      console.log('1. Update "## Recent Progress" section in the task file, but do not update the status yet');
+      console.log('2. Note any significant decisions in decision_log.md');
+      console.log('3. Document any new patterns in system_patterns.md');
+      console.log('4. Update progress_log.md with what was accomplished');
+      console.log('5. If this task came from the backlog, remove it from backlog.md');
+      console.log('6. Let the stop-review hook automatically commit your changes\n');
     }
-    console.log('1. Update "## Recent Progress" section in the task file, but do not update the status yet');
-    console.log('2. Note any significant decisions in decision_log.md');
-    console.log('3. Document any new patterns in system_patterns.md');
-    console.log('4. Let the stop-review hook automatically commit your changes\n');
 
-    // Journal reflection reminder (only if private journal is enabled)
+    // Journal reflection reminder (only if validation passed and private journal is enabled)
     const config = getConfig();
     const hasPrivateJournal = config.features?.private_journal?.enabled === true;
 
-    if (hasPrivateJournal) {
+    if (validationPassed && hasPrivateJournal) {
       console.log('### Journal Reflection\n');
       console.log('Consider recording insights about:');
       console.log('- Technical challenges encountered and solutions');
@@ -143,11 +143,9 @@ async function prepareCompletionAction() {
     console.log('### Next Steps\n');
     if (!validationPassed) {
       console.log('1. Fix the validation issues listed above');
-      console.log('2. Update documentation and record insights');
-      console.log('3. Ask the user to run `/prepare-completion` again to verify all issues are resolved');
-      console.log('4. Once all checks pass, ask the user to run `/complete-task` to finalize\n');
+      console.log('2. Ask the user to run `/prepare-completion` again to verify all issues are resolved\n');
     } else {
-      console.log('1. Complete the documentation updates above');
+      console.log('1. Complete all documentation updates above');
       if (hasPrivateJournal) {
         console.log('2. Record any insights in your journal');
         console.log('3. Ask the user to run `/complete-task` to finalize the task\n');
