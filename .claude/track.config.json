@@ -35,9 +35,9 @@
     "test": {
       "enabled": true
     },
-    "task_validation": {
+    "pre_tool_validation": {
       "enabled": true,
-      "description": "Validates edits to task files to prevent inappropriate status changes and weasel-word completions"
+      "description": "Pre-tool validation for task files and branch protection"
     }
   },
   "git": {
@@ -69,6 +69,12 @@
     "private_journal": {
       "enabled": true,
       "description": "Use private journal MCP for context preservation and learning"
+    },
+    "branch_protection": {
+      "enabled": false,
+      "description": "Block edits on protected branches to enforce feature branch workflow",
+      "protected_branches": ["main", "master"],
+      "allow_gitignored": true
     }
   },
   "logging": {

@@ -1,14 +1,58 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { HookInput } from '../types';
-import { buildValidationPrompt, extractDiffInfo, isTaskFile, taskValidationHook } from './task-validation';
+import {
+  buildValidationPrompt,
+  extractDiffInfo,
+  extractFilePath,
+  isGitIgnored,
+  isTaskFile,
+  preToolValidationHook,
+} from './pre-tool-validation';
 
-describe('task-validation', () => {
+describe('pre-tool-validation', () => {
   beforeEach(() => {
     mock.restore();
   });
 
   afterEach(() => {
     mock.restore();
+  });
+
+  describe('isGitIgnored', () => {
+    test('returns true for ignored files', () => {
+      const mockExec = mock(() => '');
+      expect(isGitIgnored('/path/to/file.log', '/project', mockExec)).toBe(true);
+      expect(mockExec).toHaveBeenCalledWith('git check-ignore "/path/to/file.log"', { cwd: '/project', stdio: 'pipe' });
+    });
+
+    test('returns false for non-ignored files', () => {
+      const mockExec = mock(() => {
+        throw new Error('exit code 1');
+      });
+      expect(isGitIgnored('/path/to/file.ts', '/project', mockExec)).toBe(false);
+    });
+  });
+
+  describe('extractFilePath', () => {
+    test('extracts path from Edit tool', () => {
+      expect(extractFilePath('Edit', { file_path: '/test/file.ts' })).toBe('/test/file.ts');
+    });
+
+    test('extracts path from Write tool', () => {
+      expect(extractFilePath('Write', { file_path: '/test/new.ts' })).toBe('/test/new.ts');
+    });
+
+    test('extracts path from MultiEdit tool', () => {
+      expect(extractFilePath('MultiEdit', { file_path: '/test/multi.ts' })).toBe('/test/multi.ts');
+    });
+
+    test('returns null for other tools', () => {
+      expect(extractFilePath('Read', { file_path: '/test/file.ts' })).toBe(null);
+    });
+
+    test('returns null when no file_path', () => {
+      expect(extractFilePath('Edit', { other_field: 'value' })).toBe(null);
+    });
   });
 
   describe('isTaskFile', () => {
@@ -78,7 +122,172 @@ describe('task-validation', () => {
     });
   });
 
-  describe('taskValidationHook', () => {
+  describe('preToolValidationHook - branch protection', () => {
+    const createMockLogger = () => ({
+      debug: mock(() => {}),
+      info: mock(() => {}),
+      warn: mock(() => {}),
+      error: mock(() => {}),
+      exception: mock(() => {}),
+    });
+
+    const createMockGitHelpers = (currentBranch: string) => {
+      // Create a mock that matches the GitHelpers class interface
+      const gitHelpers = {
+        getCurrentBranch: mock(() => currentBranch),
+        getDefaultBranch: mock(() => 'main'),
+        hasUncommittedChanges: mock(() => false),
+        isWipCommit: mock(() => false),
+        getMergeBase: mock(() => ''),
+        generateCommitMessage: mock(async () => 'test'),
+        generateCommitMessageWithMeta: mock(async () => ({ message: 'test', source: 'sdk' as const })),
+        generateBranchName: mock(async () => 'feature/test'),
+        createTaskBranch: mock(() => {}),
+        mergeTaskBranch: mock(() => {}),
+        switchToBranch: mock(() => {}),
+      };
+      return gitHelpers as any; // Cast to any to avoid type issues with the class
+    };
+
+    const createMockConfig = (
+      branchProtectionEnabled: boolean,
+      options: {
+        protectedBranches?: string[];
+        allowGitignored?: boolean;
+      } = {},
+    ) => ({
+      hooks: {
+        pre_tool_validation: { enabled: true, description: 'test' },
+      },
+      features: {
+        branch_protection: {
+          enabled: branchProtectionEnabled,
+          description: 'test',
+          protected_branches: options.protectedBranches || ['main', 'master'],
+          allow_gitignored: options.allowGitignored !== false,
+        },
+      },
+      logging: { enabled: false, level: 'INFO' as const, retentionDays: 7, prettyPrint: false },
+    });
+
+    test('blocks edits on protected branch', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/project/src/file.ts',
+          old_string: 'old',
+          new_string: 'new',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(true),
+        gitHelpers: createMockGitHelpers('main'),
+        execSync: mock(() => {
+          throw new Error('not gitignored');
+        }),
+        logger: createMockLogger(),
+      });
+
+      expect(result.hookSpecificOutput).toBeDefined();
+      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('Branch Protection');
+    });
+
+    test('allows edits on non-protected branch', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/project/src/file.ts',
+          old_string: 'old',
+          new_string: 'new',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(true),
+        gitHelpers: createMockGitHelpers('feature/my-feature'),
+        logger: createMockLogger(),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+
+    test('allows gitignored files on protected branch when configured', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Write',
+        tool_input: {
+          file_path: '/project/.env',
+          content: 'SECRET=value',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(true, { protectedBranches: ['main'] }),
+        gitHelpers: createMockGitHelpers('main'),
+        execSync: mock(() => ''), // File is gitignored
+        logger: createMockLogger(),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+
+    test('blocks gitignored files when allow_gitignored is false', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Write',
+        tool_input: {
+          file_path: '/project/.env',
+          content: 'SECRET=value',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(true, { protectedBranches: ['main'], allowGitignored: false }),
+        gitHelpers: createMockGitHelpers('main'),
+        execSync: mock(() => ''), // File is gitignored
+        logger: createMockLogger(),
+      });
+
+      expect(result.hookSpecificOutput).toBeDefined();
+      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
+    });
+
+    test('skips branch protection when disabled', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/project/src/file.ts',
+          old_string: 'old',
+          new_string: 'new',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(false, { protectedBranches: ['main'] }),
+        gitHelpers: createMockGitHelpers('main'),
+        logger: createMockLogger(),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+  });
+
+  describe('preToolValidationHook - task validation', () => {
     const createMockLogger = () => ({
       debug: mock(() => {}),
       info: mock(() => {}),
@@ -110,7 +319,7 @@ describe('task-validation', () => {
         },
       };
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         logger: createMockLogger(),
       });
@@ -134,7 +343,7 @@ describe('task-validation', () => {
         reason: 'Cannot change status to completed',
       });
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
@@ -161,7 +370,7 @@ describe('task-validation', () => {
         reason: 'Weasel words detected: claiming partial test completion',
       });
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
@@ -187,7 +396,7 @@ describe('task-validation', () => {
         reason: 'Edit is acceptable',
       });
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger: createMockLogger(),
@@ -221,7 +430,7 @@ describe('task-validation', () => {
       };
 
       const logger = createMockLogger();
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger,
@@ -256,7 +465,7 @@ describe('task-validation', () => {
       };
 
       const logger = createMockLogger();
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         claudeSDK: mockSDK,
         logger,
@@ -278,7 +487,7 @@ describe('task-validation', () => {
         },
       };
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => false,
         logger: createMockLogger(),
       });
@@ -296,7 +505,7 @@ describe('task-validation', () => {
         },
       };
 
-      const result = await taskValidationHook(input, {
+      const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         logger: createMockLogger(),
       });

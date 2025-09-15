@@ -57,10 +57,12 @@ The \`.claude/track.config.json\` file has been created with all features disabl
   "capture_plan": false,
   "stop_review": false,
   "edit_validation": false,
+  "pre_tool_validation": false,
   "pre_compact": false,
   "post_compact": false,
   "statusline": false,
   "git_branching": false,
+  "branch_protection": false,
   "api_timer": {
     "display": "hide"
   },
@@ -115,6 +117,17 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - Ask: "Would you like real-time validation when editing files? This gives Claude instant feedback on lint or type issues to help fix errors as they happen."
    - If yes: enable \`edit_validation: true\`
    - If lint/typecheck commands unclear, ask: "What command runs your linter? What command runs type checking?"
+
+   **Pre-Tool Validation**:
+   - Explain: "Pre-tool validation includes task file protection (prevents marking tasks complete without using /complete-task) and optional branch protection."
+   - Ask: "Would you like to enable pre-tool validation to protect task files from improper edits?"
+   - If yes: enable \`pre_tool_validation: true\`
+
+   **Branch Protection** (if git enabled):
+   - Ask: "Would you like to block Claude from editing files directly on the main/master branch? This enforces a feature branch workflow."
+   - If yes: enable \`branch_protection: true\`
+   - Then ask: "Which branches should be protected? (default: main, master)"
+   - Ask: "Should Claude be allowed to edit gitignored files on protected branches? (default: yes)"
 
    **Context Preservation**:
    - Ask: "Would you like automatic task documentation updates before compaction? This triggers an attempt to update the Task file before compaction to preserve progress."
@@ -228,6 +241,7 @@ Example structure:
 Add these based on what's enabled:
 - If capture_plan enabled: Add to PostToolUse array with matcher "ExitPlanMode"
 - If edit_validation enabled: Add to PostToolUse array with matcher "Edit|Write|MultiEdit"
+- If pre_tool_validation enabled: Add to PreToolUse array with matcher "Edit|Write|MultiEdit"
 - If stop_review enabled: Add to Stop array (no matcher needed)
 - If pre_compact enabled: Add to PreCompact array (no matcher needed)
 - If post_compact enabled: Add to SessionStart array with matcher "compact"

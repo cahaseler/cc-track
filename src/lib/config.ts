@@ -20,6 +20,8 @@ interface HookConfig {
   use_issue_branches?: boolean;
   auto_create_prs?: boolean;
   repository_url?: string;
+  protected_branches?: string[];
+  allow_gitignored?: boolean;
 }
 
 interface GitConfig {
@@ -84,6 +86,10 @@ const DEFAULT_CONFIG: InternalConfig = {
         command: 'bunx biome check',
       },
     },
+    pre_tool_validation: {
+      enabled: true,
+      description: 'Pre-tool validation for task files and branch protection',
+    },
   },
   features: {
     statusline: {
@@ -110,6 +116,12 @@ const DEFAULT_CONFIG: InternalConfig = {
     private_journal: {
       enabled: false,
       description: 'Use private journal MCP for context preservation and learning',
+    },
+    branch_protection: {
+      enabled: false,
+      description: 'Block edits on protected branches to enforce feature branch workflow',
+      protected_branches: ['main', 'master'],
+      allow_gitignored: true,
     },
   },
 };
