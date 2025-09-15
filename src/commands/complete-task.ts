@@ -189,8 +189,9 @@ async function completeTaskAction(options: {
 
     if (!options.noBranch && isGitHubIntegrationEnabled() && getGitHubConfig()?.auto_create_prs) {
       // Extract branch names from task file (both regular and issue branches)
-      const regularBranchMatch = taskContent.match(/<!-- branch: (.*?) -->/);
-      const issueBranchMatch = taskContent.match(/<!-- issue_branch: (.*?) -->/);
+      // Match only lines that start with the comment (not in code blocks)
+      const regularBranchMatch = taskContent.match(/^<!-- branch: (.*?) -->$/m);
+      const issueBranchMatch = taskContent.match(/^<!-- issue_branch: (.*?) -->$/m);
 
       currentBranch = getCurrentBranch(projectRoot);
 
