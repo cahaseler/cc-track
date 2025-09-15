@@ -22,4 +22,4 @@
 - [2025-09-15] Clean up SDK type usage across codebase: Import proper types from @anthropic-ai/claude-code for all SDK interactions. Fix internal prompt() function to use typed options and messages. Add canUseTool restrictions where appropriate (e.g., createValidationAgent should probably restrict Write). Replace type assertions with proper type guards or document why they're safe. See capture-plan.ts lines 224-248 for correct implementation pattern.
 - [2025-09-15] if complete-task has already been run once and there's already a PR, don't squash
 - [2025-09-15] ability to create a new task based on an existing github issue. Not sure how best to do this though.
-- [2025-09-15] Fix code review in prepare-completion - getting 'canUseTool callback requires --input-format stream-json' error. Need to update Claude SDK usage to pass prompt as AsyncIterable when using tool restrictions.
+- [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
