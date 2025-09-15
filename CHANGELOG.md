@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/cahaseler/cc-track/compare/v1.17.0...v1.18.0) (2025-09-15)
+
+
+### Features
+
+* complete TASK_052 - Fix pushCurrentBranch to Handle Diverged Branches Automatically ([777c5a6](https://github.com/cahaseler/cc-track/commit/777c5a640bbc2f65e02363867ce07bfe2dfac180))
+
 # [1.17.0](https://github.com/cahaseler/cc-track/compare/v1.16.0...v1.17.0) (2025-09-15)
 
 
