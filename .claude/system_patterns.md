@@ -149,6 +149,22 @@
 - Supports tilde expansion and environment variables in configured paths
 - Log retention is automatically managed (default 7 days)
 
+## Validation Patterns
+
+### Pre-Tool Validation
+- Unified PreToolUse hook for all validation before tool execution
+- Branch protection validates current branch before allowing edits
+- Task file validation prevents improper status changes
+- Validation order: branch protection → task validation
+- Clear user messaging with actionable next steps
+
+### Branch Protection Implementation
+- Configurable protected branches list (default: main, master)
+- Optional gitignored file exemption for protected branches
+- Uses GitHelpers for branch detection
+- git check-ignore for gitignore status checking
+- Guides users to planning mode for feature branch creation
+
 ## Update Log
 
 [2025-01-09 16:35] - Initial patterns documented based on codebase analysis
@@ -158,3 +174,5 @@
 [2025-09-11 16:00] - Added semantic release process and conventional commit patterns
 
 [2025-09-12] - Added configurable log directory pattern to keep logs outside project directory
+
+[2025-09-15] - Added validation patterns and branch protection implementation

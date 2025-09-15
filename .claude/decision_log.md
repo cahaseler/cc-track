@@ -239,6 +239,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Larger binary size (includes all templates/commands as strings), but completely reliable resource access. Simple build process with just Bun compilation. No runtime filesystem dependencies for core functionality
 - **Reversibility:** Easy - could switch to runtime resolution if needed, but unlikely given the reliability benefits
 
+[2025-09-15 21:30] - Extend Task Validation Hook for Branch Protection Instead of Creating New Hook
+- **Context:** Needed to implement branch protection to prevent edits on main/master branches, forcing feature branch workflow
+- **Decision:** Rename and extend the existing task-validation PreToolUse hook to become pre-tool-validation that handles both features
+- **Rationale:** Single PreToolUse hook provides cleaner architecture, easier maintenance, and logical grouping of related validations. Both features validate tool usage before execution.
+- **Alternatives Considered:**
+  - Create separate branch-protection hook: Would require managing multiple PreToolUse hooks and determining execution order
+  - Add to PostToolUse validation: Too late to prevent edits, would only notify after the fact
+  - Make it configurable in edit-validation: Wrong semantic layer - this is about branch policy not code quality
+- **Implications:** All pre-execution validation logic now lives in one place. Existing task validation functionality preserved while adding new capabilities.
+- **Reversibility:** Easy - could split into separate hooks later if needed, though unlikely given the clean integration
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
