@@ -1,3 +1,16 @@
+# [1.22.0](https://github.com/cahaseler/cc-track/compare/v1.21.0...v1.22.0) (2025-09-15)
+
+
+### Bug Fixes
+
+* improve PR detection and handle duplicate branch comments ([dc2f540](https://github.com/cahaseler/cc-track/commit/dc2f540a6d0999ebc98a5e1efb935183611738fb))
+* restore no_active_task.md on push failure ([dc13455](https://github.com/cahaseler/cc-track/commit/dc134556b3583d65282d6156927d50ecbc3bb21f))
+
+
+### Features
+
+* complete TASK_059 - Handle Second Runs of complete-task Command ([0b404b0](https://github.com/cahaseler/cc-track/commit/0b404b02f6edeeec1403fb9d034ead48aa382d47))
+
 # [1.21.0](https://github.com/cahaseler/cc-track/compare/v1.20.0...v1.21.0) (2025-09-15)
 
 
