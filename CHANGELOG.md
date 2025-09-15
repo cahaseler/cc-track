@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/cahaseler/cc-track/compare/v1.15.0...v1.15.1) (2025-09-15)
+
+
+### Bug Fixes
+
+* implement branch-based squashing for complete-task ([53c1d14](https://github.com/cahaseler/cc-track/commit/53c1d14245bede7b300d9745e693e36a446d4c50))
+
 # [1.15.0](https://github.com/cahaseler/cc-track/compare/v1.14.0...v1.15.0) (2025-09-14)
 
 
