@@ -261,13 +261,24 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Complete-task command now succeeds automatically in most cases. When real conflicts exist, it fails safely with clear messaging. Slightly slower push operation due to fetch, but worth the reliability improvement
 - **Reversibility:** Easy - could revert to simple push behavior, though unlikely given the clear benefits
 
+[2025-09-15 15:30] - Remove Post-Compact/SessionStart Hook System
+- **Context:** Analysis revealed the post-compact hook was duplicating work already done by pre-compact and Claude Code's native context loading
+- **Decision:** Completely remove the post-compact/SessionStart hook system from the codebase
+- **Rationale:** The hook was redundant - pre-compact already updates task files with progress, and Claude Code natively loads CLAUDE.md with its @imports after compaction. The post-compact hook was just asking Claude to do the same updates again, wasting tokens and time.
+- **Alternatives Considered:**
+  - Keep post-compact for journal review reminders: Journal review is already mentioned in root CLAUDE.md
+  - Modify to do different work: No unique value proposition identified
+  - Keep for future use: Dead code should be removed, can be restored from git if needed
+- **Implications:** Simpler codebase with one less hook to maintain, faster compaction process, no duplicate task updates
+- **Reversibility:** Easy - all changes are in git history and could be restored if needed
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
 - **Context:** [What prompted this decision]
 - **Decision:** [What was decided]
 - **Rationale:** [Why this choice was made]
-- **Alternatives Considered:** 
+- **Alternatives Considered:**
   - [Alternative 1]: [Why rejected]
   - [Alternative 2]: [Why rejected]
 - **Implications:** [What this means for the project]

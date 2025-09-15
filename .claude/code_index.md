@@ -35,8 +35,7 @@
 |------|---------|
 | src/cli/index.ts | Main CLI entry point with Commander setup |
 | src/hooks/capture-plan.ts | Captures plans from ExitPlanMode, creates task files |
-| src/hooks/pre-compact.ts | Extracts error patterns before compaction |
-| src/hooks/post-compact.ts | Restores context after compaction via SessionStart |
+| src/hooks/pre-compact.ts | Updates task files with progress before compaction |
 | src/hooks/stop-review.ts | Reviews changes at Stop event, auto-commits |
 | src/hooks/edit-validation.ts | Real-time TypeScript and Biome validation on edits |
 

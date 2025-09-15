@@ -49,18 +49,6 @@
         ]
       }
     ],
-    "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

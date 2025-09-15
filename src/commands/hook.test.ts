@@ -73,31 +73,6 @@ describe('determineHookType', () => {
     });
   });
 
-  describe('SessionStart events', () => {
-    test('routes SessionStart with compact source to post-compact', () => {
-      const input: HookInput = {
-        hook_event_name: 'SessionStart',
-        source: 'compact',
-      };
-      expect(determineHookType(input)).toBe('post-compact');
-    });
-
-    test('returns null for SessionStart without compact source', () => {
-      const input: HookInput = {
-        hook_event_name: 'SessionStart',
-        source: 'other',
-      };
-      expect(determineHookType(input)).toBe(null);
-    });
-
-    test('returns null for SessionStart with no source', () => {
-      const input: HookInput = {
-        hook_event_name: 'SessionStart',
-      };
-      expect(determineHookType(input)).toBe(null);
-    });
-  });
-
   describe('Stop events', () => {
     test('routes Stop to stop-review', () => {
       const input: HookInput = {

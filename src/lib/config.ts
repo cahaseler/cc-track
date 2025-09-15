@@ -64,11 +64,7 @@ const DEFAULT_CONFIG: InternalConfig = {
     },
     pre_compact: {
       enabled: true,
-      description: 'Extracts error patterns before compaction',
-    },
-    post_compact: {
-      enabled: true,
-      description: 'Restores context after compaction',
+      description: 'Updates task files with progress before compaction',
     },
     stop_review: {
       enabled: true,

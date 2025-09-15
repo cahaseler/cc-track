@@ -34,7 +34,6 @@ describe('config', () => {
       const config = getConfig();
       expect(config.hooks).toHaveProperty('capture_plan');
       expect(config.hooks).toHaveProperty('pre_compact');
-      expect(config.hooks).toHaveProperty('post_compact');
       expect(config.hooks).toHaveProperty('stop_review');
       expect(config.hooks).toHaveProperty('edit_validation');
     });
@@ -54,7 +53,6 @@ describe('config', () => {
       const nonExistentPath = '/tmp/nonexistent/config.json';
       expect(isHookEnabled('capture_plan', nonExistentPath)).toBe(true);
       expect(isHookEnabled('pre_compact', nonExistentPath)).toBe(true);
-      expect(isHookEnabled('post_compact', nonExistentPath)).toBe(true);
       expect(isHookEnabled('stop_review', nonExistentPath)).toBe(true);
       expect(isHookEnabled('edit_validation', nonExistentPath)).toBe(false); // Disabled by default
     });
