@@ -408,8 +408,11 @@ async function completeTaskAction(options: {
         if (gitStatus) {
           try {
             execSync('git add -A', { cwd: projectRoot });
-            const message = options.message ||
-              (existingPR ? `docs: update ${result.taskId} based on PR feedback` : `docs: update ${result.taskId} documentation`);
+            const message =
+              options.message ||
+              (existingPR
+                ? `docs: update ${result.taskId} based on PR feedback`
+                : `docs: update ${result.taskId} documentation`);
             const escapedMessage = message.replace(/'/g, "'\\''");
             execSync(`git commit -m '${escapedMessage}'`, { cwd: projectRoot });
             result.git.safetyCommit = true;
