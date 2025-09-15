@@ -2,7 +2,7 @@
 
 **Purpose:** Resolve the error_max_turns issue in the stop-review hook by adding maxTurns parameter to the Claude SDK call
 
-**Status:** planning
+**Status:** completed
 **Started:** 2025-09-15 20:11
 **Task ID:** 050
 
