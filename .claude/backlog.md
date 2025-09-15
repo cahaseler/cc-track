@@ -22,4 +22,3 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
 - [2025-09-14] debug stop-review hook error_max_turns review system error
-- [2025-09-14] Fix complete-task squashing to handle all commits since branch diverged from main, not just WIP commits. Currently fails when stop-review creates conventional commits (feat:, fix:, docs:) mixed with WIP commits

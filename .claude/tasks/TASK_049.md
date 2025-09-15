@@ -7,16 +7,16 @@
 **Task ID:** 049
 
 ## Requirements
-- [ ] Add `getMergeBase()` method to git helpers in `src/lib/git-helpers.ts`
-- [ ] Refactor squashing logic in `src/commands/complete-task.ts` (lines 204-251)
-- [ ] Implement branch detection to identify feature/bug branches vs default branches
-- [ ] Add logic to find merge-base between current branch and default branch
-- [ ] Replace WIP-only commit counting with all-commits-since-merge-base counting
-- [ ] Update squashing command to use `git reset --soft <merge-base>` approach
-- [ ] Update result messages to reflect branch-based squashing instead of WIP-based
-- [ ] Test with mixed commit types (wip:, feat:, fix:, docs:)
-- [ ] Test behavior on feature branches vs main branch
-- [ ] Test single commit branches
+- [x] Add `getMergeBase()` method to git helpers in `src/lib/git-helpers.ts`
+- [x] Refactor squashing logic in `src/commands/complete-task.ts` (lines 204-251)
+- [x] Implement branch detection to identify feature/bug branches vs default branches
+- [x] Add logic to find merge-base between current branch and default branch
+- [x] Replace WIP-only commit counting with all-commits-since-merge-base counting
+- [x] Update squashing command to use `git reset --soft <merge-base>` approach
+- [x] Update result messages to reflect branch-based squashing instead of WIP-based
+- [x] Test with mixed commit types (wip:, feat:, fix:, docs:)
+- [x] Test behavior on feature branches vs main branch
+- [x] Test single commit branches
 
 ## Success Criteria
 - Complete-task command successfully squashes all commits on feature branches regardless of commit message format
@@ -33,21 +33,25 @@ Replace the current WIP-detection logic with:
 4. If multiple commits exist, squash using `git reset --soft` + `git commit`
 5. Update messaging to reflect branch-based approach
 
-## Current Focus
+## Resolution
 
-Task completed on 2025-09-14
+**Completed:** 2025-09-14 20:15
 
-## Open Questions & Blockers
-- Need to verify how default branch detection works in the existing codebase
-- Should confirm the exact git commands used for squashing in current implementation
-- May need to handle edge cases like orphaned branches or missing merge-base
+Successfully implemented branch-based squashing that handles all commit types. The solution:
 
-## Next Steps
-1. Read current `src/commands/complete-task.ts` to understand existing squashing logic
-2. Read `src/lib/git-helpers.ts` to understand current git helper methods
-3. Implement `getMergeBase()` method in git helpers
-4. Refactor squashing logic in complete-task command
-5. Update result messages and test the changes
+1. **Added `getMergeBase()` method** to GitHelpers class that uses `git merge-base` to find the common ancestor between two branches
+2. **Refactored complete-task.ts squashing logic** to:
+   - Detect when on a feature/task branch vs default branch
+   - Find merge-base between current branch and default branch
+   - Count ALL commits since merge-base (not just WIP commits)
+   - Use `git reset --soft <merge-base>` to squash all commits
+   - Properly handle edge cases (single commit, no merge-base, on default branch)
+3. **Removed WIP-only detection** that was limiting squashing to specific commit patterns
+4. **Updated messaging** to reflect branch-based approach rather than WIP-based
+
+The fix ensures cleaner PR history with one commit per task, regardless of the commit message formats used during development. All validation checks pass (TypeScript, Biome, tests).
+
+**PR:** #41 - Merged and released as v1.15.1
 
 <!-- github_issue: 40 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/40 -->
