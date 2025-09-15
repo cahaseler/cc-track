@@ -100,11 +100,13 @@ function runBiomeCheck(projectRoot: string): ValidationResult['biome'] {
       // Auto-formatter might fail if there are syntax errors, continue to check
     }
 
-    // Now run the check
+    // Now run the check with --error-on-warnings to fail on any issues
     const config = getConfig();
     const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
     const biomeConfig = editValidation?.lint;
-    const command = biomeConfig?.command || 'bunx biome check';
+    const baseCommand = biomeConfig?.command || 'bunx biome check';
+    // Add --error-on-warnings flag if not already present
+    const command = baseCommand.includes('--error-on-warnings') ? baseCommand : `${baseCommand} --error-on-warnings`;
 
     logger.info('Running Biome check', { command });
     execSync(command, { cwd: projectRoot, encoding: 'utf-8' });

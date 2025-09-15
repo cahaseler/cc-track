@@ -63,6 +63,7 @@ The \`.claude/track.config.json\` file has been created with all features disabl
   "statusline": false,
   "git_branching": false,
   "branch_protection": false,
+  "code_review": false,
   "api_timer": {
     "display": "hide"
   },
@@ -132,6 +133,12 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    **Context Preservation**:
    - Ask: "Would you like automatic task documentation updates before compaction? This triggers an attempt to update the Task file before compaction to preserve progress."
    - If yes: enable \`pre_compact: true\` and \`post_compact: true\`
+
+   **Code Review** (if task management is enabled):
+   - Explain: "Code review runs a comprehensive Claude SDK agent before task completion to review changes against requirements, check for security issues, and assess code quality."
+   - Ask: "Would you like automatic code review before completing tasks? (takes up to 10 minutes per review)"
+   - If yes: enable \`code_review: true\`
+   - Note: "This will only run once per task when validation passes, and won't block task completion."
 
    **Status Line**:
    - Ask: "Would you like a custom status line showing current branch, task, costs, and context usage?"

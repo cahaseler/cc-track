@@ -16,21 +16,35 @@
     "rules": {
       "recommended": true,
       "complexity": {
+        "recommended": true,
         "noBannedTypes": "error",
-        "noUselessTypeConstraint": "error"
+        "noUselessTypeConstraint": "error",
+        "noUselessTernary": "error"
       },
       "correctness": {
+        "recommended": true,
         "noUnusedVariables": "error"
       },
       "suspicious": {
+        "recommended": true,
         "noExplicitAny": "error",
         "noImplicitAnyLet": "error"
       },
       "style": {
+        "recommended": true,
         "noNonNullAssertion": "error",
         "useConst": "error",
         "useTemplate": "error",
         "useNodejsImportProtocol": "error"
+      },
+      "a11y": {
+        "recommended": true
+      },
+      "performance": {
+        "recommended": true
+      },
+      "security": {
+        "recommended": true
       }
     }
   },

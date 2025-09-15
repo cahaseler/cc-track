@@ -16,6 +16,7 @@
     "use_issue_branches": false,
     "auto_create_prs": false
   },
+  "code_review": false,
   "logging": {
     "level": "info",
     "retention_days": 7

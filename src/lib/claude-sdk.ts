@@ -231,12 +231,83 @@ ${requirements}
 CHANGES:
 ${diff}
 
-Analyze if the changes properly fulfill the requirements. 
-Respond in JSON format:
-{
-  "hasIssues": boolean,
-  "review": "Brief explanation of any issues or confirmation that requirements are met"
-}`;
+
+You are a senior software engineer performing a code review on AI-generated changes. Be candid, precise, and action-oriented. Do not compliment, reassure, or claim "production-ready." Default to caution and evidence.
+
+You have been provided with the task description and list of diffs. You have the ability to navigate the current codebase and review files in full as needed. You should review the current state of files, not just rely on the diffs, use the diffs to guide your review.
+
+Note:
+At the time of this review the code passes lint, typecheck, and all existing tests pass.
+
+  Review principles:
+
+  - Evidence over opinion. If unsure, say "Unknown—needs verification," and list how to verify.
+  - Anchor every finding to file paths and lines or symbols (e.g., src/foo.ts:123,
+  UserService.create()).
+  - Rank by severity: P0 (blocker), P1 (serious), P2 (should fix), P3 (nit).
+  - For each issue, provide: What, Why it matters, Where, Concrete Fix (patch or exact steps),
+  Severity, Evidence.
+  - Prefer small patch snippets for quick fixes; otherwise list exact steps.
+  - No praise, no "LGTM," no "production-ready." State what would constitute sufficient evidence
+  instead (tests, checks, metrics).
+
+  AI-code failure modes to hunt:
+
+  - Hallucinated or wrong APIs/imports; stale types/schemas; missing null/edge handling.
+  - Over-broad catches, swallowed errors, disabled validation; brittle regex; unsafe deserialization.
+  - Concurrency/race conditions; blocking calls in hot paths; N+1 or O(n²) patterns.
+  - Secrets/keys in code or logs; PII in logs; insecure defaults; injection risks (SQL/NoSQL/LDAP/
+  OS/HTML).
+  - Dead code, duplicate logic, redundant wrappers; TODOs/placeholders left in.
+  - Misleading comments or tests that re-implement logic instead of asserting behavior.
+
+  Checks to perform (static reasoning is fine as you can't run code):
+
+  - Spec alignment: map each acceptance criterion to concrete code and tests; mark Met/Partial/Unmet
+  with evidence.
+  - Correctness & edge cases: types, nullability, error surfacing, state/ordering, input validation.
+  - Security & privacy: injection, SSRF/XSS/CSRF, path traversal, secrets handling, crypto usage,
+  logging redaction.
+  - Performance & scalability: complexity, memory growth, N+1s, I/O patterns, timeouts, backpressure.
+  - Reliability: idempotency, retries with jitter, timeouts, resource cleanup, concurrency safety.
+  - API & compatibility: contracts/schemas, versioning, migrations, deprecations, backward
+  compatibility.
+  - Tests: changed-code coverage, negative cases, flaky risks. Propose exact tests to add with names
+  and expected assertions.
+  - Observability: log levels, PII redaction, metrics, tracing.
+  - Maintainability: complexity, duplication, naming, comments/docs, public surface area, file layout.
+  - Dependencies: necessity, alternatives, pinning, supply-chain/licensing.
+
+  Output format (use concise bullets, reference files/lines):
+
+  1. Summary: 2-3 sentences on the main risks and areas touched.
+  2. Verdict: Blocking | Non-blocking.
+  3. Spec Alignment: numbered list of criteria with Met/Partial/Unmet + evidence.
+  4. Critical Issues (P0/P1): for each, provide What/Why/Where/Fix/Evidence.
+  5. Required Tests: concrete cases (test names, Arrange-Act-Assert outline; include short snippets if
+  ≤15 lines).
+  6. Security & Privacy: issues and required mitigations.
+  7. Performance: risks and improvements with expected order-of-magnitude impact if applicable.
+  8. Maintainability & Style: specific refactors or conventions to apply.
+  9. Behavioral Diffs & Compatibility: any user-visible changes; migration notes if needed.
+  10. Verification Plan: exact commands to run (build, lint, test, focused checks) and expected
+  outcomes.
+  12. Unknowns & Assumptions: call out anything you could not verify and how to de-risk it.
+
+  Language constraints:
+
+  - No compliments or filler. Avoid "looks good," "clean," "production-ready," "robust," etc.
+  - Be specific and mechanical: short bullets, direct verbs, concrete references.
+  - If a section has nothing to report, state "None found" rather than praising.
+
+  Severity rubric:
+
+  - P0: correctness/security breaks, build/test fails, backward-incompatible changes without
+  migration.
+  - P1: data loss risk, race conditions, privacy leaks, severe perf regressions.
+  - P2: maintainability issues, incomplete tests, minor perf concerns.
+  - P3: nits and stylistic polish.
+`;
 
   const response = await prompt(p, 'sonnet', { timeoutMs: 60000 });
   if (!response.success) throw new Error(`Failed to review code: ${response.error}`);
@@ -304,6 +375,140 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
   });
 }
 
+async function performCodeReview(
+  taskId: string,
+  taskTitle: string,
+  taskRequirements: string,
+  gitDiff: string,
+  projectRoot: string,
+): Promise<{ success: boolean; review: string; error?: string }> {
+  const logger = createLogger('claude-sdk');
+
+  const p = `You are performing a comprehensive code review for task ${taskId}.
+
+# Task Information
+- **Task ID:** ${taskId}
+- **Title:** ${taskTitle}
+- **Project Root:** ${projectRoot}
+
+# Task Requirements
+${taskRequirements}
+
+# Changes to Review (Git Diff)
+${gitDiff}
+
+# Your Review Task
+
+Perform a thorough code review analyzing:
+1. **Requirements Alignment:** Do the changes fulfill all task requirements?
+2. **Security:** Are there any security vulnerabilities or concerns?
+3. **Code Quality:** Is the code well-structured, readable, and maintainable?
+4. **Performance:** Are there any performance issues or optimizations needed?
+5. **Architecture:** Does the implementation follow project patterns and conventions?
+6. **Error Handling:** Is error handling comprehensive and appropriate?
+7. **Testing:** Are the changes adequately tested? Are there missing test cases?
+8. **Documentation:** Is the code properly documented? Are there missing explanations?
+
+You have access to read any file in the project to understand context and patterns.
+You can only write to the code-reviews/ directory.
+
+Write your complete review to a file named: code-reviews/${taskId}_[DATE].md
+
+Use the current UTC timestamp for [DATE] in format: YYYY-MM-DD_HHmm-UTC
+
+Your review should be thorough, actionable, and constructive. Include specific file/line references where applicable.`;
+
+  try {
+    // Find Claude Code executable
+    const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
+    const { query } = await import('@anthropic-ai/claude-code');
+
+    logger.info('Starting code review', { taskId, timeout: 600000, maxTurns: 30 });
+
+    const stream = query({
+      prompt: p,
+      options: {
+        model: 'sonnet',
+        maxTurns: 30,
+        allowedTools: ['Read', 'Grep', 'Glob', 'Write', 'Edit'],
+        disallowedTools: [], // Allow specific tools, not all
+        pathToClaudeCodeExecutable,
+        cwd: projectRoot,
+        stderr: (data: string) => {
+          try {
+            const s = typeof data === 'string' ? data : String(data);
+            logger.debug('Claude Code stderr', { data: s.substring(0, 500) });
+          } catch {
+            // ignore
+          }
+        },
+      },
+    });
+
+    let reviewText = '';
+    let success = false;
+    let error: string | undefined;
+    let timedOut = false;
+
+    // 10 minute timeout
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      try {
+        void (stream as AsyncGenerator<SDKMessage, void>).return(undefined);
+      } catch {
+        // ignore
+      }
+    }, 600000);
+
+    try {
+      for await (const message of stream) {
+        if (message.type === 'assistant') {
+          const content = message.message.content[0];
+          if (content && 'text' in content) {
+            reviewText = content.text;
+          }
+        }
+
+        if (message.type === 'result') {
+          if (message.subtype === 'success' || message.subtype === 'error_max_turns') {
+            success = true;
+            logger.info('Code review completed', {
+              subtype: message.subtype,
+              inputTokens: message.usage?.input_tokens,
+              outputTokens: message.usage?.output_tokens,
+              costUSD: message.total_cost_usd,
+            });
+          } else {
+            error = `Code review failed: ${message.subtype}`;
+            logger.error('Code review failed', { subtype: message.subtype });
+          }
+        }
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (timedOut) {
+      logger.warn('Code review timed out after 10 minutes');
+      return {
+        success: false,
+        review: reviewText || 'Code review timed out',
+        error: 'timeout after 600000ms',
+      };
+    }
+
+    return { success, review: reviewText, error };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error('Code review error', { error: msg });
+    return {
+      success: false,
+      review: '',
+      error: msg,
+    };
+  }
+}
+
 export const ClaudeSDK = {
   prompt,
   generateCommitMessage,
@@ -311,4 +516,5 @@ export const ClaudeSDK = {
   reviewCode,
   extractErrorPatterns,
   createValidationAgent,
+  performCodeReview,
 };
