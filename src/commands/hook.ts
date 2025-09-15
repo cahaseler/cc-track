@@ -2,7 +2,6 @@ import { Command } from 'commander';
 import { capturePlanHook } from '../hooks/capture-plan';
 // Import all hooks
 import { editValidationHook } from '../hooks/edit-validation';
-import { postCompactHook } from '../hooks/post-compact';
 import { preCompactHook } from '../hooks/pre-compact';
 import { preToolValidationHook } from '../hooks/pre-tool-validation';
 import { stopReviewHook } from '../hooks/stop-review';
@@ -51,13 +50,6 @@ export function determineHookType(input: HookInput): string | null {
     case 'PreCompact':
       return 'pre-compact';
 
-    case 'SessionStart':
-      // Check if source is compact for post-compact hook
-      if (input.source === 'compact') {
-        return 'post-compact';
-      }
-      return null;
-
     case 'Stop':
       return 'stop-review';
 
@@ -73,7 +65,6 @@ const hookHandlers: Record<string, (input: HookInput) => Promise<HookOutput>> = 
   'capture-plan': capturePlanHook,
   'edit-validation': editValidationHook,
   'pre-compact': preCompactHook,
-  'post-compact': postCompactHook,
   'stop-review': stopReviewHook,
   'pre-tool-validation': preToolValidationHook,
 };

@@ -18,8 +18,8 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-15] improve task creation with multi-turn claude code sdk invocation in the current working directory instructing claude to investigate any open questions and provide explicit detailed answers in the task file. Also see if we can return a message instructing claude to read this new task file after it's created.
 - [2025-09-15] block attempts to add stupid comments with the preToolUse hook
-- [2025-09-15] review session start hook instructions, update them to account for new pre-compaction process, current rules duplicate work.
 - [2025-09-15] adjust stop review prompt so it understands that security fixes and responding to code review feedback is part of the task. Maybe we include the code review feedback inside it's context too, if it exists.
 - [2025-09-15] Clean up SDK type usage across codebase: Import proper types from @anthropic-ai/claude-code for all SDK interactions. Fix internal prompt() function to use typed options and messages. Add canUseTool restrictions where appropriate (e.g., createValidationAgent should probably restrict Write). Replace type assertions with proper type guards or document why they're safe. See capture-plan.ts lines 224-248 for correct implementation pattern.
-- [2025-09-15] ensure stop-review prompt only includes messages sent since the last commit. Add hard cap to truncate extremely long message lists if they get too long anyway.
 - [2025-09-15] if complete-task has already been run once and there's already a PR, don't squash
+- [2025-09-15] ability to create a new task based on an existing github issue. Not sure how best to do this though.
+- [2025-09-15] Fix code review in prepare-completion - getting 'canUseTool callback requires --input-format stream-json' error. Need to update Claude SDK usage to pass prompt as AsyncIterable when using tool restrictions.

@@ -251,7 +251,6 @@ Add these based on what's enabled:
 - If pre_tool_validation enabled: Add to PreToolUse array with matcher "Edit|Write|MultiEdit"
 - If stop_review enabled: Add to Stop array (no matcher needed)
 - If pre_compact enabled: Add to PreCompact array (no matcher needed)
-- If post_compact enabled: Add to SessionStart array with matcher "compact"
 
 Use the Edit tool to make these changes, merging with any existing configuration.
 

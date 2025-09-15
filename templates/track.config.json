@@ -3,7 +3,6 @@
   "stop_review": false,
   "edit_validation": false,
   "pre_compact": false,
-  "post_compact": false,
   "statusline": false,
   "git_branching": false,
   "private_journal": false,
