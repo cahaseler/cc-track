@@ -1,6 +1,6 @@
 {
   "name": "cc-track",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
   "bin": {

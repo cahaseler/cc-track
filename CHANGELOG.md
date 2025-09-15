@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/cahaseler/cc-track/compare/v1.20.0...v1.21.0) (2025-09-15)
+
+
+### Features
+
+* complete TASK_058 - TASK_058: Fix Code Review Error: Convert String Prompts to AsyncIterable Format ([9501c54](https://github.com/cahaseler/cc-track/commit/9501c5480ae07957f1c8a63562ffb77f984452d9))
+
 # [1.20.0](https://github.com/cahaseler/cc-track/compare/v1.19.0...v1.20.0) (2025-09-15)
 
 
