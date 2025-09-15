@@ -110,8 +110,9 @@ async function completeTaskAction(options: {
       process.exit(1);
     }
 
-    // Save original CLAUDE.md content for potential restoration if push fails
+    // Save original content for potential restoration if push fails
     let originalClaudeMdContent = '';
+    let originalNoActiveTaskContent = '';
 
     const taskId = getActiveTaskId(projectRoot);
     if (!taskId) {
@@ -163,7 +164,8 @@ async function completeTaskAction(options: {
     // 4. Update no_active_task.md
     const noActiveTaskPath = join(claudeDir, 'no_active_task.md');
     if (existsSync(noActiveTaskPath)) {
-      let noActiveContent = readFileSync(noActiveTaskPath, 'utf-8');
+      originalNoActiveTaskContent = readFileSync(noActiveTaskPath, 'utf-8');
+      let noActiveContent = originalNoActiveTaskContent;
 
       // Add the completed task to the list
       const taskEntry = `- ${result.taskId}: ${result.taskTitle}`;
@@ -467,8 +469,14 @@ async function completeTaskAction(options: {
                   // Restore original CLAUDE.md content
                   writeFileSync(claudeMdPath, originalClaudeMdContent);
 
+                  // Restore original no_active_task.md content
+                  if (originalNoActiveTaskContent && existsSync(noActiveTaskPath)) {
+                    writeFileSync(noActiveTaskPath, originalNoActiveTaskContent);
+                  }
+
                   result.updates.taskFile = 'reverted to in_progress';
                   result.updates.claudeMd = 'restored active task';
+                  result.updates.noActiveTask = 'restored original content';
 
                   logger.error('Push failed - reverted task completion', {
                     taskId: result.taskId,
