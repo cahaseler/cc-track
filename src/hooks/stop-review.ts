@@ -563,7 +563,7 @@ REMEMBER: Output ONLY the JSON object, nothing else!`;
 
       const t0 = Date.now();
       const timeoutMs = 60000;
-      const response = await claudeSDK.prompt(prompt, model, { timeoutMs });
+      const response = await claudeSDK.prompt(prompt, model, { timeoutMs, maxTurns: 5 });
       const dt = Date.now() - t0;
       this.logger.debug('Claude review call completed', { model, duration_ms: dt, timeout_ms: timeoutMs });
 
