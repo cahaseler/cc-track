@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/cahaseler/cc-track/compare/v1.19.0...v1.20.0) (2025-09-15)
+
+
+### Features
+
+* complete TASK_057 - TASK_057: Remove Post-Compact/SessionStart Hook ([1335598](https://github.com/cahaseler/cc-track/commit/13355985bcd9255a41f696d72e0cf56c559211e1))
+
 # [1.19.0](https://github.com/cahaseler/cc-track/compare/v1.18.0...v1.19.0) (2025-09-15)
 
 
