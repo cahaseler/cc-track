@@ -110,6 +110,10 @@ async function completeTaskAction(options: {
       process.exit(1);
     }
 
+    // Save original content for potential restoration if push fails
+    let originalClaudeMdContent = '';
+    let originalNoActiveTaskContent = '';
+
     const taskId = getActiveTaskId(projectRoot);
     if (!taskId) {
       console.log('## ❌ Task Completion Failed\n');
@@ -152,14 +156,16 @@ async function completeTaskAction(options: {
     writeFileSync(taskFilePath, taskContent);
     result.updates.taskFile = 'updated';
 
-    // 3. Update CLAUDE.md
+    // 3. Update CLAUDE.md - save original content for potential restoration
+    originalClaudeMdContent = readFileSync(claudeMdPath, 'utf-8');
     clearActiveTask(projectRoot);
     result.updates.claudeMd = 'updated';
 
     // 4. Update no_active_task.md
     const noActiveTaskPath = join(claudeDir, 'no_active_task.md');
     if (existsSync(noActiveTaskPath)) {
-      let noActiveContent = readFileSync(noActiveTaskPath, 'utf-8');
+      originalNoActiveTaskContent = readFileSync(noActiveTaskPath, 'utf-8');
+      let noActiveContent = originalNoActiveTaskContent;
 
       // Add the completed task to the list
       const taskEntry = `- ${result.taskId}: ${result.taskTitle}`;
@@ -182,8 +188,64 @@ async function completeTaskAction(options: {
       result.warnings.push('no_active_task.md not found');
     }
 
-    // 5. Git operations (unless --no-squash is specified)
-    if (!options.noSquash) {
+    // 5. Check for existing PR early (if GitHub integration is enabled)
+    let existingPR: { number: number; url: string; state: string } | undefined;
+    let currentBranch: string | null = null;
+    let taskBranchName: string | undefined;
+
+    if (!options.noBranch && isGitHubIntegrationEnabled() && getGitHubConfig()?.auto_create_prs) {
+      // Extract branch names from task file (both regular and issue branches)
+      // Match only lines that start with the comment (not in code blocks)
+      const regularBranchMatch = taskContent.match(/^<!-- branch: (.*?) -->$/m);
+      const issueBranchMatch = taskContent.match(/^<!-- issue_branch: (.*?) -->$/m);
+
+      currentBranch = getCurrentBranch(projectRoot);
+
+      logger.info('PR detection starting', {
+        currentBranch,
+        regularBranch: regularBranchMatch?.[1],
+        issueBranch: issueBranchMatch?.[1],
+      });
+
+      // Check both possible branch names
+      if (regularBranchMatch && currentBranch === regularBranchMatch[1]) {
+        taskBranchName = regularBranchMatch[1];
+      } else if (issueBranchMatch && currentBranch === issueBranchMatch[1]) {
+        taskBranchName = issueBranchMatch[1];
+      }
+
+      // Check if we're on the task branch and if a PR already exists
+      if (taskBranchName && currentBranch === taskBranchName) {
+        try {
+          // Escape branch name to prevent command injection
+          const escapedBranchName = taskBranchName.replace(/'/g, "'\\''");
+          const prListOutput = execSync(`gh pr list --head '${escapedBranchName}' --json number,url,state`, {
+            encoding: 'utf-8',
+            cwd: projectRoot,
+          });
+
+          let existingPRs: Array<{ number: number; url: string; state: string }> = [];
+          try {
+            existingPRs = JSON.parse(prListOutput);
+          } catch (parseError) {
+            logger.debug('Failed to parse PR list output', { error: parseError, output: prListOutput });
+            // Continue without existing PR check
+          }
+
+          existingPR = existingPRs.find((pr) => pr.state === 'OPEN');
+          if (existingPR) {
+            logger.info('Found existing PR for branch', { branch: taskBranchName, pr: existingPR.url });
+          }
+        } catch (error) {
+          logger.debug('Could not check for existing PRs', { error });
+        }
+      }
+    }
+
+    // 6. Git operations (unless --no-squash is specified or PR already exists)
+    const shouldSquash = !options.noSquash && !existingPR;
+
+    if (shouldSquash) {
       try {
         // Check for uncommitted changes and commit them first
         const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
@@ -192,7 +254,8 @@ async function completeTaskAction(options: {
           try {
             execSync('git add -A', { cwd: projectRoot });
             const message = options.message || `docs: final ${result.taskId} documentation updates`;
-            execSync(`git commit -m "${message}"`, { cwd: projectRoot });
+            const escapedMessage = message.replace(/'/g, "'\\''");
+            execSync(`git commit -m '${escapedMessage}'`, { cwd: projectRoot });
             result.git.safetyCommit = true;
             result.git.notes = 'Committed final changes before squashing';
             logger.info('Created safety commit for uncommitted changes');
@@ -202,7 +265,9 @@ async function completeTaskAction(options: {
         }
 
         // Get current branch and default branch
-        const currentBranch = getCurrentBranch(projectRoot);
+        if (!currentBranch) {
+          currentBranch = getCurrentBranch(projectRoot);
+        }
         const defaultBranch = getDefaultBranch(projectRoot);
 
         if (currentBranch && currentBranch !== defaultBranch) {
@@ -224,7 +289,8 @@ async function completeTaskAction(options: {
 
               try {
                 execSync(`git reset --soft ${mergeBase}`, { cwd: projectRoot });
-                execSync(`git commit -m "${commitMessage}"`, { cwd: projectRoot });
+                const escapedCommitMessage = commitMessage.replace(/'/g, "'\\''");
+                execSync(`git commit -m '${escapedCommitMessage}'`, { cwd: projectRoot });
                 result.git.squashed = true;
                 result.git.wipCommitCount = numCommits; // Keep this field for compatibility
                 result.git.commitMessage = commitMessage;
@@ -277,6 +343,26 @@ async function completeTaskAction(options: {
         const error = gitError as Error;
         result.warnings.push(`Git operations failed: ${error.message}`);
       }
+    } else if (existingPR) {
+      // PR already exists - just commit any uncommitted changes
+      try {
+        const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
+        if (gitStatus) {
+          try {
+            execSync('git add -A', { cwd: projectRoot });
+            const message = options.message || `docs: update ${result.taskId} based on PR feedback`;
+            const escapedMessage = message.replace(/'/g, "'\\''");
+            execSync(`git commit -m '${escapedMessage}'`, { cwd: projectRoot });
+            result.git.safetyCommit = true;
+            result.git.notes = 'Committed changes for existing PR';
+            logger.info('Created commit for existing PR');
+          } catch (_commitError) {
+            result.warnings.push('No changes to commit');
+          }
+        }
+      } catch (error) {
+        logger.debug('Error checking git status', { error });
+      }
     }
 
     // 7. Handle branching/GitHub workflow if enabled (unless --no-branch is specified)
@@ -289,18 +375,17 @@ async function completeTaskAction(options: {
 
         if (prWorkflow) {
           // GitHub PR workflow - just push the branch, don't merge
-          const branchMatch =
-            taskContent.match(/<!-- branch: (.*?) -->/) || taskContent.match(/<!-- issue_branch: (.*?) -->/);
           const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
 
-          if (branchMatch) {
-            const branchName = branchMatch[1];
-            const currentBranch = execSync('git branch --show-current', {
-              encoding: 'utf-8',
-              cwd: projectRoot,
-            }).trim();
+          if (taskBranchName) {
+            if (!currentBranch) {
+              currentBranch = execSync('git branch --show-current', {
+                encoding: 'utf-8',
+                cwd: projectRoot,
+              }).trim();
+            }
 
-            if (currentBranch === branchName) {
+            if (currentBranch === taskBranchName) {
               // Push the current branch
               const pushSuccess = pushCurrentBranch(projectRoot);
               if (pushSuccess) {
@@ -308,66 +393,51 @@ async function completeTaskAction(options: {
                 const defaultBranch = getDefaultBranch(projectRoot);
                 result.git.defaultBranch = defaultBranch;
 
-                // Check if PR already exists for this branch
-                try {
-                  const prListOutput = execSync(`gh pr list --head ${branchName} --json number,url,state`, {
-                    encoding: 'utf-8',
-                    cwd: projectRoot,
-                  });
-                  const existingPRs = JSON.parse(prListOutput) as Array<{
-                    number: number;
-                    url: string;
-                    state: string;
-                  }>;
-
-                  const openPR = existingPRs.find((pr) => pr.state === 'OPEN');
-                  if (openPR) {
-                    result.github = {
-                      prWorkflow: true,
-                      prExists: true,
-                      prUrl: openPR.url,
-                      branchName,
-                      issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
-                    };
-                    result.git.notes = `PR already exists: ${openPR.url}`;
-                  } else {
-                    // Create new PR
-                    try {
-                      const prTitle = `feat: complete ${result.taskId} - ${result.taskTitle}`;
-                      const prBody = `## Summary\nCompletes ${result.taskId}: ${result.taskTitle}\n\n🤖 Generated with [Claude Code](https://claude.ai/code)`;
-
-                      const prCreateCmd = `gh pr create --base ${defaultBranch} --head ${branchName} --title "${prTitle}" --body "${prBody}"`;
-                      const prUrl = execSync(prCreateCmd, {
-                        encoding: 'utf-8',
-                        cwd: projectRoot,
-                      }).trim();
-
-                      result.github = {
-                        prWorkflow: true,
-                        prCreated: true,
-                        prUrl,
-                        branchName,
-                        issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
-                      };
-                      result.git.notes = `Created PR: ${prUrl}`;
-                    } catch (prError) {
-                      result.warnings.push(`Failed to create PR: ${prError}`);
-                      result.git.notes = `Pushed ${branchName} to origin - ready for manual PR creation`;
-                      result.github = {
-                        prWorkflow: true,
-                        branchName,
-                        issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
-                      };
-                    }
-                  }
-                } catch (listError) {
-                  logger.warn('Failed to check for existing PRs', { error: listError });
-                  result.git.notes = `Pushed ${branchName} to origin - ready for PR creation`;
+                // Use the existing PR check from earlier
+                if (existingPR) {
                   result.github = {
                     prWorkflow: true,
-                    branchName,
+                    prExists: true,
+                    prUrl: existingPR.url,
+                    branchName: taskBranchName,
                     issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
                   };
+                  result.git.notes = `Updated existing PR: ${existingPR.url}`;
+                } else {
+                  // Create new PR
+                  try {
+                    const prTitle = `feat: complete ${result.taskId} - ${result.taskTitle}`;
+                    const prBody = `## Summary\nCompletes ${result.taskId}: ${result.taskTitle}\n\n🤖 Generated with [Claude Code](https://claude.ai/code)`;
+
+                    // Escape all shell arguments to prevent command injection
+                    const escapedDefaultBranch = defaultBranch.replace(/'/g, "'\\''");
+                    const escapedBranchName = taskBranchName.replace(/'/g, "'\\''");
+                    const escapedTitle = prTitle.replace(/'/g, "'\\''");
+                    const escapedBody = prBody.replace(/'/g, "'\\''");
+
+                    const prCreateCmd = `gh pr create --base '${escapedDefaultBranch}' --head '${escapedBranchName}' --title '${escapedTitle}' --body '${escapedBody}'`;
+                    const prUrl = execSync(prCreateCmd, {
+                      encoding: 'utf-8',
+                      cwd: projectRoot,
+                    }).trim();
+
+                    result.github = {
+                      prWorkflow: true,
+                      prCreated: true,
+                      prUrl,
+                      branchName: taskBranchName,
+                      issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                    };
+                    result.git.notes = `Created PR: ${prUrl}`;
+                  } catch (prError) {
+                    result.warnings.push(`Failed to create PR: ${prError}`);
+                    result.git.notes = `Pushed ${taskBranchName} to origin - ready for manual PR creation`;
+                    result.github = {
+                      prWorkflow: true,
+                      branchName: taskBranchName,
+                      issueNumber: issueMatch ? parseInt(issueMatch[1], 10) : undefined,
+                    };
+                  }
                 }
 
                 // Switch back to default branch and pull latest
@@ -379,11 +449,46 @@ async function completeTaskAction(options: {
                   logger.warn('Failed to switch to default branch', { error: switchError });
                 }
               } else {
+                // Push failed - need to revert task completion
                 result.warnings.push('Failed to push branch to origin');
                 result.git.branchPushed = false;
+
+                // Revert task status back to in_progress
+                try {
+                  let revertedTaskContent = readFileSync(taskFilePath, 'utf-8');
+                  revertedTaskContent = revertedTaskContent.replace(
+                    /\*\*Status:\*\* completed/,
+                    '**Status:** in_progress',
+                  );
+                  revertedTaskContent = revertedTaskContent.replace(
+                    /## Current Focus\n\nTask completed on .+/,
+                    '## Current Focus\n\nPush failed - task completion reverted. Fix push issues and retry.',
+                  );
+                  writeFileSync(taskFilePath, revertedTaskContent);
+
+                  // Restore original CLAUDE.md content
+                  writeFileSync(claudeMdPath, originalClaudeMdContent);
+
+                  // Restore original no_active_task.md content
+                  if (originalNoActiveTaskContent && existsSync(noActiveTaskPath)) {
+                    writeFileSync(noActiveTaskPath, originalNoActiveTaskContent);
+                  }
+
+                  result.updates.taskFile = 'reverted to in_progress';
+                  result.updates.claudeMd = 'restored active task';
+                  result.updates.noActiveTask = 'restored original content';
+
+                  logger.error('Push failed - reverted task completion', {
+                    taskId: result.taskId,
+                    branch: taskBranchName,
+                  });
+                } catch (revertError) {
+                  logger.error('Failed to revert task status', { error: revertError });
+                  result.warnings.push('Failed to revert task status - manual fix required');
+                }
               }
             } else {
-              result.git.notes = `Task branch ${branchName} not currently checked out`;
+              result.git.notes = `Task branch ${taskBranchName} not currently checked out`;
             }
           } else {
             result.git.notes = 'No branch information found for GitHub PR workflow';
@@ -465,7 +570,23 @@ async function completeTaskAction(options: {
     process.exit(1);
   }
 
-  // 2. Handle GitHub PR if applicable
+  // 2. Check for push failure
+  if (result.git?.branchPushed === false && result.warnings.some((w) => w.includes('Failed to push branch'))) {
+    console.log('### ❌ Push Failed - Task Completion Reverted\n');
+    console.log('The push to origin failed, so the task completion has been reverted.');
+    console.log('The task status has been set back to in_progress.\n');
+    console.log('**Next steps:**');
+    console.log('1. Check for merge conflicts or authentication issues');
+    console.log('2. Manually push the branch: `git push -u origin HEAD`');
+    console.log('3. Once push succeeds, run `/complete-task` again\n');
+    console.log('**Current state:**');
+    console.log(`- Still on branch: ${result.github?.branchName || 'feature branch'}`);
+    console.log('- Task marked as in_progress');
+    console.log('- Commits were squashed but not pushed');
+    process.exit(1);
+  }
+
+  // 3. Handle GitHub PR if applicable
   if (result.github?.prCreated && result.github.prUrl) {
     console.log('### 1. Enhance the Pull Request\n');
     console.log('A PR was created automatically. Enhance its description with comprehensive details:\n');
@@ -481,25 +602,31 @@ async function completeTaskAction(options: {
     console.log('🤖 Generated with [Claude Code](https://claude.ai/code)"');
     console.log('```\n');
   } else if (result.github?.prExists && result.github.prUrl) {
-    console.log('### 1. Pull Request Already Exists\n');
-    console.log(`A PR already exists for this branch: ${result.github.prUrl}`);
-    console.log('No action needed - the duplicate prevention worked correctly.\n');
+    console.log('### 1. Pull Request Updated\n');
+    console.log(`Updated existing PR with new commits: ${result.github.prUrl}`);
+    console.log('The PR was not recreated since it already exists.\n');
+    console.log('If there were new changes, they have been pushed to the PR.');
+    console.log('No squashing was performed to preserve PR review history.\n');
   } else if (result.git?.branchPushed) {
     console.log('### 1. Note About Pull Request\n');
     console.log('The branch was pushed but PR creation failed or was skipped.');
     console.log('Manual PR creation may be needed.\n');
   }
 
-  // 3. Summary for user
-  const summaryNumber = result.github?.prCreated ? 2 : 1;
+  // 4. Summary for user
+  const summaryNumber = result.github?.prCreated || result.github?.prExists ? 2 : 1;
   console.log(`### ${summaryNumber}. Provide Summary to User\n`);
   console.log('Report the completion status including:');
   console.log(`- Task ${result.taskId} completed: ${result.taskTitle}`);
   if (result.git?.squashed) {
     console.log(`- Git: ${result.git.wipCommitCount || 'Multiple'} WIP commits squashed successfully`);
+  } else if (result.github?.prExists) {
+    console.log(`- Git: Pushed new commits to existing PR (no squashing to preserve history)`);
   }
-  if (result.github?.prUrl) {
-    console.log(`- PR: ${result.github.prUrl}`);
+  if (result.github?.prCreated) {
+    console.log(`- PR created: ${result.github.prUrl}`);
+  } else if (result.github?.prExists) {
+    console.log(`- PR updated: ${result.github.prUrl}`);
   }
   if (result.git?.branchSwitched) {
     console.log(`- Switched to ${result.git.defaultBranch} branch`);
