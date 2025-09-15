@@ -71,7 +71,7 @@ ${plan}
 
 ## Instructions:
 1. Extract the task name/title from the plan
-2. Set status to "planning"
+2. Set status to "in_progress"
 3. List all requirements as checkboxes
 4. Define clear success criteria
 5. Identify next steps
@@ -83,7 +83,7 @@ Create the content for TASK_${taskId}.md following this structure:
 
 **Purpose:** [Clear description of what this task accomplishes]
 
-**Status:** planning
+**Status:** in_progress
 **Started:** ${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}
 **Task ID:** ${taskId}
 
@@ -270,6 +270,18 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     return { continue: true };
   }
 
+  // Check if there's already an active task
+  const projectRoot = input.cwd || process.cwd();
+  const claudeMdHelpers = new ClaudeMdHelpers(fileOps);
+  if (claudeMdHelpers.hasActiveTask(projectRoot)) {
+    const activeTaskId = claudeMdHelpers.getActiveTaskId(projectRoot);
+    logger.info('Active task detected, blocking new task creation', { activeTaskId });
+    return {
+      continue: true,
+      systemMessage: `⚠️ There is already an active task: ${activeTaskId}\n\nPlease update the existing task file at .claude/tasks/${activeTaskId}.md with the new plan and requirements.\n\nIf this was intended to be a new task, please complete the current task first using /complete-task or clear the active task.`,
+    };
+  }
+
   debugLog(`Parsed input: ${input.hook_event_name}, tool: ${input.tool_name}`);
 
   logger.debug('Hook triggered', {
@@ -309,8 +321,7 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
   logger.debug('Plan content', { plan_length: plan.length, plan_preview: plan.substring(0, 200) });
 
   try {
-    // Ensure directories exist
-    const projectRoot = input.cwd || process.cwd();
+    // Ensure directories exist (projectRoot already declared above for active task check)
     const claudeDir = join(projectRoot, '.claude');
     const plansDir = join(claudeDir, 'plans');
     const tasksDir = join(claudeDir, 'tasks');

@@ -86,6 +86,7 @@ describe('capture-plan', () => {
       expect(prompt).toContain('Task ID:** 005');
       expect(prompt).toContain('## Requirements');
       expect(prompt).toContain('## Success Criteria');
+      expect(prompt).toContain('**Status:** in_progress'); // Verify status is in_progress
     });
   });
 
@@ -172,6 +173,39 @@ describe('capture-plan', () => {
 
       expect(result).toEqual({ continue: true });
       expect(logger.info).toHaveBeenCalledWith('Plan was not approved, skipping task creation', expect.any(Object));
+    });
+
+    test('blocks task creation when active task exists', async () => {
+      const logger = createMockLogger();
+      const fileOps = {
+        existsSync: mock(() => true),
+        readFileSync: mock(() => '# Project\n\n@.claude/tasks/TASK_002.md\n'), // Active task exists
+        writeFileSync: mock(() => {}),
+      };
+
+      const input: HookInput = {
+        hook_event_name: 'PostToolUse',
+        tool_name: 'ExitPlanMode',
+        tool_input: { plan: 'Create another feature' },
+        tool_response: { plan: 'Create another feature' }, // Plan approved
+        cwd: '/project',
+        session_id: 'test-session',
+      };
+
+      const deps: CapturePlanDependencies = {
+        fileOps,
+        logger,
+        isHookEnabled: () => true,
+      };
+
+      const result = await capturePlanHook(input, deps);
+
+      expect(result.continue).toBe(true);
+      expect(result.systemMessage).toContain('⚠️ There is already an active task: TASK_002');
+      expect(result.systemMessage).toContain('Please update the existing task file');
+      expect(logger.info).toHaveBeenCalledWith('Active task detected, blocking new task creation', {
+        activeTaskId: 'TASK_002',
+      });
     });
 
     test('creates task successfully when plan is approved', async () => {
