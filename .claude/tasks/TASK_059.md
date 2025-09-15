@@ -66,7 +66,7 @@ const openPR = existingPRs.find((pr) => pr.state === 'OPEN');
 ### Branch Name Extraction Pattern:
 The existing code correctly extracts branch names from task files:
 ```typescript
-const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/) || 
+const branchMatch = taskContent.match(/<!-- branch: (.*?) -->/) ||
                    taskContent.match(/<!-- issue_branch: (.*?) -->/);
 ```
 
