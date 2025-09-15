@@ -7,4 +7,4 @@ allowed-tools: Bash(cc-track backlog:*)
 
 !`cc-track backlog "$ARGUMENTS"`
 
-Do not change your current focus or priorities. Continue working as you have been, this backlog item will be handled later.
+Do not change your current focus or priorities. Respond to the user only with `✅ Added [concise task description] has been added to backlog.` Continue with your work if there was a clear task you are working on, otherwise simply respond with the above and do nothing else.

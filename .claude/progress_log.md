@@ -237,3 +237,8 @@
   Details: Implemented comprehensive npm package distribution with build-time resource embedding and Claude-driven setup
   Files: package.json, src/commands/init.ts, src/commands/setup-templates.ts, src/commands/setup-commands.ts, scripts/embed-resources.ts, src/lib/embedded-resources.ts, .releaserc.json, .github/workflows/release.yml
   Key Achievement: Build-time embedding eliminates runtime path complexity. Works with npx (no global install needed). Two-phase setup: minimal init command + intelligent Claude configuration. Published dev versions to npm. Semantic-release ready for automated publishing.
+
+[2025-09-15] - Completed: Task 050 - Fix Stop-Review Hook Max Turns Error
+  Details: Fixed error_max_turns issue in stop-review hook by adding maxTurns parameter to Claude SDK call
+  Files: src/hooks/stop-review.ts (1 line change)
+  Key Achievement: Resolved review failures by allowing up to 5 turns for complex review scenarios, following established patterns from other hooks
