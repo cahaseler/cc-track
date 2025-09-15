@@ -21,3 +21,4 @@
 - [2025-09-13] improve stop-review hook prompt to reduce false positives when user explicitly requests deletions or changes
 - [2025-09-14] debug stop-review hook error_max_turns review system error
 - [2025-09-15] adjust task completion and prep prompts to do all doc updates like progress log and clearing backlog item after the prep, rather than after the task completion, to avoid having to make documentation merges on main
+- [2025-09-15] configurable option to use edit validation hook to block any claude initiated writes and edits to non-gitignored files when on the default branch, to force use of feature branches. Probably pair this with better instructions inside the no_active_task file to guide Claude while in this mode.
