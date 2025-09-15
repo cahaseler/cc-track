@@ -250,6 +250,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** All pre-execution validation logic now lives in one place. Existing task validation functionality preserved while adding new capabilities.
 - **Reversibility:** Easy - could split into separate hooks later if needed, though unlikely given the clean integration
 
+[2025-09-15 22:00] - Implement Automatic Rebase in pushCurrentBranch for Diverged Branches
+- **Context:** The complete-task command frequently failed to push when semantic-release had added commits to the remote branch, requiring manual intervention each time
+- **Decision:** Enhanced pushCurrentBranch() to automatically detect and handle diverged branches by attempting a rebase before push
+- **Rationale:** The majority of divergence cases are from automated semantic-release commits which can be safely rebased. Automatic handling saves time and reduces friction in the development workflow
+- **Alternatives Considered:**
+  - Manual resolution only: Would continue to interrupt workflow frequently
+  - Force push: Too dangerous, could lose remote commits
+  - Merge instead of rebase: Would create unnecessary merge commits and complicate history
+- **Implications:** Complete-task command now succeeds automatically in most cases. When real conflicts exist, it fails safely with clear messaging. Slightly slower push operation due to fetch, but worth the reliability improvement
+- **Reversibility:** Easy - could revert to simple push behavior, though unlikely given the clear benefits
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

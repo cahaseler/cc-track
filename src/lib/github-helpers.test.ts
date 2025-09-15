@@ -173,16 +173,94 @@ describe('GitHubHelpers', () => {
   });
 
   describe('pushCurrentBranch', () => {
-    test('returns true on success', () => {
-      mockExec = mock(() => '');
+    test('returns true on simple push success', () => {
+      let callCount = 0;
+      mockExec = mock((cmd: string) => {
+        callCount++;
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) return '';
+        if (cmd.includes('git status -sb')) return '## feature-branch...origin/feature-branch';
+        if (cmd.includes('git push')) return '';
+        return '';
+      });
       gitHubHelpers = new GitHubHelpers(mockExec);
 
       expect(gitHubHelpers.pushCurrentBranch('/test')).toBe(true);
+      expect(callCount).toBe(4); // branch, fetch, status, push
     });
 
-    test('returns false on error', () => {
-      mockExec = mock(() => {
-        throw new Error('Push failed');
+    test('handles diverged branches with successful rebase', () => {
+      let callCount = 0;
+      mockExec = mock((cmd: string) => {
+        callCount++;
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) return '';
+        if (cmd.includes('git status -sb'))
+          return "## feature-branch...origin/feature-branch [ahead 1, behind 2]\nYour branch and 'origin/feature-branch' have diverged";
+        if (cmd.includes('git pull --rebase')) return 'Successfully rebased and updated';
+        if (cmd.includes('git push')) return '';
+        return '';
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      expect(gitHubHelpers.pushCurrentBranch('/test')).toBe(true);
+      expect(callCount).toBe(5); // branch, fetch, status, rebase, push
+    });
+
+    test('handles behind branch with successful rebase', () => {
+      let callCount = 0;
+      mockExec = mock((cmd: string) => {
+        callCount++;
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) return '';
+        if (cmd.includes('git status -sb')) return '## feature-branch...origin/feature-branch [behind 2]';
+        if (cmd.includes('git pull --rebase')) return 'Successfully rebased and updated';
+        if (cmd.includes('git push')) return '';
+        return '';
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      expect(gitHubHelpers.pushCurrentBranch('/test')).toBe(true);
+      expect(callCount).toBe(5); // branch, fetch, status, rebase, push
+    });
+
+    test('handles rebase conflicts and aborts gracefully', () => {
+      let callCount = 0;
+      mockExec = mock((cmd: string, _options?: any) => {
+        callCount++;
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) return '';
+        if (cmd.includes('git status -sb'))
+          return "## feature-branch...origin/feature-branch [ahead 1, behind 2]\nYour branch and 'origin/feature-branch' have diverged";
+        if (cmd.includes('git pull --rebase')) throw new Error('Merge conflict');
+        if (cmd.includes('git status') && !cmd.includes('-sb')) return 'rebase in progress; onto abc123';
+        if (cmd.includes('git rebase --abort')) return '';
+        return '';
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      expect(gitHubHelpers.pushCurrentBranch('/test')).toBe(false);
+      expect(callCount).toBe(6); // branch, fetch, status, rebase (fails), status check, abort
+    });
+
+    test('returns false on push error', () => {
+      mockExec = mock((cmd: string) => {
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) return '';
+        if (cmd.includes('git status -sb')) return '## feature-branch...origin/feature-branch';
+        if (cmd.includes('git push')) throw new Error('Push failed');
+        return '';
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      expect(gitHubHelpers.pushCurrentBranch('/test')).toBe(false);
+    });
+
+    test('returns false on fetch error', () => {
+      mockExec = mock((cmd: string) => {
+        if (cmd.includes('git branch --show-current')) return 'feature-branch\n';
+        if (cmd.includes('git fetch')) throw new Error('Network error');
+        return '';
       });
       gitHubHelpers = new GitHubHelpers(mockExec);
 

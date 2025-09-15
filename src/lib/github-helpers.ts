@@ -186,15 +186,58 @@ export class GitHubHelpers {
   }
 
   /**
-   * Push current branch to origin
+   * Push current branch to origin, handling diverged branches automatically
    */
   pushCurrentBranch(cwd: string): boolean {
     try {
       logger.info('Pushing current branch to origin');
 
-      this.exec('git push -u origin HEAD 2>&1', {
-        cwd,
-      });
+      // Get current branch name
+      const currentBranch = this.exec('git branch --show-current', { cwd }).trim();
+      logger.debug('Current branch', { currentBranch });
+
+      // Fetch latest from remote
+      logger.debug('Fetching latest from remote');
+      this.exec('git fetch origin 2>&1', { cwd });
+
+      // Check if branches have diverged
+      const statusOutput = this.exec('git status -sb', { cwd });
+      const hasDiverged = statusOutput.includes('have diverged');
+      const isBehind = statusOutput.includes('[behind');
+
+      logger.debug('Branch status', { hasDiverged, isBehind, statusOutput });
+
+      if (hasDiverged || isBehind) {
+        logger.info('Branches have diverged or local is behind, attempting rebase');
+
+        try {
+          // Attempt to rebase on remote branch
+          this.exec(`git pull --rebase origin ${currentBranch} 2>&1`, { cwd });
+          logger.info('Rebase successful, continuing with push');
+        } catch (rebaseError) {
+          // Check if rebase failed due to conflicts
+          try {
+            const rebaseStatus = this.exec('git status', { cwd });
+            if (rebaseStatus.includes('rebase in progress')) {
+              logger.warn('Rebase has conflicts, aborting');
+              this.exec('git rebase --abort', { cwd });
+              logger.error('Failed to push: merge conflicts detected', {
+                error: rebaseError,
+                message: 'The remote branch has changes that conflict with local changes. Manual resolution required.',
+              });
+              return false;
+            }
+          } catch {
+            // If we can't check status, just log the original error
+          }
+
+          logger.error('Failed to rebase', { error: rebaseError });
+          return false;
+        }
+      }
+
+      // Now push the branch
+      this.exec('git push -u origin HEAD 2>&1', { cwd });
 
       logger.info('Branch pushed successfully');
       return true;
