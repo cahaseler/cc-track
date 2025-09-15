@@ -110,6 +110,9 @@ async function completeTaskAction(options: {
       process.exit(1);
     }
 
+    // Save original CLAUDE.md content for potential restoration if push fails
+    let originalClaudeMdContent = '';
+
     const taskId = getActiveTaskId(projectRoot);
     if (!taskId) {
       console.log('## ❌ Task Completion Failed\n');
@@ -152,7 +155,8 @@ async function completeTaskAction(options: {
     writeFileSync(taskFilePath, taskContent);
     result.updates.taskFile = 'updated';
 
-    // 3. Update CLAUDE.md
+    // 3. Update CLAUDE.md - save original content for potential restoration
+    originalClaudeMdContent = readFileSync(claudeMdPath, 'utf-8');
     clearActiveTask(projectRoot);
     result.updates.claudeMd = 'updated';
 
@@ -460,13 +464,8 @@ async function completeTaskAction(options: {
                   );
                   writeFileSync(taskFilePath, revertedTaskContent);
 
-                  // Restore active task in CLAUDE.md
-                  const claudeMdContent = readFileSync(claudeMdPath, 'utf-8');
-                  const restoredContent = claudeMdContent.replace(
-                    '@.claude/no_active_task.md',
-                    `@.claude/tasks/${result.taskId}.md`,
-                  );
-                  writeFileSync(claudeMdPath, restoredContent);
+                  // Restore original CLAUDE.md content
+                  writeFileSync(claudeMdPath, originalClaudeMdContent);
 
                   result.updates.taskFile = 'reverted to in_progress';
                   result.updates.claudeMd = 'restored active task';
