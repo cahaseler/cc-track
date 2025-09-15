@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/cahaseler/cc-track/compare/v1.15.2...v1.16.0) (2025-09-15)
+
+
+### Features
+
+* complete TASK_050 - Move All Documentation Updates to Prepare Phase ([c838f62](https://github.com/cahaseler/cc-track/commit/c838f620e2e5e76a40b533c04c98dc4baf5df8ed))
+
 ## [1.15.2](https://github.com/cahaseler/cc-track/compare/v1.15.1...v1.15.2) (2025-09-15)
 
 
