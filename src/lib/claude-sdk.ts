@@ -7,7 +7,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
 import { createLogger } from './logger';
 
@@ -439,13 +439,16 @@ Your review should be thorough, actionable, and constructive. Include specific f
         canUseTool: (async (toolName, input, _options) => {
           // Only restrict Write tool to code-reviews directory
           if (toolName === 'Write') {
-            const filePath = (input as { file_path: string }).file_path;
+            const requestedPath = (input as { file_path: string }).file_path;
+            // Resolve the path relative to the project root to handle both absolute and relative paths
+            const filePath = resolve(projectRoot, requestedPath);
             const allowedDir = join(projectRoot, 'code-reviews');
 
             if (!filePath.startsWith(allowedDir)) {
               logger.warn('Blocked Write attempt outside code-reviews directory', {
                 toolName,
                 attemptedPath: filePath,
+                requestedPath,
                 allowedDir,
               });
               return {
