@@ -28,6 +28,11 @@
 
 [2025-09-14] - TASK_046 completed: Fix GitHub Build Version Numbers
 - Fixed issue where GitHub release binaries showed hardcoded '1.0.0' instead of actual version
+
+[2025-09-15 14:47] - Completed: TASK_056 - Fix GitHub Actions Deployment Failures
+  Details: Applied dependency injection to 8 failing task validation tests
+  Files: src/hooks/pre-tool-validation.test.ts
+  Solution: Added mocked getConfig and gitHelpers dependencies to prevent branch protection from blocking tests on 'main' branch in CI
 - Implemented build-time version injection using Bun's --define flag
 - Local builds now show '1.0.0-dev', release builds will show correct version
 - 2 files modified (src/cli/index.ts, .releaserc.json)
