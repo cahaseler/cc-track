@@ -273,7 +273,7 @@ async function completeTaskAction(options: {
               commitCount: remoteCommits.split('\n').filter(Boolean).length,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           // Remote branch doesn't exist - safe to squash
           logger.debug('Remote branch does not exist, safe to squash', { branch: taskBranchName });
         }
