@@ -8,7 +8,7 @@ import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
+import type { CanUseTool, PermissionResult, SDKUserMessage } from '@anthropic-ai/claude-code';
 import { createLogger } from './logger';
 
 // Defer importing '@anthropic-ai/claude-code' until needed to avoid any
@@ -24,6 +24,25 @@ export interface ClaudeResponse {
     outputTokens: number;
     costUSD: number;
   };
+}
+
+/**
+ * Helper function to convert a string prompt into an AsyncIterable<SDKUserMessage>
+ * Required when using canUseTool callback with the Claude Code SDK
+ *
+ * Note: session_id is set to 'temp-session' as these are single-use query sessions,
+ * not persistent conversations. parent_tool_use_id is null as these are initial messages.
+ */
+export async function* createMessageStream(text: string): AsyncIterable<SDKUserMessage> {
+  yield {
+    type: 'user',
+    session_id: 'temp-session',
+    parent_tool_use_id: null,
+    message: {
+      role: 'user',
+      content: [{ type: 'text', text }],
+    },
+  } as SDKUserMessage;
 }
 
 // Find the Claude Code executable cross-platform
@@ -428,7 +447,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
     logger.info('Starting code review', { taskId, timeout: 600000, maxTurns: 30 });
 
     const stream = query({
-      prompt: p,
+      prompt: createMessageStream(p),
       options: {
         model: 'sonnet',
         maxTurns: 30,

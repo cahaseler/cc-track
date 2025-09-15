@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFile
 import { join, resolve } from 'node:path';
 import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
 import { ClaudeMdHelpers } from '../lib/claude-md';
-import { findClaudeCodeExecutable } from '../lib/claude-sdk';
+import { createMessageStream, findClaudeCodeExecutable } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
@@ -213,7 +213,7 @@ export async function enrichPlanWithResearch(
 
     // Create the multi-turn stream with research and write capabilities
     const stream = query({
-      prompt,
+      prompt: createMessageStream(prompt),
       options: {
         model: 'sonnet',
         maxTurns: 20,
