@@ -71,7 +71,7 @@
       "description": "Use private journal MCP for context preservation and learning"
     },
     "branch_protection": {
-      "enabled": false,
+      "enabled": true,
       "description": "Block edits on protected branches to enforce feature branch workflow",
       "protected_branches": ["main", "master"],
       "allow_gitignored": true
