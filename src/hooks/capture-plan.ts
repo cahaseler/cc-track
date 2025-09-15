@@ -368,8 +368,8 @@ function commitTaskFilesToMain(taskId: string, projectRoot: string, deps: Captur
 
     exec(`git add .claude/tasks/TASK_${taskId}.md .claude/plans/${taskId}.md`, { cwd: projectRoot });
     exec(`git commit -m "docs: create TASK_${taskId} files"`, { cwd: projectRoot });
-    exec('git push origin main', { cwd: projectRoot });
-    logger.info(`Committed and pushed task files for ${taskId} to main`);
+    exec(`git push origin ${currentBranch}`, { cwd: projectRoot });
+    logger.info(`Committed and pushed task files for ${taskId} to ${currentBranch}`);
   } catch (error) {
     const errorMsg = String(error);
     if (errorMsg.includes('nothing to commit')) {
