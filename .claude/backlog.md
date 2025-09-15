@@ -22,3 +22,4 @@
 - [2025-09-15] adjust stop review prompt so it understands that security fixes and responding to code review feedback is part of the task. Maybe we include the code review feedback inside it's context too, if it exists.
 - [2025-09-15] Clean up SDK type usage across codebase: Import proper types from @anthropic-ai/claude-code for all SDK interactions. Fix internal prompt() function to use typed options and messages. Add canUseTool restrictions where appropriate (e.g., createValidationAgent should probably restrict Write). Replace type assertions with proper type guards or document why they're safe. See capture-plan.ts lines 224-248 for correct implementation pattern.
 - [2025-09-15] ensure stop-review prompt only includes messages sent since the last commit. Add hard cap to truncate extremely long message lists if they get too long anyway.
+- [2025-09-15] if complete-task has already been run once and there's already a PR, don't squash
