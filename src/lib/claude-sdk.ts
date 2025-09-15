@@ -7,6 +7,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
 import { createLogger } from './logger';
 
 // Defer importing '@anthropic-ai/claude-code' until needed to avoid any
@@ -25,7 +27,7 @@ export interface ClaudeResponse {
 }
 
 // Find the Claude Code executable cross-platform
-function findClaudeCodeExecutable(): string | undefined {
+export function findClaudeCodeExecutable(): string | undefined {
   // Prefer system-installed claude (often a compiled binary and faster)
   try {
     // Use 'command -v' which is POSIX standard, or 'where' on Windows
@@ -430,10 +432,38 @@ Your review should be thorough, actionable, and constructive. Include specific f
       options: {
         model: 'sonnet',
         maxTurns: 30,
-        allowedTools: ['Read', 'Grep', 'Glob', 'Write', 'Edit'],
-        disallowedTools: [], // Allow specific tools, not all
+        allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
+        disallowedTools: ['*'], // Only allow the specific tools above
         pathToClaudeCodeExecutable,
         cwd: projectRoot,
+        canUseTool: (async (toolName, input, _options) => {
+          // Only restrict Write tool to code-reviews directory
+          if (toolName === 'Write') {
+            const requestedPath = (input as { file_path: string }).file_path;
+            // Resolve the path relative to the project root to handle both absolute and relative paths
+            const filePath = resolve(projectRoot, requestedPath);
+            const allowedDir = join(projectRoot, 'code-reviews');
+
+            if (!filePath.startsWith(allowedDir)) {
+              logger.warn('Blocked Write attempt outside code-reviews directory', {
+                toolName,
+                attemptedPath: filePath,
+                requestedPath,
+                allowedDir,
+              });
+              return {
+                behavior: 'deny',
+                message: `Write access is restricted to ${allowedDir}. You can only write code review files.`,
+              } satisfies PermissionResult;
+            }
+          }
+
+          // Allow all other configured tools
+          return {
+            behavior: 'allow',
+            updatedInput: input,
+          } satisfies PermissionResult;
+        }) satisfies CanUseTool,
         stderr: (data: string) => {
           try {
             const s = typeof data === 'string' ? data : String(data);

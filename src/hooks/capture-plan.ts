@@ -1,13 +1,29 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
 import { ClaudeMdHelpers } from '../lib/claude-md';
+import { findClaudeCodeExecutable } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
 import type { ClaudeSDKInterface } from '../lib/git-helpers';
 import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
 import type { GitHubIssue, HookInput, HookOutput } from '../types';
+
+// Type for Claude Code SDK messages
+interface SDKMessage {
+  type: string;
+  subtype?: string;
+  message?: {
+    content: Array<{ text?: string }>;
+  };
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
+  total_cost_usd?: number;
+}
 
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
@@ -31,6 +47,7 @@ export interface CapturePlanDependencies {
   debugLog?: (msg: string) => void;
   isHookEnabled?: typeof isHookEnabled;
   isGitHubIntegrationEnabled?: typeof isGitHubIntegrationEnabled;
+  enrichPlanWithResearch?: typeof enrichPlanWithResearch;
 }
 
 /**
@@ -60,26 +77,47 @@ export function findNextTaskNumber(tasksDir: string, fileOps: CapturePlanDepende
 }
 
 /**
- * Generate task enrichment prompt
+ * Generate task enrichment prompt for research agent
  */
-export function generateEnrichmentPrompt(plan: string, taskId: string, now: Date): string {
-  return `
-Based on the following plan, create a comprehensive task file following the active_task template format.
+export function generateResearchPrompt(plan: string, taskId: string, now: Date, projectRoot: string): string {
+  const taskFilePath = `.claude/tasks/TASK_${taskId}.md`;
+
+  return `You are creating a comprehensive task file for a development project. Your goal is to research the codebase thoroughly and create a self-contained task document.
 
 ## The Plan:
 ${plan}
 
-## Instructions:
-1. Extract the task name/title from the plan
-2. Set status to "in_progress"
-3. List all requirements as checkboxes
-4. Define clear success criteria
-5. Identify next steps
-6. Note any potential blockers or questions
+## Your Mission:
 
-Create the content for TASK_${taskId}.md following this structure:
+You have access to the entire codebase at: ${projectRoot}
 
-# [Task Title]
+You must create a comprehensive task file and write it to: ${taskFilePath}
+
+IMPORTANT: Your job is to:
+
+1. **Research the codebase thoroughly**:
+   - Use Grep to find existing patterns and examples
+   - Use Read to examine relevant files and understand current implementations
+   - Use Glob to discover file structures and naming conventions
+   - Look for similar features or patterns already in the codebase
+
+2. **Identify and resolve all unknowns**:
+   - Don't leave vague statements like "investigate X" or "determine Y"
+   - Find specific file paths, function names, and patterns
+   - Research existing conventions and follow them
+   - Document exact technical steps based on actual code
+
+3. **Write the complete task file**:
+   - Use the Write tool to create ${taskFilePath}
+   - Make it self-contained with ALL information needed to implement
+   - Include specific code examples from your research
+   - Reference exact files and line numbers where relevant
+
+## Task File Template:
+
+The file you write should follow this structure:
+
+# [Task Title - extracted from the plan]
 
 **Purpose:** [Clear description of what this task accomplishes]
 
@@ -88,47 +126,224 @@ Create the content for TASK_${taskId}.md following this structure:
 **Task ID:** ${taskId}
 
 ## Requirements
-[Extract all requirements from the plan as checkboxes]
+[Extract all requirements from the plan as checkboxes - be specific!]
+- [ ] Requirement 1 with specific details
+- [ ] Requirement 2 with file paths
+- [ ] etc.
 
 ## Success Criteria
-[Define what "done" looks like]
+[Define what "done" looks like with measurable outcomes]
 
 ## Technical Approach
-[Summary of the technical approach from the plan]
+[Detailed technical approach based on your research]
+- Specific files that need modification (e.g., src/lib/foo.ts)
+- Existing patterns to follow (with references)
+- Exact implementation steps
+
+## Implementation Details
+[Based on your research, provide specific guidance]
+- Code patterns found in [specific files]
+- Naming conventions: [what you discovered]
+- Integration points: [specific functions/modules]
+- Dependencies: [what's already available]
 
 ## Current Focus
-[What to work on first]
+[What to work on first, with specific targets]
+- Start with [specific file:line_number]
+- Implement [specific function/feature]
 
-## Open Questions & Blockers
-[Any unknowns or blockers]
+## Research Findings
+[Document your discoveries]
+- Similar implementation found in [file:line_number]
+- Pattern used throughout codebase: [description]
+- Key files identified: [list with purposes]
+- Conventions to follow: [specific examples]
 
 ## Next Steps
-[Clear next actions]
+1. [Specific action with file reference]
+2. [Next specific action]
+3. [etc.]
 
-Respond with ONLY the markdown content for the task file, no explanations.`;
+## Open Questions & Blockers
+[Only include if there are genuine unknowns that research couldn't resolve]
+
+Remember:
+- Research first, then write the file
+- Be specific - no vague statements
+- Include file paths and line numbers
+- The task file should be a complete implementation guide
+
+Write the complete task file to ${taskFilePath} when you're done researching.`;
 }
 
 /**
- * Enrich plan using Claude SDK
+ * Enrich plan using Claude SDK with multi-turn research
  */
-export async function enrichPlanWithClaude(prompt: string, deps: CapturePlanDependencies): Promise<string> {
+export async function enrichPlanWithResearch(
+  plan: string,
+  taskId: string,
+  now: Date,
+  projectRoot: string,
+  deps: CapturePlanDependencies,
+): Promise<boolean> {
   const logger = deps.logger || createLogger('capture_plan');
-  const claudeSDK = deps.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
+  const fileOps = deps.fileOps || {
+    existsSync,
+    readFileSync,
+    writeFileSync,
+  };
+
+  const taskFilePath = join(projectRoot, '.claude', 'tasks', `TASK_${taskId}.md`);
 
   try {
-    // Use SDK instead of CLI - no temp files or /tmp hack needed!
-    const response = await claudeSDK.prompt(prompt, 'sonnet');
+    // Generate the research-focused prompt
+    const prompt = generateResearchPrompt(plan, taskId, now, projectRoot);
 
-    if (!response.success) {
-      throw new Error(response.error || 'SDK call failed');
+    // Import Claude Code SDK for multi-turn capability
+    const { query } = await import('@anthropic-ai/claude-code');
+
+    // Use the shared function from claude-sdk.ts
+    const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
+
+    logger.info('Starting comprehensive task research', {
+      taskId,
+      maxTurns: 20,
+      timeoutMs: 600000,
+    });
+
+    // Create the multi-turn stream with research and write capabilities
+    const stream = query({
+      prompt,
+      options: {
+        model: 'sonnet',
+        maxTurns: 20,
+        allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
+        disallowedTools: ['*'], // Only allow the specific tools above
+        pathToClaudeCodeExecutable,
+        cwd: projectRoot, // Allow research and writing in project directory
+        canUseTool: (async (toolName, input, _options) => {
+          // Only restrict Write tool to task directory
+          if (toolName === 'Write') {
+            const requestedPath = (input as { file_path: string }).file_path;
+            // Resolve the path relative to the project root to handle both absolute and relative paths
+            const filePath = resolve(projectRoot, requestedPath);
+            const allowedDir = join(projectRoot, '.claude', 'tasks');
+
+            if (!filePath.startsWith(allowedDir)) {
+              logger.warn('Blocked Write attempt outside task directory', {
+                toolName,
+                attemptedPath: filePath,
+                requestedPath,
+                allowedDir,
+              });
+              return {
+                behavior: 'deny',
+                message: `Write access is restricted to ${allowedDir}. You can only write task files.`,
+              } satisfies PermissionResult;
+            }
+          }
+
+          // Allow all other configured tools
+          return {
+            behavior: 'allow',
+            updatedInput: input,
+          } satisfies PermissionResult;
+        }) satisfies CanUseTool,
+        stderr: (data: string) => {
+          try {
+            const s = typeof data === 'string' ? data : String(data);
+            logger.debug('Claude Code stderr', { data: s.substring(0, 500) });
+          } catch {
+            // ignore
+          }
+        },
+      },
+    });
+
+    let success = false;
+    let error: string | undefined;
+    let timedOut = false;
+
+    // 10 minute timeout for comprehensive research
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      try {
+        void (stream as AsyncGenerator<unknown, void>).return(undefined);
+      } catch {
+        // ignore
+      }
+    }, 600000);
+
+    try {
+      for await (const message of stream) {
+        const msg = message as SDKMessage;
+
+        if (msg.type === 'result') {
+          if (msg.subtype === 'success' || msg.subtype === 'error_max_turns') {
+            success = true;
+            logger.info('Task research completed', {
+              subtype: msg.subtype,
+              inputTokens: msg.usage?.input_tokens,
+              outputTokens: msg.usage?.output_tokens,
+              costUSD: msg.total_cost_usd,
+            });
+          } else {
+            error = `Task research failed: ${msg.subtype}`;
+            logger.error('Task research failed', { subtype: msg.subtype });
+          }
+        }
+      }
+    } finally {
+      clearTimeout(timeout);
     }
 
-    return response.text.trim();
+    if (timedOut) {
+      logger.warn('Task research timed out after 10 minutes');
+      // Check if a file was created even with timeout
+      if (fileOps.existsSync(taskFilePath)) {
+        logger.info('Task file was created before timeout');
+        return true;
+      }
+      throw new Error('Task research timed out without creating task file');
+    }
+
+    if (!success) {
+      throw new Error(error || 'Task research failed without specific error');
+    }
+
+    // Check if the task file was created
+    if (!fileOps.existsSync(taskFilePath)) {
+      throw new Error('Research agent completed but did not create task file');
+    }
+
+    logger.info('Task file created successfully', { path: taskFilePath });
+    return true;
   } catch (cmdError) {
-    logger.error('Claude SDK failed', {
+    logger.error('Task research failed', {
       error: cmdError instanceof Error ? cmdError.message : String(cmdError),
     });
-    throw cmdError;
+
+    // Fallback to simple enrichment if research fails
+    logger.info('Falling back to simple task enrichment');
+    const simpleFallback = deps.claudeSDK || (await import('../lib/claude-sdk')).ClaudeSDK;
+    const simplePrompt = `Based on the following plan, create a task file for TASK_${taskId}:
+
+${plan}
+
+Include sections for Purpose, Status (in_progress), Requirements (as checkboxes), Success Criteria, Technical Approach, Current Focus, and Next Steps.
+Started: ${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0, 5)}
+
+Respond with ONLY the markdown content.`;
+
+    const response = await simpleFallback.prompt(simplePrompt, 'sonnet');
+    if (!response.success) {
+      throw new Error(response.error || 'Fallback enrichment also failed');
+    }
+
+    // Write the fallback content to the file
+    fileOps.writeFileSync(taskFilePath, response.text.trim());
+    logger.info('Fallback task file created', { path: taskFilePath });
+    return true;
   }
 }
 
@@ -342,15 +557,17 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     const planPath = join(plansDir, `${taskId}.md`);
     fileOps.writeFileSync(planPath, `# Plan: ${taskId}\n\nCaptured: ${now.toISOString()}\n\n${plan}`);
 
-    // Generate enrichment prompt
-    const enrichmentPrompt = generateEnrichmentPrompt(plan, taskId, now);
+    // Use comprehensive research to enrich the plan and create task file
+    const enrichFn = deps.enrichPlanWithResearch || enrichPlanWithResearch;
+    const success = await enrichFn(plan, taskId, now, projectRoot, deps);
 
-    // Use Claude SDK to enrich the plan
-    const taskContent = await enrichPlanWithClaude(enrichmentPrompt, deps);
+    if (!success) {
+      throw new Error('Failed to create task file');
+    }
 
-    // Save the enriched task file in tasks directory
+    // Read the task file that was created
     const taskPath = join(tasksDir, `TASK_${taskId}.md`);
-    let finalTaskContent = taskContent;
+    let finalTaskContent = fileOps.readFileSync(taskPath, 'utf-8');
 
     // Handle GitHub integration first (create issue before branching)
     const githubResult = await handleGitHubIntegration(finalTaskContent, taskId, projectRoot, deps);
@@ -383,16 +600,32 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
       }
     }
 
-    // Write final task file
-    fileOps.writeFileSync(taskPath, finalTaskContent);
+    // Update the task file with additional metadata (GitHub info, branch info)
+    if (githubResult.infoString || branchName) {
+      fileOps.writeFileSync(taskPath, finalTaskContent);
+    }
 
     // Update CLAUDE.md to point to the new task
     updateClaudeMd(projectRoot, taskId, fileOps);
 
-    // Return success with a message
+    // Read the final task content to show Claude
+    const finalTaskPath = join(tasksDir, `TASK_${taskId}.md`);
+    const displayContent = fileOps.readFileSync(finalTaskPath, 'utf-8');
+
+    // Return success with the full task content
     return {
       continue: true,
-      systemMessage: `✅ Plan captured as task ${taskId}. Task file created and set as active.`,
+      systemMessage: `✅ Plan captured as task ${taskId}. Task file created and set as active.
+
+Here is the comprehensive task file that was created:
+
+---
+
+${displayContent}
+
+---
+
+The task has been thoroughly researched and documented. All implementation details, patterns, and specific file references have been included based on analysis of the codebase.`,
     };
   } catch (error) {
     debugLog(`Fatal error: ${error}`);
