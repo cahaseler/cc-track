@@ -19,3 +19,4 @@
 - [2025-09-15] block attempts to add stupid comments with the preToolUse hook
 - [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
 - [2025-09-15] proper unit testing for commands
+- [2025-09-16] explore alternative code review options such as codex-cli, gemini-cli (for alternate perspectives from different models) or the new coderabbit cli (explicitly designed for code review in cli, which seems promising)
