@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/cahaseler/cc-track/compare/v1.23.0...v1.24.0) (2025-09-16)
+
+
+### Features
+
+* complete TASK_061 - TASK_061: Create Task from GitHub Issue Implementation ([d532644](https://github.com/cahaseler/cc-track/commit/d5326440e86ace1522378bb5fca0ade3949715d2))
+
 # [1.23.0](https://github.com/cahaseler/cc-track/compare/v1.22.0...v1.23.0) (2025-09-16)
 
 
