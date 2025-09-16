@@ -8,12 +8,15 @@ import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import type { CanUseTool, PermissionResult, SDKUserMessage } from '@anthropic-ai/claude-code';
+import type {
+  CanUseTool,
+  PermissionResult,
+  Query,
+  SDKAssistantMessage,
+  SDKResultMessage,
+  SDKUserMessage,
+} from '@anthropic-ai/claude-code';
 import { createLogger } from './logger';
-
-// Defer importing '@anthropic-ai/claude-code' until needed to avoid any
-// bundling-time side effects in compiled binaries.
-type SDKMessage = unknown;
 
 export interface ClaudeResponse {
   text: string;
@@ -146,7 +149,8 @@ async function prompt(
         timedOut = true;
         try {
           // Politely signal completion to underlying process
-          void (stream as AsyncGenerator<SDKMessage, void>).return(undefined);
+          // Type assertion is safe here as Query extends AsyncGenerator<SDKMessage, void>
+          void (stream as Query).return(undefined);
         } catch {
           // ignore
         }
@@ -157,29 +161,31 @@ async function prompt(
     try {
       for await (const message of stream) {
         if (message.type === 'assistant') {
-          const content = message.message.content[0];
+          const assistantMsg = message as SDKAssistantMessage;
+          const content = assistantMsg.message.content[0];
           if (content && 'text' in content) {
             responseText = content.text;
           }
         }
 
         if (message.type === 'result') {
-          if (message.subtype === 'success') {
+          const resultMsg = message as SDKResultMessage;
+          if (resultMsg.subtype === 'success') {
             success = true;
             usage = {
-              inputTokens: message.usage.input_tokens || 0,
-              outputTokens: message.usage.output_tokens || 0,
-              costUSD: message.total_cost_usd,
+              inputTokens: resultMsg.usage.input_tokens || 0,
+              outputTokens: resultMsg.usage.output_tokens || 0,
+              costUSD: resultMsg.total_cost_usd,
             };
-          } else if (message.subtype === 'error_max_turns' && responseText) {
+          } else if (resultMsg.subtype === 'error_max_turns' && responseText) {
             success = true;
             usage = {
-              inputTokens: message.usage.input_tokens || 0,
-              outputTokens: message.usage.output_tokens || 0,
-              costUSD: message.total_cost_usd,
+              inputTokens: resultMsg.usage.input_tokens || 0,
+              outputTokens: resultMsg.usage.output_tokens || 0,
+              costUSD: resultMsg.total_cost_usd,
             };
           } else {
-            error = `Claude returned error: ${message.subtype}`;
+            error = `Claude returned error: ${resultMsg.subtype}`;
           }
         }
       }
@@ -357,10 +363,7 @@ Format as markdown with clear headers. Be concise.`;
   return response.text;
 }
 
-async function createValidationAgent(
-  codebasePath: string,
-  validationRules: string,
-): Promise<AsyncGenerator<SDKMessage, void>> {
+async function createValidationAgent(codebasePath: string, validationRules: string): Promise<Query> {
   const p = `You are a code validation agent. Your task is to review the codebase and identify issues.
 
 Codebase path: ${codebasePath}
@@ -503,7 +506,8 @@ Your review should be thorough, actionable, and constructive. Include specific f
     const timeout = setTimeout(() => {
       timedOut = true;
       try {
-        void (stream as AsyncGenerator<SDKMessage, void>).return(undefined);
+        // Type assertion is safe here as Query extends AsyncGenerator<SDKMessage, void>
+        void (stream as Query).return(undefined);
       } catch {
         // ignore
       }
@@ -512,24 +516,26 @@ Your review should be thorough, actionable, and constructive. Include specific f
     try {
       for await (const message of stream) {
         if (message.type === 'assistant') {
-          const content = message.message.content[0];
+          const assistantMsg = message as SDKAssistantMessage;
+          const content = assistantMsg.message.content[0];
           if (content && 'text' in content) {
             reviewText = content.text;
           }
         }
 
         if (message.type === 'result') {
-          if (message.subtype === 'success' || message.subtype === 'error_max_turns') {
+          const resultMsg = message as SDKResultMessage;
+          if (resultMsg.subtype === 'success' || resultMsg.subtype === 'error_max_turns') {
             success = true;
             logger.info('Code review completed', {
-              subtype: message.subtype,
-              inputTokens: message.usage?.input_tokens,
-              outputTokens: message.usage?.output_tokens,
-              costUSD: message.total_cost_usd,
+              subtype: resultMsg.subtype,
+              inputTokens: resultMsg.usage?.input_tokens,
+              outputTokens: resultMsg.usage?.output_tokens,
+              costUSD: resultMsg.total_cost_usd,
             });
           } else {
-            error = `Code review failed: ${message.subtype}`;
-            logger.error('Code review failed', { subtype: message.subtype });
+            error = `Code review failed: ${resultMsg.subtype}`;
+            logger.error('Code review failed', { subtype: resultMsg.subtype });
           }
         }
       }

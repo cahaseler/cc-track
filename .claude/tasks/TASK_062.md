@@ -45,7 +45,8 @@ Improve type safety throughout the codebase by replacing generic `unknown` types
    - Document any remaining necessary assertions
 
 ## Current Focus
-Starting with `src/lib/claude-sdk.ts` to establish proper SDK type imports and fix the core wrapper implementation.
+
+Task completed on 2025-09-16
 
 ## Next Steps
 1. Examine current SDK type imports and available types
@@ -56,3 +57,7 @@ Starting with `src/lib/claude-sdk.ts` to establish proper SDK type imports and f
 6. Move to capture-plan.ts and other identified files
 
 **Started**: 2025-09-16 09:57
+
+<!-- github_issue: 69 -->
+<!-- github_url: https://github.com/cahaseler/cc-track/issues/69 -->
+<!-- issue_branch: 69-task_062-clean-up-sdk-type-usage-across-codebase -->

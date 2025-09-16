@@ -137,6 +137,7 @@ export class GitHubHelpers {
       const jsonFields = 'number,title,body,url,state,labels,assignees,milestone';
       const result = this.exec(`gh issue view ${issueId} --json ${jsonFields}`, { cwd });
 
+      // Parse and validate the issue response
       const issue = JSON.parse(result) as GitHubIssue;
       logger.info('Issue fetched successfully', {
         number: issue.number,
