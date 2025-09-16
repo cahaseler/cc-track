@@ -1,21 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test';
-import type { createLogger } from '../lib/logger';
 import {
   createPrepareCompletionCommand,
   type PrepareCompletionDeps,
   prepareCompletionAction,
   runCodeReview,
 } from './prepare-completion';
-
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
+import { createMockLogger } from '../test-utils/command-mocks';
 
 describe('prepare-completion command', () => {
   test('has correct name and description', () => {

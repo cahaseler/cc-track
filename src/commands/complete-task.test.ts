@@ -1,7 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import type { ExecSyncOptions } from 'node:child_process';
 import path from 'node:path';
-import type { createLogger } from '../lib/logger';
 import {
   type CompleteTaskDeps,
   type CompleteTaskOptions,
@@ -9,16 +8,7 @@ import {
   createCompleteTaskCommand,
   runCompleteTask,
 } from './complete-task';
-
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
+import { createMockLogger } from '../test-utils/command-mocks';
 
 interface MockState {
   readonly deps: CompleteTaskDeps;

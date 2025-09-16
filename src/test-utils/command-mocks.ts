@@ -5,7 +5,6 @@ import type {
   FileSystemLike,
   TimeProvider,
   LoggerFactory,
-  CommandDeps,
   PartialCommandDeps
 } from '../commands/context';
 import type { createLogger } from '../lib/logger';
@@ -73,25 +72,27 @@ export function createMockFileSystem(initialFiles?: Record<string, string>): Moc
   const files = new Map<string, string>(Object.entries(initialFiles ?? {}));
 
   return {
-    existsSync: (targetPath: string) => files.has(targetPath),
-    readFileSync: (targetPath: string, encoding?: BufferEncoding | { encoding?: BufferEncoding }) => {
-      const value = files.get(targetPath);
+    existsSync: (targetPath: any) => files.has(String(targetPath)),
+    readFileSync: ((targetPath: any, _encoding?: any) => {
+      const pathStr = String(targetPath);
+      const value = files.get(pathStr);
       if (value === undefined) {
-        throw new Error(`File not found: ${targetPath}`);
+        throw new Error(`File not found: ${pathStr}`);
       }
       return value;
+    }) as any,
+    writeFileSync: (targetPath: any, content: any, _options?: any) => {
+      files.set(String(targetPath), content.toString());
     },
-    writeFileSync: (targetPath: string, content: string | NodeJS.ArrayBufferView) => {
-      files.set(targetPath, content.toString());
+    appendFileSync: (targetPath: any, content: any, _options?: any) => {
+      const pathStr = String(targetPath);
+      const previous = files.get(pathStr) ?? '';
+      files.set(pathStr, `${previous}${content.toString()}`);
     },
-    appendFileSync: (targetPath: string, content: string | NodeJS.ArrayBufferView) => {
-      const previous = files.get(targetPath) ?? '';
-      files.set(targetPath, `${previous}${content.toString()}`);
-    },
-    mkdirSync: mock(() => {}),
-    readdirSync: mock(() => []),
-    unlinkSync: mock(() => {}),
-    copyFileSync: mock(() => {}),
+    mkdirSync: mock(() => {}) as any,
+    readdirSync: mock(() => []) as any,
+    unlinkSync: mock(() => {}) as any,
+    copyFileSync: mock(() => {}) as any,
     files,
   };
 }
@@ -115,13 +116,13 @@ export function createMockTimeProvider(fixedDate = '2025-01-01T00:00:00Z'): Time
  * Mock logger factory
  */
 export function createMockLoggerFactory(): LoggerFactory {
-  return (scope: string) => ({
+  return (_scope: string) => ({
     debug: mock(() => {}),
     info: mock(() => {}),
     warn: mock(() => {}),
     error: mock(() => {}),
     exception: mock(() => {}),
-  } as ReturnType<typeof createLogger>);
+  } as unknown as ReturnType<typeof createLogger>);
 }
 
 /**
@@ -134,7 +135,7 @@ export function createMockLogger(): ReturnType<typeof createLogger> {
     warn: mock(() => {}),
     error: mock(() => {}),
     exception: mock(() => {}),
-  } as ReturnType<typeof createLogger>;
+  } as unknown as ReturnType<typeof createLogger>;
 }
 
 /**

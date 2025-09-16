@@ -8,7 +8,7 @@ import { getCodeReviewTool, getConfig, isCodeReviewEnabled } from '../lib/config
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
-import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import type { CommandResult, PartialCommandDeps } from './context';
 import { applyCommandResult, handleCommandException, isCommandSuccess, resolveCommandDeps } from './context';
 
 export interface PrepareCompletionDeps {
@@ -437,37 +437,35 @@ export async function prepareCompletionAction(
 /**
  * Create prepare-completion command
  */
-function mapPrepareCompletionDeps(deps: CommandDeps): PrepareCompletionDeps {
-  return {
-    execSync: deps.childProcess.execSync,
-    fileOps: {
-      existsSync: deps.fs.existsSync,
-      mkdirSync: deps.fs.mkdirSync,
-      readFileSync: deps.fs.readFileSync,
-      readdirSync: deps.fs.readdirSync,
-    },
-    performCodeReview,
-    getActiveTaskId: deps.claudeMd.getActiveTaskId,
-    isCodeReviewEnabled: deps.config.isCodeReviewEnabled,
-    getCodeReviewTool,
-    getConfig: deps.config.getConfig,
-    getCurrentBranch: (cwd: string) => deps.git.getCurrentBranch(cwd),
-    getDefaultBranch: (cwd: string) => deps.git.getDefaultBranch(cwd),
-    getMergeBase: (branch: string, defaultBranch: string, cwd: string) =>
-      deps.git.getMergeBase(branch, defaultBranch, cwd),
-    runValidationChecks: deps.validation.runValidationChecks,
-    logger: deps.logger('prepare-completion-command'),
-    cwd: () => deps.process.cwd(),
-  };
-}
-
 export function createPrepareCompletionCommand(overrides?: PartialCommandDeps): Command {
   return new Command('prepare-completion')
     .description('Prepare task for completion by running validation and generating fix instructions')
     .action(async () => {
       const deps = resolveCommandDeps(overrides);
       try {
-        const result = await prepareCompletionAction(mapPrepareCompletionDeps(deps));
+        // Inline the dependency mapping - no need for separate function
+        const prepDeps: PrepareCompletionDeps = {
+          execSync: deps.childProcess.execSync,
+          fileOps: {
+            existsSync: deps.fs.existsSync,
+            mkdirSync: deps.fs.mkdirSync,
+            readFileSync: deps.fs.readFileSync,
+            readdirSync: deps.fs.readdirSync,
+          },
+          performCodeReview,
+          getActiveTaskId: deps.claudeMd.getActiveTaskId,
+          isCodeReviewEnabled: deps.config.isCodeReviewEnabled,
+          getCodeReviewTool,
+          getConfig: deps.config.getConfig,
+          getCurrentBranch: (cwd: string) => deps.git.getCurrentBranch(cwd),
+          getDefaultBranch: (cwd: string) => deps.git.getDefaultBranch(cwd),
+          getMergeBase: (branch: string, defaultBranch: string, cwd: string) =>
+            deps.git.getMergeBase(branch, defaultBranch, cwd),
+          runValidationChecks: deps.validation.runValidationChecks,
+          logger: deps.logger('prepare-completion-command'),
+          cwd: () => deps.process.cwd(),
+        };
+        const result = await prepareCompletionAction(prepDeps);
         applyCommandResult(result, deps);
       } catch (error) {
         handleCommandException(error, deps);
