@@ -1,3 +1,17 @@
+# [1.23.0](https://github.com/cahaseler/cc-track/compare/v1.22.0...v1.23.0) (2025-09-16)
+
+
+### Bug Fixes
+
+* address biome lint warning for unused variable ([e58b978](https://github.com/cahaseler/cc-track/commit/e58b9789326f46e159c3a77701e6bc5326af24bb))
+* prevent complete-task from squashing when remote has commits ([3f06126](https://github.com/cahaseler/cc-track/commit/3f0612697a7805b8b0bc50afa1a9db75799d1c86))
+* push task files to actual default branch, not hardcoded main ([1bc67e7](https://github.com/cahaseler/cc-track/commit/1bc67e7f7300bb48bc1975da06cf82b7ac080bec))
+
+
+### Features
+
+* complete TASK_060 - TASK_060: Fix Capture-Plan Hook to Commit Task Files Without CLAUDE.md Updates ([c60f8b0](https://github.com/cahaseler/cc-track/commit/c60f8b0095a989bc201136622db94240a3617bee))
+
 # [1.22.0](https://github.com/cahaseler/cc-track/compare/v1.21.0...v1.22.0) (2025-09-15)
 
 
