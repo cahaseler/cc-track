@@ -242,8 +242,50 @@ async function completeTaskAction(options: {
       }
     }
 
-    // 6. Git operations (unless --no-squash is specified or PR already exists)
-    const shouldSquash = !options.noSquash && !existingPR;
+    // 6. Check if remote branch has commits (to determine if squashing is safe)
+    let remoteHasCommits = false;
+    if (taskBranchName) {
+      try {
+        // Check if remote branch exists and has commits
+        const remoteBranch = `origin/${taskBranchName}`;
+        try {
+          // Check if remote branch exists
+          execSync(`git rev-parse --verify ${remoteBranch}`, { cwd: projectRoot, stdio: 'pipe' });
+
+          // Get the merge base with the default branch
+          const defaultBranch = getDefaultBranch(projectRoot);
+          const mergeBase = execSync(`git merge-base ${defaultBranch} ${remoteBranch}`, {
+            encoding: 'utf-8',
+            cwd: projectRoot,
+          }).trim();
+
+          // Check if remote branch has any commits beyond the merge base
+          const remoteCommits = execSync(`git rev-list ${mergeBase}..${remoteBranch}`, {
+            encoding: 'utf-8',
+            cwd: projectRoot,
+          }).trim();
+
+          remoteHasCommits = remoteCommits.length > 0;
+
+          if (remoteHasCommits) {
+            logger.info('Remote branch has commits, will not squash', {
+              branch: taskBranchName,
+              commitCount: remoteCommits.split('\n').filter(Boolean).length,
+            });
+          }
+        } catch (_error) {
+          // Remote branch doesn't exist - safe to squash
+          logger.debug('Remote branch does not exist, safe to squash', { branch: taskBranchName });
+        }
+      } catch (error) {
+        logger.warn('Could not check remote branch status', { error });
+        // Play it safe - if we can't check, assume remote has commits
+        remoteHasCommits = true;
+      }
+    }
+
+    // Only squash if no-squash flag not set, no existing PR, AND no remote commits
+    const shouldSquash = !options.noSquash && !existingPR && !remoteHasCommits;
 
     if (shouldSquash) {
       try {
@@ -343,19 +385,38 @@ async function completeTaskAction(options: {
         const error = gitError as Error;
         result.warnings.push(`Git operations failed: ${error.message}`);
       }
-    } else if (existingPR) {
-      // PR already exists - just commit any uncommitted changes
+    } else {
+      // Not squashing - handle the different reasons why
+      logger.info('Skipping squash', {
+        noSquash: options.noSquash,
+        existingPR: !!existingPR,
+        remoteHasCommits,
+      });
+
+      // Determine the reason for not squashing
+      if (remoteHasCommits) {
+        result.git.notes = 'Remote branch has commits - skipping squash to preserve history';
+      } else if (existingPR) {
+        result.git.notes = 'PR already exists - skipping squash';
+      } else if (options.noSquash) {
+        result.git.notes = 'Squashing disabled by --no-squash flag';
+      }
+
+      // Always try to commit any uncommitted changes
       try {
         const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8', cwd: projectRoot }).trim();
         if (gitStatus) {
           try {
             execSync('git add -A', { cwd: projectRoot });
-            const message = options.message || `docs: update ${result.taskId} based on PR feedback`;
+            const message =
+              options.message ||
+              (existingPR
+                ? `docs: update ${result.taskId} based on PR feedback`
+                : `docs: update ${result.taskId} documentation`);
             const escapedMessage = message.replace(/'/g, "'\\''");
             execSync(`git commit -m '${escapedMessage}'`, { cwd: projectRoot });
             result.git.safetyCommit = true;
-            result.git.notes = 'Committed changes for existing PR';
-            logger.info('Created commit for existing PR');
+            logger.info('Created commit for non-squashed branch');
           } catch (_commitError) {
             result.warnings.push('No changes to commit');
           }

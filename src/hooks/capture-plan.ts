@@ -348,6 +348,39 @@ Respond with ONLY the markdown content.`;
 }
 
 /**
+ * Commit task files to main branch and push
+ */
+function commitTaskFilesToMain(taskId: string, projectRoot: string, deps: CapturePlanDependencies): void {
+  const exec = deps.execSync || execSync;
+  const logger = deps.logger || createLogger('capture_plan');
+
+  if (!/^\d{3}$/.test(taskId)) {
+    logger.error(`Invalid task ID format: ${taskId}`);
+    return;
+  }
+
+  try {
+    const currentBranch = exec('git branch --show-current', { cwd: projectRoot, encoding: 'utf-8' }).trim();
+    if (currentBranch !== 'main' && currentBranch !== 'master') {
+      logger.warn(`Not on main branch (on ${currentBranch}), skipping commit`);
+      return;
+    }
+
+    exec(`git add .claude/tasks/TASK_${taskId}.md .claude/plans/${taskId}.md`, { cwd: projectRoot });
+    exec(`git commit -m "docs: create TASK_${taskId} files"`, { cwd: projectRoot });
+    exec(`git push origin ${currentBranch}`, { cwd: projectRoot });
+    logger.info(`Committed and pushed task files for ${taskId} to ${currentBranch}`);
+  } catch (error) {
+    const errorMsg = String(error);
+    if (errorMsg.includes('nothing to commit')) {
+      logger.debug(`Task files for ${taskId} already committed`);
+    } else {
+      logger.warn(`Failed to commit task files: ${error}`);
+    }
+  }
+}
+
+/**
  * Handle git branching for task
  */
 export async function handleGitBranching(
@@ -573,6 +606,8 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
     const githubResult = await handleGitHubIntegration(finalTaskContent, taskId, projectRoot, deps);
     finalTaskContent += githubResult.infoString;
 
+    commitTaskFilesToMain(taskId, projectRoot, deps);
+
     // Handle branching - either issue branch or regular git branch
     let branchName: string | null = null;
     const githubConfig = getGitHubConfig();
@@ -605,7 +640,6 @@ export async function capturePlanHook(input: HookInput, deps: CapturePlanDepende
       fileOps.writeFileSync(taskPath, finalTaskContent);
     }
 
-    // Update CLAUDE.md to point to the new task
     updateClaudeMd(projectRoot, taskId, fileOps);
 
     // Read the final task content to show Claude
