@@ -1,10 +1,11 @@
 import { execSync as nodeExecSync } from 'node:child_process';
+import type { ExecSyncOptions } from 'node:child_process';
 import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
 export type ExecFunction = (
   command: string,
-  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string; stdio?: any },
+  options?: ExecSyncOptions & { encoding?: BufferEncoding },
 ) => string;
 
 export type GetGitConfigFunction = typeof defaultGetGitConfig;
