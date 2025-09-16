@@ -24,6 +24,10 @@ interface HookConfig {
   allow_gitignored?: boolean;
 }
 
+export interface CodeReviewConfig extends HookConfig {
+  tool?: 'claude' | 'coderabbit';
+}
+
 interface GitConfig {
   defaultBranch?: string;
   description?: string;
@@ -43,7 +47,7 @@ interface InternalConfig {
     [key: string]: HookConfig | EditValidationConfig;
   };
   features: {
-    [key: string]: HookConfig;
+    [key: string]: HookConfig | CodeReviewConfig;
   };
   git?: GitConfig;
   logging?: LoggingConfig;
@@ -118,6 +122,11 @@ const DEFAULT_CONFIG: InternalConfig = {
       description: 'Block edits on protected branches to enforce feature branch workflow',
       protected_branches: ['main', 'master'],
       allow_gitignored: true,
+    },
+    code_review: {
+      enabled: false,
+      description: 'Run comprehensive code review before task completion',
+      tool: 'claude' as const,
     },
   },
 };
@@ -241,14 +250,19 @@ export function isGitHubIntegrationEnabled(configPath?: string): boolean {
   return githubConfig?.enabled || false;
 }
 
-export function getCodeReviewConfig(configPath?: string): HookConfig | null {
+export function getCodeReviewConfig(configPath?: string): CodeReviewConfig | null {
   const config = getConfig(configPath);
-  return config.features?.code_review || null;
+  return (config.features?.code_review as CodeReviewConfig) || null;
 }
 
 export function isCodeReviewEnabled(configPath?: string): boolean {
   const codeReviewConfig = getCodeReviewConfig(configPath);
   return codeReviewConfig?.enabled || false;
+}
+
+export function getCodeReviewTool(configPath?: string): 'claude' | 'coderabbit' {
+  const codeReviewConfig = getCodeReviewConfig(configPath);
+  return codeReviewConfig?.tool || 'claude';
 }
 
 export function getGitConfig(configPath?: string): GitConfig | null {

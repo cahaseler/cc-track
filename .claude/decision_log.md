@@ -273,6 +273,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Reversibility:** Easy - all changes are in git history and could be restored if needed
 
 
+[2025-09-16 16:30] - Increase CodeRabbit Timeout to 30 Minutes from Original 15 Minutes
+- **Context:** During testing of TASK_063's CodeRabbit integration, the initial 15-minute timeout was insufficient and the review was timing out after 10 minutes due to Claude Code's bash timeout limit
+- **Decision:** Increased both Claude Code's bash timeout and CodeRabbit's internal timeout to 30 minutes (1800000ms) to ensure reviews have sufficient time to complete
+- **Rationale:** CodeRabbit CLI is newly launched (today) and may need more time for complex reviews. Better to have a generous timeout that allows completion than to have reviews fail due to timeouts. Can reduce later if actual execution times are consistently shorter.
+- **Alternatives Considered:**
+  - Keep 15-minute timeout: Already proven insufficient in testing
+  - Make timeout configurable: Adds unnecessary complexity, users can't make informed timeout decisions
+  - Different timeouts per tool: Already implemented (Claude 10min, CodeRabbit 30min)
+- **Implications:** Reviews may take up to 30 minutes but will complete successfully. Claude Code bash operations also have 30-minute timeout to match. Users need to be patient during review process.
+- **Reversibility:** Easy - just change the timeout values in code and settings.json
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
