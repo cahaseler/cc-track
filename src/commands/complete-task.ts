@@ -544,7 +544,9 @@ function handleGitHubWorkflow(
     // Check if we're on the correct branch before pushing
     if (branchContext.currentBranch !== branchContext.taskBranchName) {
       state.git.notes = `Task branch ${branchContext.taskBranchName} not currently checked out`;
-      warnings.push(`Not on task branch (current: ${branchContext.currentBranch}, expected: ${branchContext.taskBranchName})`);
+      warnings.push(
+        `Not on task branch (current: ${branchContext.currentBranch}, expected: ${branchContext.taskBranchName})`,
+      );
       return null;
     }
 
