@@ -72,9 +72,7 @@ export function createMockFileSystem(initialFiles?: Record<string, string>): Moc
   const files = new Map<string, string>(Object.entries(initialFiles ?? {}));
 
   return {
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     existsSync: (targetPath: any) => files.has(String(targetPath)),
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     readFileSync: ((targetPath: any, _encoding?: any) => {
       const pathStr = String(targetPath);
       const value = files.get(pathStr);
@@ -82,25 +80,18 @@ export function createMockFileSystem(initialFiles?: Record<string, string>): Moc
         throw new Error(`File not found: ${pathStr}`);
       }
       return value;
-      // biome-ignore lint/suspicious/noExplicitAny: Cast needed for type compatibility
     }) as any,
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     writeFileSync: (targetPath: any, content: any, _options?: any) => {
       files.set(String(targetPath), content.toString());
     },
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     appendFileSync: (targetPath: any, content: any, _options?: any) => {
       const pathStr = String(targetPath);
       const previous = files.get(pathStr) ?? '';
       files.set(pathStr, `${previous}${content.toString()}`);
     },
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     mkdirSync: mock(() => {}) as any,
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     readdirSync: mock(() => []) as any,
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     unlinkSync: mock(() => {}) as any,
-    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     copyFileSync: mock(() => {}) as any,
     files,
   };
