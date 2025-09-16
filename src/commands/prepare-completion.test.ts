@@ -18,20 +18,19 @@ function createMockLogger(): ReturnType<typeof createLogger> {
   } as unknown as ReturnType<typeof createLogger>;
 }
 
-// Create mock ClaudeSDK
-function createMockClaudeSDK() {
-  return {
-    performCodeReview: mock(async () => ({
+// Create mock for performCodeReview
+function createMockPerformCodeReview(success = true) {
+  if (success) {
+    return mock(async () => ({
       success: true,
-      review: 'Code review content',
-    })),
-    prompt: mock(async () => ({ text: 'Response', success: true })),
-    generateCommitMessage: mock(async () => 'feat: commit message'),
-    generateBranchName: mock(async () => 'feature/branch'),
-    reviewCode: mock(async () => ({ hasIssues: false, review: 'Good' })),
-    extractErrorPatterns: mock(async () => 'Patterns'),
-    createValidationAgent: mock(async () => {}),
-  };
+      review: '# Code Review\n\nReview content here',
+    }));
+  }
+  return mock(async () => ({
+    success: false,
+    review: '',
+    error: 'Review failed',
+  }));
 }
 
 describe('prepare-completion command', () => {
@@ -159,15 +158,20 @@ describe('runCodeReview', () => {
       mkdirSync: mock(() => {}),
     };
 
-    const mockClaudeSDK = createMockClaudeSDK();
+    const mockPerformCodeReview = mock(async () => ({
+      success: true,
+      review: '# Code Review\n\nReview content here',
+    }));
+
     const mockLogger = createMockLogger();
 
     const deps: PrepareCompletionDeps = {
       console: mockConsole as any,
       isCodeReviewEnabled: mock(() => true),
+      getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
       fileOps: mockFileOps as any,
-      claudeSDK: mockClaudeSDK as any,
+      performCodeReview: mockPerformCodeReview,
       logger: mockLogger,
       execSync: mock(() => 'git diff content'),
       getCurrentBranch: mock(() => 'feature/test'),
@@ -179,13 +183,14 @@ describe('runCodeReview', () => {
 
     expect(mockConsole.log).toHaveBeenCalledWith('### 🔍 Code Review\n');
     expect(mockConsole.log).toHaveBeenCalledWith('Running comprehensive code review with Claude SDK...');
-    expect(mockClaudeSDK.performCodeReview).toHaveBeenCalledWith(
-      'TASK_001',
-      'Task Title',
-      '# Task Title\n\n## Requirements\n\nTest requirements',
-      'git diff content',
-      '/project',
-    );
+    expect(mockPerformCodeReview).toHaveBeenCalledWith({
+      taskId: 'TASK_001',
+      taskTitle: 'Task Title',
+      taskRequirements: '# Task Title\n\n## Requirements\n\nTest requirements',
+      gitDiff: 'git diff content',
+      projectRoot: '/project',
+      mergeBase: 'abc123',
+    });
     expect(mockConsole.log).toHaveBeenCalledWith(
       '✅ Code review completed: code-reviews/TASK_001_2025-01-01_1200-UTC.md\n',
     );
@@ -207,22 +212,21 @@ describe('runCodeReview', () => {
       mkdirSync: mock(() => {}),
     };
 
-    const mockClaudeSDK = {
-      performCodeReview: mock(async () => ({
-        success: false,
-        review: '',
-        error: 'API timeout',
-      })),
-    };
+    const mockPerformCodeReview = mock(async () => ({
+      success: false,
+      review: '',
+      error: 'API timeout',
+    }));
 
     const mockLogger = createMockLogger();
 
     const deps: PrepareCompletionDeps = {
       console: mockConsole as any,
       isCodeReviewEnabled: mock(() => true),
+      getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
       fileOps: mockFileOps as any,
-      claudeSDK: mockClaudeSDK as any,
+      performCodeReview: mockPerformCodeReview,
       logger: mockLogger,
       execSync: mock(() => 'git diff content'),
       getCurrentBranch: mock(() => 'main'),
@@ -389,7 +393,7 @@ describe('prepareCompletionAction', () => {
     }));
 
     // Mock the runCodeReview dependency too
-    const mockClaudeSDK = createMockClaudeSDK();
+    const mockPerformCodeReview = createMockPerformCodeReview(true);
 
     const deps: PrepareCompletionDeps = {
       console: mockConsole as any,
@@ -397,7 +401,7 @@ describe('prepareCompletionAction', () => {
       runValidationChecks: mockRunValidation,
       getConfig: mock(() => ({ features: { code_review: { enabled: false } } })),
       isCodeReviewEnabled: mock(() => false),
-      claudeSDK: mockClaudeSDK as any,
+      performCodeReview: mockPerformCodeReview,
     };
 
     await prepareCompletionAction(deps);
