@@ -439,7 +439,7 @@ describe('statusline', () => {
       // This test verifies that getCurrentBranch in git-helpers.ts
       // uses stdio options to suppress stderr
       const gitHelpers = await import('../lib/git-helpers');
-      const mockExec = mock((cmd: string, options?: any) => {
+      const mockExec = mock((_cmd: string, options?: any) => {
         // Verify stdio option is passed to suppress stderr
         expect(options?.stdio).toEqual(['pipe', 'pipe', 'ignore']);
         throw new Error('not a git repository');
