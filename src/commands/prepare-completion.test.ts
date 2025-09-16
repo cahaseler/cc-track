@@ -81,15 +81,20 @@ describe('runCodeReview', () => {
       }),
       mkdirSync: mock(() => {}),
     };
-    const claudeSDK = {
-      performCodeReview: mock(async () => ({ success: true })),
-    };
+
+    const performCodeReview = mock(async () => ({
+      success: true,
+      review: '# Code Review\n\nReview content here',
+    }));
+
     const logger = createMockLogger();
+
     const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
+      getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
       fileOps,
-      claudeSDK: claudeSDK as any,
+      performCodeReview: performCodeReview as any,
       logger,
       execSync: mock(() => 'git diff content'),
       getCurrentBranch: mock(() => 'feature/test'),
@@ -101,12 +106,13 @@ describe('runCodeReview', () => {
     expect(result.messages?.some((msg) => msg.includes('Code review completed'))).toBeTrue();
     expect(result.data?.reviewGenerated).toBeTrue();
     expect(result.data?.reviewFile).toContain('code-reviews/TASK_001_2025-01-01_1200-UTC.md');
-    expect(claudeSDK.performCodeReview).toHaveBeenCalled();
+    expect(performCodeReview).toHaveBeenCalled();
   });
 
   test('includes warning when review fails', async () => {
     const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
+      getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
       fileOps: {
         existsSync: mock(() => false),
@@ -114,9 +120,7 @@ describe('runCodeReview', () => {
         readFileSync: mock(() => '# Task'),
         mkdirSync: mock(() => {}),
       },
-      claudeSDK: {
-        performCodeReview: mock(async () => ({ success: false, error: 'API timeout' })),
-      } as any,
+      performCodeReview: mock(async () => ({ success: false, error: 'API timeout' })) as any,
       execSync: mock(() => ''),
       getCurrentBranch: mock(() => 'main'),
       getDefaultBranch: mock(() => 'main'),
@@ -198,9 +202,7 @@ describe('prepareCompletionAction', () => {
       isCodeReviewEnabled: mock(() => true),
       getActiveTaskId: mock(() => 'TASK_001'),
       fileOps,
-      claudeSDK: {
-        performCodeReview: mock(async () => ({ success: true })),
-      } as any,
+      performCodeReview: mock(async () => ({ success: true })) as any,
       execSync: mock(() => ''),
       getCurrentBranch: mock(() => 'feature/branch'),
       getDefaultBranch: mock(() => 'main'),

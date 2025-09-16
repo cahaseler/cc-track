@@ -74,7 +74,8 @@
     },
     "code_review": {
       "enabled": true,
-      "description": "Run comprehensive code review using Claude SDK before task completion"
+      "description": "Run comprehensive code review using Claude SDK or CodeRabbit CLI before task completion",
+      "tool": "claude"
     }
   },
   "logging": {

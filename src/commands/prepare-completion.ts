@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { getActiveTaskId } from '../lib/claude-md';
-import { ClaudeSDK } from '../lib/claude-sdk';
-import { getConfig, isCodeReviewEnabled } from '../lib/config';
+import { performCodeReview } from '../lib/code-review';
+import { getCodeReviewTool, getConfig, isCodeReviewEnabled } from '../lib/config';
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
@@ -19,9 +19,10 @@ export interface PrepareCompletionDeps {
     readFileSync: typeof readFileSync;
     readdirSync: typeof readdirSync;
   };
-  claudeSDK?: typeof ClaudeSDK;
+  performCodeReview?: typeof performCodeReview;
   getActiveTaskId?: typeof getActiveTaskId;
   isCodeReviewEnabled?: typeof isCodeReviewEnabled;
+  getCodeReviewTool?: typeof getCodeReviewTool;
   getConfig?: typeof getConfig;
   getCurrentBranch?: typeof getCurrentBranch;
   getDefaultBranch?: typeof getDefaultBranch;
@@ -47,9 +48,10 @@ export async function runCodeReview(
   const {
     execSync: exec = execSync,
     fileOps = { existsSync, mkdirSync, readFileSync, readdirSync },
-    claudeSDK = ClaudeSDK,
+    performCodeReview: performReview = performCodeReview,
     getActiveTaskId: getTaskId = getActiveTaskId,
     isCodeReviewEnabled: isReviewEnabled = isCodeReviewEnabled,
+    getCodeReviewTool: getReviewTool = getCodeReviewTool,
     getCurrentBranch: getCurrent = getCurrentBranch,
     getDefaultBranch: getDefault = getDefaultBranch,
     getMergeBase: getMerge = getMergeBase,
@@ -82,8 +84,11 @@ export async function runCodeReview(
         messages.push(`✅ Code review already exists: code-reviews/${existingReview}`);
         messages.push('Skipping code review generation (only one review per task).\n');
       } else {
-        messages.push('Running comprehensive code review with Claude SDK...');
-        messages.push('This may take up to 10 minutes for thorough analysis.\n');
+        const reviewTool = getReviewTool();
+        messages.push(
+          `Running comprehensive code review with ${reviewTool === 'claude' ? 'Claude SDK' : 'CodeRabbit CLI'}...`,
+        );
+        messages.push(`This may take up to ${reviewTool === 'claude' ? '10' : '30'} minutes for thorough analysis.\n`);
 
         try {
           // Get task details
@@ -98,9 +103,10 @@ export async function runCodeReview(
           const currentBranch = getCurrent(projectRoot);
           const defaultBranch = getDefault(projectRoot);
           let gitDiff = '';
+          let mergeBase: string | null = null;
 
           if (currentBranch && currentBranch !== defaultBranch) {
-            const mergeBase = getMerge(currentBranch, defaultBranch, projectRoot);
+            mergeBase = getMerge(currentBranch, defaultBranch, projectRoot);
             if (mergeBase) {
               try {
                 gitDiff = exec(`git diff ${mergeBase}..HEAD`, {
@@ -132,7 +138,14 @@ export async function runCodeReview(
           }
 
           logger.info('Starting code review', { taskId, taskTitle });
-          const reviewResult = await claudeSDK.performCodeReview(taskId, taskTitle, taskContent, gitDiff, projectRoot);
+          const reviewResult = await performReview({
+            taskId,
+            taskTitle,
+            taskRequirements: taskContent,
+            gitDiff,
+            projectRoot,
+            mergeBase: mergeBase || undefined,
+          });
 
           if (reviewResult.success) {
             // Check if a review file was created
@@ -433,9 +446,10 @@ function mapPrepareCompletionDeps(deps: CommandDeps): PrepareCompletionDeps {
       readFileSync: deps.fs.readFileSync,
       readdirSync: deps.fs.readdirSync,
     },
-    claudeSDK: deps.claudeSdk,
+    performCodeReview,
     getActiveTaskId: deps.claudeMd.getActiveTaskId,
     isCodeReviewEnabled: deps.config.isCodeReviewEnabled,
+    getCodeReviewTool,
     getConfig: deps.config.getConfig,
     getCurrentBranch: (cwd: string) => deps.git.getCurrentBranch(cwd),
     getDefaultBranch: (cwd: string) => deps.git.getDefaultBranch(cwd),

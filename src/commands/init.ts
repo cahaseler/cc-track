@@ -158,9 +158,13 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - If yes: enable \`pre_compact: true\` and \`post_compact: true\`
 
    **Code Review** (if task management is enabled):
-   - Explain: "Code review runs a comprehensive Claude SDK agent before task completion to review changes against requirements, check for security issues, and assess code quality."
-   - Ask: "Would you like automatic code review before completing tasks? (takes up to 10 minutes per review)"
-   - If yes: enable \`code_review: true\`
+   - Explain: "Code review analyzes changes before task completion to review against requirements, check for security issues, and assess code quality."
+   - Ask: "Would you like automatic code review before completing tasks?"
+   - If yes:
+     - Ask: "Which code review tool would you prefer?"
+       - **Claude SDK** (default): Comprehensive agent-based review, ~10 minutes, thorough analysis
+       - **CodeRabbit CLI**: Fast focused review, ~2-5 minutes, actionable feedback
+     - Set \`code_review: { enabled: true, tool: 'claude' | 'coderabbit' }\`
    - Note: "This will only run once per task when validation passes, and won't block task completion."
 
    **Status Line**:
