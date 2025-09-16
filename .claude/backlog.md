@@ -18,6 +18,5 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-15] block attempts to add stupid comments with the preToolUse hook
 - [2025-09-15] Clean up SDK type usage across codebase: Import proper types from @anthropic-ai/claude-code for all SDK interactions. Fix internal prompt() function to use typed options and messages. Add canUseTool restrictions where appropriate (e.g., createValidationAgent should probably restrict Write). Replace type assertions with proper type guards or document why they're safe. See capture-plan.ts lines 224-248 for correct implementation pattern.
-- [2025-09-15] ability to create a new task based on an existing github issue. Not sure how best to do this though.
 - [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
 - [2025-09-15] proper unit testing for commands

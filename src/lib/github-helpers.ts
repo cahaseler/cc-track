@@ -116,6 +116,42 @@ export class GitHubHelpers {
   }
 
   /**
+   * Get issue details from GitHub
+   */
+  getIssue(issueNumber: number | string, cwd: string): GitHubIssue | null {
+    try {
+      logger.info('Fetching GitHub issue', { issueNumber });
+
+      // If a URL is provided, extract the issue number
+      const issueId =
+        typeof issueNumber === 'string' && issueNumber.includes('/')
+          ? this.extractIssueNumberFromUrl(issueNumber)
+          : issueNumber;
+
+      if (!issueId) {
+        logger.error('Invalid issue identifier', { issueNumber });
+        return null;
+      }
+
+      // Fetch issue details using gh CLI
+      const jsonFields = 'number,title,body,url,state,labels,assignees,milestone';
+      const result = this.exec(`gh issue view ${issueId} --json ${jsonFields}`, { cwd });
+
+      const issue = JSON.parse(result) as GitHubIssue;
+      logger.info('Issue fetched successfully', {
+        number: issue.number,
+        title: issue.title,
+        state: issue.state,
+      });
+
+      return issue;
+    } catch (error) {
+      logger.error('Failed to fetch GitHub issue', { error, issueNumber });
+      return null;
+    }
+  }
+
+  /**
    * Create a branch linked to a GitHub issue using gh issue develop
    */
   createIssueBranch(issueNumber: number, cwd: string): string | null {
