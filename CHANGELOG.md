@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/cahaseler/cc-track/compare/v1.24.1...v1.25.0) (2025-09-16)
+
+
+### Features
+
+* complete TASK_062 - TASK_062: Clean up SDK type usage across codebase ([db85d65](https://github.com/cahaseler/cc-track/commit/db85d6529d08700d0ad6b0bd72dc8263556027f9))
+
 ## [1.24.1](https://github.com/cahaseler/cc-track/compare/v1.24.0...v1.24.1) (2025-09-16)
 
 
