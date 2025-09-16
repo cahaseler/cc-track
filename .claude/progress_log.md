@@ -218,6 +218,11 @@
   Files: src/hooks/capture-plan.ts, src/hooks/capture-plan.test.ts
   Key Achievement: Refactored handleGitHubIntegration to return issue object, reordered operations to create issues before branches, and fixed condition logic. Now properly uses `gh issue develop` when configured, ensuring PRs automatically link to their issues.
 
+[2025-09-16 13:15] - Completed: Task 061 - Create Task from GitHub Issue Implementation
+  Details: Implemented new command to create cc-track tasks directly from GitHub issues
+  Files: src/commands/create-task-from-issue.ts, src/lib/github-helpers.ts, src/commands/slash-commands/task-from-issue.md
+  Key Achievement: Successfully created full-featured command that fetches GitHub issues and transforms them into comprehensive cc-track tasks using existing enrichment infrastructure. Includes CLI command with --no-branch and --no-research options, slash command for Claude Code, and proper unit tests. Fixed security vulnerabilities identified in code review.
+
 [2025-09-12 22:10] - Completed: Task 038 - Remove Unused Standalone Function Exports
   Details: Cleaned up ~20 unused standalone function exports to clarify class-based architecture pattern
   Files: src/lib/github-helpers.ts, src/lib/git-helpers.ts, src/lib/claude-md.ts, src/hooks/edit-validation.ts, knip.json

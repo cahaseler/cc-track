@@ -134,6 +134,71 @@ describe('GitHubHelpers', () => {
     });
   });
 
+  describe('getIssue', () => {
+    test('fetches issue by number and returns data', () => {
+      const issueData = {
+        number: 42,
+        title: 'Test Issue',
+        body: 'Issue description',
+        url: 'https://github.com/user/repo/issues/42',
+        state: 'open',
+        labels: [{ name: 'bug' }, { name: 'high-priority' }],
+        assignees: [{ login: 'user1' }],
+        milestone: { title: 'v1.0.0' },
+      };
+      mockExec = mock(() => JSON.stringify(issueData));
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      const issue = gitHubHelpers.getIssue(42, '/test');
+
+      expect(issue).toEqual(issueData);
+      expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('gh issue view 42 --json'), { cwd: '/test' });
+    });
+
+    test('fetches issue by URL and returns data', () => {
+      const issueData = {
+        number: 99,
+        title: 'URL Issue',
+        body: 'From URL',
+        url: 'https://github.com/user/repo/issues/99',
+        state: 'closed',
+      };
+      mockExec = mock(() => JSON.stringify(issueData));
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      const issue = gitHubHelpers.getIssue('https://github.com/user/repo/issues/99', '/test');
+
+      expect(issue).toEqual(issueData);
+      expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('gh issue view 99 --json'), { cwd: '/test' });
+    });
+
+    test('returns null when issue number extraction fails from URL', () => {
+      mockExec = mock(() => '');
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      const issue = gitHubHelpers.getIssue('invalid-url', '/test');
+      expect(issue).toBeNull();
+    });
+
+    test('returns null when gh command fails', () => {
+      mockExec = mock(() => {
+        throw new Error('Issue not found');
+      });
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      const issue = gitHubHelpers.getIssue(404, '/test');
+      expect(issue).toBeNull();
+    });
+
+    test('returns null when JSON parsing fails', () => {
+      mockExec = mock(() => 'invalid json');
+      gitHubHelpers = new GitHubHelpers(mockExec);
+
+      const issue = gitHubHelpers.getIssue(1, '/test');
+      expect(issue).toBeNull();
+    });
+  });
+
   describe('createPullRequest', () => {
     test('creates PR and returns data', () => {
       mockExec = mock(() => 'https://github.com/user/repo/pull/456\n');

@@ -45,6 +45,10 @@ export interface GitHubIssue {
   url: string;
   title: string;
   state: string;
+  body?: string;
+  labels?: Array<{ name: string }>;
+  assignees?: Array<{ login: string }>;
+  milestone?: { title: string };
 }
 
 export interface ConfigFeatures {
