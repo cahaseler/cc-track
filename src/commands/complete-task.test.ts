@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test';
 import type { ExecSyncOptions } from 'node:child_process';
 import path from 'node:path';
+import { createMockLogger } from '../test-utils/command-mocks';
 import {
   type CompleteTaskDeps,
   type CompleteTaskOptions,
@@ -8,7 +9,6 @@ import {
   createCompleteTaskCommand,
   runCompleteTask,
 } from './complete-task';
-import { createMockLogger } from '../test-utils/command-mocks';
 
 interface MockState {
   readonly deps: CompleteTaskDeps;

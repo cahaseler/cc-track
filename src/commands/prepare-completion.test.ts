@@ -1,11 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test';
+import { createMockLogger } from '../test-utils/command-mocks';
 import {
   createPrepareCompletionCommand,
   type PrepareCompletionDeps,
   prepareCompletionAction,
   runCodeReview,
 } from './prepare-completion';
-import { createMockLogger } from '../test-utils/command-mocks';
 
 describe('prepare-completion command', () => {
   test('has correct name and description', () => {
