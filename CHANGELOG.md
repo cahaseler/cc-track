@@ -1,3 +1,10 @@
+## [1.24.1](https://github.com/cahaseler/cc-track/compare/v1.24.0...v1.24.1) (2025-09-16)
+
+
+### Bug Fixes
+
+* only stage task file instead of all files when creating task from issue ([3d3e39d](https://github.com/cahaseler/cc-track/commit/3d3e39d1919c5d13d4444a50488c8aa3395acfea))
+
 # [1.24.0](https://github.com/cahaseler/cc-track/compare/v1.23.0...v1.24.0) (2025-09-16)
 
 
