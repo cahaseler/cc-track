@@ -540,6 +540,14 @@ function handleGitHubWorkflow(
 
   if (prWorkflow) {
     const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
+
+    // Check if we're on the correct branch before pushing
+    if (branchContext.currentBranch !== branchContext.taskBranchName) {
+      state.git.notes = `Task branch ${branchContext.taskBranchName} not currently checked out`;
+      warnings.push(`Not on task branch (current: ${branchContext.currentBranch}, expected: ${branchContext.taskBranchName})`);
+      return null;
+    }
+
     const pushSuccess = deps.pushCurrentBranch(projectRoot);
     if (!pushSuccess) {
       state.git.branchPushed = false;
