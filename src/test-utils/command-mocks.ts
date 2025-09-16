@@ -1,14 +1,14 @@
 import { mock } from 'bun:test';
+import path from 'node:path';
 import type {
   ConsoleLike,
-  ProcessLike,
   FileSystemLike,
-  TimeProvider,
   LoggerFactory,
-  PartialCommandDeps
+  PartialCommandDeps,
+  ProcessLike,
+  TimeProvider,
 } from '../commands/context';
 import type { createLogger } from '../lib/logger';
-import path from 'node:path';
 
 /**
  * Mock console that captures all output
@@ -72,7 +72,9 @@ export function createMockFileSystem(initialFiles?: Record<string, string>): Moc
   const files = new Map<string, string>(Object.entries(initialFiles ?? {}));
 
   return {
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     existsSync: (targetPath: any) => files.has(String(targetPath)),
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     readFileSync: ((targetPath: any, _encoding?: any) => {
       const pathStr = String(targetPath);
       const value = files.get(pathStr);
@@ -80,18 +82,25 @@ export function createMockFileSystem(initialFiles?: Record<string, string>): Moc
         throw new Error(`File not found: ${pathStr}`);
       }
       return value;
+      // biome-ignore lint/suspicious/noExplicitAny: Cast needed for type compatibility
     }) as any,
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     writeFileSync: (targetPath: any, content: any, _options?: any) => {
       files.set(String(targetPath), content.toString());
     },
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     appendFileSync: (targetPath: any, content: any, _options?: any) => {
       const pathStr = String(targetPath);
       const previous = files.get(pathStr) ?? '';
       files.set(pathStr, `${previous}${content.toString()}`);
     },
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     mkdirSync: mock(() => {}) as any,
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     readdirSync: mock(() => []) as any,
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     unlinkSync: mock(() => {}) as any,
+    // biome-ignore lint/suspicious/noExplicitAny: Mock fs methods need flexible types
     copyFileSync: mock(() => {}) as any,
     files,
   };
@@ -116,13 +125,14 @@ export function createMockTimeProvider(fixedDate = '2025-01-01T00:00:00Z'): Time
  * Mock logger factory
  */
 export function createMockLoggerFactory(): LoggerFactory {
-  return (_scope: string) => ({
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>);
+  return (_scope: string) =>
+    ({
+      debug: mock(() => {}),
+      info: mock(() => {}),
+      warn: mock(() => {}),
+      error: mock(() => {}),
+      exception: mock(() => {}),
+    }) as unknown as ReturnType<typeof createLogger>;
 }
 
 /**
@@ -180,7 +190,9 @@ export function createTestDeps(options?: {
     errors: console.errors,
     warnings: console.warnings,
     files: fs.files,
-    get exitCode() { return process.exitCode; },
+    get exitCode() {
+      return process.exitCode;
+    },
   };
 }
 
@@ -227,11 +239,7 @@ export function getCommandOutput(deps: TestDeps): {
 /**
  * Helper to assert file was written with expected content
  */
-export function assertFileWritten(
-  deps: TestDeps,
-  filePath: string,
-  expectedContent?: string | RegExp
-): void {
+export function assertFileWritten(deps: TestDeps, filePath: string, expectedContent?: string | RegExp): void {
   const content = deps.files.get(filePath);
   if (!content) {
     throw new Error(`Expected file ${filePath} to be written, but it was not`);
@@ -255,9 +263,11 @@ export function assertFileWritten(
  */
 export function assertConsoleContains(deps: TestDeps, expected: string, type: 'log' | 'error' | 'warn' = 'log'): void {
   const output = type === 'log' ? deps.logs : type === 'error' ? deps.errors : deps.warnings;
-  const found = output.some(line => line.includes(expected));
+  const found = output.some((line) => line.includes(expected));
 
   if (!found) {
-    throw new Error(`Expected ${type} output to contain "${expected}", but it was not found.\nActual output:\n${output.join('\n')}`);
+    throw new Error(
+      `Expected ${type} output to contain "${expected}", but it was not found.\nActual output:\n${output.join('\n')}`,
+    );
   }
 }
