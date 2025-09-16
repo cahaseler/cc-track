@@ -8,6 +8,8 @@ import { getCodeReviewTool, getConfig, isCodeReviewEnabled } from '../lib/config
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
+import type { CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, isCommandSuccess, resolveCommandDeps } from './context';
 
 export interface PrepareCompletionDeps {
   execSync?: typeof execSync;
@@ -27,18 +29,22 @@ export interface PrepareCompletionDeps {
   getMergeBase?: typeof getMergeBase;
   runValidationChecks?: typeof runValidationChecks;
   logger?: ReturnType<typeof createLogger>;
-  console?: typeof console;
-  process?: typeof process;
+  cwd?: () => string;
 }
 
 /**
  * Run code review for the active task
  */
+export interface CodeReviewResultData {
+  reviewFile?: string;
+  reviewGenerated?: boolean;
+}
+
 export async function runCodeReview(
   projectRoot: string,
   validationPassed: boolean,
   deps: PrepareCompletionDeps = {},
-): Promise<void> {
+): Promise<CommandResult<CodeReviewResultData>> {
   const {
     execSync: exec = execSync,
     fileOps = { existsSync, mkdirSync, readFileSync, readdirSync },
@@ -50,17 +56,19 @@ export async function runCodeReview(
     getDefaultBranch: getDefault = getDefaultBranch,
     getMergeBase: getMerge = getMergeBase,
     logger = createLogger('prepare-completion'),
-    console: cons = console,
   } = deps;
+
+  const messages: string[] = [];
+  const warnings: string[] = [];
 
   // Run code review if validation passed and feature is enabled
   if (validationPassed && isReviewEnabled()) {
-    cons.log('### 🔍 Code Review\n');
+    messages.push('### 🔍 Code Review\n');
 
     const taskId = getTaskId(projectRoot);
 
     if (!taskId) {
-      cons.log('⚠️ Could not run code review: No active task found\n');
+      messages.push('⚠️ Could not run code review: No active task found\n');
     } else {
       // Check if review already exists for this task
       const codeReviewsDir = join(projectRoot, 'code-reviews');
@@ -73,14 +81,14 @@ export async function runCodeReview(
       }
 
       if (existingReview) {
-        cons.log(`✅ Code review already exists: code-reviews/${existingReview}`);
-        cons.log('Skipping code review generation (only one review per task).\n');
+        messages.push(`✅ Code review already exists: code-reviews/${existingReview}`);
+        messages.push('Skipping code review generation (only one review per task).\n');
       } else {
         const reviewTool = getReviewTool();
-        cons.log(
+        messages.push(
           `Running comprehensive code review with ${reviewTool === 'claude' ? 'Claude SDK' : 'CodeRabbit CLI'}...`,
         );
-        cons.log(`This may take up to ${reviewTool === 'claude' ? '10' : '30'} minutes for thorough analysis.\n`);
+        messages.push(`This may take up to ${reviewTool === 'claude' ? '10' : '30'} minutes for thorough analysis.\n`);
 
         try {
           // Get task details
@@ -146,69 +154,88 @@ export async function runCodeReview(
             const newReview = files.find((f) => reviewPattern.test(f));
 
             if (newReview) {
-              cons.log(`✅ Code review completed: code-reviews/${newReview}\n`);
+              messages.push(`✅ Code review completed: code-reviews/${newReview}\n`);
 
               // Read and display the full review content
               const reviewPath = join(codeReviewsDir, newReview);
               const reviewContent = fileOps.readFileSync(reviewPath, 'utf-8');
 
-              cons.log('### 📄 Code Review Results\n');
-              cons.log('```markdown');
-              cons.log(reviewContent);
-              cons.log('```\n');
+              messages.push('### 📄 Code Review Results\n');
+              messages.push('```markdown');
+              messages.push(reviewContent);
+              messages.push('```\n');
 
-              cons.log('### 🎯 Required Actions for Claude\n');
-              cons.log('You MUST present a comprehensive analysis of this code review to the user:\n');
-              cons.log('1. **Share ALL findings** - Present every finding from the review above to the user');
-              cons.log('2. **For issues you will fix:**');
-              cons.log('   - List each issue you plan to address');
-              cons.log('   - Explain exactly how you will fix it');
-              cons.log('   - Provide your reasoning for the fix');
-              cons.log('3. **For issues you disagree with:**');
-              cons.log('   - Clearly identify which findings you disagree with');
-              cons.log('   - Provide detailed technical justification for your disagreement');
-              cons.log('   - Explain why the suggested change would not improve the code');
-              cons.log('4. **For low-priority issues:**');
-              cons.log('   - Identify findings you consider non-critical');
-              cons.log('   - Explain why they are low priority');
-              cons.log('   - Justify why they should not block task completion');
-              cons.log('5. **Summary** - Provide a clear summary of:');
-              cons.log('   - Critical issues that MUST be fixed before completion');
-              cons.log('   - Nice-to-have improvements for future consideration');
-              cons.log('   - Review findings that are incorrect or not applicable\n');
-              cons.log(
+              messages.push('### 🎯 Required Actions for Claude\n');
+              messages.push('You MUST present a comprehensive analysis of this code review to the user:\n');
+              messages.push('1. **Share ALL findings** - Present every finding from the review above to the user');
+              messages.push('2. **For issues you will fix:**');
+              messages.push('   - List each issue you plan to address');
+              messages.push('   - Explain exactly how you will fix it');
+              messages.push('   - Provide your reasoning for the fix');
+              messages.push('3. **For issues you disagree with:**');
+              messages.push('   - Clearly identify which findings you disagree with');
+              messages.push('   - Provide detailed technical justification for your disagreement');
+              messages.push('   - Explain why the suggested change would not improve the code');
+              messages.push('4. **For low-priority issues:**');
+              messages.push('   - Identify findings you consider non-critical');
+              messages.push('   - Explain why they are low priority');
+              messages.push('   - Justify why they should not block task completion');
+              messages.push('5. **Summary** - Provide a clear summary of:');
+              messages.push('   - Critical issues that MUST be fixed before completion');
+              messages.push('   - Nice-to-have improvements for future consideration');
+              messages.push('   - Review findings that are incorrect or not applicable\n');
+              messages.push(
                 '**IMPORTANT:** Do not proceed with fixes until you have presented this analysis to the user and received their feedback.\n',
               );
+
+              return {
+                success: true,
+                messages,
+                warnings,
+                data: { reviewFile: join('code-reviews', newReview), reviewGenerated: true },
+              };
             } else {
-              cons.log('⚠️ Code review completed but no review file was created.\n');
+              warnings.push('⚠️ Code review completed but no review file was created.');
             }
           } else {
-            cons.log(`⚠️ Code review failed: ${reviewResult.error || 'Unknown error'}`);
-            cons.log('You can proceed without the code review.\n');
+            warnings.push(`⚠️ Code review failed: ${reviewResult.error || 'Unknown error'}`);
+            messages.push('You can proceed without the code review.\n');
           }
         } catch (reviewError) {
           logger.error('Code review failed', { error: reviewError });
-          cons.log(`⚠️ Code review error: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
-          cons.log('You can proceed without the code review.\n');
+          warnings.push(`⚠️ Code review error: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
+          messages.push('You can proceed without the code review.\n');
         }
       }
     }
   }
+
+  return {
+    success: true,
+    messages,
+    warnings,
+  };
 }
 
 /**
  * Prepare completion command action
  * Runs validation checks and generates dynamic instructions based on results
  */
-export async function prepareCompletionAction(deps: PrepareCompletionDeps = {}) {
-  const {
-    runValidationChecks: runValidation = runValidationChecks,
-    getConfig: getConf = getConfig,
-    console: cons = console,
-    process: proc = process,
-  } = deps;
+export interface PrepareCompletionResultData {
+  validation?: PreparationResult;
+  readyForCompletion?: boolean;
+  codeReview?: CodeReviewResultData;
+  error?: string;
+}
 
-  const projectRoot = proc.cwd();
+export async function prepareCompletionAction(
+  deps: PrepareCompletionDeps = {},
+): Promise<CommandResult<PrepareCompletionResultData>> {
+  const { runValidationChecks: runValidation = runValidationChecks, getConfig: getConf = getConfig } = deps;
+
+  const projectRoot = deps.cwd ? deps.cwd() : process.cwd();
+  const messages: string[] = [];
+  const warnings: string[] = [];
 
   try {
     // Run validation checks directly
@@ -220,67 +247,69 @@ export async function prepareCompletionAction(deps: PrepareCompletionDeps = {}) 
     }
 
     // Generate dynamic instructions based on the results
-    cons.log('## Prepare Task for Completion\n');
+    messages.push('## Prepare Task for Completion\n');
 
     // Check if validation passed
     const validationPassed = result.readyForCompletion;
 
     // Show validation status
     if (validationPassed) {
-      cons.log('### ✅ Validation Passed\n');
-      cons.log('All validation checks have passed successfully!\n');
+      messages.push('### ✅ Validation Passed\n');
+      messages.push('All validation checks have passed successfully!\n');
     } else {
-      cons.log('### ⚠️ Validation Issues Found\n');
-      cons.log('The following issues need to be resolved before task completion:\n');
+      messages.push('### ⚠️ Validation Issues Found\n');
+      messages.push('The following issues need to be resolved before task completion:\n');
 
       // TypeScript errors
       if (result.validation?.typescript?.passed === false) {
-        cons.log('#### TypeScript Errors');
-        cons.log(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
+        messages.push('#### TypeScript Errors');
+        messages.push(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
         if (result.validation.typescript.errors) {
-          cons.log('```');
-          cons.log(result.validation.typescript.errors.substring(0, 1000));
+          messages.push('```');
+          messages.push(result.validation.typescript.errors.substring(0, 1000));
           if (result.validation.typescript.errors.length > 1000) {
-            cons.log('... (truncated)');
+            messages.push('... (truncated)');
           }
-          cons.log('```\n');
+          messages.push('```\n');
         }
-        cons.log('**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n');
+        messages.push(
+          '**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n',
+        );
       }
 
       // Biome/linting issues
       if (result.validation?.biome?.passed === false) {
-        cons.log('#### Linting Issues');
-        cons.log(`Found ${result.validation.biome.issueCount || 'multiple'} Biome issues.\n`);
+        messages.push('#### Linting Issues');
+        messages.push(`Found ${result.validation.biome.issueCount || 'multiple'} Biome issues.\n`);
         if (result.validation.biome.errors) {
-          cons.log('```');
-          cons.log(result.validation.biome.errors.substring(0, 1000));
+          messages.push('```');
+          messages.push(result.validation.biome.errors.substring(0, 1000));
           if (result.validation.biome.errors.length > 1000) {
-            cons.log('... (truncated)');
+            messages.push('... (truncated)');
           }
-          cons.log('```\n');
+          messages.push('```\n');
         }
-        cons.log('**Action:** Fix linting issues. Many can be auto-fixed with `bunx biome check --write`.\n');
+        messages.push('**Action:** Fix linting issues. Many can be auto-fixed with `bunx biome check --write`.\n');
       }
 
       // Test failures
       if (result.validation?.tests?.passed === false) {
-        cons.log('#### Test Failures');
-        cons.log(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
+        messages.push('#### Test Failures');
+        messages.push(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
         if (result.validation.tests.errors) {
-          cons.log('```');
-          cons.log(result.validation.tests.errors.substring(0, 1000));
+          messages.push('```');
+          messages.push(result.validation.tests.errors.substring(0, 1000));
           if (result.validation.tests.errors.length > 1000) {
-            cons.log('... (truncated)');
+            messages.push('... (truncated)');
           }
-          cons.log('```\n');
+          messages.push('```\n');
         }
-        cons.log('**Action:** Fix failing tests or update test expectations as needed.\n');
+        messages.push('**Action:** Fix failing tests or update test expectations as needed.\n');
       }
 
       // Knip unused code warnings (non-blocking)
       if (result.validation?.knip?.passed === false) {
-        cons.log('#### Unused Code (Optional)');
+        messages.push('#### Unused Code (Optional)');
         const issues = [];
         if (result.validation.knip.unusedFiles) {
           issues.push(`${result.validation.knip.unusedFiles} unused files`);
@@ -291,43 +320,45 @@ export async function prepareCompletionAction(deps: PrepareCompletionDeps = {}) 
         if (result.validation.knip.unusedDeps) {
           issues.push(`${result.validation.knip.unusedDeps} unused dependencies`);
         }
-        cons.log(`Knip found: ${issues.join(', ')}\n`);
-        cons.log("**Note:** These are warnings and won't block completion, but consider cleaning them up.\n");
+        messages.push(`Knip found: ${issues.join(', ')}\n`);
+        messages.push("**Note:** These are warnings and won't block completion, but consider cleaning them up.\n");
       }
     }
 
     // Git status information
     if (result.git?.hasUncommittedChanges) {
-      cons.log('#### Uncommitted Changes');
-      cons.log(`Found ${result.git.modifiedFiles?.length || 'uncommitted'} modified files.\n`);
-      cons.log('**Note:** These will be automatically committed during task completion.\n');
+      messages.push('#### Uncommitted Changes');
+      messages.push(`Found ${result.git.modifiedFiles?.length || 'uncommitted'} modified files.\n`);
+      messages.push('**Note:** These will be automatically committed during task completion.\n');
     }
 
     if (result.git?.wipCommitCount > 0) {
-      cons.log('#### WIP Commits');
-      cons.log(`Found ${result.git.wipCommitCount} WIP commits that will be squashed during completion.\n`);
+      messages.push('#### WIP Commits');
+      messages.push(`Found ${result.git.wipCommitCount} WIP commits that will be squashed during completion.\n`);
     }
 
     // Task status check
     if (result.task?.status !== 'in_progress') {
-      cons.log('#### Task Status');
-      cons.log(`Task status is '${result.task?.status || 'unknown'}', expected 'in_progress'.\n`);
-      cons.log("**Note:** This won't block completion but is unusual.\n");
+      messages.push('#### Task Status');
+      messages.push(`Task status is '${result.task?.status || 'unknown'}', expected 'in_progress'.\n`);
+      messages.push("**Note:** This won't block completion but is unusual.\n");
     }
 
     // Run code review
-    await runCodeReview(projectRoot, validationPassed, deps);
+    const codeReviewResult = await runCodeReview(projectRoot, validationPassed, deps);
+    messages.push(...(codeReviewResult.messages ?? []));
+    warnings.push(...(codeReviewResult.warnings ?? []));
 
     // Documentation update reminder - only if validation passed
     if (validationPassed) {
-      cons.log('### Documentation Updates\n');
-      cons.log('Update the task documentation:');
-      cons.log('1. Update "## Recent Progress" section in the task file, but do not update the status yet');
-      cons.log('2. Note any significant decisions in decision_log.md');
-      cons.log('3. Document any new patterns in system_patterns.md');
-      cons.log('4. Update progress_log.md with what was accomplished');
-      cons.log('5. If this task came from the backlog, remove it from backlog.md');
-      cons.log('6. Let the stop-review hook automatically commit your changes\n');
+      messages.push('### Documentation Updates\n');
+      messages.push('Update the task documentation:');
+      messages.push('1. Update "## Recent Progress" section in the task file, but do not update the status yet');
+      messages.push('2. Note any significant decisions in decision_log.md');
+      messages.push('3. Document any new patterns in system_patterns.md');
+      messages.push('4. Update progress_log.md with what was accomplished');
+      messages.push('5. If this task came from the backlog, remove it from backlog.md');
+      messages.push('6. Let the stop-review hook automatically commit your changes\n');
     }
 
     // Journal reflection reminder (only if validation passed and private journal is enabled)
@@ -335,62 +366,109 @@ export async function prepareCompletionAction(deps: PrepareCompletionDeps = {}) 
     const hasPrivateJournal = config.features?.private_journal?.enabled === true;
 
     if (validationPassed && hasPrivateJournal) {
-      cons.log('### Journal Reflection\n');
-      cons.log('Consider recording insights about:');
-      cons.log('- Technical challenges encountered and solutions');
-      cons.log('- Patterns that worked well or poorly');
-      cons.log('- Any learnings for future tasks\n');
+      messages.push('### Journal Reflection\n');
+      messages.push('Consider recording insights about:');
+      messages.push('- Technical challenges encountered and solutions');
+      messages.push('- Patterns that worked well or poorly');
+      messages.push('- Any learnings for future tasks\n');
     }
 
-    cons.log('### Next Steps\n');
+    messages.push('### Next Steps\n');
     if (!validationPassed) {
-      cons.log('1. Fix the validation issues listed above');
-      cons.log('2. Ask the user to run `/prepare-completion` again to verify all issues are resolved\n');
+      messages.push('1. Fix the validation issues listed above');
+      messages.push('2. Ask the user to run `/prepare-completion` again to verify all issues are resolved\n');
     } else {
-      cons.log('1. Complete all documentation updates above');
+      messages.push('1. Complete all documentation updates above');
       if (hasPrivateJournal) {
-        cons.log('2. Record any insights in your journal');
-        cons.log('3. Ask the user to run `/complete-task` to finalize the task\n');
+        messages.push('2. Record any insights in your journal');
+        messages.push('3. Ask the user to run `/complete-task` to finalize the task\n');
       } else {
-        cons.log('2. Ask the user to run `/complete-task` to finalize the task\n');
+        messages.push('2. Ask the user to run `/complete-task` to finalize the task\n');
       }
-      cons.log('**✅ Task is ready for completion!**\n');
+      messages.push('**✅ Task is ready for completion!**\n');
     }
 
-    // Always exit with success so the output is passed to Claude
-    // The command already outputs detailed feedback about what needs fixing
-    proc.exit(0);
+    const codeReviewData = isCommandSuccess(codeReviewResult) ? codeReviewResult.data : undefined;
+
+    return {
+      success: true,
+      messages,
+      warnings,
+      data: {
+        validation: result,
+        readyForCompletion: validationPassed,
+        codeReview: codeReviewData,
+      },
+      exitCode: 0,
+    };
   } catch (error) {
     // Handle cases where validation-checks command fails completely
-    cons.log('## ❌ Validation Check Failed\n');
+    messages.push('## ❌ Validation Check Failed\n');
 
     const err = error as { code?: string; status?: number; message?: string; stderr?: string };
     if (err.code === 'ENOENT') {
-      cons.log('Error: Could not find cc-track binary.\n');
-      cons.log(
+      messages.push('Error: Could not find cc-track binary.\n');
+      messages.push(
         'Please ensure the project is built with: `bun build ./src/cli/index.ts --compile --outfile dist/cc-track`',
       );
     } else if (err.status === 127) {
-      cons.log('Error: cc-track command not found.\n');
-      cons.log('Please ensure the project is built properly.');
+      messages.push('Error: cc-track command not found.\n');
+      messages.push('Please ensure the project is built properly.');
     } else {
-      cons.log(`Error running validation checks: ${err.message || 'Unknown error'}\n`);
+      messages.push(`Error running validation checks: ${err.message || 'Unknown error'}\n`);
       if (err.stderr) {
-        cons.log('Error details:');
-        cons.log(err.stderr);
+        messages.push('Error details:');
+        messages.push(err.stderr);
       }
     }
 
-    // Exit with 0 so Claude sees the error message
-    proc.exit(0);
+    return {
+      success: true,
+      messages,
+      warnings,
+      data: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      exitCode: 0,
+    };
   }
 }
 
 /**
  * Create prepare-completion command
  */
-export function createPrepareCompletionCommand(): Command {
+export function createPrepareCompletionCommand(overrides?: PartialCommandDeps): Command {
   return new Command('prepare-completion')
     .description('Prepare task for completion by running validation and generating fix instructions')
-    .action(() => prepareCompletionAction());
+    .action(async () => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        // Inline the dependency mapping - no need for separate function
+        const prepDeps: PrepareCompletionDeps = {
+          execSync: deps.childProcess.execSync,
+          fileOps: {
+            existsSync: deps.fs.existsSync,
+            mkdirSync: deps.fs.mkdirSync,
+            readFileSync: deps.fs.readFileSync,
+            readdirSync: deps.fs.readdirSync,
+          },
+          performCodeReview,
+          getActiveTaskId: deps.claudeMd.getActiveTaskId,
+          isCodeReviewEnabled: deps.config.isCodeReviewEnabled,
+          getCodeReviewTool,
+          getConfig: deps.config.getConfig,
+          getCurrentBranch: (cwd: string) => deps.git.getCurrentBranch(cwd),
+          getDefaultBranch: (cwd: string) => deps.git.getDefaultBranch(cwd),
+          getMergeBase: (branch: string, defaultBranch: string, cwd: string) =>
+            deps.git.getMergeBase(branch, defaultBranch, cwd),
+          runValidationChecks: deps.validation.runValidationChecks,
+          logger: deps.logger('prepare-completion-command'),
+          cwd: () => deps.process.cwd(),
+        };
+        const result = await prepareCompletionAction(prepDeps);
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
 }

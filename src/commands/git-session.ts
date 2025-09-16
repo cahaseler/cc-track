@@ -1,23 +1,51 @@
-import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import type { execSync } from 'node:child_process';
+import type { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { isWipCommit } from '../lib/git-helpers';
-import { createLogger } from '../lib/logger';
+import type { isWipCommit } from '../lib/git-helpers';
+import type { createLogger } from '../lib/logger';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
-const logger = createLogger('git-session-command');
+export interface GitSessionDeps {
+  execSync: typeof execSync;
+  existsSync: typeof existsSync;
+  readFileSync: typeof readFileSync;
+  cwd: () => string;
+  logger: ReturnType<typeof createLogger>;
+  isWipCommit: typeof isWipCommit;
+}
 
-/**
- * Get the last commit that's NOT a WIP commit
- */
-function getLastUserCommit(): string {
+interface SquashData {
+  baseCommit: string;
+  wipMessages: string[];
+}
+
+interface PreparePushData {
+  lintRan: boolean;
+  testsRan: boolean;
+}
+
+function mapGitSessionDeps(deps: CommandDeps): GitSessionDeps {
+  return {
+    execSync: deps.childProcess.execSync,
+    existsSync: deps.fs.existsSync,
+    readFileSync: deps.fs.readFileSync,
+    cwd: () => deps.process.cwd(),
+    logger: deps.logger('git-session-command'),
+    isWipCommit: deps.git.isWipCommit,
+  };
+}
+
+function getLastUserCommit(deps: GitSessionDeps): string {
   try {
-    const commits = execSync('git log --oneline -20', { encoding: 'utf-8' })
+    const commits = deps
+      .execSync('git log --oneline -20', { encoding: 'utf-8' })
       .split('\n')
       .filter((line) => line.trim());
 
     for (const commit of commits) {
-      if (!isWipCommit(commit)) {
+      if (!deps.isWipCommit(commit)) {
         return commit.split(' ')[0];
       }
     }
@@ -27,14 +55,12 @@ function getLastUserCommit(): string {
   }
 }
 
-/**
- * Get list of WIP commit hashes
- */
-function getWipCommits(): string[] {
+function getWipCommits(deps: GitSessionDeps): string[] {
   try {
-    const commits = execSync('git log --oneline', { encoding: 'utf-8' })
+    const commits = deps
+      .execSync('git log --oneline', { encoding: 'utf-8' })
       .split('\n')
-      .filter((line) => isWipCommit(line))
+      .filter((line) => deps.isWipCommit(line))
       .map((line) => line.split(' ')[0]);
 
     return commits;
@@ -43,209 +69,290 @@ function getWipCommits(): string[] {
   }
 }
 
-/**
- * Get current task ID from CLAUDE.md
- */
-function getCurrentTaskId(): string {
-  const projectRoot = process.cwd();
-  const claudeMdPath = join(projectRoot, 'CLAUDE.md');
-
-  if (!existsSync(claudeMdPath)) return 'UNKNOWN';
-
-  const content = readFileSync(claudeMdPath, 'utf-8');
-  const match = content.match(/TASK_(\d+)/);
-  return match ? `TASK_${match[1]}` : 'UNKNOWN';
-}
-
-/**
- * Show revert command - display how to revert to last non-WIP commit
- */
-function showRevertCommand() {
-  const lastUserCommit = getLastUserCommit();
-  console.log(`To revert to last user commit (${lastUserCommit}), run:`);
-  console.log(`  git reset --hard ${lastUserCommit}`);
-  console.log('\n⚠️  This will discard all uncommitted changes!');
-  console.log('Review changes first with: git diff HEAD');
-}
-
-/**
- * Squash all WIP commits since last user commit
- */
-function squashSession(message?: string) {
-  const projectRoot = process.cwd();
-  const baseCommit = getLastUserCommit();
-  const taskId = getCurrentTaskId();
-
-  // Get a list of what was done from the WIP commits
-  const wipMessages = execSync(`git log --oneline ${baseCommit}..HEAD`, { encoding: 'utf-8' })
-    .split('\n')
-    .filter((line) => isWipCommit(line))
-    .map((line) => line.replace(/^[a-f0-9]+ (\[wip\] |wip: )/, '- '))
-    .join('\n');
-
-  console.log(`\nSquashing WIP commits since ${baseCommit}\n`);
-  if (wipMessages) {
-    console.log('Work included:');
-    console.log(wipMessages);
-  }
-
-  if (!message) {
-    // Show what would be squashed and exit
-    console.error('❌ ERROR: Commit message required');
-    console.error(`\nUsage: cc-track git-session squash "<commit message>"`);
-    console.error(`Example: cc-track git-session squash "${taskId}: Implement feature X"`);
-    if (wipMessages) {
-      console.error('\nWork to be squashed:');
-      console.error(wipMessages);
-    }
-    process.exit(1);
-  }
-
-  // Squash with provided message
-  try {
-    execSync(`git reset --soft ${baseCommit}`, { cwd: projectRoot });
-    execSync(`git commit -m "${message}"`, { cwd: projectRoot });
-    console.log(`\n✅ Squashed with message: ${message}`);
-  } catch (error) {
-    const err = error as Error;
-    console.error('❌ Squash failed:', err.message);
-    logger.error('Squash failed', { error: err.message, baseCommit, message });
-    process.exit(1);
-  }
-}
-
-/**
- * Show all WIP commits
- */
-function showWip() {
-  const wipCommits = getWipCommits();
-  if (wipCommits.length === 0) {
-    console.log('No WIP commits found');
-  } else {
-    console.log(`Found ${wipCommits.length} WIP commits:`);
-    try {
-      // Display each WIP commit using its hash for consistency
-      for (const hash of wipCommits) {
-        execSync(`git log --oneline -1 ${hash}`, { stdio: 'inherit' });
-      }
-    } catch {
-      console.log('Error displaying WIP commits');
-    }
-  }
-}
-
-/**
- * Show all changes since last user commit
- */
-function diffSession() {
-  const base = getLastUserCommit();
-  console.log(`Changes since ${base}:`);
-  try {
-    execSync(`git diff ${base}..HEAD`, { stdio: 'inherit' });
-  } catch {
-    console.log('No changes found');
-  }
-}
-
-/**
- * Detect the package manager being used in the project
- */
-function detectPackageManager(projectRoot: string): string {
-  if (existsSync(join(projectRoot, 'bun.lockb'))) {
+function detectPackageManager(deps: GitSessionDeps, projectRoot: string): string {
+  if (deps.existsSync(join(projectRoot, 'bun.lockb'))) {
     return 'bun run';
   }
-  if (existsSync(join(projectRoot, 'yarn.lock'))) {
+  if (deps.existsSync(join(projectRoot, 'yarn.lock'))) {
     return 'yarn run';
   }
-  if (existsSync(join(projectRoot, 'pnpm-lock.yaml'))) {
+  if (deps.existsSync(join(projectRoot, 'pnpm-lock.yaml'))) {
     return 'pnpm run';
   }
   return 'npm run';
 }
 
-/**
- * Prepare for pushing: squash WIPs and run checks
- */
-function preparePush(message?: string) {
-  const projectRoot = process.cwd();
-
-  if (!message) {
-    console.error('❌ ERROR: Commit message required for prepare-push');
-    console.error('\nUsage: cc-track git-session prepare-push "<commit message>"');
-    console.error('Example: cc-track git-session prepare-push "TASK_XXX: Implement feature Y"');
-    process.exit(1);
-  }
-
-  console.log('Preparing for push...');
-
-  // 1. Squash WIP commits
-  console.log('\n1. Squashing WIP commits...');
-  squashSession(message);
-
-  // 2. Run lint if available
-  if (existsSync(join(projectRoot, 'package.json'))) {
-    const pkg = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf-8'));
-    const runCommand = detectPackageManager(projectRoot);
-
-    if (pkg.scripts?.lint) {
-      console.log('\n2. Running lint...');
-      try {
-        execSync(`${runCommand} lint`, { stdio: 'inherit', cwd: projectRoot });
-      } catch {
-        console.error('⚠️ Lint failed - fix before pushing');
-      }
-    }
-
-    // 3. Run tests if available
-    if (pkg.scripts?.test) {
-      console.log('\n3. Running tests...');
-      try {
-        execSync(`${runCommand} test`, { stdio: 'inherit', cwd: projectRoot });
-      } catch {
-        console.error('⚠️ Tests failed - fix before pushing');
-      }
-    }
-  }
-
-  console.log('\n✅ Ready to push! Use: git push origin <branch>');
+export function showRevert(deps: GitSessionDeps): CommandResult<{ lastCommit: string }> {
+  const lastUserCommit = getLastUserCommit(deps);
+  return {
+    success: true,
+    messages: [
+      `To revert to last user commit (${lastUserCommit}), run:`,
+      `  git reset --hard ${lastUserCommit}`,
+      '\n⚠️  This will discard all uncommitted changes!',
+      'Review changes first with: git diff HEAD',
+    ],
+    data: { lastCommit: lastUserCommit },
+  };
 }
 
-// Create the main git-session command
-export const gitSessionCommand = new Command('git-session')
-  .description('Git session management utilities')
-  .addCommand(
-    new Command('show-revert').description('Display command to revert to last non-WIP commit').action(() => {
-      logger.info('Showing revert command');
-      showRevertCommand();
-    }),
-  )
-  .addCommand(
-    new Command('squash')
-      .description('Squash all WIP commits into one')
-      .argument('<message>', 'commit message for squashed commit')
-      .action((message: string) => {
-        logger.info('Squashing session', { message });
-        squashSession(message);
-      }),
-  )
-  .addCommand(
-    new Command('show-wip').description('Show all WIP commits').action(() => {
-      logger.info('Showing WIP commits');
-      showWip();
-    }),
-  )
-  .addCommand(
-    new Command('diff').description('Show all changes since last user commit').action(() => {
-      logger.info('Showing session diff');
-      diffSession();
-    }),
-  )
-  .addCommand(
-    new Command('prepare-push')
-      .description('Squash WIPs and run quality checks')
-      .argument('<message>', 'commit message for squashed commit')
-      .action((message: string) => {
-        logger.info('Preparing for push', { message });
-        preparePush(message);
-      }),
-  );
+export function showWip(deps: GitSessionDeps): CommandResult<{ commits: string[]; details: string[] }> {
+  const commits = getWipCommits(deps);
+  if (commits.length === 0) {
+    return {
+      success: true,
+      messages: ['No WIP commits found'],
+      data: { commits: [], details: [] },
+    };
+  }
+
+  const details: string[] = [];
+  for (const hash of commits) {
+    try {
+      const output = deps.execSync(`git log --oneline -1 ${hash}`, { encoding: 'utf-8' }).trim();
+      details.push(output);
+    } catch {
+      details.push(`Unable to display commit ${hash}`);
+    }
+  }
+
+  return {
+    success: true,
+    messages: [`Found ${commits.length} WIP commits:`, ...details],
+    data: { commits, details },
+  };
+}
+
+export function diffSession(deps: GitSessionDeps): CommandResult<{ baseCommit: string; diff?: string }> {
+  const base = getLastUserCommit(deps);
+  try {
+    const diff = deps.execSync(`git diff ${base}..HEAD`, { encoding: 'utf-8' }).trim();
+    return {
+      success: true,
+      messages: [`Changes since ${base}:`, diff || 'No changes found'],
+      data: { baseCommit: base, diff },
+    };
+  } catch {
+    return {
+      success: true,
+      messages: [`Changes since ${base}:`, 'No changes found'],
+      data: { baseCommit: base },
+    };
+  }
+}
+
+function extractWipMessages(output: string, deps: GitSessionDeps): string[] {
+  return output
+    .split('\n')
+    .filter((line) => deps.isWipCommit(line))
+    .map((line) => line.replace(/^[a-f0-9]+ (\[wip\] |wip: )/i, '- '));
+}
+
+export function squashSession(message: string | undefined, deps: GitSessionDeps): CommandResult<SquashData> {
+  const projectRoot = deps.cwd();
+  const baseCommit = getLastUserCommit(deps);
+
+  const wipLogOutput = deps.execSync(`git log --oneline ${baseCommit}..HEAD`, { encoding: 'utf-8' });
+  const wipMessages = extractWipMessages(wipLogOutput, deps);
+
+  const messages: string[] = [`\nSquashing WIP commits since ${baseCommit}\n`];
+  if (wipMessages.length > 0) {
+    messages.push('Work included:');
+    messages.push(...wipMessages);
+  }
+
+  if (!message) {
+    return {
+      success: false,
+      error: 'Commit message required',
+      exitCode: 1,
+      messages,
+      data: { baseCommit, wipMessages },
+    };
+  }
+
+  try {
+    deps.execSync(`git reset --soft ${baseCommit}`, { cwd: projectRoot, encoding: 'utf-8' });
+    deps.execSync(`git commit -m "${message}"`, { cwd: projectRoot, encoding: 'utf-8' });
+    messages.push(`\n✅ Squashed with message: ${message}`);
+    return {
+      success: true,
+      messages,
+      data: { baseCommit, wipMessages },
+    };
+  } catch (error) {
+    deps.logger.error('Squash failed', {
+      error: error instanceof Error ? error.message : String(error),
+      baseCommit,
+      message,
+    });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Squash failed',
+      exitCode: 1,
+      messages,
+      data: { baseCommit, wipMessages },
+    };
+  }
+}
+
+export function preparePush(message: string | undefined, deps: GitSessionDeps): CommandResult<PreparePushData> {
+  const projectRoot = deps.cwd();
+  const messages: string[] = ['Preparing for push...'];
+  const warnings: string[] = [];
+
+  if (!message) {
+    return {
+      success: false,
+      error: 'Commit message required for prepare-push',
+      exitCode: 1,
+    };
+  }
+
+  const squashResult = squashSession(message, deps);
+  if (!squashResult.success) {
+    return {
+      success: false,
+      error: squashResult.error,
+      exitCode: squashResult.exitCode,
+      messages: squashResult.messages,
+      warnings: squashResult.warnings,
+      details: squashResult.details,
+    };
+  }
+  messages.push(...(squashResult.messages ?? []));
+
+  let lintRan = false;
+  let testsRan = false;
+
+  const packageJsonPath = join(projectRoot, 'package.json');
+  if (deps.existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(deps.readFileSync(packageJsonPath, 'utf-8')) as {
+        scripts?: Record<string, string>;
+      };
+      const runCommand = detectPackageManager(deps, projectRoot);
+
+      if (packageJson.scripts?.lint) {
+        messages.push('\n2. Running lint...');
+        lintRan = true;
+        try {
+          const output = deps.execSync(`${runCommand} lint`, { cwd: projectRoot, encoding: 'utf-8' }).trim();
+          if (output) {
+            messages.push(output);
+          }
+        } catch (error) {
+          warnings.push('⚠️ Lint failed - fix before pushing');
+          deps.logger.warn('Lint command failed during prepare-push', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      if (packageJson.scripts?.test) {
+        messages.push('\n3. Running tests...');
+        testsRan = true;
+        try {
+          const output = deps.execSync(`${runCommand} test`, { cwd: projectRoot, encoding: 'utf-8' }).trim();
+          if (output) {
+            messages.push(output);
+          }
+        } catch (error) {
+          warnings.push('⚠️ Tests failed - fix before pushing');
+          deps.logger.warn('Test command failed during prepare-push', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    } catch (error) {
+      warnings.push('⚠️ Failed to read package.json scripts');
+      deps.logger.warn('Unable to parse package.json during prepare-push', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  messages.push('\n✅ Ready to push! Use: git push origin <branch>');
+
+  return {
+    success: true,
+    messages,
+    warnings,
+    data: { lintRan, testsRan },
+  };
+}
+
+export function createGitSessionCommand(overrides?: PartialCommandDeps): Command {
+  const command = new Command('git-session').description('Git session management utilities');
+
+  command
+    .command('show-revert')
+    .description('Display command to revert to last non-WIP commit')
+    .action(async () => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = showRevert(mapGitSessionDeps(deps));
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+
+  command
+    .command('squash')
+    .description('Squash all WIP commits into one')
+    .argument('<message>', 'commit message for squashed commit')
+    .action(async (message: string) => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = squashSession(message, mapGitSessionDeps(deps));
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+
+  command
+    .command('show-wip')
+    .description('Show all WIP commits')
+    .action(async () => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = showWip(mapGitSessionDeps(deps));
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+
+  command
+    .command('diff')
+    .description('Show all changes since last user commit')
+    .action(async () => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = diffSession(mapGitSessionDeps(deps));
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+
+  command
+    .command('prepare-push')
+    .description('Squash WIPs and run quality checks')
+    .argument('<message>', 'commit message for squashed commit')
+    .action(async (message: string) => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = preparePush(message, mapGitSessionDeps(deps));
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+
+  return command;
+}
+
+export const gitSessionCommand = createGitSessionCommand();

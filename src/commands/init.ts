@@ -1,27 +1,50 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { Command } from 'commander';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
-export const initCommand = new Command('init').description('Initialize cc-track in your project').action(() => {
-  // Create .claude/commands directory if it doesn't exist
-  const claudeDir = join(process.cwd(), '.claude');
-  const commandsDir = join(claudeDir, 'commands');
+export type InitDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'path' | 'logger'>;
 
-  if (!existsSync(claudeDir)) {
-    mkdirSync(claudeDir, { recursive: true });
-  }
+export interface InitResultData {
+  claudeDir: string;
+  commandsDir: string;
+  setupCommandPath: string;
+  createdClaudeDir: boolean;
+  createdCommandsDir: boolean;
+  createdSetupCommand: boolean;
+}
 
-  if (!existsSync(commandsDir)) {
-    mkdirSync(commandsDir, { recursive: true });
-  }
+export function runInit(deps: InitDeps): CommandResult<InitResultData> {
+  const logger = deps.logger('init-command');
 
-  // Create the setup slash command
-  const setupCommandPath = join(commandsDir, 'setup-cc-track.md');
+  try {
+    const projectRoot = deps.process.cwd();
+    const claudeDir = deps.path.join(projectRoot, '.claude');
+    const commandsDir = deps.path.join(claudeDir, 'commands');
+    const setupCommandPath = deps.path.join(commandsDir, 'setup-cc-track.md');
 
-  if (existsSync(setupCommandPath)) {
-    console.log('⚠️  setup-cc-track.md already exists. Skipping creation.');
-  } else {
-    const setupCommandContent = `---
+    const messages: string[] = [];
+    let createdClaudeDir = false;
+    let createdCommandsDir = false;
+    let createdSetupCommand = false;
+
+    if (!deps.fs.existsSync(claudeDir)) {
+      deps.fs.mkdirSync(claudeDir, { recursive: true });
+      logger.info('Created .claude directory', { path: claudeDir });
+      messages.push('✅ Created .claude directory');
+      createdClaudeDir = true;
+    }
+
+    if (!deps.fs.existsSync(commandsDir)) {
+      deps.fs.mkdirSync(commandsDir, { recursive: true });
+      logger.info('Created commands directory', { path: commandsDir });
+      messages.push('✅ Created .claude/commands directory');
+      createdCommandsDir = true;
+    }
+
+    if (deps.fs.existsSync(setupCommandPath)) {
+      messages.push('⚠️ setup-cc-track.md already exists. Skipping creation.');
+    } else {
+      const setupCommandContent = `---
 allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 model: claude-sonnet-4-20250514
@@ -202,135 +225,45 @@ Based on your analysis, update:
 - Ask: "Are there team conventions I should know about?"
 - If private_journal is enabled: Use journal search to find any existing preferences about this user
 
-## Step 5: Configure settings.json
-
-Now configure the settings.json file based on enabled features:
-
-1. Read the existing .claude/settings.json file (create if it doesn't exist)
-2. Based on what features were enabled in track.config.json, update settings.json:
-
-### For statusline (if enabled):
-Add or update the statusLine configuration:
-\`\`\`json
-"statusLine": {
-  "type": "command",
-  "command": "npx cc-track statusline",
-  "padding": 0
-}
-\`\`\`
-
-### For hooks (based on what's enabled):
-Add to the hooks section (preserve any existing hooks). Each hook type should be an array containing objects with a "hooks" array:
-
-Example structure:
-\`\`\`json
-"hooks": {
-  "PostToolUse": [
-    {
-      "matcher": "ExitPlanMode",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "npx cc-track hook"
-        }
-      ]
+`; // end template
+      deps.fs.writeFileSync(setupCommandPath, setupCommandContent);
+      messages.push('✅ Created setup-cc-track.md');
+      createdSetupCommand = true;
     }
-  ],
-  "Stop": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "npx cc-track hook"
-        }
-      ]
-    }
-  ]
-}
-\`\`\`
 
-Add these based on what's enabled:
-- If capture_plan enabled: Add to PostToolUse array with matcher "ExitPlanMode"
-- If edit_validation enabled: Add to PostToolUse array with matcher "Edit|Write|MultiEdit"
-- If pre_tool_validation enabled: Add to PreToolUse array with matcher "Edit|Write|MultiEdit"
-- If stop_review enabled: Add to Stop array (no matcher needed)
-- If pre_compact enabled: Add to PreCompact array (no matcher needed)
-
-Use the Edit tool to make these changes, merging with any existing configuration.
-
-## Step 6: Update CLAUDE.md
-
-Update the main CLAUDE.md file to include cc-track context references:
-
-1. Read the existing CLAUDE.md file
-2. Add the cc-track section with @ imports (if not already present):
-
-\`\`\`markdown
-# Project: [Update with actual project name]
-
-## Active Task
-@.claude/no_active_task.md
-<!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
-
-## Product Vision
-@.claude/product_context.md
-
-## System Patterns
-@.claude/system_patterns.md
-
-## Decision Log
-@.claude/decision_log.md
-
-## Code Index
-@.claude/code_index.md
-
-## User Context
-@.claude/user_context.md
-\`\`\`
-
-3. If the existing CLAUDE.md is already large (>100 lines):
-   - Suggest: "Your CLAUDE.md is quite extensive. Would you like me to move some of the existing content to the appropriate context files (product_context, system_patterns, etc.)?"
-   - If yes, help reorganize content into the appropriate files
-
-4. Preserve any existing content that doesn't fit the cc-track structure
-
-## Step 7: Git Hooks Recommendation (if stop_review enabled)
-
-If stop_review was enabled:
-- Explain: "The stop-review hook creates frequent WIP commits as you work. This can conflict with pre-commit hooks that run linting/tests."
-- Ask: "Would you like me to help you convert any pre-commit hooks to pre-push hooks instead?"
-- If yes and .git/hooks/pre-commit exists:
-  - Show them what's in the pre-commit hook
-  - Help them move it to pre-push: \`mv .git/hooks/pre-commit .git/hooks/pre-push\`
-  - Explain: "This way, validation happens before pushing to remote, not on every WIP commit"
-- If using husky or similar:
-  - Suggest: "Consider moving validation from pre-commit to pre-push in your husky configuration"
-
-## Step 8: Final Summary
-
-Show the user what was configured and explain the key features:
-- How task tracking works (if enabled)
-- What the hooks do (for enabled features)
-- How to use the slash commands
-- Remind them to restart Claude Code for settings.json changes to take effect
-
-## Important Instructions
-
-- Be specific when asking questions - reference what you found
-- For existing projects, show what you discovered before asking for confirmation
-- Explain each feature's benefit when asking about it
-- If the user seems unsure, recommend sensible defaults
-- Make sure gh CLI is installed and authenticated before enabling GitHub features
-`;
-
-    writeFileSync(setupCommandPath, setupCommandContent);
-    console.log('✅ Created .claude/commands/setup-cc-track.md');
+    return {
+      success: true,
+      messages,
+      data: {
+        claudeDir,
+        commandsDir,
+        setupCommandPath,
+        createdClaudeDir,
+        createdCommandsDir,
+        createdSetupCommand,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Failed to initialize project', { error: message });
+    return {
+      success: false,
+      error: `Failed to initialize cc-track: ${message}`,
+      exitCode: 1,
+    };
   }
+}
 
-  console.log('\n🚅 cc-track initialization started!\n');
-  console.log('Next steps:');
-  console.log('1. Start Claude Code (or restart if already running)');
-  console.log('2. Run the slash command: /setup-cc-track');
-  console.log('3. Claude will guide you through the complete setup\n');
-  console.log("This transparent setup process lets you see exactly what's being configured.");
-});
+export function createInitCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('init').description('Initialize cc-track in your project').action(async () => {
+    const deps = resolveCommandDeps(overrides);
+    try {
+      const result = runInit(deps);
+      applyCommandResult(result, deps);
+    } catch (error) {
+      handleCommandException(error, deps);
+    }
+  });
+}
+
+export const initCommand = createInitCommand();

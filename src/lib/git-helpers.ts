@@ -1,11 +1,9 @@
+import type { ExecSyncOptions } from 'node:child_process';
 import { execSync as nodeExecSync } from 'node:child_process';
 import { getGitConfig as defaultGetGitConfig } from './config';
 
 // Interface for dependency injection
-export type ExecFunction = (
-  command: string,
-  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string },
-) => string;
+export type ExecFunction = (command: string, options?: ExecSyncOptions & { encoding?: BufferEncoding }) => string;
 
 export type GetGitConfigFunction = typeof defaultGetGitConfig;
 
@@ -244,7 +242,7 @@ export class GitHelpers {
    */
   getCurrentBranch(cwd: string): string {
     try {
-      return this.exec('git branch --show-current', { cwd }).trim();
+      return this.exec('git branch --show-current', { cwd, stdio: ['pipe', 'pipe', 'ignore'] }).trim();
     } catch {
       return '';
     }

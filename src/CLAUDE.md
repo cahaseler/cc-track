@@ -30,6 +30,27 @@ This codebase uses explicit dependency injection to keep side effects isolated a
 - Prefer DI over `mock.module` for Node built‑ins. If `mock.module` is unavoidable, restore it in `afterEach` and use fresh dynamic imports inside the test scope.
 - Avoid mutating process‑wide state (e.g., `process.env`) without restoring it within the test.
 
+## Shared Test Utilities
+
+The codebase provides reusable test utilities in `src/test-utils/command-mocks.ts`:
+
+```typescript
+import { createMockLogger, createMockConsole, createMockProcess, createMockFileSystem,
+         createTestDeps, assertFileWritten, assertConsoleContains } from '../test-utils/command-mocks';
+
+// Create all test dependencies at once
+const deps = createTestDeps({ cwd: '/project', fixedDate: '2025-01-01' });
+
+// Or create individual mocks
+const logger = createMockLogger();
+const console = createMockConsole();
+const fs = createMockFileSystem({ '/file.txt': 'content' });
+
+// Use assertion helpers
+assertFileWritten(deps, '/output.txt', 'expected content');
+assertConsoleContains(deps, 'Success message');
+```
+
 ## Example: Hook With DI
 
 // Implementation (production defaults with overrides)
@@ -45,13 +66,15 @@ export async function exampleHook(input: HookInput, deps: {
   return { continue: true };
 }
 
-// Test (parallel‑safe)
+// Test (parallel‑safe) - using shared utilities
+import { createMockLogger } from '../test-utils/command-mocks';
+
 beforeEach(() => { mock.restore(); /* clearConfigCache() if config used */ });
 
 test('does work without touching globals', async () => {
   const exec = mock(() => 'ok');
   const fileOps = { existsSync: mock(() => true) };
-  const logger = { debug: mock(() => {}), info: mock(() => {}), warn: mock(() => {}), error: mock(() => {}), exception: mock(() => {}) } as ReturnType<typeof createLogger>;
+  const logger = createMockLogger();  // Use shared utility
 
   const out = await exampleHook({ hook_event_name: 'PostToolUse' }, { execSync: exec, fileOps, logger });
   expect(out.continue).toBe(true);
@@ -86,4 +109,5 @@ test('runs with mocked exec', () => {
 - Process execution DI: `GitHelpers(exec?)`, `GitHubHelpers(exec?)`
 - Hook deps objects: `capturePlanHook`, `stopReviewHook`, `postCompactHook`, `editValidationHook`
 - Config cache reset: `clearConfigCache()` in `src/lib/config.ts`
+- Shared test utilities: `src/test-utils/command-mocks.ts` - createMockLogger, createMockConsole, createMockFileSystem, createTestDeps, assertFileWritten, assertConsoleContains
 

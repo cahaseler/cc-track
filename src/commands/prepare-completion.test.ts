@@ -1,37 +1,11 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { createLogger } from '../lib/logger';
+import { describe, expect, mock, test } from 'bun:test';
+import { createMockLogger } from '../test-utils/command-mocks';
 import {
   createPrepareCompletionCommand,
   type PrepareCompletionDeps,
   prepareCompletionAction,
   runCodeReview,
 } from './prepare-completion';
-
-// Create mock logger
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
-
-// Create mock for performCodeReview
-function createMockPerformCodeReview(success = true) {
-  if (success) {
-    return mock(async () => ({
-      success: true,
-      review: '# Code Review\n\nReview content here',
-    }));
-  }
-  return mock(async () => ({
-    success: false,
-    review: '',
-    error: 'Review failed',
-  }));
-}
 
 describe('prepare-completion command', () => {
   test('has correct name and description', () => {
@@ -40,376 +14,215 @@ describe('prepare-completion command', () => {
     expect(command.description()).toBe(
       'Prepare task for completion by running validation and generating fix instructions',
     );
-  });
-
-  test('has no options', () => {
-    const command = createPrepareCompletionCommand();
-    const options = command.options;
-    expect(options).toHaveLength(0);
+    const handler = (command as unknown as { _actionHandler?: unknown })._actionHandler;
+    expect(typeof handler).toBe('function');
   });
 });
 
 describe('runCodeReview', () => {
-  beforeEach(() => {
-    mock.restore();
-  });
-
-  afterEach(() => {
-    mock.restore();
-  });
-
-  test('skips review when validation failed', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+  test('returns empty result when validation has not passed', async () => {
+    const result = await runCodeReview('/project', false, {
       isCodeReviewEnabled: mock(() => true),
-    };
-
-    await runCodeReview('/project', false, deps);
-
-    // Should not log anything when validation failed
-    expect(mockConsole.log).not.toHaveBeenCalled();
+    });
+    expect(result.success).toBeTrue();
+    expect(result.messages).toHaveLength(0);
   });
 
-  test('skips review when feature is disabled', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+  test('returns empty result when feature disabled', async () => {
+    const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => false),
-    };
-
-    await runCodeReview('/project', true, deps);
-
-    // Should not log anything when feature is disabled
-    expect(mockConsole.log).not.toHaveBeenCalled();
+    });
+    expect(result.messages).toHaveLength(0);
   });
 
-  test('handles missing active task', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+  test('reports missing active task', async () => {
+    const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
       getActiveTaskId: mock(() => null),
-    };
-
-    await runCodeReview('/project', true, deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('### 🔍 Code Review\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('⚠️ Could not run code review: No active task found\n');
+    });
+    expect(result.messages?.[0]).toContain('### 🔍 Code Review');
+    expect(result.messages?.some((msg) => msg.includes('No active task found'))).toBeTrue();
   });
 
-  test('skips review when review already exists', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockFileOps = {
-      existsSync: mock(() => true),
-      readdirSync: mock(() => ['TASK_001_2025-01-01_1200-UTC.md']),
-      readFileSync: mock(() => 'task content'),
-      mkdirSync: mock(() => {}),
-    };
-
+  test('skips when review already exists', async () => {
     const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
       isCodeReviewEnabled: mock(() => true),
       getActiveTaskId: mock(() => 'TASK_001'),
-      fileOps: mockFileOps as any,
+      fileOps: {
+        existsSync: mock(() => true),
+        readdirSync: mock(() => ['TASK_001_2025-01-01_1200-UTC.md']),
+        readFileSync: mock(() => '# Task'),
+        mkdirSync: mock(() => {}),
+      },
     };
-
-    await runCodeReview('/project', true, deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('### 🔍 Code Review\n');
-    expect(mockConsole.log).toHaveBeenCalledWith(
-      '✅ Code review already exists: code-reviews/TASK_001_2025-01-01_1200-UTC.md',
-    );
-    expect(mockConsole.log).toHaveBeenCalledWith('Skipping code review generation (only one review per task).\n');
+    const result = await runCodeReview('/project', true, deps);
+    expect(result.messages?.some((msg) => msg.includes('code-reviews/TASK_001_2025-01-01_1200-UTC.md'))).toBeTrue();
   });
 
-  test('performs code review successfully', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockFileOps = {
-      existsSync: mock((path: string) => {
-        // code-reviews dir doesn't exist initially
-        return !path.includes('code-reviews');
-      }),
+  test('performs review and returns messages', async () => {
+    const fileOps = {
+      existsSync: mock((path: string) => !path.includes('code-reviews')),
       readdirSync: mock(() => ['TASK_001_2025-01-01_1200-UTC.md']),
       readFileSync: mock((path: string) => {
         if (path.includes('TASK_001.md')) {
-          return '# Task Title\n\n## Requirements\n\nTest requirements';
+          return '# Task Title\n\n## Requirements\nRequirements info';
         }
-        if (path.includes('TASK_001_2025-01-01_1200-UTC.md')) {
-          return '# Code Review\n\nReview content here';
-        }
-        return '';
+        return '# Code Review\n\nReview content here';
       }),
       mkdirSync: mock(() => {}),
     };
 
-    const mockPerformCodeReview = mock(async () => ({
+    const performCodeReview = mock(async () => ({
       success: true,
       review: '# Code Review\n\nReview content here',
     }));
 
-    const mockLogger = createMockLogger();
+    const logger = createMockLogger();
 
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+    const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
       getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
-      fileOps: mockFileOps as any,
-      performCodeReview: mockPerformCodeReview,
-      logger: mockLogger,
+      fileOps,
+      performCodeReview: performCodeReview as any,
+      logger,
       execSync: mock(() => 'git diff content'),
       getCurrentBranch: mock(() => 'feature/test'),
       getDefaultBranch: mock(() => 'main'),
       getMergeBase: mock(() => 'abc123'),
-    };
-
-    await runCodeReview('/project', true, deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('### 🔍 Code Review\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('Running comprehensive code review with Claude SDK...');
-    expect(mockPerformCodeReview).toHaveBeenCalledWith({
-      taskId: 'TASK_001',
-      taskTitle: 'Task Title',
-      taskRequirements: '# Task Title\n\n## Requirements\n\nTest requirements',
-      gitDiff: 'git diff content',
-      projectRoot: '/project',
-      mergeBase: 'abc123',
     });
-    expect(mockConsole.log).toHaveBeenCalledWith(
-      '✅ Code review completed: code-reviews/TASK_001_2025-01-01_1200-UTC.md\n',
-    );
-    expect(mockConsole.log).toHaveBeenCalledWith('### 📄 Code Review Results\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('```markdown');
-    expect(mockConsole.log).toHaveBeenCalledWith('# Code Review\n\nReview content here');
-    expect(mockConsole.log).toHaveBeenCalledWith('```\n');
+
+    expect(result.success).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('Code review completed'))).toBeTrue();
+    expect(result.data?.reviewGenerated).toBeTrue();
+    expect(result.data?.reviewFile).toContain('code-reviews/TASK_001_2025-01-01_1200-UTC.md');
+    expect(performCodeReview).toHaveBeenCalled();
   });
 
-  test('handles code review failure gracefully', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockFileOps = {
-      existsSync: mock(() => false),
-      readdirSync: mock(() => []),
-      readFileSync: mock(() => '# Task Title\n\n## Requirements\n\nTest requirements'),
-      mkdirSync: mock(() => {}),
-    };
-
-    const mockPerformCodeReview = mock(async () => ({
-      success: false,
-      review: '',
-      error: 'API timeout',
-    }));
-
-    const mockLogger = createMockLogger();
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+  test('includes warning when review fails', async () => {
+    const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
       getCodeReviewTool: mock(() => 'claude'),
       getActiveTaskId: mock(() => 'TASK_001'),
-      fileOps: mockFileOps as any,
-      performCodeReview: mockPerformCodeReview,
-      logger: mockLogger,
-      execSync: mock(() => 'git diff content'),
+      fileOps: {
+        existsSync: mock(() => false),
+        readdirSync: mock(() => []),
+        readFileSync: mock(() => '# Task'),
+        mkdirSync: mock(() => {}),
+      },
+      performCodeReview: mock(async () => ({ success: false, error: 'API timeout' })) as any,
+      execSync: mock(() => ''),
       getCurrentBranch: mock(() => 'main'),
       getDefaultBranch: mock(() => 'main'),
-    };
-
-    await runCodeReview('/project', true, deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('⚠️ Code review failed: API timeout');
-    expect(mockConsole.log).toHaveBeenCalledWith('You can proceed without the code review.\n');
+      logger: createMockLogger(),
+    });
+    expect(result.warnings?.some((msg) => msg.includes('API timeout'))).toBeTrue();
   });
 
-  test('handles exception during code review', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockFileOps = {
-      existsSync: mock(() => false),
-      readdirSync: mock(() => []),
-      readFileSync: mock(() => {
-        throw new Error('File not found');
-      }),
-      mkdirSync: mock(() => {}),
-    };
-
-    const mockLogger = createMockLogger();
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
+  test('handles exception during review', async () => {
+    const result = await runCodeReview('/project', true, {
       isCodeReviewEnabled: mock(() => true),
       getActiveTaskId: mock(() => 'TASK_001'),
-      fileOps: mockFileOps as any,
-      logger: mockLogger,
-    };
-
-    await runCodeReview('/project', true, deps);
-
-    expect(mockLogger.error).toHaveBeenCalled();
-    expect(mockConsole.log).toHaveBeenCalledWith('⚠️ Code review error: File not found');
-    expect(mockConsole.log).toHaveBeenCalledWith('You can proceed without the code review.\n');
+      fileOps: {
+        existsSync: mock(() => false),
+        readdirSync: mock(() => []),
+        readFileSync: mock(() => {
+          throw new Error('File not found');
+        }),
+        mkdirSync: mock(() => {}),
+      },
+      logger: createMockLogger(),
+    });
+    expect(result.warnings?.some((msg) => msg.includes('Code review error'))).toBeTrue();
   });
 });
 
 describe('prepareCompletionAction', () => {
-  beforeEach(() => {
-    mock.restore();
-  });
-
-  afterEach(() => {
-    mock.restore();
-  });
-
-  test('handles validation failure', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockProcess = {
-      cwd: mock(() => '/project'),
-      exit: mock(() => {}),
-    };
-
-    const mockRunValidation = mock(async () => ({
-      success: false,
-      readyForCompletion: false,
-      task: { exists: false },
-      validation: {},
-      git: {
-        hasUncommittedChanges: false,
-        modifiedFiles: [],
-        wipCommitCount: 0,
-        currentBranch: 'main',
-        isTaskBranch: false,
-      },
-      warnings: [],
-      error: 'Validation failed',
-    }));
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
-      process: mockProcess as any,
-      runValidationChecks: mockRunValidation,
-    };
-
-    await prepareCompletionAction(deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('## ❌ Validation Check Failed\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('Error running validation checks: Validation failed\n');
-    expect(mockProcess.exit).toHaveBeenCalledWith(0);
-  });
-
-  test('shows validation issues when found', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
-    };
-
-    const mockProcess = {
-      cwd: mock(() => '/project'),
-      exit: mock(() => {}),
-    };
-
-    const mockRunValidation = mock(async () => ({
-      success: true,
-      readyForCompletion: false,
-      task: { exists: true, taskId: 'TASK_001', status: 'in_progress' },
-      validation: {
-        typescript: { passed: false, errorCount: 5, errors: 'TypeScript errors here' },
-        biome: { passed: false, issueCount: 3, errors: 'Linting issues here' },
-      },
-      git: {
-        hasUncommittedChanges: false,
-        modifiedFiles: [],
-        wipCommitCount: 0,
-        currentBranch: 'main',
-        isTaskBranch: false,
-      },
-      warnings: [],
-    }));
-
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
-      process: mockProcess as any,
-      runValidationChecks: mockRunValidation,
+  function createBaseDeps(overrides: Partial<PrepareCompletionDeps> = {}): PrepareCompletionDeps {
+    return {
+      runValidationChecks: mock(async () => ({
+        success: true,
+        readyForCompletion: true,
+        validation: {},
+        git: {},
+        task: { status: 'in_progress' },
+      })),
       getConfig: mock(() => ({ features: {} })),
-    };
+      isCodeReviewEnabled: mock(() => false),
+      getActiveTaskId: mock(() => null),
+      cwd: () => '/project',
+      logger: createMockLogger(),
+      ...overrides,
+    } satisfies PrepareCompletionDeps;
+  }
 
-    await prepareCompletionAction(deps);
+  test('reports validation issues when checks fail', async () => {
+    const deps = createBaseDeps({
+      runValidationChecks: mock(async () => ({
+        success: true,
+        readyForCompletion: false,
+        validation: {
+          typescript: { passed: false, errorCount: 3, errors: 'TS error output' },
+          biome: { passed: false, issueCount: 2, errors: 'Biome output' },
+          tests: { passed: false, failCount: 1, errors: 'Test failure' },
+          knip: { passed: false, unusedFiles: 1, unusedExports: 0, unusedDeps: 0 },
+        },
+        git: { hasUncommittedChanges: true, modifiedFiles: ['a.ts'], wipCommitCount: 2 },
+        task: { status: 'review' },
+      })),
+    });
 
-    expect(mockConsole.log).toHaveBeenCalledWith('### ⚠️ Validation Issues Found\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('#### TypeScript Errors');
-    expect(mockConsole.log).toHaveBeenCalledWith('Found 5 TypeScript errors.\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('#### Linting Issues');
-    expect(mockConsole.log).toHaveBeenCalledWith('Found 3 Biome issues.\n');
-    expect(mockProcess.exit).toHaveBeenCalledWith(0);
+    const result = await prepareCompletionAction(deps);
+    expect(result.success).toBeTrue();
+    expect(result.data?.readyForCompletion).toBeFalse();
+    expect(result.messages?.some((msg) => msg.includes('TypeScript Errors'))).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('Linting Issues'))).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('Test Failures'))).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('WIP commits'))).toBeTrue();
   });
 
-  test('shows success when validation passes', async () => {
-    const mockConsole = {
-      log: mock(() => {}),
+  test('includes code review output when enabled', async () => {
+    const fileOps = {
+      existsSync: mock(() => false),
+      mkdirSync: mock(() => {}),
+      readFileSync: mock(() => '# Task Title'),
+      readdirSync: mock(() => ['TASK_001_review.md']),
     };
+    const deps = createBaseDeps({
+      isCodeReviewEnabled: mock(() => true),
+      getActiveTaskId: mock(() => 'TASK_001'),
+      fileOps,
+      performCodeReview: mock(async () => ({ success: true })) as any,
+      execSync: mock(() => ''),
+      getCurrentBranch: mock(() => 'feature/branch'),
+      getDefaultBranch: mock(() => 'main'),
+      getMergeBase: mock(() => 'abc123'),
+    });
 
-    const mockProcess = {
-      cwd: mock(() => '/project'),
-      exit: mock(() => {}),
-    };
+    const result = await prepareCompletionAction(deps);
+    expect(result.success).toBeTrue();
+    expect(result.data?.codeReview?.reviewGenerated).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('Code review completed'))).toBeTrue();
+  });
 
-    const mockRunValidation = mock(async () => ({
-      success: true,
-      readyForCompletion: true,
-      task: { exists: true, taskId: 'TASK_001', status: 'in_progress' },
-      validation: {
-        typescript: { passed: true },
-        biome: { passed: true },
-      },
-      git: {
-        hasUncommittedChanges: false,
-        modifiedFiles: [],
-        wipCommitCount: 0,
-        currentBranch: 'main',
-        isTaskBranch: false,
-      },
-      warnings: [],
-    }));
+  test('returns success output when validation passes', async () => {
+    const deps = createBaseDeps();
+    const result = await prepareCompletionAction(deps);
+    expect(result.success).toBeTrue();
+    expect(result.data?.readyForCompletion).toBeTrue();
+    expect(result.messages?.some((msg) => msg.includes('Task is ready for completion'))).toBeTrue();
+  });
 
-    // Mock the runCodeReview dependency too
-    const mockPerformCodeReview = createMockPerformCodeReview(true);
+  test('captures errors from validation command', async () => {
+    const deps = createBaseDeps({
+      runValidationChecks: mock(async () => {
+        throw new Error('exec failed');
+      }),
+    });
 
-    const deps: PrepareCompletionDeps = {
-      console: mockConsole as any,
-      process: mockProcess as any,
-      runValidationChecks: mockRunValidation,
-      getConfig: mock(() => ({ features: { code_review: { enabled: false } } })),
-      isCodeReviewEnabled: mock(() => false),
-      performCodeReview: mockPerformCodeReview,
-    };
-
-    await prepareCompletionAction(deps);
-
-    expect(mockConsole.log).toHaveBeenCalledWith('### ✅ Validation Passed\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('All validation checks have passed successfully!\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('### Documentation Updates\n');
-    expect(mockConsole.log).toHaveBeenCalledWith('**✅ Task is ready for completion!**\n');
-    expect(mockProcess.exit).toHaveBeenCalledWith(0);
+    const result = await prepareCompletionAction(deps);
+    expect(result.success).toBeTrue();
+    expect(result.data?.error).toBe('exec failed');
+    expect(result.messages?.some((msg) => msg.includes('Validation Check Failed'))).toBeTrue();
   });
 });

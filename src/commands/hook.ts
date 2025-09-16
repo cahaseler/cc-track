@@ -7,6 +7,8 @@ import { preToolValidationHook } from '../hooks/pre-tool-validation';
 import { stopReviewHook } from '../hooks/stop-review';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, CommandError, handleCommandException, resolveCommandDeps } from './context';
 
 const logger = createLogger('hook-dispatcher');
 
@@ -72,11 +74,15 @@ const hookHandlers: Record<string, (input: HookInput) => Promise<HookOutput>> = 
 /**
  * Read JSON input from stdin
  */
-async function readStdinJson(): Promise<HookInput> {
+async function readStdinJson(stdin: NodeJS.ReadableStream): Promise<HookInput> {
   const chunks: Buffer[] = [];
 
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk);
+  for await (const chunk of stdin) {
+    if (Buffer.isBuffer(chunk)) {
+      chunks.push(chunk);
+    } else {
+      chunks.push(Buffer.from(chunk));
+    }
   }
 
   const input = Buffer.concat(chunks).toString('utf-8');
@@ -85,64 +91,84 @@ async function readStdinJson(): Promise<HookInput> {
     return JSON.parse(input) as HookInput;
   } catch (error) {
     logger.error('Failed to parse JSON input', { error, input });
-    throw new Error('Invalid JSON input');
+    throw new CommandError('Invalid JSON input', { exitCode: 1, details: input });
   }
 }
 
 /**
- * Hook command for handling Claude Code hook events
+ * Hook command logic
  */
-export const hookCommand = new Command('hook')
-  .description('Handle Claude Code hook events (reads JSON from stdin)')
-  .action(async () => {
+export async function runHookCommand(
+  deps: CommandDeps,
+  stdin: NodeJS.ReadableStream = process.stdin,
+  stdout: NodeJS.WritableStream = process.stdout,
+  handlers: typeof hookHandlers = hookHandlers,
+): Promise<CommandResult<{ hookType?: string; output: HookOutput | { continue: true } }>> {
+  const messages: string[] = [];
+  try {
+    const input = await readStdinJson(stdin);
+
+    deps.logger('hook-dispatcher').debug('Received hook input', {
+      hook_event_name: input.hook_event_name,
+      tool_name: input.tool_name,
+      source: input.source,
+    });
+
+    const hookType = determineHookType(input);
+
+    if (!hookType) {
+      messages.push(JSON.stringify({ continue: true }));
+      stdout.write(`${messages[0]}\n`);
+      return {
+        success: true,
+        messages,
+        data: { output: { continue: true } },
+        exitCode: 0,
+      };
+    }
+
+    const handler = handlers[hookType];
+    if (!handler) {
+      throw new CommandError(`Unknown hook type: ${hookType}`, { exitCode: 1 });
+    }
+
+    deps.logger('hook-dispatcher').debug(`Executing ${hookType} hook`);
+    const result = await handler(input);
+    const payload = JSON.stringify(result);
+    stdout.write(`${payload}\n`);
+
+    return {
+      success: true,
+      messages: [payload],
+      data: { hookType, output: result },
+      exitCode: 0,
+    };
+  } catch (error) {
+    const err = error instanceof CommandError ? error : new CommandError('Hook execution failed', { cause: error });
+    const payload = JSON.stringify({
+      error: err.message,
+    });
+    stdout.write(`${payload}\n`);
+    return {
+      success: false,
+      error: err.message,
+      exitCode: err.exitCode,
+      details: err.details,
+      data: { output: { continue: true } },
+    };
+  }
+}
+
+export function createHookCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('hook').description('Handle Claude Code hook events (reads JSON from stdin)').action(async () => {
+    const deps = resolveCommandDeps(overrides);
     try {
-      // Read input from stdin
-      const input = await readStdinJson();
-
-      // Log the received input for debugging
-      logger.debug('Received hook input', {
-        hook_event_name: input.hook_event_name,
-        tool_name: input.tool_name,
-        source: input.source,
-      });
-
-      // Determine hook type from input
-      const hookType = determineHookType(input);
-
-      if (!hookType) {
-        logger.debug('No handler for this hook event', {
-          hook_event_name: input.hook_event_name,
-          tool_name: input.tool_name,
-        });
-        // Return success with no action for unhandled events
-        console.log(JSON.stringify({ continue: true }));
-        process.exit(0);
-      }
-
-      // Get the handler for this hook type
-      const handler = hookHandlers[hookType];
-      if (!handler) {
-        logger.error('Unknown hook type', { hookType });
-        console.error(JSON.stringify({ error: `Unknown hook type: ${hookType}` }));
-        process.exit(1);
-      }
-
-      // Execute the hook
-      logger.debug(`Executing ${hookType} hook`);
-      const result = await handler(input);
-
-      // Output the result as JSON to stdout
-      // For JSON output mode, always use exit code 0
-      // The decision field in the JSON controls blocking, not the exit code
-      console.log(JSON.stringify(result));
-      process.exit(0);
+      const result = await runHookCommand(deps);
+      applyCommandResult(result, deps);
     } catch (error) {
-      logger.error('Hook execution failed', { error });
-      console.error(
-        JSON.stringify({
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }),
-      );
-      process.exit(1);
+      handleCommandException(error, deps);
     }
   });
+}
+
+export const hookCommand = createHookCommand();

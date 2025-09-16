@@ -72,7 +72,7 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.test.ts", "**/*.test.js"],
+      "includes": ["**/*.test.ts", "**/*.test.js", "**/test-utils/**/*.ts"],
       "linter": {
         "rules": {
           "suspicious": {
