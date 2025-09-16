@@ -61,8 +61,11 @@ Working on production quality improvements identified during code review to brin
 Based on code review, the following improvements are being made for production readiness:
 
 ### High Priority
-- [ ] **Extract shared test utilities** - Multiple test files have duplicate mock creation functions that should be consolidated
-- [ ] **Simplify dependency mapping** - Some commands like `complete-task` have unnecessary indirection with mapping functions
+- [x] **Extract shared test utilities** - Created `src/test-utils/command-mocks.ts` with reusable mock factories
+  - Extracted createMockLogger, createMockConsole, createMockProcess, createMockFileSystem
+  - Added helper functions for common test assertions
+  - Updated complete-task and prepare-completion tests to use shared utilities
+- [x] **Simplify dependency mapping** - Removed unnecessary `mapPrepareCompletionDeps` function from prepare-completion command
 
 ### Medium Priority
 - [ ] **Standardize mock patterns** - Inconsistent mocking approaches (some use `mock(() => {})`, others `mock(() => undefined)`)
@@ -73,9 +76,9 @@ Based on code review, the following improvements are being made for production r
 - [ ] **Document DI pattern** - Add guide for future contributors explaining the dependency injection architecture
 
 ## Next Steps
-1. Complete high-priority production improvements
+1. ~~Complete high-priority production improvements~~ ✓
 2. Address medium priority items for better maintainability
 3. Add integration tests and documentation
 4. Final review before merging
 
-**Last Updated:** 2025-01-16 19:30 UTC
+**Last Updated:** 2025-09-16 20:30 UTC
