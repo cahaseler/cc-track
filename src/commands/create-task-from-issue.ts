@@ -134,9 +134,12 @@ _To be populated during implementation_
       // Commit task file to main branch
       console.log('💾 Committing task file...');
       const safeIssueNumber = String(issue.number).replace(/[^0-9]/g, '');
-      execSync(`git add . && git commit -m "feat: create TASK_${taskId} from GitHub issue #${safeIssueNumber}"`, {
-        cwd: projectRoot,
-      });
+      execSync(
+        `git add "${taskPath}" && git commit -m "feat: create TASK_${taskId} from GitHub issue #${safeIssueNumber}"`,
+        {
+          cwd: projectRoot,
+        },
+      );
 
       // Create issue branch if not disabled
       let branchName: string | null = null;
