@@ -379,4 +379,77 @@ describe('statusline', () => {
       expect(typeof handler).toBe('function');
     });
   });
+
+  describe('direct execution (import.meta.main)', () => {
+    test('handles errors gracefully when executed directly', async () => {
+      // This test ensures that if runStatusline() rejects, the process would
+      // exit with code 1 and log the error. We can't easily test import.meta.main
+      // directly, but we can verify the error handling logic exists in the file.
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const fileContent = fs.readFileSync(path.resolve(__dirname, './statusline.ts'), 'utf-8');
+
+      // Check that we have proper error handling with .catch()
+      expect(fileContent).toContain('.catch(');
+      expect(fileContent).toContain('process.exit(1)');
+
+      // Check that we handle unsuccessful results
+      expect(fileContent).toContain('if (!result.success)');
+    });
+  });
+
+  describe('git repository handling', () => {
+    test('works gracefully outside git repository', () => {
+      // Mock deps to avoid calling external commands
+      const mockDeps = {
+        execSync: mock(() => '{"daily": []}'), // Mock ccusage response
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''), // Empty string for no git
+        getActiveTaskId: mock(() => null),
+      };
+
+      // Verify statusline generates output without branch (when not in git repo)
+      const output = generateStatusLine(
+        {
+          model: { display_name: 'Sonnet' },
+          cost: 10,
+          branch: '', // Empty branch simulates not being in a git repo
+          task: null,
+          hourlyRate: '',
+          tokens: '',
+          apiWindow: '',
+          showTimer: false,
+        },
+        mockDeps,
+      );
+
+      expect(output).toContain('🚅 Sonnet');
+      expect(output).not.toContain('fatal:');
+      expect(output).not.toContain('error');
+      expect(output).toContain('\n'); // Two-line output
+
+      // Second line should be empty when no branch/task
+      const lines = output.split('\n');
+      expect(lines[1]).toBe('');
+    });
+
+    test('getCurrentBranch suppresses git stderr output', async () => {
+      // This test verifies that getCurrentBranch in git-helpers.ts
+      // uses stdio options to suppress stderr
+      const gitHelpers = await import('../lib/git-helpers');
+      const mockExec = mock((cmd: string, options?: any) => {
+        // Verify stdio option is passed to suppress stderr
+        expect(options?.stdio).toEqual(['pipe', 'pipe', 'ignore']);
+        throw new Error('not a git repository');
+      });
+
+      const helpers = new gitHelpers.GitHelpers(mockExec);
+      const branch = helpers.getCurrentBranch('/tmp');
+
+      expect(branch).toBe('');
+      expect(mockExec).toHaveBeenCalledTimes(1);
+    });
+  });
 });

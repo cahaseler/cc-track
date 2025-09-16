@@ -4,7 +4,7 @@ import { getGitConfig as defaultGetGitConfig } from './config';
 // Interface for dependency injection
 export type ExecFunction = (
   command: string,
-  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string },
+  options?: { cwd?: string; encoding?: BufferEncoding; timeout?: number; shell?: string; stdio?: any },
 ) => string;
 
 export type GetGitConfigFunction = typeof defaultGetGitConfig;
@@ -244,7 +244,7 @@ export class GitHelpers {
    */
   getCurrentBranch(cwd: string): string {
     try {
-      return this.exec('git branch --show-current', { cwd }).trim();
+      return this.exec('git branch --show-current', { cwd, stdio: ['pipe', 'pipe', 'ignore'] }).trim();
     } catch {
       return '';
     }

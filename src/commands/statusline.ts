@@ -248,9 +248,17 @@ export function createStatuslineCommand(overrides?: PartialCommandDeps): Command
 export const statuslineCommand = createStatuslineCommand();
 
 if (import.meta.main) {
-  runStatusline().then((result) => {
-    for (const message of result.messages ?? []) {
-      console.log(message);
-    }
-  });
+  runStatusline()
+    .then((result) => {
+      for (const message of result.messages ?? []) {
+        console.log(message);
+      }
+      if (!result.success) {
+        process.exit(1);
+      }
+    })
+    .catch((error) => {
+      console.error('Statusline error:', error);
+      process.exit(1);
+    });
 }
