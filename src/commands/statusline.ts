@@ -4,6 +4,8 @@ import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from '
 import { Command } from 'commander';
 import { getConfig as getConfigImpl } from '../lib/config';
 import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
 interface StatusLineInput {
   model?: {
@@ -191,19 +193,18 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   return `${firstLine}\n${secondLine}`;
 }
 
-/**
- * Main function for CLI execution
- */
-export async function runStatusline(): Promise<void> {
-  // Read JSON input from stdin
+export async function runStatusline(
+  deps: StatusLineDeps = defaultDeps,
+  stdin: NodeJS.ReadableStream = process.stdin,
+): Promise<CommandResult<{ output: string }>> {
   let input: StatusLineInput = {};
   try {
     const stdinData = await new Promise<string>((resolve) => {
       let data = '';
-      process.stdin.on('data', (chunk) => {
+      stdin.on('data', (chunk) => {
         data += chunk;
       });
-      process.stdin.on('end', () => resolve(data));
+      stdin.on('end', () => resolve(data));
     });
 
     if (stdinData) {
@@ -213,18 +214,43 @@ export async function runStatusline(): Promise<void> {
     // Ignore parse errors, use empty input
   }
 
-  const output = generateStatusLine(input);
-  console.log(output);
+  const output = generateStatusLine(input, deps);
+
+  return {
+    success: true,
+    messages: [output],
+    data: { output },
+  };
 }
 
-// Create command for CLI
-export const statuslineCommand = new Command('statusline')
-  .description('Generate status line for Claude Code')
-  .action(async () => {
-    await runStatusline();
-  });
+function mapStatuslineDeps(deps: CommandDeps): StatusLineDeps {
+  return {
+    execSync: deps.childProcess.execSync,
+    existsSync: deps.fs.existsSync,
+    readFileSync: deps.fs.readFileSync,
+    getConfig: deps.config.getConfig,
+    getCurrentBranch: deps.git.getCurrentBranch,
+  };
+}
 
-// Run if executed directly
+export function createStatuslineCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('statusline').description('Generate status line for Claude Code').action(async () => {
+    const deps = resolveCommandDeps(overrides);
+    try {
+      const result = await runStatusline(mapStatuslineDeps(deps));
+      applyCommandResult(result, deps);
+    } catch (error) {
+      handleCommandException(error, deps);
+    }
+  });
+}
+
+export const statuslineCommand = createStatuslineCommand();
+
 if (import.meta.main) {
-  runStatusline().catch(console.error);
+  runStatusline().then((result) => {
+    for (const message of result.messages ?? []) {
+      console.log(message);
+    }
+  });
 }

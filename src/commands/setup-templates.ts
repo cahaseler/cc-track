@@ -1,74 +1,122 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { Command } from 'commander';
 import { embeddedTemplates } from '../lib/embedded-resources';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
-export const setupTemplatesCommand = new Command('setup-templates')
-  .description('Copy cc-track templates to your project')
-  .action(() => {
-    // Target directory is .claude in current working directory
-    const targetDir = join(process.cwd(), '.claude');
+export type SetupTemplatesDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'path' | 'logger' | 'time'>;
 
-    // Create .claude directory if it doesn't exist
-    if (!existsSync(targetDir)) {
-      mkdirSync(targetDir, { recursive: true });
+export interface SetupTemplatesResultData {
+  targetDir: string;
+  created: string[];
+  backedUp: string[];
+  skipped: string[];
+  updatedClaudeMd: boolean;
+}
+
+export function runSetupTemplates(deps: SetupTemplatesDeps): CommandResult<SetupTemplatesResultData> {
+  const logger = deps.logger('setup-templates');
+
+  try {
+    const projectRoot = deps.process.cwd();
+    const targetDir = deps.path.join(projectRoot, '.claude');
+    const created: string[] = [];
+    const backedUp: string[] = [];
+    const skipped: string[] = [];
+    const messages: string[] = [];
+
+    if (!deps.fs.existsSync(targetDir)) {
+      deps.fs.mkdirSync(targetDir, { recursive: true });
+      logger.info('Created .claude directory', { targetDir });
+      messages.push('✅ Created .claude directory');
     }
 
-    let copiedCount = 0;
-    let skippedCount = 0;
+    const timestamp = deps.time.now().getTime();
 
-    // Write each embedded template to the target directory
     for (const [filename, content] of Object.entries(embeddedTemplates)) {
-      // Skip CLAUDE.md as it needs special handling
-      if (filename === 'CLAUDE.md') continue;
-
-      const targetPath = join(targetDir, filename);
-
-      if (existsSync(targetPath)) {
-        // If file exists, create a backup
-        const backupPath = `${targetPath}.backup-${Date.now()}`;
-        copyFileSync(targetPath, backupPath);
-        console.log(`📦 Backed up existing ${filename}`);
+      if (filename === 'CLAUDE.md') {
+        continue;
       }
 
-      writeFileSync(targetPath, content);
-      copiedCount++;
-      console.log(`✅ Created ${filename}`);
+      const targetPath = deps.path.join(targetDir, filename);
+
+      if (deps.fs.existsSync(targetPath)) {
+        const backupPath = `${targetPath}.backup-${timestamp}`;
+        deps.fs.copyFileSync(targetPath, backupPath);
+        backedUp.push(backupPath);
+        messages.push(`📦 Backed up existing ${filename}`);
+      }
+
+      deps.fs.writeFileSync(targetPath, content);
+      created.push(filename);
+      messages.push(`✅ Created ${filename}`);
     }
 
-    // Special handling for CLAUDE.md - need to merge if it exists
-    const claudeMdTarget = join(process.cwd(), 'CLAUDE.md');
-    const claudeMdContent = embeddedTemplates['CLAUDE.md'];
+    const claudeMdTarget = deps.path.join(projectRoot, 'CLAUDE.md');
+    const claudeTemplate = embeddedTemplates['CLAUDE.md'];
+    let updatedClaudeMd = false;
 
-    if (claudeMdContent) {
-      if (existsSync(claudeMdTarget)) {
-        // Create backup
-        const backupPath = `${claudeMdTarget}.backup-${Date.now()}`;
-        copyFileSync(claudeMdTarget, backupPath);
-        console.log(`📦 Backed up existing CLAUDE.md`);
+    if (claudeTemplate) {
+      if (deps.fs.existsSync(claudeMdTarget)) {
+        const backupPath = `${claudeMdTarget}.backup-${timestamp}`;
+        deps.fs.copyFileSync(claudeMdTarget, backupPath);
+        backedUp.push(backupPath);
+        messages.push('📦 Backed up existing CLAUDE.md');
 
-        // Read existing content
-        const existingContent = readFileSync(claudeMdTarget, 'utf-8');
+        const existingContent = deps.fs.readFileSync(claudeMdTarget, 'utf-8');
 
-        // If the existing file doesn't have cc-track imports, add them
         if (!existingContent.includes('## Active Task')) {
-          console.log('📝 Updating CLAUDE.md with cc-track imports...');
-
-          // Merge by adding cc-track sections if not present
-          const mergedContent = `${existingContent}\n\n# cc-track Context Management\n\n${claudeMdContent}`;
-          writeFileSync(claudeMdTarget, mergedContent);
-          console.log('✅ Updated CLAUDE.md');
+          const mergedContent = `${existingContent}\n\n# cc-track Context Management\n\n${claudeTemplate}`;
+          deps.fs.writeFileSync(claudeMdTarget, mergedContent);
+          updatedClaudeMd = true;
+          messages.push('✅ Updated CLAUDE.md');
         } else {
-          console.log('ℹ️  CLAUDE.md already has cc-track sections');
-          skippedCount++;
+          skipped.push('CLAUDE.md');
+          messages.push('ℹ️  CLAUDE.md already has cc-track sections');
         }
       } else {
-        writeFileSync(claudeMdTarget, claudeMdContent);
-        console.log('✅ Created CLAUDE.md');
-        copiedCount++;
+        deps.fs.writeFileSync(claudeMdTarget, claudeTemplate);
+        created.push('CLAUDE.md');
+        updatedClaudeMd = true;
+        messages.push('✅ Created CLAUDE.md');
       }
     }
 
-    console.log(`\n📊 Setup complete: ${copiedCount} files created, ${skippedCount} skipped`);
-    console.log('📝 Templates are ready for Claude to configure!');
+    messages.push('');
+    messages.push(`📊 Setup complete: ${created.length} files created, ${skipped.length} skipped`);
+    messages.push('📝 Templates are ready for Claude to configure!');
+
+    return {
+      success: true,
+      messages,
+      data: {
+        targetDir,
+        created,
+        backedUp,
+        skipped,
+        updatedClaudeMd,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Failed to set up templates', { error: message });
+    return {
+      success: false,
+      error: `Failed to set up templates: ${message}`,
+      exitCode: 1,
+    };
+  }
+}
+
+export function createSetupTemplatesCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('setup-templates').description('Copy cc-track templates to your project').action(async () => {
+    const deps = resolveCommandDeps(overrides);
+    try {
+      const result = runSetupTemplates(deps);
+      applyCommandResult(result, deps);
+    } catch (error) {
+      handleCommandException(error, deps);
+    }
   });
+}
+
+export const setupTemplatesCommand = createSetupTemplatesCommand();

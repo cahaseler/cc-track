@@ -1,112 +1,151 @@
-import { existsSync, writeFileSync } from 'node:fs';
 import { Command } from 'commander';
-import { ClaudeLogParser, type ParseOptions } from '../lib/log-parser';
-import { createLogger } from '../lib/logger';
+import type { ParseOptions } from '../lib/log-parser';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, CommandError, handleCommandException, resolveCommandDeps } from './context';
 
-const logger = createLogger('parse-logs');
+export type ParseLogsDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'logger' | 'logParser'>;
 
-/**
- * Parse a date string to Date object
- */
-function parseDate(dateStr: string): Date | undefined {
-  if (!dateStr) return undefined;
+export interface ParseLogsOptions {
+  file: string;
+  from?: string;
+  to?: string;
+  role: 'user' | 'assistant' | 'system' | 'all';
+  limit?: number;
+  format: 'json' | 'plaintext';
+  output?: string;
+  includeTools: boolean;
+  raw: boolean;
+}
 
-  const date = new Date(dateStr);
+export interface ParseLogsResultData {
+  output?: string;
+  entryCount?: number;
+  writtenToFile?: boolean;
+}
+
+function parseDate(value: string | undefined): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new Error(`Invalid date format: ${dateStr}`);
+    throw new CommandError(`Invalid date format: ${value}`, { exitCode: 1 });
   }
   return date;
 }
 
-/**
- * Create the parse-logs command
- */
-export const parseLogsCommand = new Command('parse-logs')
-  .description('Parse and filter Claude Code JSONL logs')
-  .requiredOption('-f, --file <path>', 'Path to JSONL log file')
-  .option('--from <date>', 'Start date for filtering (ISO format or parseable date)')
-  .option('--to <date>', 'End date for filtering (ISO format or parseable date)')
-  .option('-r, --role <role>', 'Filter by role (user, assistant, system, all)', 'all')
-  .option('-l, --limit <number>', 'Maximum number of entries to return', parseInt)
-  .option('--format <format>', 'Output format (json or plaintext)', 'plaintext')
-  .option('-o, --output <file>', 'Output file (default: stdout)')
-  .option('--include-tools', 'Include tool calls and results in output', true)
-  .option('--no-include-tools', 'Exclude tool calls and results from output')
-  .option('--raw', 'Output raw entries without simplification')
-  .action(async (options) => {
-    try {
-      // Validate file exists
-      if (!existsSync(options.file)) {
-        console.error(`Error: File not found: ${options.file}`);
-        process.exit(1);
-      }
+export async function runParseLogs(
+  options: ParseLogsOptions,
+  deps: ParseLogsDeps,
+): Promise<CommandResult<ParseLogsResultData>> {
+  const logger = deps.logger('parse-logs');
 
-      // Validate role
-      const validRoles = ['user', 'assistant', 'system', 'all'];
-      if (!validRoles.includes(options.role)) {
-        console.error(`Error: Invalid role. Must be one of: ${validRoles.join(', ')}`);
-        process.exit(1);
-      }
-
-      // Validate format
-      const validFormats = ['json', 'plaintext'];
-      if (!validFormats.includes(options.format)) {
-        console.error(`Error: Invalid format. Must be one of: ${validFormats.join(', ')}`);
-        process.exit(1);
-      }
-
-      // Parse dates if provided
-      let timeRange: ParseOptions['timeRange'];
-      if (options.from || options.to) {
-        timeRange = {};
-        if (options.from) {
-          timeRange.start = parseDate(options.from);
-          if (!timeRange.start) {
-            console.error(`Error: Invalid from date: ${options.from}`);
-            process.exit(1);
-          }
-        }
-        if (options.to) {
-          timeRange.end = parseDate(options.to);
-          if (!timeRange.end) {
-            console.error(`Error: Invalid to date: ${options.to}`);
-            process.exit(1);
-          }
-        }
-      }
-
-      // Build parse options
-      const parseOptions: ParseOptions = {
-        timeRange,
-        role: options.role as 'user' | 'assistant' | 'system' | 'all',
-        limit: options.limit,
-        format: options.format as 'json' | 'plaintext',
-        includeTools: options.includeTools,
-        simplifyResults: !options.raw,
+  try {
+    if (!deps.fs.existsSync(options.file)) {
+      return {
+        success: false,
+        error: `File not found: ${options.file}`,
+        exitCode: 1,
       };
-
-      logger.info('Parsing log file', {
-        file: options.file,
-        options: parseOptions,
-      });
-
-      // Parse the log
-      const parser = new ClaudeLogParser(options.file);
-      const result = await parser.parse(parseOptions);
-
-      // Output results
-      const output = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-
-      if (options.output) {
-        writeFileSync(options.output, output);
-        console.log(`Output written to: ${options.output}`);
-      } else {
-        console.log(output);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error: ${errorMessage}`);
-      logger.error('Failed to parse logs', { error: errorMessage });
-      process.exit(1);
     }
-  });
+
+    const validRoles: Array<ParseLogsOptions['role']> = ['user', 'assistant', 'system', 'all'];
+    if (!validRoles.includes(options.role)) {
+      return {
+        success: false,
+        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+        exitCode: 1,
+      };
+    }
+
+    const validFormats: Array<ParseLogsOptions['format']> = ['json', 'plaintext'];
+    if (!validFormats.includes(options.format)) {
+      return {
+        success: false,
+        error: `Invalid format. Must be one of: ${validFormats.join(', ')}`,
+        exitCode: 1,
+      };
+    }
+
+    const timeRange: ParseOptions['timeRange'] = {};
+    const fromDate = parseDate(options.from);
+    const toDate = parseDate(options.to);
+    if (fromDate) timeRange.start = fromDate;
+    if (toDate) timeRange.end = toDate;
+
+    const parseOptions: ParseOptions = {
+      timeRange: options.from || options.to ? timeRange : undefined,
+      role: options.role,
+      limit: options.limit,
+      format: options.format,
+      includeTools: options.includeTools,
+      simplifyResults: !options.raw,
+    };
+
+    logger.info('Parsing log file', { file: options.file, parseOptions });
+
+    const parser = deps.logParser.create(options.file);
+    const result = await parser.parse(parseOptions);
+    const output = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+
+    if (options.output) {
+      deps.fs.writeFileSync(options.output, output);
+      return {
+        success: true,
+        messages: [`Output written to: ${options.output}`],
+        data: {
+          output,
+          writtenToFile: true,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      messages: [output],
+      data: {
+        output,
+        entryCount: Array.isArray(result) ? result.length : undefined,
+        writtenToFile: false,
+      },
+    };
+  } catch (error) {
+    if (error instanceof CommandError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Failed to parse logs', { error: message });
+    return {
+      success: false,
+      error: `Failed to parse logs: ${message}`,
+      exitCode: 1,
+    };
+  }
+}
+
+export function createParseLogsCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('parse-logs')
+    .description('Parse and filter Claude Code JSONL logs')
+    .requiredOption('-f, --file <path>', 'Path to JSONL log file')
+    .option('--from <date>', 'Start date for filtering (ISO format or parseable date)')
+    .option('--to <date>', 'End date for filtering (ISO format or parseable date)')
+    .option('-r, --role <role>', 'Filter by role (user, assistant, system, all)', 'all')
+    .option('-l, --limit <number>', 'Maximum number of entries to return', (value) => parseInt(value, 10))
+    .option('--format <format>', 'Output format (json or plaintext)', 'plaintext')
+    .option('-o, --output <file>', 'Output file (default: stdout)')
+    .option('--include-tools', 'Include tool calls and results in output', true)
+    .option('--no-include-tools', 'Exclude tool calls and results from output')
+    .option('--raw', 'Output raw entries without simplification')
+    .action(async (cmdOptions: ParseLogsOptions) => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = await runParseLogs(cmdOptions, deps);
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
+}
+
+export const parseLogsCommand = createParseLogsCommand();

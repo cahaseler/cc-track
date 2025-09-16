@@ -18,4 +18,4 @@
 - extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
 - [2025-09-15] block attempts to add stupid comments with the preToolUse hook
 - [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
-- [2025-09-15] proper unit testing for commands
+- [2025-09-16] Add targeted unit tests for `src/lib/claude-sdk.ts` (retry/timeout/fallback paths) once DI seams are ready
