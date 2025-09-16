@@ -33,6 +33,7 @@ export class GitHelpers {
   private async ensureClaudeSDK(): Promise<ClaudeSDKInterface> {
     if (this.claudeSDK) return this.claudeSDK;
     const mod = await import('./claude-sdk');
+    // Type assertion is safe here - we're importing our own module with known exports
     this.claudeSDK = (mod as unknown as { ClaudeSDK: ClaudeSDKInterface }).ClaudeSDK;
     return this.claudeSDK;
   }

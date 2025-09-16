@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { CanUseTool, PermissionResult } from '@anthropic-ai/claude-code';
+import type { CanUseTool, PermissionResult, Query, SDKResultMessage } from '@anthropic-ai/claude-code';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { createMessageStream, findClaudeCodeExecutable } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
@@ -10,20 +10,6 @@ import { GitHelpers } from '../lib/git-helpers';
 import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
 import type { GitHubIssue, HookInput, HookOutput } from '../types';
-
-// Type for Claude Code SDK messages
-interface SDKMessage {
-  type: string;
-  subtype?: string;
-  message?: {
-    content: Array<{ text?: string }>;
-  };
-  usage?: {
-    input_tokens?: number;
-    output_tokens?: number;
-  };
-  total_cost_usd?: number;
-}
 
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
@@ -268,7 +254,8 @@ export async function enrichPlanWithResearch(
     const timeout = setTimeout(() => {
       timedOut = true;
       try {
-        void (stream as AsyncGenerator<unknown, void>).return(undefined);
+        // Type assertion is safe here as Query extends AsyncGenerator
+        void (stream as Query).return(undefined);
       } catch {
         // ignore
       }
@@ -276,20 +263,19 @@ export async function enrichPlanWithResearch(
 
     try {
       for await (const message of stream) {
-        const msg = message as SDKMessage;
-
-        if (msg.type === 'result') {
-          if (msg.subtype === 'success' || msg.subtype === 'error_max_turns') {
+        if (message.type === 'result') {
+          const resultMsg = message as SDKResultMessage;
+          if (resultMsg.subtype === 'success' || resultMsg.subtype === 'error_max_turns') {
             success = true;
             logger.info('Task research completed', {
-              subtype: msg.subtype,
-              inputTokens: msg.usage?.input_tokens,
-              outputTokens: msg.usage?.output_tokens,
-              costUSD: msg.total_cost_usd,
+              subtype: resultMsg.subtype,
+              inputTokens: resultMsg.usage?.input_tokens,
+              outputTokens: resultMsg.usage?.output_tokens,
+              costUSD: resultMsg.total_cost_usd,
             });
           } else {
-            error = `Task research failed: ${msg.subtype}`;
-            logger.error('Task research failed', { subtype: msg.subtype });
+            error = `Task research failed: ${resultMsg.subtype}`;
+            logger.error('Task research failed', { subtype: resultMsg.subtype });
           }
         }
       }
