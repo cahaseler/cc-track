@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(cc-track complete-task), Bash(gh pr edit:*), Edit, Read
+allowed-tools: Bash(npx cc-track complete-task), Bash(gh pr edit:*), Edit, Read
 description: Complete the current active task (Phase 2 of task completion workflow)
 ---
 
@@ -7,4 +7,4 @@ description: Complete the current active task (Phase 2 of task completion workfl
 
 ## Phase 2: Task Completion
 
-!`cc-track complete-task`
+!`npx cc-track complete-task`
