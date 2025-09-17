@@ -98,10 +98,10 @@ export function getCurrentBranch(deps = defaultDeps): string {
 /**
  * Get recent hook status message if available
  */
-export function getRecentHookStatus(deps = defaultDeps): string {
+export function getRecentHookStatus(deps = defaultDeps): { message: string; emoji: string } {
   const statusPath = '.claude/hook-status.json';
   if (!deps.existsSync(statusPath)) {
-    return '';
+    return { message: '', emoji: '' };
   }
 
   try {
@@ -114,12 +114,26 @@ export function getRecentHookStatus(deps = defaultDeps): string {
     const ageInSeconds = (now - messageTime) / 1000;
 
     if (ageInSeconds < 60) {
-      return data.message || '';
+      const message = data.message || '';
+      // Choose emoji based on message content
+      let emoji = '✅'; // Default checkmark for success
+
+      if (message.toLowerCase().includes('deviation')) {
+        emoji = '⚠️';
+      } else if (message.toLowerCase().includes('critical') || message.toLowerCase().includes('failure')) {
+        emoji = '🚨';
+      } else if (message.toLowerCase().includes('verification') || message.toLowerCase().includes('needs')) {
+        emoji = '🔍';
+      } else if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+        emoji = '❌';
+      }
+
+      return { message, emoji };
     }
 
-    return '';
+    return { message: '', emoji: '' };
   } catch {
-    return '';
+    return { message: '', emoji: '' };
   }
 }
 
@@ -172,7 +186,7 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
-  const hookStatus = getRecentHookStatus(deps);
+  const { message: hookMessage, emoji: hookEmoji } = getRecentHookStatus(deps);
 
   // Get API timer config
   const config = deps.getConfig();
@@ -219,8 +233,8 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   }
 
   // Build output with optional hook status line
-  if (hookStatus) {
-    const hookLine = `🛤️ ${hookStatus}`;
+  if (hookMessage) {
+    const hookLine = `${hookEmoji} ${hookMessage}`;
     return `${hookLine}\n${firstLine}\n${secondLine}`;
   }
 
