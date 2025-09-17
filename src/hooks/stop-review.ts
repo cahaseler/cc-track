@@ -826,6 +826,25 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
     // Generate output based on review
     const output = generateStopOutput(review, inStopHook);
 
+    // Write hook status for statusline display (skip "No changes to commit")
+    if (output.systemMessage && !output.systemMessage.includes('No changes to commit')) {
+      try {
+        const statusData = {
+          timestamp: new Date().toISOString(),
+          message: review.message, // Use the basic message without emoji prefix
+          status: review.status, // Include status type for emoji/color selection
+          source: 'stop_review',
+        };
+
+        const fs = deps.fileOps || { writeFileSync };
+        const statusPath = join(projectRoot, '.claude', 'hook-status.json');
+        fs.writeFileSync(statusPath, JSON.stringify(statusData, null, 2));
+        logger.debug('Wrote hook status to file', { statusPath, message: review.message });
+      } catch (error) {
+        logger.warn('Failed to write hook status file', { error });
+      }
+    }
+
     logger.info('Review complete', { status: review.status, message: review.message });
     logger.debug('Sending output', { output_preview: JSON.stringify(output).substring(0, 100) });
 

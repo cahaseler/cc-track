@@ -96,6 +96,65 @@ export function getCurrentBranch(deps = defaultDeps): string {
 }
 
 /**
+ * Get recent hook status message if available
+ */
+export function getRecentHookStatus(deps = defaultDeps): { message: string; emoji: string } {
+  const statusPath = '.claude/hook-status.json';
+  if (!deps.existsSync(statusPath)) {
+    return { message: '', emoji: '' };
+  }
+
+  try {
+    const content = deps.readFileSync(statusPath, 'utf-8');
+    const data = JSON.parse(content);
+
+    // Check if message is less than 60 seconds old
+    const messageTime = new Date(data.timestamp).getTime();
+    const now = Date.now();
+    const ageInSeconds = (now - messageTime) / 1000;
+
+    if (ageInSeconds < 60) {
+      const message = data.message || '';
+      const status = data.status || 'on_track'; // Default to on_track if not specified
+
+      // Choose emoji and color based on status type
+      let emoji = '✅'; // Default checkmark for success
+      let color = '\x1b[92m'; // Bright green for success
+
+      switch (status) {
+        case 'deviation':
+          emoji = '⚠️';
+          color = '\x1b[93m'; // Bright yellow for warnings
+          break;
+        case 'critical_failure':
+          emoji = '🚨';
+          color = '\x1b[91m'; // Bright red for critical
+          break;
+        case 'needs_verification':
+          emoji = '🔍';
+          color = '\x1b[96m'; // Bright cyan for verification needed
+          break;
+        case 'review_failed':
+          emoji = '❌';
+          color = '\x1b[91m'; // Bright red for errors
+          break;
+        default: // Includes 'on_track' and any unknown status
+          emoji = '✅';
+          color = '\x1b[92m'; // Bright green for success
+          break;
+      }
+
+      const coloredMessage = `${color}${message}\x1b[0m`; // Reset color at end
+      return { message: coloredMessage, emoji };
+    }
+
+    return { message: '', emoji: '' };
+  } catch {
+    return { message: '', emoji: '' };
+  }
+}
+
+/**
  * Get active task from CLAUDE.md
  */
 export function getActiveTask(deps = defaultDeps): string {
@@ -144,6 +203,7 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
+  const { message: hookMessage, emoji: hookEmoji } = getRecentHookStatus(deps);
 
   // Get API timer config
   const config = deps.getConfig();
@@ -189,7 +249,13 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
     secondLine += secondLine ? ` | ${task}` : task;
   }
 
-  // Return two-line output
+  // Build output with optional hook status line
+  if (hookMessage) {
+    const hookLine = `${hookEmoji} ${hookMessage}`;
+    return `${hookLine}\n${firstLine}\n${secondLine}`;
+  }
+
+  // Return two-line output when no hook status
   return `${firstLine}\n${secondLine}`;
 }
 

@@ -20,3 +20,4 @@
 - [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
 - [2025-09-16] Add targeted unit tests for `src/lib/claude-sdk.ts` (retry/timeout/fallback paths) once DI seams are ready
 - [2025-09-16] Test quality improvements: Standardize mock patterns across 25+ test files, split complete-task.test.ts (365+ lines) into focused files, add integration tests for critical paths
+- [2025-09-17] If Claude Code hook output bug isn't resolved by 2025-09-20, add comprehensive unit tests and first-class config support for the hook status statusline workaround
