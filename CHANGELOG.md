@@ -1,3 +1,26 @@
+# [1.26.0](https://github.com/cahaseler/cc-track/compare/v1.25.0...v1.26.0) (2025-09-17)
+
+
+### Bug Fixes
+
+* add branch validation before pushing in complete-task command ([7b52ab0](https://github.com/cahaseler/cc-track/commit/7b52ab0ad3486d4d9f42a8a096903690af7f177e))
+* exclude test-utils from strict type checking ([73172b1](https://github.com/cahaseler/cc-track/commit/73172b1aac5981ffa2348f7b4b4f9366f0917bb2))
+* resolve biome linting issues in command-mocks.ts ([03f0fc4](https://github.com/cahaseler/cc-track/commit/03f0fc402327cbefb1b7f09332f40ab8fae627c2))
+* resolve merge conflicts with main branch - integrate CodeRabbit support ([a972899](https://github.com/cahaseler/cc-track/commit/a9728995384a01184b43c1436c7baa55a7ef9706))
+* restore error handling and suppress git stderr in statusline ([380ae59](https://github.com/cahaseler/cc-track/commit/380ae5921b9f9153491e04b80c051f6f318ae520))
+* use proper ExecSyncOptions type instead of any ([4ad3658](https://github.com/cahaseler/cc-track/commit/4ad36585486d6bba8864ccb409c0c463e85320fd))
+
+
+### Features
+
+* add shared command test utilities for DI pattern ([b6a4605](https://github.com/cahaseler/cc-track/commit/b6a46056664447dc38b16146ac7b6fd2f7fd28c2))
+* complete TASK_063 - TASK_063: Add Configurable Code Review Tool Support ([da67677](https://github.com/cahaseler/cc-track/commit/da67677401bf90cf461e1709b6d9e7b7f12c5152))
+* complete TASK_065 - TASK_065: Fix Default Branch Assumptions ([910ae18](https://github.com/cahaseler/cc-track/commit/910ae18ecc6fb0f61c33e43b27e76ca7d0d2a7d4))
+* complete TASK_066 - TASK_066: Make cc-track Lint-Agnostic with Built-in Support for Biome and ESLint ([b59ecdf](https://github.com/cahaseler/cc-track/commit/b59ecdfdb41e0f364ea0ef80313b770fe387a120))
+* complete TASK_067 - TASK_067: Fix GitHub Release Pipeline - mock.module Cross-Test Pollution ([af949eb](https://github.com/cahaseler/cc-track/commit/af949eb0aa5dd0aae20ee964e9955b6a25aa765c))
+* complete TASK_069 - TASK_069: Fix CodeRabbit/code-review Tests Filesystem Access ([46d9c87](https://github.com/cahaseler/cc-track/commit/46d9c87205de12706767780487c5ba1906f394e0))
+* complete TASK_070 - TASK_070: Fix CI Test Failures via Dependency Injection ([b8c8850](https://github.com/cahaseler/cc-track/commit/b8c8850c1774c22412da0a99bb5a83a5f239d0ea))
+
 # [1.25.0](https://github.com/cahaseler/cc-track/compare/v1.24.1...v1.25.0) (2025-09-16)
 
 
