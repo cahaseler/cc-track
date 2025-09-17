@@ -22,3 +22,4 @@
 - [2025-09-16] Test quality improvements: Standardize mock patterns across 25+ test files, split complete-task.test.ts (365+ lines) into focused files, add integration tests for critical paths
 - [2025-09-17] If Claude Code hook output bug isn't resolved by 2025-09-20, add comprehensive unit tests and first-class config support for the hook status statusline workaround
 - [2025-09-17] Fix Claude SDK task creation copying branch comments from other files - The Claude SDK copies branch comment formatting from existing task files when creating new ones, causing conflicts with GitHub issue branch naming and breaking complete-task PR flow when branch names don't match. Need to improve prompt or add post-processing to remove these copied comments.
+- [2025-09-17] setup-cc-track command fails when project is not a git repo
