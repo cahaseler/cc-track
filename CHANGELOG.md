@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/cahaseler/cc-track/compare/v1.27.0...v1.28.0) (2025-09-17)
+
+
+### Features
+
+* complete TASK_072 - TASK_072: Fix Missing settings.json Creation During Setup ([6ce8b9e](https://github.com/cahaseler/cc-track/commit/6ce8b9e2e8410947e00e4595e08d4620153270df))
+
 # [1.27.0](https://github.com/cahaseler/cc-track/compare/v1.26.0...v1.27.0) (2025-09-17)
 
 
