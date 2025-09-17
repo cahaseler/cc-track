@@ -678,8 +678,7 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
     case 'on_track':
       // Allow stop - work is good
       output.continue = true;
-      output.systemMessage = `[SYSTEMMESSAGE FIELD TEST] 🛤️ Project is on track. ${review.message}`;
-      // Note: on_track doesn't use reason field since continue=true
+      output.systemMessage = `🛤️ Project is on track. ${review.message}`;
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
       }
@@ -688,8 +687,8 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
     case 'deviation':
       // Block stop - needs correction
       output.decision = 'block';
-      output.reason = `[REASON FIELD TEST] Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
-      output.systemMessage = `[SYSTEMMESSAGE FIELD TEST] ⚠️ DEVIATION DETECTED: ${review.message}`;
+      output.reason = `Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
+      output.systemMessage = `⚠️ DEVIATION DETECTED: ${review.message}`;
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
       }
@@ -833,6 +832,7 @@ export async function stopReviewHook(input: HookInput, deps: StopReviewDependenc
         const statusData = {
           timestamp: new Date().toISOString(),
           message: review.message, // Use the basic message without emoji prefix
+          status: review.status, // Include status type for emoji/color selection
           source: 'stop_review',
         };
 

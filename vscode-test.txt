@@ -1,2 +1,0 @@
-Testing without VS Code open.
-If the theory is correct, I should NOT see any system reminder about the hook status update this time.

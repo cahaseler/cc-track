@@ -115,22 +115,34 @@ export function getRecentHookStatus(deps = defaultDeps): { message: string; emoj
 
     if (ageInSeconds < 60) {
       const message = data.message || '';
-      // Choose emoji and color based on message content
+      const status = data.status || 'on_track'; // Default to on_track if not specified
+
+      // Choose emoji and color based on status type
       let emoji = '✅'; // Default checkmark for success
       let color = '\x1b[92m'; // Bright green for success
 
-      if (message.toLowerCase().includes('deviation')) {
-        emoji = '⚠️';
-        color = '\x1b[93m'; // Bright yellow for warnings
-      } else if (message.toLowerCase().includes('critical') || message.toLowerCase().includes('failure')) {
-        emoji = '🚨';
-        color = '\x1b[91m'; // Bright red for critical
-      } else if (message.toLowerCase().includes('verification') || message.toLowerCase().includes('needs')) {
-        emoji = '🔍';
-        color = '\x1b[96m'; // Bright cyan for verification needed
-      } else if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
-        emoji = '❌';
-        color = '\x1b[91m'; // Bright red for errors
+      switch (status) {
+        case 'deviation':
+          emoji = '⚠️';
+          color = '\x1b[93m'; // Bright yellow for warnings
+          break;
+        case 'critical_failure':
+          emoji = '🚨';
+          color = '\x1b[91m'; // Bright red for critical
+          break;
+        case 'needs_verification':
+          emoji = '🔍';
+          color = '\x1b[96m'; // Bright cyan for verification needed
+          break;
+        case 'review_failed':
+          emoji = '❌';
+          color = '\x1b[91m'; // Bright red for errors
+          break;
+        case 'on_track':
+        default:
+          emoji = '✅';
+          color = '\x1b[92m'; // Bright green for success
+          break;
       }
 
       const coloredMessage = `${color}${message}\x1b[0m`; // Reset color at end
