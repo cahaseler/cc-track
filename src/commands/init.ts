@@ -245,6 +245,192 @@ Based on your analysis, update:
 - Ask: "Are there team conventions I should know about?"
 - If private_journal is enabled: Use journal search to find any existing preferences about this user
 
+## Step 5: Create settings.json for Claude Code hooks
+
+Based on the features enabled in track.config.json, create \`.claude/settings.json\` with the appropriate hooks configuration.
+
+**IMPORTANT**: This file is required for cc-track hooks to actually run in Claude Code!
+
+Start with this base structure:
+\`\`\`json
+{
+  "hooks": {}
+}
+\`\`\`
+
+Then populate the hooks object based on enabled features:
+
+### If capture_plan is enabled:
+Add to hooks object:
+\`\`\`json
+"PostToolUse": [
+  {
+    "matcher": "ExitPlanMode",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "npx cc-track hook",
+        "timeout": 30000
+      }
+    ]
+  }
+]
+\`\`\`
+
+### If stop_review is enabled:
+Add to hooks object:
+\`\`\`json
+"Stop": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "npx cc-track hook",
+        "timeout": 30000
+      }
+    ]
+  }
+]
+\`\`\`
+
+### If edit_validation is enabled:
+Add to PostToolUse array (merge with capture_plan if both enabled):
+\`\`\`json
+{
+  "matcher": "Edit|Write|MultiEdit",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "npx cc-track hook",
+      "timeout": 5000
+    }
+  ]
+}
+\`\`\`
+
+### If pre_tool_validation OR branch_protection is enabled:
+Add to hooks object:
+\`\`\`json
+"PreToolUse": [
+  {
+    "matcher": "Edit|MultiEdit",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "npx cc-track hook",
+        "timeout": 15000
+      }
+    ]
+  }
+]
+\`\`\`
+
+### If pre_compact is enabled:
+Add to hooks object:
+\`\`\`json
+"PreCompact": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "npx cc-track hook",
+        "timeout": 60000
+      }
+    ]
+  }
+]
+\`\`\`
+
+
+### If statusline is enabled:
+Add statusLine property at root level:
+\`\`\`json
+"statusLine": {
+  "type": "command",
+  "command": "npx cc-track statusline",
+  "padding": 0
+}
+\`\`\`
+
+Example complete settings.json with all features:
+\`\`\`json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 30000
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 15000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 60000
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx cc-track statusline",
+    "padding": 0
+  }
+}
+\`\`\`
+
+Write this to \`.claude/settings.json\`. If the file exists with non-cc-track hooks, merge carefully.
+
+## Step 6: Final Summary
+
+Provide a summary to the user of what was configured:
+- Which features were enabled
+- What commands are available (slash commands)
+- Any manual steps they need to take
+- Suggest restarting Claude Code for settings to take effect
+
 `; // end template
       deps.fs.writeFileSync(setupCommandPath, setupCommandContent);
       messages.push('✅ Created setup-cc-track.md');
