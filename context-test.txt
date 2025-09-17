@@ -1,2 +1,0 @@
-Testing if additionalContext field reaches Claude.
-Looking for [ADDITIONALCONTEXT TEST] or [REASON TEST] markers.

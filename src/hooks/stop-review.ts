@@ -679,11 +679,6 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
       // Allow stop - work is good
       output.continue = true;
       output.systemMessage = `🛤️ Project is on track. ${review.message}`;
-      // Test if additionalContext reaches Claude
-      output.hookSpecificOutput = {
-        hookEventName: 'Stop',
-        additionalContext: `[ADDITIONALCONTEXT TEST] Review status: ${review.status}. Message: ${review.message}`
-      };
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
       }
@@ -692,13 +687,8 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
     case 'deviation':
       // Block stop - needs correction
       output.decision = 'block';
-      output.reason = `[REASON TEST] Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
+      output.reason = `Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
       output.systemMessage = `⚠️ DEVIATION DETECTED: ${review.message}`;
-      // Test if additionalContext reaches Claude
-      output.hookSpecificOutput = {
-        hookEventName: 'Stop',
-        additionalContext: `[ADDITIONALCONTEXT TEST] DEVIATION! ${review.message}. You need to fix this and align with task requirements.`
-      };
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
       }

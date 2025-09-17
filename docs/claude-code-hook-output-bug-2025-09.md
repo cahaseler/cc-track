@@ -40,23 +40,29 @@ The documentation explicitly states:
 Testing reveals that:
 1. **systemMessage fields are NOT shown to users** despite documentation claiming they should be
 2. **reason fields from PostToolUse hooks are NOT delivered to Claude** despite being intended for automated prompting
-3. **All hook outputs are hidden** unless viewing in transcript mode
-4. **suppressOutput defaults to false** but outputs are suppressed anyway
+3. **additionalContext fields are NOT delivered to Claude** even though docs say they provide "context for Claude to consider"
+4. **suppressOutput field has no effect** - setting it to true or false makes no difference
+5. **All hook outputs are hidden** unless viewing in transcript mode (raw JSON only)
+6. **No hook feedback channels work** - all documented communication methods are broken
 
 ### Test Methodology
 
 We tested by:
 1. Creating TypeScript files with deliberate errors to trigger edit-validation hooks
 2. Modifying stop-review hooks to include distinct test markers in `reason` vs `systemMessage` fields
-3. Monitoring what feedback reached Claude through various channels
-4. Testing with VS Code open/closed to isolate file watcher effects
+3. Testing `suppressOutput` field with both `true` and `false` values
+4. Testing `additionalContext` field in `hookSpecificOutput` object
+5. Adding `[TEST]` prefixes to different fields to track which ones reach Claude
+6. Monitoring what feedback reached Claude through various channels
+7. Testing with VS Code open/closed to isolate file watcher effects
 
 ### Findings
 
-1. **No hook feedback reaches Claude through intended channels** - Neither `reason` nor `systemMessage` fields are delivered
-2. **Transcript mode shows raw output** - Hook JSON is visible but only in read-only transcript view
-3. **File modification workaround** - We inadvertently discovered Claude receives file modification notifications through VS Code, not hook outputs
-4. **Complete feedback system failure** - Both user visibility and Claude guidance mechanisms are broken
+1. **No hook feedback reaches Claude through intended channels** - Neither `reason`, `systemMessage`, nor `additionalContext` fields are delivered
+2. **suppressOutput field is non-functional** - Has no effect whether set to `true` or `false`
+3. **Transcript mode shows raw output** - Hook JSON is visible but only in read-only transcript view
+4. **File modification workaround** - We inadvertently discovered Claude receives file modification notifications through VS Code, not hook outputs
+5. **Complete feedback system failure** - Every documented communication channel is broken
 
 ## Workaround Implementation
 
