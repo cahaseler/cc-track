@@ -1,0 +1,2 @@
+Testing if suppressOutput: false makes any difference.
+Will the systemMessage be visible now?
