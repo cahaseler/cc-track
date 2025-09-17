@@ -1,2 +1,0 @@
-Testing if suppressOutput: true makes any difference.
-According to docs, this should hide output from transcript mode.

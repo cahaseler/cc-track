@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-17T15:31:56.958Z",
+  "timestamp": "2025-09-17T15:33:50.927Z",
   "message": "Adding suppressOutput: false doesn't address the core task of displaying hook status in statusline",
   "status": "deviation",
   "source": "stop_review"
