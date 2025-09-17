@@ -1,3 +1,24 @@
+# [1.27.0](https://github.com/cahaseler/cc-track/compare/v1.26.0...v1.27.0) (2025-09-17)
+
+
+### Bug Fixes
+
+* use status field for hook statusline emoji/color instead of message parsing ([f61cceb](https://github.com/cahaseler/cc-track/commit/f61cceb86c4e1bac151e9723254425418a403ba9))
+
+
+### Features
+
+* add color coding to hook status messages in statusline ([b7c1ad8](https://github.com/cahaseler/cc-track/commit/b7c1ad8bc17aef37fd23c0f911c084a8f9bb8913))
+* add hook status display to statusline ([573ff13](https://github.com/cahaseler/cc-track/commit/573ff136cac3348480a961c5619708cccd819981))
+* add hook status display to statusline with emoji mapping ([fdcaa0e](https://github.com/cahaseler/cc-track/commit/fdcaa0e8ea4c00beffeb4d0bbeece352c5524260))
+* use bright colors for hook status display in statusline ([486ebde](https://github.com/cahaseler/cc-track/commit/486ebde0b5126f069d28204ce440886bb05163aa))
+
+
+### Reverts
+
+* remove test markers without implementing hook status display ([66a5d4e](https://github.com/cahaseler/cc-track/commit/66a5d4e6b64d92b8f47cd34b0eec36cbe579d7a9))
+* remove unrelated test file creation ([230dce3](https://github.com/cahaseler/cc-track/commit/230dce3da2185f27c960f71e689d431b3986ef1c))
+
 # [1.26.0](https://github.com/cahaseler/cc-track/compare/v1.25.0...v1.26.0) (2025-09-17)
 
 
