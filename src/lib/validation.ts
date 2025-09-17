@@ -68,6 +68,12 @@ function runTypeScriptCheck(projectRoot: string): ValidationResult['typescript']
     const config = getConfig();
     const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
     const tsConfig = editValidation?.typecheck;
+
+    if (!tsConfig?.enabled) {
+      logger.info('TypeScript check disabled');
+      return { passed: true };
+    }
+
     const command = tsConfig?.command || 'bunx tsc --noEmit';
 
     logger.info('Running TypeScript check', { command });

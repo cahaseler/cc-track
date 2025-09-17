@@ -28,7 +28,13 @@
 
 [2025-09-17 13:35] - Completed: TASK_070 - Fix CI Test Failures via Dependency Injection
   Details: Added DI to performCodeReview, eliminated global module mocking from index.test.ts
-  Files: src/lib/code-review/index.ts, src/lib/code-review/index.test.ts
+
+[2025-09-17 15:55] - Started: TASK_074 - Fix Code Review Access in Non-TypeScript Projects
+  Details: TypeScript validation blocking code reviews even when disabled in configuration
+
+[2025-09-17 20:00] - Completed: TASK_074 - Fix Code Review Access in Non-TypeScript Projects
+  Details: Fixed runTypeScriptCheck() to respect typecheck.enabled configuration
+  Files: src/lib/validation.ts (4 lines), src/lib/validation.test.ts (289 lines added)
 
 [2025-09-17 11:45] - Completed: TASK_069 - Fix CodeRabbit/code-review Tests Filesystem Access
   Details: Updated test files to use mock logger, eliminating filesystem dependencies in CI
