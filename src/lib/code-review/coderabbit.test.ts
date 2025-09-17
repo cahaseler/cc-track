@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { createMockLogger } from '../../test-utils/command-mocks';
 import { performCodeRabbitReview } from './coderabbit';
 import type { CodeReviewOptions } from './types';
 
@@ -22,6 +23,7 @@ describe('performCodeRabbitReview', () => {
 
     const result = await performCodeRabbitReview(options, {
       execSync: mockExec,
+      logger: createMockLogger(),
     });
 
     expect(result.success).toBe(false);
@@ -81,6 +83,7 @@ Review completed ✔`;
     const result = await performCodeRabbitReview(options, {
       execSync: mockExec,
       fileOps: mockFileOps as any,
+      logger: createMockLogger(),
     });
 
     expect(result.success).toBe(true);
@@ -127,6 +130,7 @@ Review completed ✔`;
     const result = await performCodeRabbitReview(options, {
       execSync: mockExec,
       fileOps: mockFileOps as any,
+      logger: createMockLogger(),
     });
 
     expect(result.success).toBe(true);
@@ -164,6 +168,7 @@ Review completed ✔`;
     const result = await performCodeRabbitReview(options, {
       execSync: mockExec,
       fileOps: mockFileOps as any,
+      logger: createMockLogger(),
     });
 
     expect(result.success).toBe(false);
@@ -199,6 +204,7 @@ Review completed ✔`;
     const result = await performCodeRabbitReview(options, {
       execSync: mockExec,
       fileOps: mockFileOps as any,
+      logger: createMockLogger(),
     });
 
     expect(result.success).toBe(true);

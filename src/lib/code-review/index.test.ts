@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { createMockLogger } from '../../test-utils/command-mocks';
 import type { CodeReviewOptions } from './types';
 
 describe('performCodeReview', () => {
@@ -11,6 +12,10 @@ describe('performCodeReview', () => {
   });
 
   test('returns error when code review is disabled', async () => {
+    mock.module('../logger', () => ({
+      createLogger: () => createMockLogger(),
+    }));
+
     mock.module('../config', () => ({
       isCodeReviewEnabled: () => false,
       getCodeReviewTool: () => 'claude',
@@ -36,6 +41,10 @@ describe('performCodeReview', () => {
     const mockPerformClaudeReview = mock(async () => ({
       success: true,
       review: 'Claude review content',
+    }));
+
+    mock.module('../logger', () => ({
+      createLogger: () => createMockLogger(),
     }));
 
     mock.module('../config', () => ({
@@ -70,6 +79,10 @@ describe('performCodeReview', () => {
       review: 'CodeRabbit review content',
     }));
 
+    mock.module('../logger', () => ({
+      createLogger: () => createMockLogger(),
+    }));
+
     mock.module('../config', () => ({
       isCodeReviewEnabled: () => true,
       getCodeReviewTool: () => 'coderabbit',
@@ -97,6 +110,10 @@ describe('performCodeReview', () => {
   });
 
   test('handles unknown tool gracefully', async () => {
+    mock.module('../logger', () => ({
+      createLogger: () => createMockLogger(),
+    }));
+
     mock.module('../config', () => ({
       isCodeReviewEnabled: () => true,
       getCodeReviewTool: () => 'unknown-tool' as any,
@@ -119,6 +136,10 @@ describe('performCodeReview', () => {
   });
 
   test('handles tool errors gracefully', async () => {
+    mock.module('../logger', () => ({
+      createLogger: () => createMockLogger(),
+    }));
+
     mock.module('../config', () => ({
       isCodeReviewEnabled: () => true,
       getCodeReviewTool: () => 'claude',
