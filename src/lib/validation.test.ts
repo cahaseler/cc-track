@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { createMockLogger } from '../test-utils/command-mocks';
-import { type ValidationDeps, runValidationChecks } from './validation';
+import { runValidationChecks, type ValidationDeps } from './validation';
 
 describe('validation', () => {
   beforeEach(() => {
@@ -55,10 +55,7 @@ describe('validation', () => {
       expect(result.validation.lint?.passed).toBe(true);
 
       // TypeScript command should never be called when disabled
-      expect(mockExecSync).not.toHaveBeenCalledWith(
-        expect.stringContaining('tsc'),
-        expect.any(Object)
-      );
+      expect(mockExecSync).not.toHaveBeenCalledWith(expect.stringContaining('tsc'), expect.any(Object));
     });
 
     test('fails validation when TypeScript is enabled and has errors', async () => {
@@ -121,10 +118,7 @@ describe('validation', () => {
       expect(result.validation.typescript?.errorCount).toBe(1);
 
       // TypeScript command should be called when enabled
-      expect(mockExecSync).toHaveBeenCalledWith(
-        'bunx tsc --noEmit',
-        expect.objectContaining({ cwd: '/test/project' })
-      );
+      expect(mockExecSync).toHaveBeenCalledWith('bunx tsc --noEmit', expect.objectContaining({ cwd: '/test/project' }));
     });
 
     test('passes validation when TypeScript is enabled and has no errors', async () => {
@@ -181,10 +175,7 @@ describe('validation', () => {
       expect(result.validation.typescript?.passed).toBe(true);
 
       // TypeScript command should be called when enabled
-      expect(mockExecSync).toHaveBeenCalledWith(
-        'bunx tsc --noEmit',
-        expect.objectContaining({ cwd: '/test/project' })
-      );
+      expect(mockExecSync).toHaveBeenCalledWith('bunx tsc --noEmit', expect.objectContaining({ cwd: '/test/project' }));
     });
 
     test('handles missing active task', async () => {
@@ -263,10 +254,7 @@ describe('validation', () => {
       expect(result.validation.typescript?.passed).toBe(true);
 
       // Should use the custom command
-      expect(mockExecSync).toHaveBeenCalledWith(
-        customCommand,
-        expect.objectContaining({ cwd: '/test/project' })
-      );
+      expect(mockExecSync).toHaveBeenCalledWith(customCommand, expect.objectContaining({ cwd: '/test/project' }));
     });
   });
 });
