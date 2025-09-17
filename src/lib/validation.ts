@@ -414,7 +414,7 @@ export interface ValidationDeps {
  */
 export async function runValidationChecks(
   projectRoot: string = process.cwd(),
-  deps: ValidationDeps = {}
+  deps: ValidationDeps = {},
 ): Promise<PreparationResult> {
   const result: PreparationResult = {
     success: false,
