@@ -26,6 +26,10 @@
 
 ## Log Entries
 
+[2025-09-17 13:35] - Completed: TASK_070 - Fix CI Test Failures via Dependency Injection
+  Details: Added DI to performCodeReview, eliminated global module mocking from index.test.ts
+  Files: src/lib/code-review/index.ts, src/lib/code-review/index.test.ts
+
 [2025-09-17 11:45] - Completed: TASK_069 - Fix CodeRabbit/code-review Tests Filesystem Access
   Details: Updated test files to use mock logger, eliminating filesystem dependencies in CI
   Files: src/lib/code-review/coderabbit.test.ts, src/lib/code-review/index.test.ts

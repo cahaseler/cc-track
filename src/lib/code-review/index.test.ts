@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { createMockLogger } from '../../test-utils/command-mocks';
+import { performCodeReview } from './index';
 import type { CodeReviewOptions } from './types';
 
 describe('performCodeReview', () => {
@@ -12,17 +13,6 @@ describe('performCodeReview', () => {
   });
 
   test('returns error when code review is disabled', async () => {
-    mock.module('../logger', () => ({
-      createLogger: () => createMockLogger(),
-    }));
-
-    mock.module('../config', () => ({
-      isCodeReviewEnabled: () => false,
-      getCodeReviewTool: () => 'claude',
-    }));
-
-    const { performCodeReview } = await import('./index');
-
     const options: CodeReviewOptions = {
       taskId: 'TASK_001',
       taskTitle: 'Test Task',
@@ -31,7 +21,11 @@ describe('performCodeReview', () => {
       projectRoot: '/project',
     };
 
-    const result = await performCodeReview(options);
+    const result = await performCodeReview(options, {
+      isCodeReviewEnabled: () => false,
+      getCodeReviewTool: () => 'claude',
+      logger: createMockLogger(),
+    });
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Code review is disabled in configuration');
@@ -43,21 +37,6 @@ describe('performCodeReview', () => {
       review: 'Claude review content',
     }));
 
-    mock.module('../logger', () => ({
-      createLogger: () => createMockLogger(),
-    }));
-
-    mock.module('../config', () => ({
-      isCodeReviewEnabled: () => true,
-      getCodeReviewTool: () => 'claude',
-    }));
-
-    mock.module('./claude', () => ({
-      performClaudeReview: mockPerformClaudeReview,
-    }));
-
-    const { performCodeReview } = await import('./index');
-
     const options: CodeReviewOptions = {
       taskId: 'TASK_001',
       taskTitle: 'Test Task',
@@ -66,7 +45,12 @@ describe('performCodeReview', () => {
       projectRoot: '/project',
     };
 
-    const result = await performCodeReview(options);
+    const result = await performCodeReview(options, {
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'claude',
+      performClaudeReview: mockPerformClaudeReview,
+      logger: createMockLogger(),
+    });
 
     expect(result.success).toBe(true);
     expect(result.review).toBe('Claude review content');
@@ -79,21 +63,6 @@ describe('performCodeReview', () => {
       review: 'CodeRabbit review content',
     }));
 
-    mock.module('../logger', () => ({
-      createLogger: () => createMockLogger(),
-    }));
-
-    mock.module('../config', () => ({
-      isCodeReviewEnabled: () => true,
-      getCodeReviewTool: () => 'coderabbit',
-    }));
-
-    mock.module('./coderabbit', () => ({
-      performCodeRabbitReview: mockPerformCodeRabbitReview,
-    }));
-
-    const { performCodeReview } = await import('./index');
-
     const options: CodeReviewOptions = {
       taskId: 'TASK_002',
       taskTitle: 'Test Task 2',
@@ -102,7 +71,12 @@ describe('performCodeReview', () => {
       projectRoot: '/project',
     };
 
-    const result = await performCodeReview(options);
+    const result = await performCodeReview(options, {
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'coderabbit',
+      performCodeRabbitReview: mockPerformCodeRabbitReview,
+      logger: createMockLogger(),
+    });
 
     expect(result.success).toBe(true);
     expect(result.review).toBe('CodeRabbit review content');
@@ -110,17 +84,6 @@ describe('performCodeReview', () => {
   });
 
   test('handles unknown tool gracefully', async () => {
-    mock.module('../logger', () => ({
-      createLogger: () => createMockLogger(),
-    }));
-
-    mock.module('../config', () => ({
-      isCodeReviewEnabled: () => true,
-      getCodeReviewTool: () => 'unknown-tool' as any,
-    }));
-
-    const { performCodeReview } = await import('./index');
-
     const options: CodeReviewOptions = {
       taskId: 'TASK_003',
       taskTitle: 'Test Task 3',
@@ -129,29 +92,20 @@ describe('performCodeReview', () => {
       projectRoot: '/project',
     };
 
-    const result = await performCodeReview(options);
+    const result = await performCodeReview(options, {
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'unknown-tool' as any,
+      logger: createMockLogger(),
+    });
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Unknown code review tool: unknown-tool');
   });
 
   test('handles tool errors gracefully', async () => {
-    mock.module('../logger', () => ({
-      createLogger: () => createMockLogger(),
-    }));
-
-    mock.module('../config', () => ({
-      isCodeReviewEnabled: () => true,
-      getCodeReviewTool: () => 'claude',
-    }));
-
-    mock.module('./claude', () => ({
-      performClaudeReview: mock(async () => {
-        throw new Error('Network timeout');
-      }),
-    }));
-
-    const { performCodeReview } = await import('./index');
+    const mockPerformClaudeReview = mock(async () => {
+      throw new Error('Network timeout');
+    });
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_004',
@@ -161,7 +115,12 @@ describe('performCodeReview', () => {
       projectRoot: '/project',
     };
 
-    const result = await performCodeReview(options);
+    const result = await performCodeReview(options, {
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'claude',
+      performClaudeReview: mockPerformClaudeReview,
+      logger: createMockLogger(),
+    });
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Code review failed with claude: Network timeout');

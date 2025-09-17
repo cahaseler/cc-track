@@ -6,14 +6,31 @@ import type { CodeReviewOptions, CodeReviewResult, CodeReviewTool } from './type
 
 export type { CodeReviewIssue, CodeReviewOptions, CodeReviewResult, CodeReviewTool } from './types';
 
+export interface CodeReviewDeps {
+  isCodeReviewEnabled?: typeof isCodeReviewEnabled;
+  getCodeReviewTool?: typeof getCodeReviewTool;
+  performClaudeReview?: typeof performClaudeReview;
+  performCodeRabbitReview?: typeof performCodeRabbitReview;
+  logger?: ReturnType<typeof createLogger>;
+}
+
 /**
  * Perform code review using the configured tool
  */
-export async function performCodeReview(options: CodeReviewOptions): Promise<CodeReviewResult> {
-  const logger = createLogger('code-review');
+export async function performCodeReview(
+  options: CodeReviewOptions,
+  deps: CodeReviewDeps = {},
+): Promise<CodeReviewResult> {
+  const {
+    isCodeReviewEnabled: checkEnabled = isCodeReviewEnabled,
+    getCodeReviewTool: getTool = getCodeReviewTool,
+    performClaudeReview: claudeReview = performClaudeReview,
+    performCodeRabbitReview: codeRabbitReview = performCodeRabbitReview,
+    logger = createLogger('code-review'),
+  } = deps;
 
   // Check if code review is enabled
-  if (!isCodeReviewEnabled()) {
+  if (!checkEnabled()) {
     logger.debug('Code review is disabled');
     return {
       success: false,
@@ -22,7 +39,7 @@ export async function performCodeReview(options: CodeReviewOptions): Promise<Cod
   }
 
   // Get configured tool
-  const tool = getCodeReviewTool() as CodeReviewTool;
+  const tool = getTool() as CodeReviewTool;
 
   logger.info('Starting code review', {
     tool,
@@ -32,10 +49,10 @@ export async function performCodeReview(options: CodeReviewOptions): Promise<Cod
   try {
     switch (tool) {
       case 'claude':
-        return await performClaudeReview(options);
+        return await claudeReview(options);
 
       case 'coderabbit':
-        return await performCodeRabbitReview(options);
+        return await codeRabbitReview(options);
 
       default:
         logger.error('Unknown code review tool', { tool });
