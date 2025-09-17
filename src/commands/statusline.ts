@@ -96,6 +96,34 @@ export function getCurrentBranch(deps = defaultDeps): string {
 }
 
 /**
+ * Get recent hook status message if available
+ */
+export function getRecentHookStatus(deps = defaultDeps): string {
+  const statusPath = '.claude/hook-status.json';
+  if (!deps.existsSync(statusPath)) {
+    return '';
+  }
+
+  try {
+    const content = deps.readFileSync(statusPath, 'utf-8');
+    const data = JSON.parse(content);
+
+    // Check if message is less than 60 seconds old
+    const messageTime = new Date(data.timestamp).getTime();
+    const now = Date.now();
+    const ageInSeconds = (now - messageTime) / 1000;
+
+    if (ageInSeconds < 60) {
+      return data.message || '';
+    }
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Get active task from CLAUDE.md
  */
 export function getActiveTask(deps = defaultDeps): string {
@@ -144,6 +172,7 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
+  const hookStatus = getRecentHookStatus(deps);
 
   // Get API timer config
   const config = deps.getConfig();
@@ -180,16 +209,22 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
     firstLine += ` | ${tokens}`;
   }
 
-  // Build second line
-  let secondLine = '';
+  // Build second line (with track emoji for consistency)
+  let secondLine = '🛤️ ';
   if (branch) {
-    secondLine = branch;
+    secondLine += branch;
   }
   if (task) {
-    secondLine += secondLine ? ` | ${task}` : task;
+    secondLine += secondLine.length > 4 ? ` | ${task}` : task;
   }
 
-  // Return two-line output
+  // Build output with optional hook status line
+  if (hookStatus) {
+    const hookLine = `🛤️ ${hookStatus}`;
+    return `${hookLine}\n${firstLine}\n${secondLine}`;
+  }
+
+  // Return two-line output when no hook status
   return `${firstLine}\n${secondLine}`;
 }
 
