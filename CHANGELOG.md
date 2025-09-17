@@ -1,3 +1,15 @@
+# [1.30.0](https://github.com/cahaseler/cc-track/compare/v1.29.0...v1.30.0) (2025-09-17)
+
+
+### Bug Fixes
+
+* add dependency injection to validation.ts for CI compatibility ([a299438](https://github.com/cahaseler/cc-track/commit/a2994386a280b70d64afb28136d9f83fdd3e8b55))
+
+
+### Features
+
+* complete TASK_074 - Fix Code Review Access in Non-TypeScript Projects ([b5374ef](https://github.com/cahaseler/cc-track/commit/b5374ef38933861db46277e5c81164e49521c0b7))
+
 # [1.29.0](https://github.com/cahaseler/cc-track/compare/v1.28.0...v1.29.0) (2025-09-17)
 
 
