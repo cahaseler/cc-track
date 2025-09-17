@@ -34,7 +34,7 @@ export interface CompleteTaskResultData {
   validation: {
     preflightPassed?: boolean;
     typescript?: string;
-    biome?: string;
+    lint?: string;
     tests?: string;
     knip?: string;
   };
@@ -266,8 +266,8 @@ function collectValidationWarnings(state: CompleteTaskState): string[] {
   if (state.validation.typescript) {
     warnings.push(`TypeScript: ${state.validation.typescript}`);
   }
-  if (state.validation.biome) {
-    warnings.push(`Biome: ${state.validation.biome}`);
+  if (state.validation.lint) {
+    warnings.push(`Linting: ${state.validation.lint}`);
   }
   if (state.validation.tests) {
     warnings.push(`Tests: ${state.validation.tests}`);
@@ -671,8 +671,8 @@ export async function runCompleteTask(
         if (validation.validation?.typescript?.errorCount) {
           state.validation.typescript = `${validation.validation.typescript.errorCount} errors`;
         }
-        if (validation.validation?.biome?.issueCount) {
-          state.validation.biome = `${validation.validation.biome.issueCount} issues`;
+        if (validation.validation?.lint?.issueCount) {
+          state.validation.lint = `${validation.validation.lint.issueCount} issues`;
         }
         if (validation.validation?.tests?.failCount) {
           state.validation.tests = `${validation.validation.tests.failCount} tests failing`;

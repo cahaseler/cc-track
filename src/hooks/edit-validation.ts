@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { isHookEnabled } from '../lib/config';
+import { getLintConfig, isHookEnabled } from '../lib/config';
+import { getLintParser } from '../lib/lint-parsers';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
@@ -17,6 +18,9 @@ export interface EditValidationConfig {
   lint?: {
     enabled: boolean;
     command: string;
+    tool?: 'biome' | 'eslint' | 'custom';
+    autoFixCommand?: string;
+    customParser?: string;
   };
 }
 
@@ -66,14 +70,16 @@ export function isTestFile(filePath: string): boolean {
 export function loadEditValidationConfig(cwd: string): EditValidationConfig {
   const defaultConfig: EditValidationConfig = {
     enabled: false,
-    description: 'Runs TypeScript and Biome checks on edited files',
+    description: 'Runs TypeScript and lint checks on edited files',
     typecheck: {
       enabled: true,
       command: 'bunx tsc --noEmit',
     },
     lint: {
       enabled: true,
+      tool: 'biome' as const,
       command: 'bunx biome check --error-on-warnings',
+      autoFixCommand: 'bunx biome check --write',
     },
   };
 
@@ -173,9 +179,9 @@ export function runTypeScriptCheck(
 }
 
 /**
- * Run Biome validation on a file
+ * Run lint validation on a file
  */
-export function runBiomeCheck(
+export function runLintCheck(
   filePath: string,
   config: EditValidationConfig,
   cwd: string,
@@ -189,8 +195,10 @@ export function runBiomeCheck(
   }
 
   try {
-    const command = `${config.lint.command} "${filePath}" --reporter=compact`;
-    log.debug('Running Biome check', { command });
+    const lintConfig = getLintConfig();
+    const tool = lintConfig?.tool || config.lint?.tool || 'biome';
+    const command = `${config.lint.command} "${filePath}"`;
+    log.debug('Running lint check', { command, tool });
 
     exec(command, {
       encoding: 'utf-8',
@@ -198,20 +206,19 @@ export function runBiomeCheck(
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (error) {
-    const execError = error as { stdout?: string; code?: string };
+    const execError = error as { stdout?: string; stderr?: string; code?: string };
     // Re-throw timeout errors
     if (execError.code === 'ETIMEDOUT') {
       throw error;
     }
-    if (execError.stdout) {
-      // Parse Biome compact output (format: file:line:col lint/rule message)
-      const lines = execError.stdout.split('\n').filter((line: string) => line.includes(filePath));
-      for (const line of lines) {
-        const match = line.match(/:(\d+):\d+ \S+ (.+)/);
-        if (match) {
-          errors.push(`Line ${match[1]}: ${match[2]}`);
-        }
-      }
+    const output = execError.stdout || execError.stderr || '';
+    if (output) {
+      // Parse output using the appropriate parser
+      const lintConfig = getLintConfig();
+      const tool = lintConfig?.tool || config.lint?.tool || 'biome';
+      const parser = getLintParser(tool);
+      const parseResult = parser.parseOutput(output, filePath);
+      errors.push(...parseResult.errors);
     }
   }
 
@@ -335,16 +342,16 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
         }
       }
 
-      // Run Biome check using configured command
+      // Run lint check using configured command
       try {
-        const biomeErrors = runBiomeCheck(filePath, config, cwd, exec, log);
-        errors.push(...biomeErrors);
+        const lintErrors = runLintCheck(filePath, config, cwd, exec, log);
+        errors.push(...lintErrors);
       } catch (error) {
         const err = error as { code?: string };
         if (err.code === 'ETIMEDOUT') {
           return {
             decision: 'block',
-            reason: '⏱️ Validation timeout - Biome check took too long',
+            reason: '⏱️ Validation timeout - Lint check took too long',
           };
         }
         // Re-throw other unexpected errors
@@ -369,7 +376,7 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
 
       return {
         decision: 'block',
-        reason: `⚠️ TypeScript/Biome validation failed:\n\n${message}`,
+        reason: `⚠️ TypeScript/Lint validation failed:\n\n${message}`,
       };
     }
 

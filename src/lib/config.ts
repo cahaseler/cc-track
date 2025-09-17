@@ -6,9 +6,15 @@ export interface ValidationConfig {
   command: string;
 }
 
+export interface LintConfig extends ValidationConfig {
+  tool?: 'biome' | 'eslint' | 'custom';
+  autoFixCommand?: string;
+  customParser?: string;
+}
+
 export interface EditValidationConfig extends HookConfig {
   typecheck?: ValidationConfig;
-  lint?: ValidationConfig;
+  lint?: ValidationConfig | LintConfig;
   knip?: ValidationConfig;
 }
 
@@ -76,14 +82,16 @@ const DEFAULT_CONFIG: InternalConfig = {
     },
     edit_validation: {
       enabled: false,
-      description: 'Runs TypeScript and Biome checks on edited files',
+      description: 'Runs TypeScript and lint checks on edited files',
       typecheck: {
         enabled: true,
         command: 'bunx tsc --noEmit',
       },
       lint: {
         enabled: true,
+        tool: 'biome' as const,
         command: 'bunx biome check',
+        autoFixCommand: 'bunx biome check --write',
       },
     },
     pre_tool_validation: {
@@ -278,4 +286,16 @@ export function getLoggingConfig(configPath?: string): LoggingConfig {
 
 export function clearConfigCache(): void {
   configCache = null;
+}
+
+export function getLintConfig(configPath?: string): LintConfig | null {
+  const config = getConfig(configPath);
+  const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
+  const lintConfig = editValidation?.lint;
+
+  if (!lintConfig) {
+    return null;
+  }
+
+  return lintConfig as LintConfig;
 }

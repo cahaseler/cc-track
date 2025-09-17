@@ -140,6 +140,26 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    **Edit Validation** (if TypeScript/JavaScript project detected):
    - Ask: "Would you like real-time validation when editing files? This gives Claude instant feedback on lint or type issues to help fix errors as they happen."
    - If yes: enable \`edit_validation: true\`
+   - Detect which linter is available:
+     - If \`biome.json\` exists or \`bunx biome --version\` works: Configure for Biome
+     - If \`.eslintrc.*\` exists or \`npx eslint --version\` works: Configure for ESLint
+     - Otherwise ask: "What linting tool do you use? (biome/eslint/other)"
+   - Configure the lint settings:
+     \`\`\`json
+     "edit_validation": {
+       "enabled": true,
+       "typecheck": {
+         "enabled": true,
+         "command": "bunx tsc --noEmit"  // or "npx tsc --noEmit"
+       },
+       "lint": {
+         "enabled": true,
+         "tool": "biome",  // or "eslint" or "custom"
+         "command": "bunx biome check",  // or "npx eslint"
+         "autoFixCommand": "bunx biome check --write"  // or "npx eslint --fix"
+       }
+     }
+     \`\`\`
    - If lint/typecheck commands unclear, ask: "What command runs your linter? What command runs type checking?"
 
    **Pre-Tool Validation**:

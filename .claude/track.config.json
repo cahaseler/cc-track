@@ -21,7 +21,9 @@
       },
       "lint": {
         "enabled": true,
-        "command": "bunx biome check"
+        "tool": "biome",
+        "command": "bunx biome check",
+        "autoFixCommand": "bunx biome check --write"
       },
       "knip": {
         "enabled": true,
