@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import { performCodeReview } from './index';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { CodeReviewOptions } from './types';
 
 describe('performCodeReview', () => {
@@ -7,11 +6,17 @@ describe('performCodeReview', () => {
     mock.restore();
   });
 
+  afterEach(() => {
+    mock.restore();
+  });
+
   test('returns error when code review is disabled', async () => {
     mock.module('../config', () => ({
-      isCodeReviewEnabled: mock(() => false),
-      getCodeReviewTool: mock(() => 'claude'),
+      isCodeReviewEnabled: () => false,
+      getCodeReviewTool: () => 'claude',
     }));
+
+    const { performCodeReview } = await import('./index');
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_001',
@@ -34,13 +39,15 @@ describe('performCodeReview', () => {
     }));
 
     mock.module('../config', () => ({
-      isCodeReviewEnabled: mock(() => true),
-      getCodeReviewTool: mock(() => 'claude'),
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'claude',
     }));
 
     mock.module('./claude', () => ({
       performClaudeReview: mockPerformClaudeReview,
     }));
+
+    const { performCodeReview } = await import('./index');
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_001',
@@ -64,13 +71,15 @@ describe('performCodeReview', () => {
     }));
 
     mock.module('../config', () => ({
-      isCodeReviewEnabled: mock(() => true),
-      getCodeReviewTool: mock(() => 'coderabbit'),
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'coderabbit',
     }));
 
     mock.module('./coderabbit', () => ({
       performCodeRabbitReview: mockPerformCodeRabbitReview,
     }));
+
+    const { performCodeReview } = await import('./index');
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_002',
@@ -89,9 +98,11 @@ describe('performCodeReview', () => {
 
   test('handles unknown tool gracefully', async () => {
     mock.module('../config', () => ({
-      isCodeReviewEnabled: mock(() => true),
-      getCodeReviewTool: mock(() => 'unknown-tool' as any),
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'unknown-tool' as any,
     }));
+
+    const { performCodeReview } = await import('./index');
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_003',
@@ -109,8 +120,8 @@ describe('performCodeReview', () => {
 
   test('handles tool errors gracefully', async () => {
     mock.module('../config', () => ({
-      isCodeReviewEnabled: mock(() => true),
-      getCodeReviewTool: mock(() => 'claude'),
+      isCodeReviewEnabled: () => true,
+      getCodeReviewTool: () => 'claude',
     }));
 
     mock.module('./claude', () => ({
@@ -118,6 +129,8 @@ describe('performCodeReview', () => {
         throw new Error('Network timeout');
       }),
     }));
+
+    const { performCodeReview } = await import('./index');
 
     const options: CodeReviewOptions = {
       taskId: 'TASK_004',
