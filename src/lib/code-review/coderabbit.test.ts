@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { createMockLogger } from '../../test-utils/command-mocks';
 import { performCodeRabbitReview } from './coderabbit';
 import type { CodeReviewOptions } from './types';
 
 describe('performCodeRabbitReview', () => {
-  beforeEach(() => {
+  afterEach(() => {
     mock.restore();
   });
 
