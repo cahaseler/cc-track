@@ -1,8 +1,8 @@
-# Claude Code Hook Output Visibility Bug - January 2025
+# Claude Code Hook Output Visibility Bug - September 2025
 
 ## Issue Summary
 
-As of January 17, 2025, Claude Code pushed an update that includes a change described as "Show condensed output for post-tool hooks to reduce visual clutter". This change has inadvertently broken the entire hook feedback system by hiding ALL hook outputs from both users and Claude, despite documentation claiming certain fields should remain visible.
+As of September 17, 2025, Claude Code pushed an update that includes a change described as "Show condensed output for post-tool hooks to reduce visual clutter". This change has inadvertently broken the entire hook feedback system by hiding ALL hook outputs from both users and Claude, despite documentation claiming certain fields should remain visible.
 
 ## Impact
 
@@ -125,8 +125,8 @@ The hooks still execute and can block actions, but their educational/guidance pu
 ## References
 
 - GitHub Issue: [#7530](https://github.com/anthropics/claude-code/issues/7530) (if one exists)
-- Feedback submitted: January 17, 2025, ~14:52 UTC
-- First observed: January 17, 2025
+- Feedback submitted: September 17, 2025, ~14:52 UTC
+- First observed: September 17, 2025
 - Claude Code version: Not specified in update notes
 
 ## Testing Commands
