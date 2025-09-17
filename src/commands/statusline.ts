@@ -115,20 +115,26 @@ export function getRecentHookStatus(deps = defaultDeps): { message: string; emoj
 
     if (ageInSeconds < 60) {
       const message = data.message || '';
-      // Choose emoji based on message content
+      // Choose emoji and color based on message content
       let emoji = '✅'; // Default checkmark for success
+      let color = '\x1b[32m'; // Green for success
 
       if (message.toLowerCase().includes('deviation')) {
         emoji = '⚠️';
+        color = '\x1b[33m'; // Yellow for warnings
       } else if (message.toLowerCase().includes('critical') || message.toLowerCase().includes('failure')) {
         emoji = '🚨';
+        color = '\x1b[91m'; // Bright red for critical
       } else if (message.toLowerCase().includes('verification') || message.toLowerCase().includes('needs')) {
         emoji = '🔍';
+        color = '\x1b[36m'; // Cyan for verification needed
       } else if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
         emoji = '❌';
+        color = '\x1b[31m'; // Red for errors
       }
 
-      return { message, emoji };
+      const coloredMessage = `${color}${message}\x1b[0m`; // Reset color at end
+      return { message: coloredMessage, emoji };
     }
 
     return { message: '', emoji: '' };
