@@ -63,8 +63,8 @@ You are setting up cc-track (Task Review And Context Keeper) for this project. F
 
 Check what tools and configurations are available:
 
-!\`git status 2>&1\`
-!\`gh auth status 2>&1\`
+!\`git status 2>&1 || echo "Not a git repository"\`
+!\`gh auth status 2>&1 || echo "GitHub CLI not authenticated or not installed"\`
 
 Read key files to understand the project:
 - Check for package.json, requirements.txt, Cargo.toml, go.mod, etc.
