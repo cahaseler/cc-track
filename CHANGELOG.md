@@ -1,3 +1,11 @@
+# [1.29.0](https://github.com/cahaseler/cc-track/compare/v1.28.0...v1.29.0) (2025-09-17)
+
+
+### Features
+
+* complete TASK_073 - Fix prepare-completion Command Path Issue ([475ff5b](https://github.com/cahaseler/cc-track/commit/475ff5bb91d7012fbcebef5228cd40026b24cdc2))
+* fix command path issues for npm installations ([956c0f4](https://github.com/cahaseler/cc-track/commit/956c0f467c62164b8d30dc70a4f387d1a4e80deb))
+
 # [1.28.0](https://github.com/cahaseler/cc-track/compare/v1.27.0...v1.28.0) (2025-09-17)
 
 
