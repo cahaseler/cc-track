@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-09-17T15:21:09.013Z",
-  "message": "Updated hook status test data with proper timestamp and formatting",
-  "status": "on_track",
+  "timestamp": "2025-09-17T15:31:56.958Z",
+  "message": "Adding suppressOutput: false doesn't address the core task of displaying hook status in statusline",
+  "status": "deviation",
   "source": "stop_review"
 }

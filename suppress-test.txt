@@ -1,2 +1,2 @@
-Testing if suppressOutput: false makes any difference.
-Will the systemMessage be visible now?
+Testing if suppressOutput: true makes any difference.
+According to docs, this should hide output from transcript mode.

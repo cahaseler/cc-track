@@ -678,7 +678,7 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
     case 'on_track':
       // Allow stop - work is good
       output.continue = true;
-      output.suppressOutput = false; // Explicitly try to show output
+      output.suppressOutput = true; // Test with true to see if it changes anything
       output.systemMessage = `🛤️ Project is on track. ${review.message}`;
       if (review.details) {
         output.systemMessage += `\n\nDetails: ${review.details}`;
@@ -688,7 +688,7 @@ export function generateStopOutput(review: ReviewResult, inStopHook: boolean): H
     case 'deviation':
       // Block stop - needs correction
       output.decision = 'block';
-      output.suppressOutput = false; // Explicitly try to show output
+      output.suppressOutput = true; // Test with true to see if it changes anything
       output.reason = `Deviation detected: ${review.message}. Please fix the issues and align with the task requirements.`;
       output.systemMessage = `⚠️ DEVIATION DETECTED: ${review.message}`;
       if (review.details) {
