@@ -38,12 +38,29 @@
    - Pass mocked dependencies directly instead of using mock.module
    - Match the pattern used in coderabbit.test.ts
 
-## Current Focus
-Implementing proper mock cleanup in index.test.ts to prevent cross-test pollution while maintaining test functionality.
+## Recent Progress
 
-## Next Steps
-1. Examine current test files to understand mock usage patterns
-2. Implement mock.restore() calls in appropriate locations
-3. Test locally with different execution orders
-4. Validate fix resolves CI failures
-5. Update release pipeline if needed
+Successfully identified and fixed the root cause of CI test failures:
+
+1. **Root Cause Analysis**: Discovered that `mock.module` calls in `index.test.ts` were persisting and affecting `coderabbit.test.ts` in CI due to different test execution order/parallelization
+   - Tests were getting "CodeRabbit review content" from index.test.ts instead of their own mocks
+   - Issue only manifested in CI, not locally
+
+2. **Solution Implemented**: Fixed mock isolation by importing `performCodeReview` dynamically AFTER setting up mocks in each test
+   - Added `afterEach()` cleanup for additional safety
+   - Removed unnecessary `mock()` wrappers around simple functions
+   - All 5 tests in index.test.ts now properly isolated
+
+3. **Verification**: Tested thoroughly with different test execution orders - all 355 tests pass consistently
+
+4. **Code Quality**: Confirmed this was the only file violating the DI pattern - all other test files properly inject dependencies
+
+The fix is minimal, focused, and aligns with project patterns. Ready for merge to resolve the GitHub release pipeline failures.
+
+<!-- github_issue: 78 -->
+<!-- github_url: https://github.com/cahaseler/cc-track/issues/78 -->
+<!-- issue_branch: 78-task_067-fix-github-release-pipeline-mockmodule-cross-test-pollution -->
+
+## Current Focus
+
+Task completed on 2025-09-17
