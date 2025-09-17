@@ -1,31 +1,19 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { clearConfigCache } from './config';
-import { runValidationChecks } from './validation';
+import { createMockLogger } from '../test-utils/command-mocks';
+import { type ValidationDeps, runValidationChecks } from './validation';
 
 describe('validation', () => {
   beforeEach(() => {
     mock.restore();
-    clearConfigCache();
   });
 
   afterEach(() => {
     mock.restore();
-    clearConfigCache();
   });
 
   describe('runValidationChecks', () => {
     test('passes validation when TypeScript is disabled', async () => {
-      // Mock config to disable TypeScript
-      const mockGetConfig = mock(() => ({
-        hooks: {
-          edit_validation: {
-            typecheck: { enabled: false },
-            lint: { enabled: false },
-          },
-        },
-      }));
-
-      // Mock other dependencies
+      // Mock dependencies
       const mockExecSync = mock(() => '');
       const mockExistsSync = mock(() => true);
       const mockReadFileSync = mock((path: string) => {
@@ -37,25 +25,29 @@ describe('validation', () => {
         }
         return '';
       });
-      const mockGetActiveTaskId = mock(() => 'TASK_001');
 
-      // Mock the modules
-      mock.module('./config', () => ({
-        getConfig: mockGetConfig,
-        getLintConfig: () => ({ enabled: false }),
-      }));
-      mock.module('./claude-md', () => ({
-        getActiveTaskId: mockGetActiveTaskId,
-      }));
-      mock.module('node:child_process', () => ({
+      const deps: ValidationDeps = {
         execSync: mockExecSync,
-      }));
-      mock.module('node:fs', () => ({
-        existsSync: mockExistsSync,
-        readFileSync: mockReadFileSync,
-      }));
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({
+          hooks: {
+            edit_validation: {
+              typecheck: { enabled: false },
+              lint: { enabled: false },
+            },
+          },
+        })),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
 
-      const result = await runValidationChecks('/test/project');
+      const result = await runValidationChecks('/test/project', deps);
 
       expect(result.success).toBe(true);
       expect(result.readyForCompletion).toBe(true);
@@ -63,20 +55,13 @@ describe('validation', () => {
       expect(result.validation.lint?.passed).toBe(true);
 
       // TypeScript command should never be called when disabled
-      expect(mockExecSync).not.toHaveBeenCalledWith(expect.stringContaining('tsc'), expect.any(Object));
+      expect(mockExecSync).not.toHaveBeenCalledWith(
+        expect.stringContaining('tsc'),
+        expect.any(Object)
+      );
     });
 
     test('fails validation when TypeScript is enabled and has errors', async () => {
-      // Mock config to enable TypeScript
-      const mockGetConfig = mock(() => ({
-        hooks: {
-          edit_validation: {
-            typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
-            lint: { enabled: false },
-          },
-        },
-      }));
-
       // Mock TypeScript failure
       const mockExecSync = mock((command: string) => {
         if (command.includes('tsc')) {
@@ -106,25 +91,29 @@ describe('validation', () => {
         }
         return '';
       });
-      const mockGetActiveTaskId = mock(() => 'TASK_001');
 
-      // Mock the modules
-      mock.module('./config', () => ({
-        getConfig: mockGetConfig,
-        getLintConfig: () => ({ enabled: false }),
-      }));
-      mock.module('./claude-md', () => ({
-        getActiveTaskId: mockGetActiveTaskId,
-      }));
-      mock.module('node:child_process', () => ({
+      const deps: ValidationDeps = {
         execSync: mockExecSync,
-      }));
-      mock.module('node:fs', () => ({
-        existsSync: mockExistsSync,
-        readFileSync: mockReadFileSync,
-      }));
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({
+          hooks: {
+            edit_validation: {
+              typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
+              lint: { enabled: false },
+            },
+          },
+        })),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
 
-      const result = await runValidationChecks('/test/project');
+      const result = await runValidationChecks('/test/project', deps);
 
       expect(result.success).toBe(true);
       expect(result.readyForCompletion).toBe(false); // Should fail due to TypeScript errors
@@ -132,20 +121,13 @@ describe('validation', () => {
       expect(result.validation.typescript?.errorCount).toBe(1);
 
       // TypeScript command should be called when enabled
-      expect(mockExecSync).toHaveBeenCalledWith('bunx tsc --noEmit', expect.objectContaining({ cwd: '/test/project' }));
+      expect(mockExecSync).toHaveBeenCalledWith(
+        'bunx tsc --noEmit',
+        expect.objectContaining({ cwd: '/test/project' })
+      );
     });
 
     test('passes validation when TypeScript is enabled and has no errors', async () => {
-      // Mock config to enable TypeScript
-      const mockGetConfig = mock(() => ({
-        hooks: {
-          edit_validation: {
-            typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
-            lint: { enabled: false },
-          },
-        },
-      }));
-
       // Mock successful TypeScript check
       const mockExecSync = mock((command: string) => {
         if (command.includes('git status')) {
@@ -170,42 +152,57 @@ describe('validation', () => {
         }
         return '';
       });
-      const mockGetActiveTaskId = mock(() => 'TASK_001');
 
-      // Mock the modules
-      mock.module('./config', () => ({
-        getConfig: mockGetConfig,
-        getLintConfig: () => ({ enabled: false }),
-      }));
-      mock.module('./claude-md', () => ({
-        getActiveTaskId: mockGetActiveTaskId,
-      }));
-      mock.module('node:child_process', () => ({
+      const deps: ValidationDeps = {
         execSync: mockExecSync,
-      }));
-      mock.module('node:fs', () => ({
-        existsSync: mockExistsSync,
-        readFileSync: mockReadFileSync,
-      }));
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({
+          hooks: {
+            edit_validation: {
+              typecheck: { enabled: true, command: 'bunx tsc --noEmit' },
+              lint: { enabled: false },
+            },
+          },
+        })),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
 
-      const result = await runValidationChecks('/test/project');
+      const result = await runValidationChecks('/test/project', deps);
 
       expect(result.success).toBe(true);
       expect(result.readyForCompletion).toBe(true);
       expect(result.validation.typescript?.passed).toBe(true);
 
       // TypeScript command should be called when enabled
-      expect(mockExecSync).toHaveBeenCalledWith('bunx tsc --noEmit', expect.objectContaining({ cwd: '/test/project' }));
+      expect(mockExecSync).toHaveBeenCalledWith(
+        'bunx tsc --noEmit',
+        expect.objectContaining({ cwd: '/test/project' })
+      );
     });
 
     test('handles missing active task', async () => {
-      const mockGetActiveTaskId = mock(() => null);
+      const deps: ValidationDeps = {
+        execSync: mock(() => ''),
+        fileOps: {
+          existsSync: mock(() => true),
+          readFileSync: mock(() => ''),
+        },
+        getConfig: mock(() => ({})),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => null), // No active task
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
 
-      mock.module('./claude-md', () => ({
-        getActiveTaskId: mockGetActiveTaskId,
-      }));
-
-      const result = await runValidationChecks('/test/project');
+      const result = await runValidationChecks('/test/project', deps);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('No active task found');
@@ -214,16 +211,6 @@ describe('validation', () => {
 
     test('uses custom TypeScript command when configured', async () => {
       const customCommand = 'npx tsc --strict --noEmit';
-
-      // Mock config with custom command
-      const mockGetConfig = mock(() => ({
-        hooks: {
-          edit_validation: {
-            typecheck: { enabled: true, command: customCommand },
-            lint: { enabled: false },
-          },
-        },
-      }));
 
       const mockExecSync = mock((command: string) => {
         if (command.includes('git status')) {
@@ -248,30 +235,38 @@ describe('validation', () => {
         }
         return '';
       });
-      const mockGetActiveTaskId = mock(() => 'TASK_001');
 
-      mock.module('./config', () => ({
-        getConfig: mockGetConfig,
-        getLintConfig: () => ({ enabled: false }),
-      }));
-      mock.module('./claude-md', () => ({
-        getActiveTaskId: mockGetActiveTaskId,
-      }));
-      mock.module('node:child_process', () => ({
+      const deps: ValidationDeps = {
         execSync: mockExecSync,
-      }));
-      mock.module('node:fs', () => ({
-        existsSync: mockExistsSync,
-        readFileSync: mockReadFileSync,
-      }));
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({
+          hooks: {
+            edit_validation: {
+              typecheck: { enabled: true, command: customCommand },
+              lint: { enabled: false },
+            },
+          },
+        })),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
 
-      const result = await runValidationChecks('/test/project');
+      const result = await runValidationChecks('/test/project', deps);
 
       expect(result.success).toBe(true);
       expect(result.validation.typescript?.passed).toBe(true);
 
       // Should use the custom command
-      expect(mockExecSync).toHaveBeenCalledWith(customCommand, expect.objectContaining({ cwd: '/test/project' }));
+      expect(mockExecSync).toHaveBeenCalledWith(
+        customCommand,
+        expect.objectContaining({ cwd: '/test/project' })
+      );
     });
   });
 });
