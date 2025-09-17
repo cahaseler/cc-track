@@ -26,6 +26,10 @@
 
 ## Log Entries
 
+[2025-09-17 11:45] - Completed: TASK_069 - Fix CodeRabbit/code-review Tests Filesystem Access
+  Details: Updated test files to use mock logger, eliminating filesystem dependencies in CI
+  Files: src/lib/code-review/coderabbit.test.ts, src/lib/code-review/index.test.ts
+
 [2025-09-15 15:35] - Completed: TASK_057 - Remove Post-Compact/SessionStart Hook
   Details: Successfully removed all post-compact hook functionality from the codebase
   Files: Deleted 2 files (post-compact.ts, post-compact.test.ts), modified 12 files across configs, source, tests, and docs
