@@ -339,6 +339,7 @@ Respond with ONLY the markdown content.`;
 function commitTaskFilesToMain(taskId: string, projectRoot: string, deps: CapturePlanDependencies): void {
   const exec = deps.execSync || execSync;
   const logger = deps.logger || createLogger('capture_plan');
+  const gitHelpers = deps.gitHelpers || new GitHelpers();
 
   if (!/^\d{3}$/.test(taskId)) {
     logger.error(`Invalid task ID format: ${taskId}`);
@@ -347,8 +348,9 @@ function commitTaskFilesToMain(taskId: string, projectRoot: string, deps: Captur
 
   try {
     const currentBranch = exec('git branch --show-current', { cwd: projectRoot, encoding: 'utf-8' }).trim();
-    if (currentBranch !== 'main' && currentBranch !== 'master') {
-      logger.warn(`Not on main branch (on ${currentBranch}), skipping commit`);
+    const defaultBranch = gitHelpers.getDefaultBranch(projectRoot);
+    if (currentBranch !== defaultBranch) {
+      logger.warn(`Not on default branch (on ${currentBranch}, default is ${defaultBranch}), skipping commit`);
       return;
     }
 

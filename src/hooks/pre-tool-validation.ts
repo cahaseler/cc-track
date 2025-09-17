@@ -177,9 +177,13 @@ export async function preToolValidationHook(
 
       if (filePath) {
         const currentBranch = gitHelpers.getCurrentBranch(cwd);
-        const protectedBranches = config.features.branch_protection.protected_branches || ['main', 'master'];
+        const defaultBranch = gitHelpers.getDefaultBranch(cwd);
+        const configuredProtected = config.features.branch_protection.protected_branches || [];
 
-        if (protectedBranches.includes(currentBranch)) {
+        // Combine configured protected branches with the actual default branch
+        const protectedBranches = new Set([...configuredProtected, defaultBranch]);
+
+        if (protectedBranches.has(currentBranch)) {
           // Check if gitignored files are allowed
           const allowGitignored = config.features.branch_protection.allow_gitignored !== false;
 

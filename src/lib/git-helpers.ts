@@ -47,7 +47,7 @@ export class GitHelpers {
     }
 
     try {
-      // Try to get the default branch from git config
+      // Try to get the default branch from remote tracking
       const defaultBranch = this.exec(
         'git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@"',
         {
@@ -60,7 +60,23 @@ export class GitHelpers {
         return defaultBranch;
       }
     } catch {
-      // Fall through to check local branches
+      // Fall through to check git config
+    }
+
+    try {
+      // Check git config for the default branch name
+      const configDefault = this.exec('git config init.defaultBranch', { cwd }).trim();
+      if (configDefault) {
+        // Verify this branch actually exists
+        try {
+          this.exec(`git show-ref --verify --quiet refs/heads/${configDefault}`, { cwd });
+          return configDefault;
+        } catch {
+          // Configured default doesn't exist, continue checking
+        }
+      }
+    } catch {
+      // No config set, fall through to check common defaults
     }
 
     try {
@@ -76,7 +92,7 @@ export class GitHelpers {
       this.exec('git show-ref --verify --quiet refs/heads/master', { cwd });
       return 'master';
     } catch {
-      // Default to main if neither exists
+      // Default to main if neither exists (follows modern git convention)
       return 'main';
     }
   }

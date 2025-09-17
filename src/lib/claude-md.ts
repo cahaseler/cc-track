@@ -88,8 +88,11 @@ export class ClaudeMdHelpers {
     let content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
 
     // Replace no_active_task.md or existing task
+    // Handle both @.claude/no_active_task.md and @.claude/tasks/no_active_task.md formats
     if (content.includes('@.claude/no_active_task.md')) {
       content = content.replace('@.claude/no_active_task.md', `@.claude/tasks/${taskId}.md`);
+    } else if (content.includes('@.claude/tasks/no_active_task.md')) {
+      content = content.replace('@.claude/tasks/no_active_task.md', `@.claude/tasks/${taskId}.md`);
     } else {
       content = content.replace(/@\.claude\/tasks\/TASK_\d+\.md/, `@.claude/tasks/${taskId}.md`);
     }
