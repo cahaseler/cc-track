@@ -163,7 +163,7 @@ describe('prepareCompletionAction', () => {
         readyForCompletion: false,
         validation: {
           typescript: { passed: false, errorCount: 3, errors: 'TS error output' },
-          biome: { passed: false, issueCount: 2, errors: 'Biome output' },
+          lint: { passed: false, issueCount: 2, errors: 'Lint output' },
           tests: { passed: false, failCount: 1, errors: 'Test failure' },
           knip: { passed: false, unusedFiles: 1, unusedExports: 0, unusedDeps: 0 },
         },

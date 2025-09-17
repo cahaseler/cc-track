@@ -1,26 +1,59 @@
 {
-  "capture_plan": false,
-  "stop_review": false,
-  "edit_validation": false,
-  "pre_compact": false,
-  "statusline": false,
-  "git_branching": false,
-  "private_journal": false,
-  "api_timer": {
-    "display": "hide"
+  "hooks": {
+    "capture_plan": {
+      "enabled": false
+    },
+    "stop_review": {
+      "enabled": false
+    },
+    "edit_validation": {
+      "enabled": false,
+      "typecheck": {
+        "enabled": false
+      },
+      "lint": {
+        "enabled": false
+      }
+    },
+    "pre_compact": {
+      "enabled": false
+    },
+    "pre_tool_validation": {
+      "enabled": false
+    }
   },
-  "github_integration": {
-    "enabled": false,
-    "auto_create_issues": false,
-    "use_issue_branches": false,
-    "auto_create_prs": false
-  },
-  "code_review": {
-    "enabled": false,
-    "tool": "claude"
+  "features": {
+    "statusline": {
+      "enabled": false
+    },
+    "git_branching": {
+      "enabled": false
+    },
+    "private_journal": {
+      "enabled": false
+    },
+    "branch_protection": {
+      "enabled": false,
+      "protected_branches": ["main", "master"],
+      "allow_gitignored": true
+    },
+    "api_timer": {
+      "display": "hide"
+    },
+    "github_integration": {
+      "enabled": false,
+      "auto_create_issues": false,
+      "use_issue_branches": false,
+      "auto_create_prs": false
+    },
+    "code_review": {
+      "enabled": false,
+      "tool": "claude"
+    }
   },
   "logging": {
+    "enabled": true,
     "level": "info",
-    "retention_days": 7
+    "retentionDays": 7
   }
 }

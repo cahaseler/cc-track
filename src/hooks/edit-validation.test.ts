@@ -6,7 +6,7 @@ import {
   extractFilePaths,
   filterTypeScriptFiles,
   formatValidationResults,
-  runBiomeCheck,
+  runLintCheck,
   runTypeScriptCheck,
 } from './edit-validation';
 
@@ -229,7 +229,7 @@ describe('edit-validation', () => {
     });
   });
 
-  describe('runBiomeCheck', () => {
+  describe('runLintCheck', () => {
     const mockLogger = {
       debug: mock(() => {}),
       info: mock(() => {}),
@@ -248,12 +248,12 @@ describe('edit-validation', () => {
       };
 
       const mockExec = mock(() => '');
-      const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+      const result = runLintCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
       expect(mockExec).not.toHaveBeenCalled();
     });
 
-    test('returns empty array when Biome check passes', () => {
+    test('returns empty array when lint check passes', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
@@ -262,11 +262,11 @@ describe('edit-validation', () => {
       };
 
       const mockExec = mock(() => '');
-      const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+      const result = runLintCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
     });
 
-    test('extracts Biome errors from stdout', () => {
+    test('extracts lint errors from stdout', () => {
       const config: EditValidationConfig = {
         enabled: true,
         description: 'test',
@@ -275,12 +275,12 @@ describe('edit-validation', () => {
       };
 
       const mockExec = mock(() => {
-        const error = new Error('Biome failed');
+        const error = new Error('Lint check failed');
         (error as { stdout?: string }).stdout = '/test/file.ts:10:5 lint/suspicious/noExplicitAny Unexpected any.';
         throw error;
       });
 
-      const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+      const result = runLintCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual(['Line 10: Unexpected any.']);
     });
 
@@ -299,7 +299,7 @@ describe('edit-validation', () => {
       });
 
       expect(() => {
-        runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+        runLintCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       }).toThrow('Command timed out');
     });
 
@@ -315,7 +315,7 @@ describe('edit-validation', () => {
         throw new Error('Some generic error');
       });
 
-      const result = runBiomeCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
+      const result = runLintCheck('/test/file.ts', config, '/test', mockExec, mockLogger);
       expect(result).toEqual([]);
     });
   });
@@ -413,12 +413,12 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.reason).toContain('TypeScript/Biome validation failed');
+      expect(result.reason).toContain('TypeScript/Lint validation failed');
       expect(result.reason).toContain("Type 'string' is not assignable to type 'number'");
     });
 
-    test('blocks edit when Biome linting fails', async () => {
-      // Mock execSync - TypeScript passes, Biome fails
+    test('blocks edit when linting fails', async () => {
+      // Mock execSync - TypeScript passes, lint check fails
       const mockExec = mock((cmd: string) => {
         if (cmd.includes('tsc')) {
           return ''; // TypeScript passes
@@ -450,14 +450,14 @@ describe('edit-validation', () => {
         }),
       });
       expect(result.decision).toBe('block');
-      expect(result.reason).toContain('TypeScript/Biome validation failed');
+      expect(result.reason).toContain('TypeScript/Lint validation failed');
       expect(result.reason).toContain('Unexpected any');
     });
 
     test('allows edit when all validation passes', async () => {
       // Mock execSync - everything passes
       const mockExec = mock((_cmd: string) => {
-        return ''; // Both TypeScript and Biome pass
+        return ''; // Both TypeScript and lint checks pass
       });
 
       const input: HookInput = {
@@ -512,7 +512,7 @@ describe('edit-validation', () => {
       expect(result.continue).toBe(true);
       // Verify the configured commands were used (now runs on whole project)
       expect(executedCommands).toContain('bunx tsc --noEmit --pretty false --incremental');
-      expect(executedCommands).toContain('bunx biome check --write "/test/test.ts" --reporter=compact');
+      expect(executedCommands).toContain('bunx biome check --write "/test/test.ts"');
     });
 
     test('handles MultiEdit with multiple files', async () => {

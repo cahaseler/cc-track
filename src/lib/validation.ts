@@ -2,8 +2,9 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getActiveTaskId } from './claude-md';
-import { type EditValidationConfig, getConfig } from './config';
+import { type EditValidationConfig, getConfig, getLintConfig } from './config';
 import { isWipCommit } from './git-helpers';
+import { getLintParser } from './lint-parsers';
 import { createLogger } from './logger';
 
 const logger = createLogger('validation');
@@ -14,7 +15,7 @@ interface ValidationResult {
     errors?: string;
     errorCount?: number;
   };
-  biome?: {
+  lint?: {
     passed: boolean;
     errors?: string;
     issueCount?: number;
@@ -88,43 +89,46 @@ function runTypeScriptCheck(projectRoot: string): ValidationResult['typescript']
 }
 
 /**
- * Run Biome linting and auto-formatting
+ * Run linting and auto-formatting
  */
-function runBiomeCheck(projectRoot: string): ValidationResult['biome'] {
+function runLintCheck(projectRoot: string): ValidationResult['lint'] {
   try {
-    // First, run auto-formatter
-    try {
-      logger.info('Running Biome auto-formatter');
-      execSync('bunx biome check --write', { cwd: projectRoot, encoding: 'utf-8' });
-    } catch {
-      // Auto-formatter might fail if there are syntax errors, continue to check
+    const lintConfig = getLintConfig();
+    if (!lintConfig || !lintConfig.enabled) {
+      logger.info('Lint check disabled');
+      return { passed: true };
     }
 
-    // Now run the check with --error-on-warnings to fail on any issues
-    const config = getConfig();
-    const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
-    const biomeConfig = editValidation?.lint;
-    const baseCommand = biomeConfig?.command || 'bunx biome check';
-    // Add --error-on-warnings flag if not already present
-    const command = baseCommand.includes('--error-on-warnings') ? baseCommand : `${baseCommand} --error-on-warnings`;
+    // First, run auto-formatter if configured
+    if (lintConfig.autoFixCommand) {
+      try {
+        logger.info('Running lint auto-formatter', { command: lintConfig.autoFixCommand });
+        execSync(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8' });
+      } catch {
+        // Auto-formatter might fail if there are syntax errors, continue to check
+      }
+    }
 
-    logger.info('Running Biome check', { command });
+    // Now run the lint check
+    const command = lintConfig.command;
+    logger.info('Running lint check', { command, tool: lintConfig.tool || 'biome' });
     execSync(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     return { passed: true };
   } catch (error) {
     const err = error as { stdout?: string; stderr?: string };
-    const output = err.stdout || err.stderr || 'Biome check failed';
+    const output = err.stdout || err.stderr || 'Lint check failed';
 
-    // Try to parse Biome output for issue count
-    const issueMatch = output.match(/(\d+)\s+diagnostic/);
-    const issueCount = issueMatch ? parseInt(issueMatch[1], 10) : undefined;
+    // Parse output using the appropriate parser
+    const lintConfig = getLintConfig();
+    const parser = getLintParser(lintConfig?.tool || 'biome');
+    const parseResult = parser.parseOutput(output);
 
-    logger.error('Biome check failed', { issueCount });
+    logger.error('Lint check failed', { issueCount: parseResult.issueCount });
     return {
       passed: false,
       errors: output.substring(0, 2000),
-      issueCount,
+      issueCount: parseResult.issueCount,
     };
   }
 }
@@ -402,8 +406,8 @@ export async function runValidationChecks(projectRoot: string = process.cwd()): 
     // TypeScript check
     result.validation.typescript = runTypeScriptCheck(projectRoot);
 
-    // Biome check
-    result.validation.biome = runBiomeCheck(projectRoot);
+    // Lint check
+    result.validation.lint = runLintCheck(projectRoot);
 
     // Test check
     result.validation.tests = runTests(projectRoot);
@@ -414,7 +418,7 @@ export async function runValidationChecks(projectRoot: string = process.cwd()): 
     // Determine if ready for completion
     const allValidationPassed =
       result.validation.typescript?.passed !== false &&
-      result.validation.biome?.passed !== false &&
+      result.validation.lint?.passed !== false &&
       result.validation.tests?.passed !== false;
 
     // Knip issues are warnings, not blockers

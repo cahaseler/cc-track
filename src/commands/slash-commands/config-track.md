@@ -15,7 +15,16 @@ If called without parameters, show the current configuration and ask what they'd
 - `pre_compact` - Updates task documentation before compaction
 - `post_compact` - Restores context after compaction
 - `stop_review` - Reviews changes and auto-commits with [wip]
-- `edit_validation` - Runs TypeScript/Biome checks on edited files
+- `edit_validation` - Runs TypeScript/lint checks on edited files
+  - Configure the lint tool with:
+    ```json
+    "lint": {
+      "enabled": true,
+      "tool": "biome",  // or "eslint" or "custom"
+      "command": "bunx biome check",
+      "autoFixCommand": "bunx biome check --write"
+    }
+    ```
 
 **Features:**
 - `statusline` - Custom status line with costs and task info

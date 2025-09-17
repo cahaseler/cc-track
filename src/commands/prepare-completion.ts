@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { getActiveTaskId } from '../lib/claude-md';
 import { performCodeReview } from '../lib/code-review';
-import { getCodeReviewTool, getConfig, isCodeReviewEnabled } from '../lib/config';
+import { getCodeReviewTool, getConfig, getLintConfig, isCodeReviewEnabled } from '../lib/config';
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
@@ -277,19 +277,33 @@ export async function prepareCompletionAction(
         );
       }
 
-      // Biome/linting issues
-      if (result.validation?.biome?.passed === false) {
+      // Linting issues
+      if (result.validation?.lint?.passed === false) {
         messages.push('#### Linting Issues');
-        messages.push(`Found ${result.validation.biome.issueCount || 'multiple'} Biome issues.\n`);
-        if (result.validation.biome.errors) {
+        messages.push(`Found ${result.validation.lint.issueCount || 'multiple'} linting issues.\n`);
+        if (result.validation.lint.errors) {
           messages.push('```');
-          messages.push(result.validation.biome.errors.substring(0, 1000));
-          if (result.validation.biome.errors.length > 1000) {
+          messages.push(result.validation.lint.errors.substring(0, 1000));
+          if (result.validation.lint.errors.length > 1000) {
             messages.push('... (truncated)');
           }
           messages.push('```\n');
         }
-        messages.push('**Action:** Fix linting issues. Many can be auto-fixed with `bunx biome check --write`.\n');
+
+        // Generate tool-specific fix advice
+        const lintConfig = getLintConfig();
+        const tool = lintConfig?.tool || 'biome';
+        let fixAdvice = 'Fix linting issues';
+
+        if (lintConfig?.autoFixCommand) {
+          fixAdvice = `Fix linting issues. Many can be auto-fixed with \`${lintConfig.autoFixCommand}\``;
+        } else if (tool === 'biome') {
+          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `bunx biome check --write`';
+        } else if (tool === 'eslint') {
+          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `npx eslint --fix`';
+        }
+
+        messages.push(`**Action:** ${fixAdvice}.\n`);
       }
 
       // Test failures

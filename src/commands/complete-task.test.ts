@@ -194,7 +194,7 @@ describe('runCompleteTask', () => {
         task: { exists: true, taskId: 'TASK_001', status: 'in_progress' },
         validation: {
           typescript: { passed: false, errorCount: 2, errors: 'TS errors' },
-          biome: { passed: false, issueCount: 1, errors: 'Biome issue' },
+          lint: { passed: false, issueCount: 1, errors: 'Lint issue' },
           tests: { passed: false, failCount: 1, errors: 'Test failure' },
           knip: { passed: false, unusedFiles: 1, unusedExports: 0, unusedDeps: 0 },
         },
