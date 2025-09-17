@@ -101,24 +101,19 @@ function runTypeScriptCheck(projectRoot: string, deps: ValidationDeps = {}): Val
 /**
  * Run linting and auto-formatting
  */
-function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): ValidationResult['lint'] {
-  const getLintConfigFn = deps.getLintConfig || getLintConfig;
-  const exec = deps.execSync || execSync;
-  const getParserFn = deps.getLintParser || getLintParser;
-  const log = deps.logger || logger;
-
+function runLintCheck(projectRoot: string): ValidationResult['lint'] {
   try {
-    const lintConfig = getLintConfigFn();
+    const lintConfig = getLintConfig();
     if (!lintConfig || !lintConfig.enabled) {
-      log.info('Lint check disabled');
+      logger.info('Lint check disabled');
       return { passed: true };
     }
 
     // First, run auto-formatter if configured
     if (lintConfig.autoFixCommand) {
       try {
-        log.info('Running lint auto-formatter', { command: lintConfig.autoFixCommand });
-        exec(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8' });
+        logger.info('Running lint auto-formatter', { command: lintConfig.autoFixCommand });
+        execSync(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8' });
       } catch {
         // Auto-formatter might fail if there are syntax errors, continue to check
       }
@@ -126,8 +121,8 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
 
     // Now run the lint check
     const command = lintConfig.command;
-    log.info('Running lint check', { command, tool: lintConfig.tool || 'biome' });
-    exec(command, { cwd: projectRoot, encoding: 'utf-8' });
+    logger.info('Running lint check', { command, tool: lintConfig.tool || 'biome' });
+    execSync(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     return { passed: true };
   } catch (error) {
@@ -135,11 +130,11 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     const output = err.stdout || err.stderr || 'Lint check failed';
 
     // Parse output using the appropriate parser
-    const lintConfig = getLintConfigFn();
-    const parser = getParserFn(lintConfig?.tool || 'biome');
+    const lintConfig = getLintConfig();
+    const parser = getLintParser(lintConfig?.tool || 'biome');
     const parseResult = parser.parseOutput(output);
 
-    log.error('Lint check failed', { issueCount: parseResult.issueCount });
+    logger.error('Lint check failed', { issueCount: parseResult.issueCount });
     return {
       passed: false,
       errors: output.substring(0, 2000),
@@ -151,37 +146,33 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
 /**
  * Run tests
  */
-function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationResult['tests'] {
-  const fs = deps.fileOps || { existsSync, readFileSync };
-  const exec = deps.execSync || execSync;
-  const log = deps.logger || logger;
-
+function runTests(projectRoot: string): ValidationResult['tests'] {
   try {
     // Check if test script exists in package.json
     const packageJsonPath = join(projectRoot, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
       if (!packageJson.scripts?.test) {
-        log.info('No test script found in package.json');
+        logger.info('No test script found in package.json');
         return { passed: true };
       }
     }
 
-    log.info('Running tests');
+    logger.info('Running tests');
     // Run tests silently and just check exit code
     // We redirect output to /dev/null to avoid polluting the JSON output
     try {
-      exec('bun test >/dev/null 2>&1', {
+      execSync('bun test >/dev/null 2>&1', {
         cwd: projectRoot,
         encoding: 'utf-8',
         shell: '/bin/bash',
       });
-      // If exec doesn't throw, tests passed
-      log.info('All tests passed');
+      // If execSync doesn't throw, tests passed
+      logger.info('All tests passed');
       return { passed: true };
     } catch (_testError) {
       // Tests failed - run again to get details for the error report
-      const output = exec('bun test 2>&1 || true', {
+      const output = execSync('bun test 2>&1 || true', {
         cwd: projectRoot,
         encoding: 'utf-8',
         shell: '/bin/bash',
@@ -211,7 +202,7 @@ function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationRes
     const failMatch = output.match(/(\d+)\s+fail/);
     const failCount = failMatch ? parseInt(failMatch[1], 10) : undefined;
 
-    log.error('Tests failed', { failCount });
+    logger.error('Tests failed', { failCount });
     return {
       passed: false,
       errors: output.substring(0, 2000),
@@ -223,25 +214,21 @@ function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationRes
 /**
  * Run Knip for unused code detection
  */
-function runKnipCheck(projectRoot: string, deps: ValidationDeps = {}): ValidationResult['knip'] {
-  const getConfigFn = deps.getConfig || getConfig;
-  const exec = deps.execSync || execSync;
-  const log = deps.logger || logger;
-
+function runKnipCheck(projectRoot: string): ValidationResult['knip'] {
   try {
-    const config = getConfigFn();
+    const config = getConfig();
     const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
     const knipConfig = editValidation?.knip;
 
     if (!knipConfig?.enabled) {
-      log.info('Knip check disabled');
+      logger.info('Knip check disabled');
       return { passed: true };
     }
 
     const command = knipConfig.command || 'bunx knip';
-    log.info('Running Knip check', { command });
+    logger.info('Running Knip check', { command });
 
-    const output = exec(command, { cwd: projectRoot, encoding: 'utf-8' });
+    const output = execSync(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     // Parse Knip output
     const filesMatch = output.match(/Unused files\s+(\d+)/);
@@ -272,7 +259,7 @@ function runKnipCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     const exportsMatch = output.match(/Unused exports\s+(\d+)/);
     const depsMatch = output.match(/Unused dependencies\s+(\d+)/);
 
-    log.warn('Knip check completed with issues');
+    logger.warn('Knip check completed with issues');
     return {
       passed: false,
       unusedFiles: filesMatch ? parseInt(filesMatch[1], 10) : undefined,
@@ -286,14 +273,10 @@ function runKnipCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
 /**
  * Get git status information
  */
-function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps = {}): GitStatus {
-  const exec = deps.execSync || execSync;
-  const isWipCommitFn = deps.isWipCommit || isWipCommit;
-  const log = deps.logger || logger;
-
+function getGitStatus(projectRoot: string, taskId?: string): GitStatus {
   try {
     // Check for uncommitted changes
-    const statusOutput = exec('git status --porcelain', {
+    const statusOutput = execSync('git status --porcelain', {
       cwd: projectRoot,
       encoding: 'utf-8',
     }).trim();
@@ -304,13 +287,13 @@ function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps
       .map((line) => line.substring(3).trim());
 
     // Get current branch
-    const currentBranch = exec('git branch --show-current', {
+    const currentBranch = execSync('git branch --show-current', {
       cwd: projectRoot,
       encoding: 'utf-8',
     }).trim();
 
     // Count WIP commits
-    const gitLog = exec('git log --oneline -20', {
+    const gitLog = execSync('git log --oneline -20', {
       cwd: projectRoot,
       encoding: 'utf-8',
     });
@@ -318,12 +301,12 @@ function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps
     const wipCommitCount = gitLog
       .split('\n')
       .filter((line) => line.trim())
-      .filter((line) => isWipCommitFn(line)).length;
+      .filter((line) => isWipCommit(line)).length;
 
     // Check if on task branch
     const isTaskBranch = taskId ? currentBranch.includes(taskId.toLowerCase()) : false;
 
-    log.info('Git status', {
+    logger.info('Git status', {
       hasUncommittedChanges: modifiedFiles.length > 0,
       modifiedFileCount: modifiedFiles.length,
       wipCommitCount,
@@ -339,7 +322,7 @@ function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps
       isTaskBranch,
     };
   } catch (error) {
-    log.error('Failed to get git status', { error });
+    logger.error('Failed to get git status', { error });
     return {
       hasUncommittedChanges: false,
       modifiedFiles: [],
@@ -353,23 +336,19 @@ function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps
 /**
  * Get task information
  */
-function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
-  const getActiveTaskIdFn = deps.getActiveTaskId || getActiveTaskId;
-  const fs = deps.fileOps || { existsSync, readFileSync };
-  const log = deps.logger || logger;
-
+function getTaskInfo(projectRoot: string): TaskInfo {
   try {
-    const taskId = getActiveTaskIdFn(projectRoot);
+    const taskId = getActiveTaskId(projectRoot);
     if (!taskId) {
       return { exists: false };
     }
 
     const taskFilePath = join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
-    if (!fs.existsSync(taskFilePath)) {
+    if (!existsSync(taskFilePath)) {
       return { exists: false };
     }
 
-    const taskContent = fs.readFileSync(taskFilePath, 'utf-8');
+    const taskContent = readFileSync(taskFilePath, 'utf-8');
 
     // Extract task title
     const titleMatch = taskContent.match(/^# (.+)$/m);
@@ -379,7 +358,7 @@ function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
     const statusMatch = taskContent.match(/\*\*Status:\*\* (\w+)/);
     const status = statusMatch ? statusMatch[1] : 'unknown';
 
-    log.info('Task info', { taskId, taskTitle, status });
+    logger.info('Task info', { taskId, taskTitle, status });
 
     return {
       exists: true,
@@ -389,7 +368,7 @@ function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
       filePath: taskFilePath,
     };
   } catch (error) {
-    log.error('Failed to get task info', { error });
+    logger.error('Failed to get task info', { error });
     return { exists: false };
   }
 }
@@ -414,7 +393,7 @@ export interface ValidationDeps {
  */
 export async function runValidationChecks(
   projectRoot: string = process.cwd(),
-  deps: ValidationDeps = {},
+  deps: ValidationDeps = {}
 ): Promise<PreparationResult> {
   const result: PreparationResult = {
     success: false,
