@@ -102,11 +102,18 @@ const ageInSeconds = (now.getTime() - statusTime.getTime()) / 1000;
 return ageInSeconds < 60 ? status.message : '';
 ```
 
+## Recent Progress
+- Discovered that Claude Code's recent update now hides hook outputs with "condensed output" feature
+- Analyzed current hook implementation patterns to understand how our stop-review and edit-validation hooks work
+- Confirmed stop-review hook correctly uses `systemMessage` for user-facing content (should still be visible)
+- Identified that edit-validation hook incorrectly uses `reason` field instead of `additionalContext` for TypeScript/lint feedback
+- Verified through logs investigation that edit-validation hook may not actually be blocking as expected
+
 ## Current Focus
-Start with stop-review hook modification in `src/hooks/stop-review.ts`:
-1. Add hook status writing at line 827 (after `logger.info('Review complete', ...)`)
-2. Implement meaningful message filtering
-3. Test with simple status write
+Task temporarily paused while investigating Claude Code's hook output visibility changes:
+1. Understanding what outputs are still visible to users after the "condensed output" update
+2. Testing different JSON output methods to determine if `systemMessage` workaround is viable
+3. Determining if the task is still necessary given the broader hook visibility issue
 
 ## Research Findings
 
