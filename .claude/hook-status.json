@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-09-17T15:36:09.918Z",
-  "message": "Adding test markers doesn't address the core task of displaying hook status in statusline",
+  "timestamp": "2025-09-17T15:38:07.751Z",
+  "message": "Removed test markers and functionality without completing the core statusline task",
   "status": "deviation",
   "source": "stop_review"
 }

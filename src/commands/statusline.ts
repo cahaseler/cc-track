@@ -138,8 +138,7 @@ export function getRecentHookStatus(deps = defaultDeps): { message: string; emoj
           emoji = '❌';
           color = '\x1b[91m'; // Bright red for errors
           break;
-        case 'on_track':
-        default:
+        default: // Includes 'on_track' and any unknown status
           emoji = '✅';
           color = '\x1b[92m'; // Bright green for success
           break;
@@ -241,13 +240,13 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
     firstLine += ` | ${tokens}`;
   }
 
-  // Build second line (with track emoji for consistency)
-  let secondLine = '🛤️ ';
+  // Build second line
+  let secondLine = '';
   if (branch) {
-    secondLine += branch;
+    secondLine = branch;
   }
   if (task) {
-    secondLine += secondLine.length > 4 ? ` | ${task}` : task;
+    secondLine += secondLine ? ` | ${task}` : task;
   }
 
   // Build output with optional hook status line
