@@ -1,0 +1,2 @@
+This is a random test file to trigger the stop review hook.
+Let's see which field gets sent to Claude as a system reminder!
