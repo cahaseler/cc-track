@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  type TempProject,
+  ClaudeSDKStub,
   captureSystemState,
   createMockPlan,
   createTempProject,
   runCommand,
   runHook,
-  ClaudeSDKStub,
+  type TempProject,
 } from '../test-utils/integration-helpers';
 
 describe('Configuration Propagation Tests', () => {
@@ -31,7 +30,7 @@ describe('Configuration Propagation Tests', () => {
       gitInit: true,
       trackConfig: {
         capture_plan: false, // Disabled
-        stop_review: false,  // Disabled
+        stop_review: false, // Disabled
         edit_validation: false, // Disabled
         git_branching: false, // Disabled
       },
@@ -45,7 +44,7 @@ describe('Configuration Propagation Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Test', 'Testing disabled features') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should pass through without creating task
@@ -64,7 +63,7 @@ describe('Configuration Propagation Tests', () => {
       {
         hook_event_name: 'Stop',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(stopResult).toHaveProperty('continue', true);
@@ -84,7 +83,7 @@ describe('Configuration Propagation Tests', () => {
           file_path: '/bad.ts',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should pass through despite type error
@@ -125,7 +124,7 @@ describe('Configuration Propagation Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Test', 'Testing enabled features') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     const state1 = captureSystemState(project.projectDir);
@@ -144,7 +143,7 @@ describe('Configuration Propagation Tests', () => {
           file_path: '/bad.ts',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(editResult).toHaveProperty('continue', false);
@@ -167,7 +166,7 @@ describe('Configuration Propagation Tests', () => {
       {
         hook_event_name: 'Stop',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -199,14 +198,14 @@ describe('Configuration Propagation Tests', () => {
 
     // Mock gh commands (should not be called)
     const ghCallCount = { count: 0 };
-    const originalExecSync = require('child_process').execSync;
+    const originalExecSync = require('node:child_process').execSync;
     const execMock = mock((command: string, options: any) => {
       if (command.includes('gh ')) {
         ghCallCount.count++;
       }
       return originalExecSync(command, options);
     });
-    require('child_process').execSync = execMock;
+    require('node:child_process').execSync = execMock;
 
     // Capture plan - should NOT create GitHub issue
     await runHook(
@@ -216,7 +215,7 @@ describe('Configuration Propagation Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('No GitHub', 'Test without GitHub') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(ghCallCount.count).toBe(0);
@@ -260,7 +259,7 @@ describe('Configuration Propagation Tests', () => {
       }
       return originalExecSync(command, options);
     });
-    require('child_process').execSync = execMock2;
+    require('node:child_process').execSync = execMock2;
 
     // Capture plan - SHOULD create GitHub issue
     await runHook(
@@ -270,12 +269,12 @@ describe('Configuration Propagation Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('With GitHub', 'Test with GitHub') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(ghCallCount.count).toBeGreaterThan(0);
 
-    require('child_process').execSync = originalExecSync;
+    require('node:child_process').execSync = originalExecSync;
     delete process.env.CLAUDE_CODE_EXECUTABLE;
   });
 
@@ -295,7 +294,7 @@ describe('Configuration Propagation Tests', () => {
       });
 
       // Mock ccusage command
-      const originalExecSync = require('child_process').execSync;
+      const originalExecSync = require('node:child_process').execSync;
       const execMock = mock((command: string, options: any) => {
         if (command.includes('ccusage')) {
           return JSON.stringify({
@@ -314,7 +313,7 @@ describe('Configuration Propagation Tests', () => {
         }
         return originalExecSync(command, options);
       });
-      require('child_process').execSync = execMock;
+      require('node:child_process').execSync = execMock;
 
       const result = await runCommand('statusline', [], project.projectDir);
 
@@ -327,7 +326,7 @@ describe('Configuration Propagation Tests', () => {
         expect(result.stdout).toContain('⏱');
       }
 
-      require('child_process').execSync = originalExecSync;
+      require('node:child_process').execSync = originalExecSync;
       project.cleanup();
     }
   });
@@ -358,7 +357,7 @@ describe('Configuration Propagation Tests', () => {
           content: 'test',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(result1).toHaveProperty('continue', false);
@@ -378,7 +377,7 @@ describe('Configuration Propagation Tests', () => {
           content: 'test',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(result2).toHaveProperty('continue', true);
@@ -402,7 +401,7 @@ describe('Configuration Propagation Tests', () => {
       {
         hook_event_name: 'Stop',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(result1).toHaveProperty('continue', true);
@@ -430,7 +429,7 @@ describe('Configuration Propagation Tests', () => {
       {
         hook_event_name: 'Stop',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -470,7 +469,7 @@ describe('Configuration Propagation Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Log test', 'Test logging configuration') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;

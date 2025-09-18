@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  type TempProject,
+  ClaudeSDKStub,
   captureSystemState,
   createMockPlan,
   createTempProject,
   runHook,
   runHookChain,
-  ClaudeSDKStub,
+  type TempProject,
 } from '../test-utils/integration-helpers';
 
 describe('Hook Chain Integration Tests', () => {
@@ -59,7 +58,7 @@ describe('Hook Chain Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Fix types', 'Fix type errors') },
       },
-      project.projectDir
+      project.projectDir,
     );
     delete process.env.CLAUDE_CODE_EXECUTABLE;
 
@@ -78,7 +77,7 @@ describe('Hook Chain Integration Tests', () => {
           new_string: 'const x: string = 123;',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should block due to type error
@@ -99,7 +98,7 @@ describe('Hook Chain Integration Tests', () => {
           new_string: 'const x: string = "123";',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should pass now
@@ -121,7 +120,7 @@ describe('Hook Chain Integration Tests', () => {
 
     // Mock GitHub commands
     const issueNumber = 42;
-    const originalExecSync = require('child_process').execSync;
+    const originalExecSync = require('node:child_process').execSync;
     const execMock = mock((command: string, options: any) => {
       const cmd = command.toString();
 
@@ -135,7 +134,7 @@ describe('Hook Chain Integration Tests', () => {
       return originalExecSync(command, options);
     });
 
-    require('child_process').execSync = execMock;
+    require('node:child_process').execSync = execMock;
 
     claudeStub.setDefaultResponse({
       text: '# Task\n\n## Requirements\n- [ ] Implement feature',
@@ -154,10 +153,10 @@ describe('Hook Chain Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan },
       },
-      project.projectDir
+      project.projectDir,
     );
 
-    require('child_process').execSync = originalExecSync;
+    require('node:child_process').execSync = originalExecSync;
     delete process.env.CLAUDE_CODE_EXECUTABLE;
 
     expect(captureResult).toHaveProperty('continue', true);
@@ -192,7 +191,7 @@ describe('Hook Chain Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Make changes', 'Task requiring changes') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Make changes
@@ -218,7 +217,7 @@ describe('Hook Chain Integration Tests', () => {
       {
         hook_event_name: 'Stop',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -261,7 +260,7 @@ describe('Hook Chain Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Add features', 'Adding new features') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Chain of hooks simulating real workflow
@@ -337,7 +336,7 @@ describe('Hook Chain Integration Tests', () => {
           content: 'export const x = 1;',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should be blocked
@@ -358,7 +357,7 @@ describe('Hook Chain Integration Tests', () => {
           content: 'export const x = 1;',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should be allowed now

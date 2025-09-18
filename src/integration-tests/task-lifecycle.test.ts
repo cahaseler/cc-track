@@ -1,17 +1,14 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  type TempProject,
+  ClaudeSDKStub,
   captureSystemState,
-  createMockPlan,
   createCapturePlanInput,
+  createMockPlan,
   createTempProject,
+  GitHubAPIStub,
   runCommand,
   runHook,
-  ClaudeSDKStub,
-  GitHubAPIStub,
+  type TempProject,
 } from '../test-utils/integration-helpers';
 
 describe('Task Lifecycle Integration Tests', () => {
@@ -40,10 +37,7 @@ describe('Task Lifecycle Integration Tests', () => {
     });
 
     // Create a mock plan
-    const plan = createMockPlan(
-      'Implement new feature',
-      'Add a new feature to the application'
-    );
+    const plan = createMockPlan('Implement new feature', 'Add a new feature to the application');
 
     // Capture plan (simulate ExitPlanMode hook)
     const planInput = createCapturePlanInput(plan);
@@ -74,7 +68,6 @@ describe('Task Lifecycle Integration Tests', () => {
     expect(state1.taskFiles).toContain('TASK_001.md');
     expect(state1.gitBranch).toBe('feature/test-task-001');
 
-
     // Simulate some development work
     project.writeFile('src/feature.ts', 'export function newFeature() { return "implemented"; }');
     project.execInProject('git add src/feature.ts');
@@ -93,11 +86,7 @@ describe('Task Lifecycle Integration Tests', () => {
     expect(state2.lastCommitMessage).toContain('wip');
 
     // Complete the task
-    const completeResult = await runCommand(
-      'complete-task',
-      ['--skip-validation'],
-      project.projectDir
-    );
+    const completeResult = await runCommand('complete-task', ['--skip-validation'], project.projectDir);
 
     expect(completeResult.exitCode).toBe(0);
 
@@ -129,7 +118,7 @@ describe('Task Lifecycle Integration Tests', () => {
     });
 
     // Mock GitHub CLI commands
-    const originalExecSync = require('child_process').execSync;
+    const originalExecSync = require('node:child_process').execSync;
     const execMock = mock((command: string, options: any) => {
       const cmd = command.toString();
 
@@ -153,13 +142,10 @@ describe('Task Lifecycle Integration Tests', () => {
       return originalExecSync(command, options);
     });
 
-    require('child_process').execSync = execMock;
+    require('node:child_process').execSync = execMock;
 
     // Create a mock plan
-    const plan = createMockPlan(
-      'Add GitHub feature',
-      'Implement GitHub integration feature'
-    );
+    const plan = createMockPlan('Add GitHub feature', 'Implement GitHub integration feature');
 
     // Capture plan
     const planInput = createCapturePlanInput(plan);
@@ -202,14 +188,10 @@ describe('Task Lifecycle Integration Tests', () => {
     project.execInProject('git commit -m "wip: changes"');
 
     // Complete task with PR creation
-    const completeResult = await runCommand(
-      'complete-task',
-      ['--skip-validation'],
-      project.projectDir
-    );
+    const completeResult = await runCommand('complete-task', ['--skip-validation'], project.projectDir);
 
     // Restore original execSync after command
-    require('child_process').execSync = originalExecSync;
+    require('node:child_process').execSync = originalExecSync;
 
     expect(completeResult.exitCode).toBe(0);
     // PR creation would fail in test environment since gh commands aren't mocked for subprocess
@@ -275,11 +257,7 @@ describe('Task Lifecycle Integration Tests', () => {
     expect(prepareResult.exitCode).toBe(0);
 
     // Complete successfully
-    const completeResult = await runCommand(
-      'complete-task',
-      ['--skip-validation'],
-      project.projectDir
-    );
+    const completeResult = await runCommand('complete-task', ['--skip-validation'], project.projectDir);
 
     expect(completeResult.exitCode).toBe(0);
   });
@@ -313,7 +291,7 @@ describe('Task Lifecycle Integration Tests', () => {
     let taskContent = project.readFile(taskPath);
     taskContent = taskContent.replace(
       '## Recent Progress\n- Started implementation',
-      '## Recent Progress\n- Started implementation\n- Made significant progress\n- Fixed bug in implementation'
+      '## Recent Progress\n- Started implementation\n- Made significant progress\n- Fixed bug in implementation',
     );
     project.writeFile(taskPath, taskContent);
 
@@ -328,7 +306,7 @@ describe('Task Lifecycle Integration Tests', () => {
       {
         hook_event_name: 'SessionStart',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;

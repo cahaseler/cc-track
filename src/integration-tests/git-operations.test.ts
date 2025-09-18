@@ -1,14 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'node:child_process';
-import { mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  type TempProject,
+  ClaudeSDKStub,
   captureSystemState,
   createMockPlan,
   createTempProject,
   runCommand,
   runHook,
-  ClaudeSDKStub,
+  type TempProject,
 } from '../test-utils/integration-helpers';
 
 describe('Git Operations Integration Tests', () => {
@@ -51,7 +49,7 @@ describe('Git Operations Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Test branching', 'Test git branching') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -81,7 +79,7 @@ describe('Git Operations Integration Tests', () => {
 
     // Verify only one non-initial commit on main
     const commitCount = project.execInProject('git rev-list --count HEAD ^HEAD~2');
-    expect(parseInt(commitCount.trim())).toBe(1);
+    expect(parseInt(commitCount.trim(), 10)).toBe(1);
   });
 
   test('WIP commits are created and squashed correctly', async () => {
@@ -107,7 +105,7 @@ describe('Git Operations Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Multiple changes', 'Make multiple WIP commits') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     claudeStub.setResponse(/review/i, {
@@ -128,7 +126,7 @@ describe('Git Operations Integration Tests', () => {
         {
           hook_event_name: 'Stop',
         },
-        project.projectDir
+        project.projectDir,
       );
 
       const state = captureSystemState(project.projectDir);
@@ -137,9 +135,7 @@ describe('Git Operations Integration Tests', () => {
     }
 
     // Get commit count before squashing
-    const beforeCount = parseInt(
-      project.execInProject('git rev-list --count HEAD').trim()
-    );
+    const beforeCount = parseInt(project.execInProject('git rev-list --count HEAD').trim(), 10);
 
     // Complete task to squash commits
     await runCommand('complete-task', ['--skip-validation'], project.projectDir);
@@ -147,9 +143,7 @@ describe('Git Operations Integration Tests', () => {
     delete process.env.CLAUDE_CODE_EXECUTABLE;
 
     // Should have fewer commits after squashing (initial + 1 squashed)
-    const afterCount = parseInt(
-      project.execInProject('git rev-list --count HEAD').trim()
-    );
+    const afterCount = parseInt(project.execInProject('git rev-list --count HEAD').trim(), 10);
     expect(afterCount).toBeLessThan(beforeCount);
 
     // Final commit should be feat commit
@@ -226,7 +220,7 @@ describe('Git Operations Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Git config test', 'Test git configuration') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -267,7 +261,7 @@ describe('Git Operations Integration Tests', () => {
           content: 'content',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(result).toHaveProperty('continue', false);
@@ -287,7 +281,7 @@ describe('Git Operations Integration Tests', () => {
           content: 'content',
         },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     expect(result2).toHaveProperty('continue', true);
@@ -313,7 +307,7 @@ describe('Git Operations Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Test stashing', 'Test git stash operations') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;

@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  type TempProject,
+  ClaudeSDKStub,
   captureSystemState,
   createMockPlan,
   createTempProject,
   runCommand,
   runHook,
-  ClaudeSDKStub,
+  type TempProject,
 } from '../test-utils/integration-helpers';
 
 describe('Context Management Integration Tests', () => {
@@ -51,7 +50,7 @@ describe('Context Management Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('First task', 'First context test task') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Should now reference TASK_001.md
@@ -77,7 +76,7 @@ describe('Context Management Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Second task', 'Second context test task') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -117,7 +116,7 @@ describe('Context Management Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Long task', 'Task spanning multiple sessions') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     // Add more progress manually
@@ -130,7 +129,7 @@ describe('Context Management Integration Tests', () => {
 - Set up project structure
 - Completed Phase 1
 - Working on Phase 2
-- Fixed critical bug in Phase 2`
+- Fixed critical bug in Phase 2`,
     );
     project.writeFile(taskPath, taskContent);
 
@@ -138,7 +137,7 @@ describe('Context Management Integration Tests', () => {
     claudeStub.setResponse(/Update the task file/i, {
       text: taskContent.replace(
         '## Recent Progress',
-        '## Recent Progress\n- [Compaction at ' + new Date().toISOString() + ']'
+        `## Recent Progress\n- [Compaction at ${new Date().toISOString()}]`,
       ),
       success: true,
     });
@@ -148,7 +147,7 @@ describe('Context Management Integration Tests', () => {
       {
         hook_event_name: 'SessionStart',
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;
@@ -166,11 +165,7 @@ describe('Context Management Integration Tests', () => {
     project = await createTempProject({});
 
     // Check all context files exist and have correct structure
-    const contextFiles = [
-      '.claude/product_context.md',
-      '.claude/no_active_task.md',
-      'CLAUDE.md',
-    ];
+    const contextFiles = ['.claude/product_context.md', '.claude/no_active_task.md', 'CLAUDE.md'];
 
     for (const file of contextFiles) {
       expect(project.fileExists(file)).toBe(true);
@@ -234,7 +229,7 @@ describe('Context Management Integration Tests', () => {
           tool_name: 'ExitPlanMode',
           exit_plan_mode_data: { plan: plans[i] },
         },
-        project.projectDir
+        project.projectDir,
       );
 
       if (i < plans.length - 1) {
@@ -276,11 +271,7 @@ describe('Context Management Integration Tests', () => {
     project.writeFile('.claude/backlog.md', backlogContent);
 
     // Add new item via command
-    const result = await runCommand(
-      'backlog',
-      ['Third backlog item with special chars!'],
-      project.projectDir
-    );
+    const result = await runCommand('backlog', ['Third backlog item with special chars!'], project.projectDir);
 
     expect(result.exitCode).toBe(0);
 
@@ -352,7 +343,7 @@ describe('Context Management Integration Tests', () => {
         tool_name: 'ExitPlanMode',
         exit_plan_mode_data: { plan: createMockPlan('Pattern test', 'Test pattern preservation') },
       },
-      project.projectDir
+      project.projectDir,
     );
 
     delete process.env.CLAUDE_CODE_EXECUTABLE;

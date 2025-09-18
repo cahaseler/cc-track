@@ -113,19 +113,19 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
 
 ## Product Vision
 @.claude/product_context.md
-`
+`,
   );
 
   // Create no_active_task.md
   writeFileSync(
     join(projectDir, '.claude', 'no_active_task.md'),
-    '# No active task\n\nThere is currently no active task selected.'
+    '# No active task\n\nThere is currently no active task selected.',
   );
 
   // Create product_context.md
   writeFileSync(
     join(projectDir, '.claude', 'product_context.md'),
-    '# Product Context\n\nTest project for integration testing.'
+    '# Product Context\n\nTest project for integration testing.',
   );
 
   // Create track.config.json
@@ -134,7 +134,7 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
     stop_review: true,
     edit_validation: false,
     statusline: true,
-    git_branching: Boolean(options.gitInit),  // Ensure boolean value
+    git_branching: Boolean(options.gitInit), // Ensure boolean value
     github_integration: {
       enabled: options.githubEnabled || false,
       auto_create_issues: options.githubEnabled || false,
@@ -144,10 +144,7 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
     ...options.trackConfig,
   };
 
-  writeFileSync(
-    join(projectDir, '.claude', 'track.config.json'),
-    JSON.stringify(trackConfig, null, 2)
-  );
+  writeFileSync(join(projectDir, '.claude', 'track.config.json'), JSON.stringify(trackConfig, null, 2));
 
   // Add any initial files
   if (options.initialFiles) {
@@ -166,10 +163,7 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
     createTempGitRepo(projectDir, options.gitUser);
 
     // Add .gitignore for hook-status.json
-    writeFileSync(
-      join(projectDir, '.gitignore'),
-      '.claude/hook-status.json\n'
-    );
+    writeFileSync(join(projectDir, '.gitignore'), '.claude/hook-status.json\n');
   }
 
   // Return project interface
@@ -202,11 +196,7 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
  * Run a hook with given input and capture output
  * For integration tests, we run the hook functions directly with mocked dependencies
  */
-export async function runHook(
-  hookName: string,
-  input: Partial<HookInput>,
-  projectDir: string
-): Promise<HookOutput> {
+export async function runHook(hookName: string, input: Partial<HookInput>, projectDir: string): Promise<HookOutput> {
   const fullInput: HookInput = {
     hook_event_name: 'PostToolUse',
     cwd: projectDir,
@@ -215,7 +205,7 @@ export async function runHook(
 
   // Create mock Claude SDK
   const mockClaudeSDK = {
-    prompt: async (text: string, model: 'haiku' | 'sonnet' | 'opus') => {
+    prompt: async (text: string, _model: 'haiku' | 'sonnet' | 'opus') => {
       // Return appropriate mock responses based on the prompt
       if (text.includes('Research the codebase') || text.includes('create a task file')) {
         return {
@@ -272,7 +262,7 @@ export async function runHook(
       }
       return 'wip: save changes';
     },
-    generateBranchName: async (plan: string, taskId: string) => {
+    generateBranchName: async (_plan: string, taskId: string) => {
       // Generate mock branch name
       return `feature/test-task-${taskId}`;
     },
@@ -286,7 +276,7 @@ export async function runHook(
 
     // Create a mock GitHelpers that uses our mockExecSync
     // Need to define mockExecSync before creating GitHelpers
-    const realExecSync = require('child_process').execSync;
+    const realExecSync = require('node:child_process').execSync;
     const mockExecSync = (command: string, options?: any) => {
       const cmd = command.toString();
       // Log git commands for debugging
@@ -319,17 +309,17 @@ export async function runHook(
     const mockGitHelpers = new GitHelpers(
       mockExecSync as any, // Use our mock exec
       undefined, // getGitConfig - use default
-      mockClaudeSDK // Use our mock SDK
+      mockClaudeSDK, // Use our mock SDK
     );
 
     const mockGitHubHelpers = new GitHubHelpers(
-      mockExecSync as any // Use our mock exec
+      mockExecSync as any, // Use our mock exec
     );
 
     // Create a logger to see what's happening
     const mockLogger = {
       info: (msg: string, data?: any) => console.log('Hook:', msg, data),
-      debug: (msg: string, data?: any) => {},
+      debug: (_msg: string, _data?: any) => {},
       warn: (msg: string, data?: any) => console.warn('Hook:', msg, data),
       error: (msg: string, data?: any) => console.error('Hook:', msg, data),
     };
@@ -356,7 +346,7 @@ export async function runHook(
     const { GitHelpers } = await import('../lib/git-helpers');
 
     // Mock execSync to skip push operations
-    const realExecSync = require('child_process').execSync;
+    const realExecSync = require('node:child_process').execSync;
     const mockExecSync = (command: string, options?: any) => {
       const cmd = command.toString();
       // Log git commands for debugging
@@ -371,15 +361,11 @@ export async function runHook(
       return realExecSync(command, options);
     };
 
-    const mockGitHelpers = new GitHelpers(
-      mockExecSync as any,
-      undefined,
-      mockClaudeSDK
-    );
+    const mockGitHelpers = new GitHelpers(mockExecSync as any, undefined, mockClaudeSDK);
 
     const mockLogger = {
       info: (msg: string, data?: any) => console.log('Stop-review:', msg, data),
-      debug: (msg: string, data?: any) => {},
+      debug: (_msg: string, _data?: any) => {},
       warn: (msg: string, data?: any) => console.warn('Stop-review:', msg, data),
       error: (msg: string, data?: any) => console.error('Stop-review:', msg, data),
     };
@@ -426,7 +412,7 @@ export async function runHook(
 
     // The hook might output the same JSON twice (stdout and stderr)
     // Split by newlines and parse the first valid JSON
-    const lines = result.split('\n').filter(line => line.trim());
+    const lines = result.split('\n').filter((line) => line.trim());
     for (const line of lines) {
       try {
         return JSON.parse(line);
@@ -456,7 +442,7 @@ export async function runHook(
  */
 export async function runHookChain(
   hooks: Array<{ name: string; input: Partial<HookInput> }>,
-  projectDir: string
+  projectDir: string,
 ): Promise<HookOutput[]> {
   const results: HookOutput[] = [];
 
@@ -499,13 +485,13 @@ export function captureSystemState(projectDir: string): SystemState {
       state.gitBranch = execSync('git branch --show-current', {
         cwd: projectDir,
         stdio: 'pipe',
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       }).trim();
 
       state.gitStatus = execSync('git status --porcelain', {
         cwd: projectDir,
         stdio: 'pipe',
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       }).trim();
 
       state.uncommittedChanges = state.gitStatus.length > 0;
@@ -513,9 +499,9 @@ export function captureSystemState(projectDir: string): SystemState {
       state.lastCommitMessage = execSync('git log -1 --pretty=%B', {
         cwd: projectDir,
         stdio: 'pipe',
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       }).trim();
-    } catch (e) {
+    } catch (_e) {
       // Git commands might fail if no commits yet
     }
   }
@@ -535,8 +521,11 @@ export function captureSystemState(projectDir: string): SystemState {
     state.taskFiles = execSync('ls', {
       cwd: tasksDir,
       stdio: 'pipe',
-      encoding: 'utf-8'
-    }).trim().split('\n').filter(Boolean);
+      encoding: 'utf-8',
+    })
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   }
 
   // List plan files
@@ -545,8 +534,11 @@ export function captureSystemState(projectDir: string): SystemState {
     state.planFiles = execSync('ls', {
       cwd: plansDir,
       stdio: 'pipe',
-      encoding: 'utf-8'
-    }).trim().split('\n').filter(Boolean);
+      encoding: 'utf-8',
+    })
+      .trim()
+      .split('\n')
+      .filter(Boolean);
   }
 
   return state;
@@ -645,7 +637,7 @@ export class GitHubAPIStub {
 export async function runCommand(
   command: string,
   args: string[],
-  projectDir: string
+  projectDir: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   const cliPath = getTestBinary();
   const fullCommand = `${cliPath} ${command} ${args.join(' ')}`;
