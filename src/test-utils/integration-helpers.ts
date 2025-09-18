@@ -59,7 +59,6 @@ export function getMockClaudeExecutable(): string {
  */
 export interface TempProjectOptions {
   gitInit?: boolean;
-  githubEnabled?: boolean;
   trackConfig?: Record<string, any>;
   initialFiles?: Record<string, string>;
   gitUser?: { name: string; email: string };
@@ -163,10 +162,10 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
         enabled: Boolean(options.gitInit),
       },
       github_integration: {
-        enabled: options.githubEnabled || false,
-        auto_create_issues: options.githubEnabled || false,
-        use_issue_branches: options.githubEnabled || false,
-        auto_create_prs: options.githubEnabled || false,
+        enabled: false,
+        auto_create_issues: false,
+        use_issue_branches: false,
+        auto_create_prs: false,
       },
     },
     ...options.trackConfig,
