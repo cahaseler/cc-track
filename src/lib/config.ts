@@ -32,6 +32,7 @@ interface HookConfig {
 
 export interface CodeReviewConfig extends HookConfig {
   tool?: 'claude' | 'coderabbit';
+  max_diff_size?: number;
 }
 
 interface GitConfig {
@@ -271,6 +272,11 @@ export function isCodeReviewEnabled(configPath?: string): boolean {
 export function getCodeReviewTool(configPath?: string): 'claude' | 'coderabbit' {
   const codeReviewConfig = getCodeReviewConfig(configPath);
   return codeReviewConfig?.tool || 'claude';
+}
+
+export function getCodeReviewMaxDiffSize(configPath?: string): number {
+  const codeReviewConfig = getCodeReviewConfig(configPath);
+  return codeReviewConfig?.max_diff_size || 320000; // Default: 80k tokens * 4 chars/token
 }
 
 export function getGitConfig(configPath?: string): GitConfig | null {

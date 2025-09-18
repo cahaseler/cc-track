@@ -4,7 +4,14 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { getActiveTaskId } from '../lib/claude-md';
 import { performCodeReview } from '../lib/code-review';
-import { getCodeReviewTool, getConfig, getLintConfig, isCodeReviewEnabled } from '../lib/config';
+import {
+  getCodeReviewMaxDiffSize,
+  getCodeReviewTool,
+  getConfig,
+  getLintConfig,
+  isCodeReviewEnabled,
+} from '../lib/config';
+import { truncateGitDiff } from '../lib/diff-truncator';
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
@@ -132,6 +139,19 @@ export async function runCodeReview(
             }
           }
 
+          // Truncate git diff if too large for review
+          const maxDiffSize = getCodeReviewMaxDiffSize();
+          const truncationResult = truncateGitDiff(gitDiff, maxDiffSize);
+
+          if (truncationResult.truncated) {
+            logger.warn('Git diff truncated for code review', {
+              originalSize: truncationResult.originalSize,
+              truncatedSize: truncationResult.truncatedSize,
+              filesOmitted: truncationResult.filesOmitted,
+              linesOmitted: truncationResult.linesOmitted,
+            });
+          }
+
           // Ensure code-reviews directory exists
           if (!fileOps.existsSync(codeReviewsDir)) {
             fileOps.mkdirSync(codeReviewsDir, { recursive: true });
@@ -142,7 +162,7 @@ export async function runCodeReview(
             taskId,
             taskTitle,
             taskRequirements: taskContent,
-            gitDiff,
+            gitDiff: truncationResult.diff,
             projectRoot,
             mergeBase: mergeBase || undefined,
           });
