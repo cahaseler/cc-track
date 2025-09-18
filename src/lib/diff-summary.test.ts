@@ -1,44 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { createMockClaudeSDK, createMockLogger } from '../test-utils/command-mocks';
 import type { ClaudeSDKInterface } from './diff-summary';
 import { DiffSummary } from './diff-summary';
 import type { createLogger } from './logger';
-
-// Create a properly typed logger mock
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
-
-// Create mock ClaudeSDK
-function createMockClaudeSDK(): ClaudeSDKInterface {
-  return {
-    prompt: mock(async (text: string) => {
-      // Return different responses based on prompt content
-      if (text.includes('No changes detected')) {
-        return { text: '• No changes detected', success: true };
-      }
-      if (text.includes('auth.ts') || text.includes('login')) {
-        return { text: '• Added user authentication\n• Updated security middleware', success: true };
-      }
-      if (text.includes('Diff 1') && text.includes('Diff 2')) {
-        return {
-          text: 'Added authentication system with login/logout functionality and updated security middleware to enforce access controls.',
-          success: true,
-        };
-      }
-      if (text.includes('truncated')) {
-        return { text: '• Large changes truncated for processing', success: true };
-      }
-      // Default response
-      return { text: '• Modified application code\n• Updated dependencies', success: true };
-    }),
-  };
-}
 
 describe('DiffSummary', () => {
   let mockClaudeSDK: ClaudeSDKInterface;
@@ -47,13 +11,22 @@ describe('DiffSummary', () => {
 
   beforeEach(() => {
     mock.restore();
-    mockClaudeSDK = createMockClaudeSDK();
+    // Default SDK with generic response
+    mockClaudeSDK = createMockClaudeSDK({
+      promptResponse: { text: '• Modified application code\n• Updated dependencies', success: true },
+    });
     mockLogger = createMockLogger();
     diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
   });
 
   describe('summarizeDiff', () => {
     test('returns summary for valid diff', async () => {
+      // Override with specific response for this test
+      mockClaudeSDK = createMockClaudeSDK({
+        promptResponse: { text: '• Added user authentication\n• Updated security middleware', success: true },
+      });
+      diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
+
       const diff = `diff --git a/src/auth.ts b/src/auth.ts
 +export function login() {
 +  // authentication logic
@@ -106,13 +79,13 @@ describe('DiffSummary', () => {
     });
 
     test('handles SDK errors gracefully', async () => {
-      mockClaudeSDK = {
-        prompt: mock(async () => ({
+      mockClaudeSDK = createMockClaudeSDK({
+        promptResponse: {
           text: '',
           success: false,
           error: 'API rate limit exceeded',
-        })),
-      };
+        },
+      });
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
       await expect(diffSummary.summarizeDiff('some diff')).rejects.toThrow(
@@ -122,11 +95,11 @@ describe('DiffSummary', () => {
     });
 
     test('handles SDK exceptions', async () => {
-      mockClaudeSDK = {
-        prompt: mock(async () => {
-          throw new Error('Network timeout');
-        }),
-      };
+      mockClaudeSDK = createMockClaudeSDK();
+      // Override with a function that throws
+      mockClaudeSDK.prompt = mock(async () => {
+        throw new Error('Network timeout');
+      });
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
       await expect(diffSummary.summarizeDiff('some diff')).rejects.toThrow('Failed to summarize diff: Network timeout');
@@ -134,12 +107,12 @@ describe('DiffSummary', () => {
     });
 
     test('returns fallback for empty SDK response', async () => {
-      mockClaudeSDK = {
-        prompt: mock(async () => ({
+      mockClaudeSDK = createMockClaudeSDK({
+        promptResponse: {
           text: '',
           success: true,
-        })),
-      };
+        },
+      });
       diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
 
       const summary = await diffSummary.summarizeDiff('some diff');
@@ -149,6 +122,15 @@ describe('DiffSummary', () => {
 
   describe('summarizeDiffs', () => {
     test('summarizes multiple diffs into unified summary', async () => {
+      // Override with specific response for this test
+      mockClaudeSDK = createMockClaudeSDK({
+        promptResponse: {
+          text: 'Added authentication system with login/logout functionality and updated security middleware to enforce access controls.',
+          success: true,
+        },
+      });
+      diffSummary = new DiffSummary(mockClaudeSDK, mockLogger);
+
       const diffs = ['diff --git a/auth.ts\n+login function', 'diff --git a/middleware.ts\n+security checks'];
 
       const summary = await diffSummary.summarizeDiffs(diffs);

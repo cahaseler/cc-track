@@ -3,6 +3,7 @@ import type { ClaudeMdHelpers } from '../lib/claude-md';
 import type { DiffSummary } from '../lib/diff-summary';
 import { GitHelpers } from '../lib/git-helpers';
 import type { createLogger } from '../lib/logger';
+import { createMockLogger } from '../test-utils/command-mocks';
 import type { HookInput } from '../types';
 import {
   generateStopOutput,
@@ -11,17 +12,6 @@ import {
   type StopReviewDependencies,
   stopReviewHook,
 } from './stop-review';
-
-// Create a properly typed logger mock
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
 
 // Create mock DiffSummary for tests
 function createMockDiffSummary(): DiffSummary {

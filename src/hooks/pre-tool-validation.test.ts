@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { createMockClaudeSDK, createMockGitHelpers, createMockLogger } from '../test-utils/command-mocks';
 import type { HookInput } from '../types';
 import {
   buildValidationPrompt,
@@ -123,32 +124,6 @@ describe('pre-tool-validation', () => {
   });
 
   describe('preToolValidationHook - branch protection', () => {
-    const createMockLogger = () => ({
-      debug: mock(() => {}),
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      exception: mock(() => {}),
-    });
-
-    const createMockGitHelpers = (currentBranch: string) => {
-      // Create a mock that matches the GitHelpers class interface
-      const gitHelpers = {
-        getCurrentBranch: mock(() => currentBranch),
-        getDefaultBranch: mock(() => 'main'),
-        hasUncommittedChanges: mock(() => false),
-        isWipCommit: mock(() => false),
-        getMergeBase: mock(() => ''),
-        generateCommitMessage: mock(async () => 'test'),
-        generateCommitMessageWithMeta: mock(async () => ({ message: 'test', source: 'sdk' as const })),
-        generateBranchName: mock(async () => 'feature/test'),
-        createTaskBranch: mock(() => {}),
-        mergeTaskBranch: mock(() => {}),
-        switchToBranch: mock(() => {}),
-      };
-      return gitHelpers as any; // Cast to any to avoid type issues with the class
-    };
-
     const createMockConfig = (
       branchProtectionEnabled: boolean,
       options: {
@@ -185,7 +160,7 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         getConfig: () => createMockConfig(true),
-        gitHelpers: createMockGitHelpers('main'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'main' }),
         execSync: mock(() => {
           throw new Error('not gitignored');
         }),
@@ -212,7 +187,7 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         getConfig: () => createMockConfig(true),
-        gitHelpers: createMockGitHelpers('feature/my-feature'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/my-feature' }),
         logger: createMockLogger(),
       });
 
@@ -233,7 +208,7 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         getConfig: () => createMockConfig(true, { protectedBranches: ['main'] }),
-        gitHelpers: createMockGitHelpers('main'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'main' }),
         execSync: mock(() => ''), // File is gitignored
         logger: createMockLogger(),
       });
@@ -255,7 +230,7 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         getConfig: () => createMockConfig(true, { protectedBranches: ['main'], allowGitignored: false }),
-        gitHelpers: createMockGitHelpers('main'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'main' }),
         execSync: mock(() => ''), // File is gitignored
         logger: createMockLogger(),
       });
@@ -279,7 +254,7 @@ describe('pre-tool-validation', () => {
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
         getConfig: () => createMockConfig(false, { protectedBranches: ['main'] }),
-        gitHelpers: createMockGitHelpers('main'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'main' }),
         logger: createMockLogger(),
       });
 
@@ -288,32 +263,6 @@ describe('pre-tool-validation', () => {
   });
 
   describe('preToolValidationHook - task validation', () => {
-    const createMockLogger = () => ({
-      debug: mock(() => {}),
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      exception: mock(() => {}),
-    });
-
-    const createMockGitHelpers = (currentBranch: string) => {
-      // Create a mock that matches the GitHelpers class interface
-      const gitHelpers = {
-        getCurrentBranch: mock(() => currentBranch),
-        getDefaultBranch: mock(() => 'main'),
-        hasUncommittedChanges: mock(() => false),
-        isWipCommit: mock(() => false),
-        getMergeBase: mock(() => ''),
-        generateCommitMessage: mock(async () => 'test'),
-        generateCommitMessageWithMeta: mock(async () => ({ message: 'test', source: 'sdk' as const })),
-        generateBranchName: mock(async () => 'feature/test'),
-        createTaskBranch: mock(() => {}),
-        mergeTaskBranch: mock(() => {}),
-        switchToBranch: mock(() => {}),
-      };
-      return gitHelpers as any; // Cast to any to avoid type issues with the class
-    };
-
     const createMockConfig = (
       branchProtectionEnabled: boolean,
       options: {
@@ -335,18 +284,6 @@ describe('pre-tool-validation', () => {
       logging: { enabled: false, level: 'INFO' as const, retentionDays: 7, prettyPrint: false },
     });
 
-    const createMockClaudeSDK = (response: { shouldBlock: boolean; reason: string }) => ({
-      prompt: mock(async () => ({
-        text: JSON.stringify(response),
-        success: true,
-      })),
-      generateCommitMessage: mock(async () => 'feat: test'),
-      generateBranchName: mock(async () => 'feature/test'),
-      reviewCode: mock(async () => ({ hasIssues: false, review: 'ok' })),
-      extractErrorPatterns: mock(async () => 'patterns'),
-      createValidationAgent: mock(async function* () {}),
-    });
-
     test('allows edits to non-task files', async () => {
       const input: HookInput = {
         hook_event_name: 'PreToolUse',
@@ -362,7 +299,7 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       expect(result).toEqual({ continue: true });
@@ -380,8 +317,10 @@ describe('pre-tool-validation', () => {
       };
 
       const mockSDK = createMockClaudeSDK({
-        shouldBlock: true,
-        reason: 'Cannot change status to completed',
+        promptResponse: {
+          text: JSON.stringify({ shouldBlock: true, reason: 'Cannot change status to completed' }),
+          success: true,
+        },
       });
 
       const result = await preToolValidationHook(input, {
@@ -389,7 +328,7 @@ describe('pre-tool-validation', () => {
         claudeSDK: mockSDK,
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
@@ -409,8 +348,13 @@ describe('pre-tool-validation', () => {
       };
 
       const mockSDK = createMockClaudeSDK({
-        shouldBlock: true,
-        reason: 'Weasel words detected: claiming partial test completion',
+        promptResponse: {
+          text: JSON.stringify({
+            shouldBlock: true,
+            reason: 'Weasel words detected: claiming partial test completion',
+          }),
+          success: true,
+        },
       });
 
       const result = await preToolValidationHook(input, {
@@ -418,7 +362,7 @@ describe('pre-tool-validation', () => {
         claudeSDK: mockSDK,
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
@@ -437,8 +381,10 @@ describe('pre-tool-validation', () => {
       };
 
       const mockSDK = createMockClaudeSDK({
-        shouldBlock: false,
-        reason: 'Edit is acceptable',
+        promptResponse: {
+          text: JSON.stringify({ shouldBlock: false, reason: 'Edit is acceptable' }),
+          success: true,
+        },
       });
 
       const result = await preToolValidationHook(input, {
@@ -446,7 +392,7 @@ describe('pre-tool-validation', () => {
         claudeSDK: mockSDK,
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       expect(result).toEqual({ continue: true });
@@ -463,18 +409,13 @@ describe('pre-tool-validation', () => {
         },
       };
 
-      const mockSDK = {
-        prompt: mock(async () => ({
+      const mockSDK = createMockClaudeSDK({
+        promptResponse: {
           text: '',
           success: false,
           error: 'SDK error',
-        })),
-        generateCommitMessage: mock(async () => 'feat: test'),
-        generateBranchName: mock(async () => 'feature/test'),
-        reviewCode: mock(async () => ({ hasIssues: false, review: 'ok' })),
-        extractErrorPatterns: mock(async () => 'patterns'),
-        createValidationAgent: mock(async function* () {}),
-      };
+        },
+      });
 
       const logger = createMockLogger();
       const result = await preToolValidationHook(input, {
@@ -482,7 +423,7 @@ describe('pre-tool-validation', () => {
         claudeSDK: mockSDK,
         logger,
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       // Should allow edit on error
@@ -501,17 +442,12 @@ describe('pre-tool-validation', () => {
         },
       };
 
-      const mockSDK = {
-        prompt: mock(async () => ({
+      const mockSDK = createMockClaudeSDK({
+        promptResponse: {
           text: 'Not valid JSON',
           success: true,
-        })),
-        generateCommitMessage: mock(async () => 'feat: test'),
-        generateBranchName: mock(async () => 'feature/test'),
-        reviewCode: mock(async () => ({ hasIssues: false, review: 'ok' })),
-        extractErrorPatterns: mock(async () => 'patterns'),
-        createValidationAgent: mock(async function* () {}),
-      };
+        },
+      });
 
       const logger = createMockLogger();
       const result = await preToolValidationHook(input, {
@@ -519,7 +455,7 @@ describe('pre-tool-validation', () => {
         claudeSDK: mockSDK,
         logger,
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       // Should allow edit on parse error
@@ -560,7 +496,7 @@ describe('pre-tool-validation', () => {
         isHookEnabled: () => true,
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers('feature/test'),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
       });
 
       expect(result).toEqual({ continue: true });

@@ -1,32 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { createMockClaudeSDK } from '../test-utils/command-mocks';
 import type { ClaudeSDKInterface, ExecFunction, GetGitConfigFunction } from './git-helpers';
 import { GitHelpers } from './git-helpers';
-
-// Create a mock ClaudeSDK for tests
-function createMockClaudeSDK(): ClaudeSDKInterface {
-  return {
-    generateCommitMessage: mock(async (changes: string) => {
-      // Return predictable responses for tests
-      if (changes.includes('new feature')) {
-        return 'feat: add new feature';
-      }
-      if (changes.includes('login bug')) {
-        return 'fix: resolve login bug';
-      }
-      return 'chore: save work in progress';
-    }),
-    generateBranchName: mock(async (taskTitle: string, taskId: string) => {
-      // Return predictable branch names
-      if (taskTitle.includes('authentication')) {
-        return `feature/user-auth-${taskId.toLowerCase()}`;
-      }
-      if (taskTitle.includes('login')) {
-        return `bug/fix-login-${taskId.toLowerCase()}`;
-      }
-      return `feature/task-${taskId.toLowerCase()}`;
-    }),
-  };
-}
 
 describe('GitHelpers', () => {
   let mockExec: ExecFunction;
