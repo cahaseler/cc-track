@@ -16,6 +16,19 @@ import {
   resolveCommandDeps,
 } from './context';
 
+/**
+ * Cross-platform delay function that works on Windows, Mac, and Linux
+ * Uses busy-wait for synchronous delay without requiring shell commands
+ * @param ms - Milliseconds to delay
+ */
+function crossPlatformDelay(ms: number): void {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    // Busy wait - not ideal for long delays but works cross-platform
+    // For short delays (2-3 seconds) this is acceptable
+  }
+}
+
 export interface CompleteTaskOptions {
   noSquash?: boolean;
   noBranch?: boolean;
@@ -562,6 +575,11 @@ function handleGitHubWorkflow(
     const defaultBranch = deps.getDefaultBranch(projectRoot);
     state.git.defaultBranch = defaultBranch;
 
+    // Add a small delay after push to allow GitHub API to recognize the branch
+    // This helps avoid "must first push" errors when creating PRs immediately after pushing
+    deps.logger.debug('Waiting for GitHub to recognize pushed branch');
+    crossPlatformDelay(2000); // 2 second delay
+
     if (branchContext.existingPr) {
       state.github = {
         prWorkflow: true,
@@ -572,24 +590,55 @@ function handleGitHubWorkflow(
       };
       state.git.notes = `Updated existing PR: ${branchContext.existingPr.url}`;
     } else {
-      try {
-        const prTitle = `feat: complete ${state.taskId} - ${state.taskTitle}`;
-        const prBody =
-          '## Summary\n' +
-          `Completes ${state.taskId}: ${state.taskTitle}\n\n` +
-          '🤖 Generated with [Claude Code](https://claude.ai/code)';
-        const escapedDefaultBranch = defaultBranch.replace(/'/g, "'\\''");
-        const escapedBranchName = branchContext.taskBranchName.replace(/'/g, "'\\''");
-        const escapedTitle = prTitle.replace(/'/g, "'\\''");
-        const escapedBody = prBody.replace(/'/g, "'\\''");
+      const prTitle = `feat: complete ${state.taskId} - ${state.taskTitle}`;
+      const prBody =
+        '## Summary\n' +
+        `Completes ${state.taskId}: ${state.taskTitle}\n\n` +
+        '🤖 Generated with [Claude Code](https://claude.ai/code)';
+      const escapedDefaultBranch = defaultBranch.replace(/'/g, "'\\''");
+      const escapedBranchName = branchContext.taskBranchName.replace(/'/g, "'\\''");
+      const escapedTitle = prTitle.replace(/'/g, "'\\''");
+      const escapedBody = prBody.replace(/'/g, "'\\''");
 
-        const prUrl = deps
-          .execSync(
-            `gh pr create --base '${escapedDefaultBranch}' --head '${escapedBranchName}' --title '${escapedTitle}' --body '${escapedBody}'`,
-            { cwd: projectRoot, encoding: 'utf-8' },
-          )
-          .trim();
+      let prCreated = false;
+      let prUrl = '';
+      let lastError: unknown = null;
 
+      // Try to create PR with retry logic for "must push" errors
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          deps.logger.debug(`Attempting to create PR (attempt ${attempt}/2)`);
+          prUrl = deps
+            .execSync(
+              `gh pr create --base '${escapedDefaultBranch}' --head '${escapedBranchName}' --title '${escapedTitle}' --body '${escapedBody}'`,
+              { cwd: projectRoot, encoding: 'utf-8' },
+            )
+            .trim();
+          prCreated = true;
+          deps.logger.info('PR created successfully', { prUrl, attempt });
+          break;
+        } catch (error) {
+          lastError = error;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          // Check if this is a "must push" error that might benefit from a retry
+          if (attempt === 1 && errorMessage.includes('you must first push')) {
+            deps.logger.warn('PR creation failed with push error, waiting and retrying', {
+              error: errorMessage,
+              attempt,
+            });
+            // Wait a bit longer before retry
+            crossPlatformDelay(3000); // 3 second delay
+            continue;
+          }
+
+          // For other errors or second attempt, don't retry
+          deps.logger.warn('PR creation failed', { error: errorMessage, attempt });
+          break;
+        }
+      }
+
+      if (prCreated) {
         state.github = {
           prWorkflow: true,
           prCreated: true,
@@ -598,8 +647,8 @@ function handleGitHubWorkflow(
           issueNumber: issueMatch ? Number(issueMatch[1]) : undefined,
         };
         state.git.notes = `Created PR: ${prUrl}`;
-      } catch (error) {
-        warnings.push(`Failed to create PR: ${error instanceof Error ? error.message : error}`);
+      } else {
+        warnings.push(`Failed to create PR: ${lastError instanceof Error ? lastError.message : lastError}`);
         state.git.notes = `Pushed ${branchContext.taskBranchName} to origin - ready for manual PR creation`;
         state.github = {
           prWorkflow: true,
