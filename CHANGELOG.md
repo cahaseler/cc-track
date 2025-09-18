@@ -1,3 +1,20 @@
+# [1.34.0](https://github.com/cahaseler/cc-track/compare/v1.33.0...v1.34.0) (2025-09-18)
+
+
+### Bug Fixes
+
+* correct track.config.json structure and remove untestable GitHub integration test ([bc91989](https://github.com/cahaseler/cc-track/commit/bc91989d350aece8b7e2915ba1e83aecda9ac62b))
+* escape git config commands to prevent command injection ([ad18c20](https://github.com/cahaseler/cc-track/commit/ad18c2040c174241d6fe68896906002bd737cda6))
+* escape git config commands to prevent security scanner false positives ([9a80684](https://github.com/cahaseler/cc-track/commit/9a80684b6122fd2b6cb380bb770f03167881de4b))
+* make integration tests CI-ready with dynamic paths and binary build step ([0c8385d](https://github.com/cahaseler/cc-track/commit/0c8385d0716a66a27952164b047acf1e6d52a00f))
+* remove unused GitHub imports and clean up lint issues ([fca91c8](https://github.com/cahaseler/cc-track/commit/fca91c8f2b440c0600b263431904492dbfc6e196))
+
+
+### Features
+
+* add comprehensive integration test suite with 5 test scenarios ([e487c56](https://github.com/cahaseler/cc-track/commit/e487c5607cd26a5f6794f1ea610e7375a636d528))
+* add comprehensive integration testing framework with 5 test suites ([a708d19](https://github.com/cahaseler/cc-track/commit/a708d19c285be7d40cc583f76d77c56664418e1a))
+
 # [1.33.0](https://github.com/cahaseler/cc-track/compare/v1.32.0...v1.33.0) (2025-09-18)
 
 
