@@ -16,6 +16,19 @@ import {
   resolveCommandDeps,
 } from './context';
 
+/**
+ * Cross-platform delay function that works on Windows, Mac, and Linux
+ * Uses busy-wait for synchronous delay without requiring shell commands
+ * @param ms - Milliseconds to delay
+ */
+function crossPlatformDelay(ms: number): void {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    // Busy wait - not ideal for long delays but works cross-platform
+    // For short delays (2-3 seconds) this is acceptable
+  }
+}
+
 export interface CompleteTaskOptions {
   noSquash?: boolean;
   noBranch?: boolean;
@@ -565,7 +578,7 @@ function handleGitHubWorkflow(
     // Add a small delay after push to allow GitHub API to recognize the branch
     // This helps avoid "must first push" errors when creating PRs immediately after pushing
     deps.logger.debug('Waiting for GitHub to recognize pushed branch');
-    deps.execSync('sleep 2', { cwd: projectRoot });
+    crossPlatformDelay(2000); // 2 second delay
 
     if (branchContext.existingPr) {
       state.github = {
@@ -615,7 +628,7 @@ function handleGitHubWorkflow(
               attempt,
             });
             // Wait a bit longer before retry
-            deps.execSync('sleep 3', { cwd: projectRoot });
+            crossPlatformDelay(3000); // 3 second delay
             continue;
           }
 
