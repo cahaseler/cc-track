@@ -1,3 +1,16 @@
+# [1.32.0](https://github.com/cahaseler/cc-track/compare/v1.31.0...v1.32.0) (2025-09-18)
+
+
+### Bug Fixes
+
+* **git:** improve merge-base calculation by using origin branch ([e6ffdbe](https://github.com/cahaseler/cc-track/commit/e6ffdbe3d02cf90456e6f17868a9f466317292fd))
+* use origin/main for merge-base to prevent divergence issues ([8e02249](https://github.com/cahaseler/cc-track/commit/8e02249957a90bf375ed0036b769f885408f62df))
+
+
+### Features
+
+* complete TASK_078 - TASK_078: Fix Claude SDK Copying Branch Comments from Other Task Files ([54f01a5](https://github.com/cahaseler/cc-track/commit/54f01a53ade53116567887c65e66ef88479c86a2))
+
 # [1.31.0](https://github.com/cahaseler/cc-track/compare/v1.30.0...v1.31.0) (2025-09-18)
 
 
