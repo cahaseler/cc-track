@@ -5,7 +5,6 @@ import {
   createCapturePlanInput,
   createMockPlan,
   createTempProject,
-  GitHubAPIStub,
   runCommand,
   runHook,
   type TempProject,
@@ -14,11 +13,9 @@ import {
 describe('Task Lifecycle Integration Tests', () => {
   let project: TempProject;
   let claudeStub: ClaudeSDKStub;
-  let githubStub: GitHubAPIStub;
 
   beforeEach(async () => {
     claudeStub = new ClaudeSDKStub();
-    githubStub = new GitHubAPIStub();
     mock.restore();
   });
 
@@ -101,7 +98,6 @@ describe('Task Lifecycle Integration Tests', () => {
     const taskContent = project.readFile('.claude/tasks/TASK_001.md');
     expect(taskContent).toContain('**Status:** completed');
   });
-
 
   test('task workflow handles validation failures gracefully', async () => {
     // Create project with validation enabled
