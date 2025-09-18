@@ -85,8 +85,8 @@ export function createTempGitRepo(dir: string, user?: { name: string; email: str
 
   // Initialize git repo
   execSync('git init', { cwd: dir, stdio: 'pipe' });
-  execSync(`git config user.name "${gitUser.name}"`, { cwd: dir, stdio: 'pipe' });
-  execSync(`git config user.email "${gitUser.email}"`, { cwd: dir, stdio: 'pipe' });
+  execSync(`git config user.name ${JSON.stringify(gitUser.name)}`, { cwd: dir, stdio: 'pipe' });
+  execSync(`git config user.email ${JSON.stringify(gitUser.email)}`, { cwd: dir, stdio: 'pipe' });
 
   // Create initial commit on main branch (standardize branch name)
   writeFileSync(join(dir, 'README.md'), '# Test Project\n');
