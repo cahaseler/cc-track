@@ -1,4 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
+import type { ExecSyncOptions } from 'node:child_process';
 import path from 'node:path';
 import { createMockCompleteTaskDeps } from '../test-utils/command-mocks';
 import { runCompleteTask } from './complete-task';
