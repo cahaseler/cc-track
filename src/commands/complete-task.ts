@@ -227,8 +227,10 @@ function detectBranchContext(
         });
 
         const defaultBranch = deps.getDefaultBranch(projectRoot);
+        // Use origin/defaultBranch to ensure we get the latest merge-base
+        // This prevents issues when local main is behind origin/main
         const mergeBase = deps
-          .execSync(`git merge-base ${defaultBranch} ${remoteBranch}`, {
+          .execSync(`git merge-base origin/${defaultBranch} ${remoteBranch}`, {
             cwd: projectRoot,
             encoding: 'utf-8',
           })
