@@ -170,6 +170,16 @@ Your review should be thorough, actionable, and constructive. Include specific f
       };
     }
 
+    // Check for empty review with success status (indicates SDK issue)
+    if (success && !reviewText.trim()) {
+      logger.warn('Claude code review completed with empty output - likely SDK subprocess issue');
+      return {
+        success: false,
+        review: '',
+        error: 'Review completed successfully but produced no output (possible token limit exceeded)',
+      };
+    }
+
     return { success, review: reviewText, error };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
