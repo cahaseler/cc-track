@@ -81,7 +81,7 @@ function runTypeScriptCheck(projectRoot: string, deps: ValidationDeps = {}): Val
     const command = tsConfig?.command || 'bunx tsc --noEmit';
 
     log.info('Running TypeScript check', { command });
-    exec(command, { cwd: projectRoot, encoding: 'utf-8' });
+    exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
 
     return { passed: true };
   } catch (error) {
@@ -118,7 +118,7 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     if (lintConfig.autoFixCommand) {
       try {
         log.info('Running lint auto-formatter', { command: lintConfig.autoFixCommand });
-        exec(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8' });
+        exec(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
       } catch {
         // Auto-formatter might fail if there are syntax errors, continue to check
       }
@@ -127,7 +127,7 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     // Now run the lint check
     const command = lintConfig.command;
     log.info('Running lint check', { command, tool: lintConfig.tool || 'biome' });
-    exec(command, { cwd: projectRoot, encoding: 'utf-8' });
+    exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
 
     return { passed: true };
   } catch (error) {
@@ -250,7 +250,7 @@ function runKnipCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     const command = knipConfig.command || 'bunx knip';
     log.info('Running Knip check', { command });
 
-    const output = exec(command, { cwd: projectRoot, encoding: 'utf-8' });
+    const output = exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
 
     // Parse Knip output
     const filesMatch = output.match(/Unused files\s+(\d+)/);
