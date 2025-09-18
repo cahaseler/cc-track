@@ -1,3 +1,17 @@
+# [1.31.0](https://github.com/cahaseler/cc-track/compare/v1.30.0...v1.31.0) (2025-09-18)
+
+
+### Bug Fixes
+
+* replace Unix-only sleep with cross-platform delay ([762030e](https://github.com/cahaseler/cc-track/commit/762030e02d07470fba0d4275695286b144784201))
+
+
+### Features
+
+* complete TASK_075 - Fix setup-cc-track command bash execution for non-git repos ([8f717e9](https://github.com/cahaseler/cc-track/commit/8f717e990941c1446bd33717677b0a72a011dad2))
+* complete TASK_076 - Fix Code Review Failure Due to Token Limit Overflow ([18b9379](https://github.com/cahaseler/cc-track/commit/18b9379e9c651e45605d33f070cfea0b72b5360f))
+* complete TASK_077 - TASK_077: Investigate /complete-task PR Creation Failure ([3032714](https://github.com/cahaseler/cc-track/commit/303271409d17106602ce943b9043265cce6c09ef))
+
 # [1.30.0](https://github.com/cahaseler/cc-track/compare/v1.29.0...v1.30.0) (2025-09-17)
 
 
