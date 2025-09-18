@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getActiveTaskId } from './claude-md';
-import { type EditValidationConfig, getConfig, getLintConfig } from './config';
+import { type EditValidationConfig, getConfig, getLintConfig, getTestConfig } from './config';
 import { isWipCommit } from './git-helpers';
 import { getLintParser } from './lint-parsers';
 import { createLogger } from './logger';
@@ -154,9 +154,18 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
 function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationResult['tests'] {
   const fs = deps.fileOps || { existsSync, readFileSync };
   const exec = deps.execSync || execSync;
+  const getTestConfigFn = deps.getTestConfig || getTestConfig;
   const log = deps.logger || logger;
 
   try {
+    const testConfig = getTestConfigFn();
+    if (!testConfig || !testConfig.enabled) {
+      log.info('Tests disabled');
+      return { passed: true };
+    }
+
+    const command = testConfig.command || 'bun test';
+
     // Check if test script exists in package.json
     const packageJsonPath = join(projectRoot, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
@@ -167,11 +176,11 @@ function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationRes
       }
     }
 
-    log.info('Running tests');
+    log.info('Running tests', { command });
     // Run tests silently and just check exit code
     // We redirect output to /dev/null to avoid polluting the JSON output
     try {
-      exec('bun test >/dev/null 2>&1', {
+      exec(`${command} >/dev/null 2>&1`, {
         cwd: projectRoot,
         encoding: 'utf-8',
         shell: '/bin/bash',
@@ -181,7 +190,7 @@ function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationRes
       return { passed: true };
     } catch (_testError) {
       // Tests failed - run again to get details for the error report
-      const output = exec('bun test 2>&1 || true', {
+      const output = exec(`${command} 2>&1 || true`, {
         cwd: projectRoot,
         encoding: 'utf-8',
         shell: '/bin/bash',
@@ -402,6 +411,7 @@ export interface ValidationDeps {
   };
   getConfig?: typeof getConfig;
   getLintConfig?: typeof getLintConfig;
+  getTestConfig?: typeof getTestConfig;
   getActiveTaskId?: typeof getActiveTaskId;
   isWipCommit?: typeof isWipCommit;
   getLintParser?: typeof getLintParser;

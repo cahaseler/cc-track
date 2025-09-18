@@ -41,6 +41,7 @@ describe('validation', () => {
           },
         })),
         getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
@@ -104,6 +105,7 @@ describe('validation', () => {
           },
         })),
         getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
@@ -162,6 +164,7 @@ describe('validation', () => {
           },
         })),
         getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
@@ -187,6 +190,7 @@ describe('validation', () => {
         },
         getConfig: mock(() => ({})),
         getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => null), // No active task
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
@@ -242,6 +246,7 @@ describe('validation', () => {
           },
         })),
         getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
@@ -255,6 +260,225 @@ describe('validation', () => {
 
       // Should use the custom command
       expect(mockExecSync).toHaveBeenCalledWith(customCommand, expect.objectContaining({ cwd: '/test/project' }));
+    });
+
+    test('passes validation when tests are disabled', async () => {
+      const mockExecSync = mock((command: string) => {
+        if (command.includes('git status')) {
+          return '';
+        }
+        if (command.includes('git branch')) {
+          return 'main';
+        }
+        if (command.includes('git log')) {
+          return '';
+        }
+        return '';
+      });
+
+      const mockExistsSync = mock(() => true);
+      const mockReadFileSync = mock((path: string) => {
+        if (path.includes('package.json')) {
+          return JSON.stringify({ scripts: { test: 'bun test' } });
+        }
+        if (path.includes('TASK_001.md')) {
+          return '# Test Task\n\n**Status:** in_progress';
+        }
+        return '';
+      });
+
+      const deps: ValidationDeps = {
+        execSync: mockExecSync,
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({})),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: false })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
+
+      const result = await runValidationChecks('/test/project', deps);
+
+      expect(result.success).toBe(true);
+      expect(result.readyForCompletion).toBe(true);
+      expect(result.validation.tests?.passed).toBe(true);
+
+      // Tests should not be executed when disabled
+      expect(mockExecSync).not.toHaveBeenCalledWith(expect.stringContaining('test'), expect.any(Object));
+    });
+
+    test('uses custom test command when configured', async () => {
+      const customTestCommand = 'npm test';
+
+      const mockExecSync = mock((command: string) => {
+        if (command.includes('git status')) {
+          return '';
+        }
+        if (command.includes('git branch')) {
+          return 'main';
+        }
+        if (command.includes('git log')) {
+          return '';
+        }
+        return '';
+      });
+
+      const mockExistsSync = mock(() => true);
+      const mockReadFileSync = mock((path: string) => {
+        if (path.includes('package.json')) {
+          return JSON.stringify({ scripts: { test: 'npm test' } });
+        }
+        if (path.includes('TASK_001.md')) {
+          return '# Test Task\n\n**Status:** in_progress';
+        }
+        return '';
+      });
+
+      const deps: ValidationDeps = {
+        execSync: mockExecSync,
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({})),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: true, command: customTestCommand })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
+
+      const result = await runValidationChecks('/test/project', deps);
+
+      expect(result.success).toBe(true);
+      expect(result.validation.tests?.passed).toBe(true);
+
+      // Should use the custom test command
+      expect(mockExecSync).toHaveBeenCalledWith(
+        `${customTestCommand} >/dev/null 2>&1`,
+        expect.objectContaining({
+          cwd: '/test/project',
+          shell: '/bin/bash',
+        }),
+      );
+    });
+
+    test('detects test failures when tests are enabled', async () => {
+      const mockExecSync = mock((command: string) => {
+        if (command.includes('npm test >/dev/null 2>&1')) {
+          const error = new Error('Tests failed') as any;
+          error.status = 1;
+          throw error;
+        }
+        if (command.includes('npm test 2>&1 || true')) {
+          return '✗ test/example.test.js › should work (fail)\n    AssertionError: expected 1 to equal 2\n\n1 fail\n0 pass';
+        }
+        if (command.includes('git status')) {
+          return '';
+        }
+        if (command.includes('git branch')) {
+          return 'main';
+        }
+        if (command.includes('git log')) {
+          return '';
+        }
+        return '';
+      });
+
+      const mockExistsSync = mock(() => true);
+      const mockReadFileSync = mock((path: string) => {
+        if (path.includes('package.json')) {
+          return JSON.stringify({ scripts: { test: 'npm test' } });
+        }
+        if (path.includes('TASK_001.md')) {
+          return '# Test Task\n\n**Status:** in_progress';
+        }
+        return '';
+      });
+
+      const deps: ValidationDeps = {
+        execSync: mockExecSync,
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({})),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: true, command: 'npm test' })),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
+
+      const result = await runValidationChecks('/test/project', deps);
+
+      expect(result.success).toBe(true);
+      expect(result.readyForCompletion).toBe(false); // Should fail due to test failures
+      expect(result.validation.tests?.passed).toBe(false);
+      expect(result.validation.tests?.failCount).toBe(1);
+      expect(result.validation.tests?.errors).toContain('should work');
+    });
+
+    test('falls back to default bun test command when no custom command configured', async () => {
+      const mockExecSync = mock((command: string) => {
+        if (command.includes('git status')) {
+          return '';
+        }
+        if (command.includes('git branch')) {
+          return 'main';
+        }
+        if (command.includes('git log')) {
+          return '';
+        }
+        return '';
+      });
+
+      const mockExistsSync = mock(() => true);
+      const mockReadFileSync = mock((path: string) => {
+        if (path.includes('package.json')) {
+          return JSON.stringify({ scripts: { test: 'bun test' } });
+        }
+        if (path.includes('TASK_001.md')) {
+          return '# Test Task\n\n**Status:** in_progress';
+        }
+        return '';
+      });
+
+      const deps: ValidationDeps = {
+        execSync: mockExecSync,
+        fileOps: {
+          existsSync: mockExistsSync,
+          readFileSync: mockReadFileSync,
+        },
+        getConfig: mock(() => ({})),
+        getLintConfig: mock(() => ({ enabled: false })),
+        getTestConfig: mock(() => ({ enabled: true })), // No command specified
+        getActiveTaskId: mock(() => 'TASK_001'),
+        isWipCommit: mock(() => false),
+        getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
+        logger: createMockLogger(),
+      };
+
+      const result = await runValidationChecks('/test/project', deps);
+
+      expect(result.success).toBe(true);
+      expect(result.validation.tests?.passed).toBe(true);
+
+      // Should use the default 'bun test' command
+      expect(mockExecSync).toHaveBeenCalledWith(
+        'bun test >/dev/null 2>&1',
+        expect.objectContaining({
+          cwd: '/test/project',
+          shell: '/bin/bash',
+        }),
+      );
     });
   });
 });

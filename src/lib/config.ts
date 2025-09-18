@@ -15,6 +15,7 @@ export interface LintConfig extends ValidationConfig {
 export interface EditValidationConfig extends HookConfig {
   typecheck?: ValidationConfig;
   lint?: ValidationConfig | LintConfig;
+  tests?: ValidationConfig;
   knip?: ValidationConfig;
 }
 
@@ -93,6 +94,10 @@ const DEFAULT_CONFIG: InternalConfig = {
         tool: 'biome' as const,
         command: 'bunx biome check',
         autoFixCommand: 'bunx biome check --write',
+      },
+      tests: {
+        enabled: true,
+        command: 'bun test',
       },
     },
     pre_tool_validation: {
@@ -304,4 +309,16 @@ export function getLintConfig(configPath?: string): LintConfig | null {
   }
 
   return lintConfig as LintConfig;
+}
+
+export function getTestConfig(configPath?: string): ValidationConfig | null {
+  const config = getConfig(configPath);
+  const editValidation = config.hooks?.edit_validation as EditValidationConfig | undefined;
+  const testConfig = editValidation?.tests;
+
+  if (!testConfig) {
+    return null;
+  }
+
+  return testConfig;
 }
