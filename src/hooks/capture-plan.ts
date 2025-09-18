@@ -11,6 +11,9 @@ import { GitHubHelpers } from '../lib/github-helpers';
 import { createLogger } from '../lib/logger';
 import type { GitHubIssue, HookInput, HookOutput } from '../types';
 
+// Regex pattern to match HTML metadata comments that should not be copied between task files
+const HTML_METADATA_COMMENT_REGEX = /<!--\s*(github_issue|github_url|issue_branch|branch):.*?-->/g;
+
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
   fileOps?: {
@@ -158,6 +161,7 @@ Remember:
 - Be specific - no vague statements
 - Include file paths and line numbers
 - The task file should be a complete implementation guide
+- IMPORTANT: Do NOT copy any HTML comments (<!-- ... -->) from other task files. These are metadata added later and should not be included in your task file.
 
 Write the complete task file to ${taskFilePath} when you're done researching.`;
 }
@@ -302,6 +306,18 @@ export async function enrichPlanWithResearch(
       throw new Error('Research agent completed but did not create task file');
     }
 
+    // Clean up any HTML comments that shouldn't be there yet
+    let content = fileOps.readFileSync(taskFilePath, 'utf-8');
+    const originalLength = content.length;
+    content = content.replace(HTML_METADATA_COMMENT_REGEX, '');
+    if (content.length !== originalLength) {
+      logger.debug('Removed copied HTML metadata comments from task file', {
+        taskId,
+        bytesRemoved: originalLength - content.length,
+      });
+    }
+    fileOps.writeFileSync(taskFilePath, content.trim());
+
     logger.info('Task file created successfully', { path: taskFilePath });
     return true;
   } catch (cmdError) {
@@ -327,7 +343,17 @@ Respond with ONLY the markdown content.`;
     }
 
     // Write the fallback content to the file
-    fileOps.writeFileSync(taskFilePath, response.text.trim());
+    let fallbackContent = response.text.trim();
+    // Clean up any HTML comments that shouldn't be there yet
+    const originalLength = fallbackContent.length;
+    fallbackContent = fallbackContent.replace(HTML_METADATA_COMMENT_REGEX, '');
+    if (fallbackContent.length !== originalLength) {
+      logger.debug('Removed copied HTML metadata comments from fallback task file', {
+        taskId,
+        bytesRemoved: originalLength - fallbackContent.length,
+      });
+    }
+    fileOps.writeFileSync(taskFilePath, fallbackContent);
     logger.info('Fallback task file created', { path: taskFilePath });
     return true;
   }

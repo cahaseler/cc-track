@@ -5,6 +5,7 @@ import type { HookInput } from '../types';
 import {
   type CapturePlanDependencies,
   capturePlanHook,
+  enrichPlanWithResearch,
   findNextTaskNumber,
   generateResearchPrompt,
 } from './capture-plan';
@@ -254,6 +255,93 @@ describe('capture-plan', () => {
       );
       // Verify the task file was "written"
       expect(writtenFiles['/project/.claude/tasks/TASK_001.md']).toBeDefined();
+    });
+  });
+
+  describe('HTML comment cleaning', () => {
+    test('enrichPlanWithResearch removes copied HTML comments from task file', async () => {
+      const taskId = '001';
+      const now = new Date('2025-01-01T12:00:00Z');
+      const projectRoot = '/project';
+
+      // Mock task content with HTML comments that shouldn't be there
+      const taskContentWithComments = `# Test Task
+
+**Purpose:** Test task creation
+
+**Status:** in_progress
+
+<!-- github_issue: 123 -->
+<!-- github_url: https://example.com/issue -->
+<!-- issue_branch: 123-old-task-branch -->
+<!-- branch: feature/old-branch -->
+
+## Requirements
+- [ ] Test requirement
+
+<!-- Regular comment that should stay -->
+## Implementation Details`;
+
+      const mockFileOps = {
+        existsSync: mock(() => true),
+        readFileSync: mock(() => taskContentWithComments),
+        writeFileSync: mock(),
+      };
+
+      const mockQuery = mock(async function* () {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          usage: { input_tokens: 100, output_tokens: 200 },
+          total_cost_usd: 0.01,
+        } as any;
+      });
+
+      // Mock the claude-code module
+      mock.module('@anthropic-ai/claude-code', () => ({
+        query: mockQuery,
+      }));
+
+      const deps: CapturePlanDependencies = {
+        fileOps: mockFileOps as any,
+        logger: createMockLogger(),
+      };
+
+      // Call enrichPlanWithResearch
+      const result = await enrichPlanWithResearch('Test plan', taskId, now, projectRoot, deps);
+
+      expect(result).toBe(true);
+
+      // Check that writeFileSync was called to clean the content
+      const writeCalls = mockFileOps.writeFileSync.mock.calls;
+      expect(writeCalls.length).toBeGreaterThan(0);
+
+      // Get the last write call (the cleaned content)
+      const lastWriteCall = writeCalls[writeCalls.length - 1];
+      const cleanedContent = lastWriteCall[1];
+
+      // Verify problematic comments were removed
+      expect(cleanedContent).not.toContain('<!-- github_issue:');
+      expect(cleanedContent).not.toContain('<!-- github_url:');
+      expect(cleanedContent).not.toContain('<!-- issue_branch:');
+      expect(cleanedContent).not.toContain('<!-- branch:');
+
+      // Verify other comments are preserved
+      expect(cleanedContent).toContain('<!-- Regular comment that should stay -->');
+    });
+
+    test('generateResearchPrompt includes warning about HTML comments', () => {
+      const plan = 'Create a new feature';
+      const taskId = '005';
+      const now = new Date('2025-01-01T12:00:00Z');
+      const projectRoot = '/project';
+
+      const prompt = generateResearchPrompt(plan, taskId, now, projectRoot);
+
+      // Check that the warning about HTML comments is included
+      expect(prompt).toContain('Do NOT copy any HTML comments');
+      expect(prompt).toContain('<!-- ... -->');
+      expect(prompt).toContain('These are metadata added later');
     });
   });
 });
