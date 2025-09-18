@@ -6,6 +6,7 @@ import type { HookInput, HookOutput } from '../types';
 
 // Build and copy the binary to a temp location once
 let testBinaryPath: string | null = null;
+let mockClaudeExecutablePath: string | null = null;
 
 /**
  * Get or create the test binary in a safe location
@@ -27,6 +28,19 @@ export function getTestBinary(): string {
     execSync(`chmod +x ${testBinaryPath}`);
   }
   return testBinaryPath;
+}
+
+/**
+ * Get or create the mock Claude executable for testing
+ */
+export function getMockClaudeExecutable(): string {
+  if (!mockClaudeExecutablePath) {
+    const tempBinDir = mkdtempSync(join(tmpdir(), 'mock-claude-'));
+    mockClaudeExecutablePath = join(tempBinDir, 'claude');
+    copyFileSync('/home/ubuntu/projects/cc-pars/src/test-utils/mock-claude-executable.sh', mockClaudeExecutablePath);
+    execSync(`chmod +x ${mockClaudeExecutablePath}`);
+  }
+  return mockClaudeExecutablePath;
 }
 
 /**
@@ -63,10 +77,17 @@ export function createTempGitRepo(dir: string, user?: { name: string; email: str
   execSync(`git config user.name "${gitUser.name}"`, { cwd: dir, stdio: 'pipe' });
   execSync(`git config user.email "${gitUser.email}"`, { cwd: dir, stdio: 'pipe' });
 
-  // Create initial commit
+  // Create initial commit on main branch (standardize branch name)
   writeFileSync(join(dir, 'README.md'), '# Test Project\n');
   execSync('git add README.md', { cwd: dir, stdio: 'pipe' });
   execSync('git commit -m "Initial commit"', { cwd: dir, stdio: 'pipe' });
+
+  // Rename to main if it's master
+  try {
+    execSync('git branch -m master main', { cwd: dir, stdio: 'pipe' });
+  } catch {
+    // Already on main or different default branch
+  }
 }
 
 /**
@@ -173,27 +194,109 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
 
 /**
  * Run a hook with given input and capture output
+ * For integration tests, we run the hook functions directly with mocked dependencies
  */
 export async function runHook(
   hookName: string,
   input: Partial<HookInput>,
   projectDir: string
 ): Promise<HookOutput> {
-  const hookPath = getTestBinary();
   const fullInput: HookInput = {
     hook_event_name: 'PostToolUse',
+    cwd: projectDir,
     ...input,
   };
 
-  // Write JSON to temp file to avoid shell escaping issues
+  // Create mock Claude SDK
+  const mockClaudeSDK = {
+    prompt: async (text: string, model: 'haiku' | 'sonnet' | 'opus') => {
+      // Return appropriate mock responses based on the prompt
+      if (text.includes('Research the codebase') || text.includes('create a task file')) {
+        return {
+          text: `# Task: Test Task
+
+## Requirements
+- [ ] Implement feature
+- [ ] Add tests
+- [ ] Update documentation
+
+## Success Criteria
+- All tests pass
+- Feature works as expected
+
+## Recent Progress
+- Task created via integration test`,
+          success: true,
+        };
+      }
+      if (text.includes('review')) {
+        return {
+          text: JSON.stringify({
+            decision: 'continue',
+            reason: 'Changes align with task requirements',
+          }),
+          success: true,
+        };
+      }
+      return {
+        text: 'Mock response',
+        success: true,
+      };
+    },
+  };
+
+  // Import and run the hook directly with mocked dependencies
+  if (hookName === 'capture-plan') {
+    const { capturePlanHook } = await import('../hooks/capture-plan');
+    return await capturePlanHook(fullInput, {
+      claudeSDK: mockClaudeSDK,
+      enrichPlanWithResearch: async (plan, taskId, now, root, deps) => {
+        // Use the mock SDK for enrichment
+        const enrichDeps = { ...deps, claudeSDK: mockClaudeSDK };
+        const { enrichPlanWithResearch: realEnrich } = await import('../hooks/capture-plan');
+        return realEnrich(plan, taskId, now, root, enrichDeps);
+      },
+    });
+  }
+
+  if (hookName === 'stop-review') {
+    const { stopReviewHook } = await import('../hooks/stop-review');
+    return await stopReviewHook(fullInput, {
+      claudeSDK: mockClaudeSDK,
+    });
+  }
+
+  if (hookName === 'edit-validation') {
+    const { editValidationHook } = await import('../hooks/edit-validation');
+    return await editValidationHook(fullInput, {});
+  }
+
+  if (hookName === 'pre-tool-validation') {
+    const { preToolValidationHook } = await import('../hooks/pre-tool-validation');
+    return await preToolValidationHook(fullInput, {});
+  }
+
+  if (hookName === 'pre-compact') {
+    const { preCompactHook } = await import('../hooks/pre-compact');
+    return await preCompactHook(fullInput, {
+      claudeSDK: mockClaudeSDK,
+    });
+  }
+
+  // Fallback to running through CLI if hook not implemented above
+  const hookPath = getTestBinary();
+  const mockClaudePath = getMockClaudeExecutable();
   const tempFile = join(projectDir, '.test-hook-input.json');
   writeFileSync(tempFile, JSON.stringify(fullInput));
 
   try {
-    const result = execSync(
-      `cat ${tempFile} | ${hookPath} hook 2>&1`,
-      { cwd: projectDir, stdio: 'pipe', encoding: 'utf-8' }
-    );
+    const command = `cat ${tempFile} | CLAUDE_CODE_EXECUTABLE="${mockClaudePath}" ${hookPath} hook 2>&1`;
+    const result = execSync(command, {
+      cwd: projectDir,
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      timeout: 3000,
+    });
 
     // The hook might output the same JSON twice (stdout and stderr)
     // Split by newlines and parse the first valid JSON

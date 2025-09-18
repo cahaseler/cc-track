@@ -185,6 +185,25 @@ export async function enrichPlanWithResearch(
 
   const taskFilePath = join(projectRoot, '.claude', 'tasks', `TASK_${taskId}.md`);
 
+  // If a mock SDK is injected, use it directly instead of the real SDK
+  if (deps.claudeSDK?.prompt) {
+    logger.info('Using injected Claude SDK for task enrichment');
+    const simplePrompt = generateResearchPrompt(plan, taskId, now, projectRoot);
+
+    const response = await deps.claudeSDK.prompt(simplePrompt, 'sonnet');
+    if (!response.success) {
+      throw new Error(response.error || 'Task enrichment failed');
+    }
+
+    // Write the content to the file
+    let taskContent = response.text.trim();
+    // Clean up any HTML comments that shouldn't be there yet
+    taskContent = taskContent.replace(HTML_METADATA_COMMENT_REGEX, '');
+    fileOps.writeFileSync(taskFilePath, taskContent);
+    logger.info('Task file created with injected SDK', { path: taskFilePath });
+    return true;
+  }
+
   try {
     // Generate the research-focused prompt
     const prompt = generateResearchPrompt(plan, taskId, now, projectRoot);
