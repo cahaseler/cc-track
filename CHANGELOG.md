@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/cahaseler/cc-track/compare/v1.34.0...v1.35.0) (2025-09-18)
+
+
+### Features
+
+* complete TASK_081 - Support Custom Test Commands in Prepare Completion Hook ([261568f](https://github.com/cahaseler/cc-track/commit/261568f5df714507331254eb1143f2f9603cecf3))
+
 # [1.34.0](https://github.com/cahaseler/cc-track/compare/v1.33.0...v1.34.0) (2025-09-18)
 
 
