@@ -139,18 +139,35 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
     '# Product Context\n\nTest project for integration testing.',
   );
 
-  // Create track.config.json
+  // Create track.config.json with proper structure
   const trackConfig = {
-    capture_plan: true,
-    stop_review: true,
-    edit_validation: false,
-    statusline: true,
-    git_branching: Boolean(options.gitInit), // Ensure boolean value
-    github_integration: {
-      enabled: options.githubEnabled || false,
-      auto_create_issues: options.githubEnabled || false,
-      use_issue_branches: options.githubEnabled || false,
-      auto_create_prs: options.githubEnabled || false,
+    hooks: {
+      capture_plan: {
+        enabled: true,
+      },
+      stop_review: {
+        enabled: true,
+      },
+      edit_validation: {
+        enabled: false,
+      },
+      pre_tool_validation: {
+        enabled: false,
+      },
+    },
+    features: {
+      statusline: {
+        enabled: true,
+      },
+      git_branching: {
+        enabled: Boolean(options.gitInit),
+      },
+      github_integration: {
+        enabled: options.githubEnabled || false,
+        auto_create_issues: options.githubEnabled || false,
+        use_issue_branches: options.githubEnabled || false,
+        auto_create_prs: options.githubEnabled || false,
+      },
     },
     ...options.trackConfig,
   };
