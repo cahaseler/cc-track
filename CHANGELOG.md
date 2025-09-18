@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/cahaseler/cc-track/compare/v1.35.0...v1.36.0) (2025-09-18)
+
+
+### Features
+
+* complete TASK_082 - Fix Missing Shell Option in Lint Auto-Formatter Execution ([cd46c34](https://github.com/cahaseler/cc-track/commit/cd46c34410715fc78ea4540579b19b7c0d2062ff))
+
 # [1.35.0](https://github.com/cahaseler/cc-track/compare/v1.34.0...v1.35.0) (2025-09-18)
 
 
