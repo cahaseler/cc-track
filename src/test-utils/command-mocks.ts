@@ -322,9 +322,16 @@ export function createMockClaudeSDK(options?: {
 }
 
 /**
+ * Mock ExecFunction with call tracking for testing shell commands
+ */
+export type MockExecFunction = ExecFunction & {
+  execCalls: Array<{ command: string; options?: ExecSyncOptions & { encoding?: BufferEncoding } }>;
+};
+
+/**
  * Mock ExecFunction for testing shell commands
  */
-export function createMockExec(responses?: Record<string, string>): ExecFunction {
+export function createMockExec(responses?: Record<string, string>): MockExecFunction {
   const execCalls: Array<{ command: string; options?: ExecSyncOptions & { encoding?: BufferEncoding } }> = [];
 
   const mockExec = mock((command: string, options?: ExecSyncOptions & { encoding?: BufferEncoding }) => {
@@ -349,10 +356,8 @@ export function createMockExec(responses?: Record<string, string>): ExecFunction
     return '';
   }) as ExecFunction;
 
-  // Attach execCalls for test inspection
-  (mockExec as any).execCalls = execCalls;
-
-  return mockExec;
+  // Attach execCalls for test inspection with proper typing
+  return Object.assign(mockExec, { execCalls });
 }
 
 /**
@@ -396,7 +401,7 @@ export function createMockGitHubHelpers(overrides?: Partial<GitHubHelpers>): Git
  */
 export interface ExtendedTestDeps extends TestDeps {
   claudeSDK: MockClaudeSDK;
-  exec: ExecFunction & { execCalls: Array<{ command: string; options?: any }> };
+  exec: MockExecFunction;
   gitHelpers: GitHelpers;
   githubHelpers: GitHubHelpers;
 }
