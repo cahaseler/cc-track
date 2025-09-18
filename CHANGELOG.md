@@ -1,3 +1,16 @@
+# [1.33.0](https://github.com/cahaseler/cc-track/compare/v1.32.0...v1.33.0) (2025-09-18)
+
+
+### Bug Fixes
+
+* add missing ExecSyncOptions import in complete-task-workflow.test.ts ([b85055e](https://github.com/cahaseler/cc-track/commit/b85055ec2bde6e5323329d407a4d25227721483f))
+* properly type createMockExec return value with execCalls property ([9fbc66a](https://github.com/cahaseler/cc-track/commit/9fbc66a4314fca816bb6b93f7b31ea28013b8a85))
+
+
+### Features
+
+* complete TASK_079 - TASK_079: Test Quality Improvements ([8d72c4e](https://github.com/cahaseler/cc-track/commit/8d72c4e1317f17e729d2c494916928696cf87fb2))
+
 # [1.32.0](https://github.com/cahaseler/cc-track/compare/v1.31.0...v1.32.0) (2025-09-18)
 
 
