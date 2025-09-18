@@ -14,15 +14,24 @@ let mockClaudeExecutablePath: string | null = null;
 export function getTestBinary(): string {
   if (!testBinaryPath) {
     // Build the binary
-    execSync('bun build src/cli/index.ts --compile --outfile dist/cc-track', {
-      cwd: '/home/ubuntu/projects/cc-pars',
-      stdio: 'pipe',
-    });
+    // Get project root dynamically
+    const projectRoot = process.cwd();
+    const distBinary = join(projectRoot, 'dist', 'cc-track');
+
+    // Check if binary exists (CI should build it beforehand)
+    if (!existsSync(distBinary)) {
+      // Build the binary if it doesn't exist (for local dev)
+      console.log('Building cc-track binary for tests...');
+      execSync('bun build src/cli/index.ts --compile --outfile dist/cc-track', {
+        cwd: projectRoot,
+        stdio: 'pipe',
+      });
+    }
 
     // Copy to temp location
     const tempBinDir = mkdtempSync(join(tmpdir(), 'cc-track-test-bin-'));
     testBinaryPath = join(tempBinDir, 'cc-track');
-    copyFileSync('/home/ubuntu/projects/cc-pars/dist/cc-track', testBinaryPath);
+    copyFileSync(distBinary, testBinaryPath);
 
     // Make it executable
     execSync(`chmod +x ${testBinaryPath}`);
@@ -37,7 +46,9 @@ export function getMockClaudeExecutable(): string {
   if (!mockClaudeExecutablePath) {
     const tempBinDir = mkdtempSync(join(tmpdir(), 'mock-claude-'));
     mockClaudeExecutablePath = join(tempBinDir, 'claude');
-    copyFileSync('/home/ubuntu/projects/cc-pars/src/test-utils/mock-claude-executable.sh', mockClaudeExecutablePath);
+    const projectRoot = process.cwd();
+    const mockScriptPath = join(projectRoot, 'src', 'test-utils', 'mock-claude-executable.sh');
+    copyFileSync(mockScriptPath, mockClaudeExecutablePath);
     execSync(`chmod +x ${mockClaudeExecutablePath}`);
   }
   return mockClaudeExecutablePath;

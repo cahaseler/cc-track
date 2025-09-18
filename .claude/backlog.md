@@ -22,3 +22,8 @@
 - [2025-09-16] Test quality improvements: Standardize mock patterns across 25+ test files, split complete-task.test.ts (365+ lines) into focused files, add integration tests for critical paths
 - [2025-09-17] If Claude Code hook output bug isn't resolved by 2025-09-20, add comprehensive unit tests and first-class config support for the hook status statusline workaround
 - [2025-09-18] Add integration tests for critical end-to-end workflows (multi-component interactions, command chaining, hook sequences) to complement existing 366 unit tests
+[2025-09-18] Add focused integration tests for specific features:
+- Context management tests: CLAUDE.md imports, backlog commands, context file structure  
+- Git operations tests: Branch protection, automatic rebasing, git configuration
+- Hook chain tests: Complex hook interaction sequences and blocking behavior
+- Configuration propagation tests: Config inheritance and override behavior
