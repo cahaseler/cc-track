@@ -134,7 +134,7 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
     stop_review: true,
     edit_validation: false,
     statusline: true,
-    git_branching: options.gitInit || false,
+    git_branching: Boolean(options.gitInit),  // Ensure boolean value
     github_integration: {
       enabled: options.githubEnabled || false,
       auto_create_issues: options.githubEnabled || false,
@@ -243,26 +243,84 @@ export async function runHook(
         success: true,
       };
     },
+    generateCommitMessage: async (changes: string) => {
+      // Generate mock commit message
+      if (changes.includes('TASK_')) {
+        return 'wip: work on task';
+      }
+      return 'wip: save changes';
+    },
+    generateBranchName: async (plan: string, taskId: string) => {
+      // Generate mock branch name
+      return `feature/test-task-${taskId}`;
+    },
   };
 
   // Import and run the hook directly with mocked dependencies
   if (hookName === 'capture-plan') {
     const { capturePlanHook } = await import('../hooks/capture-plan');
-    return await capturePlanHook(fullInput, {
+    const { GitHelpers } = await import('../lib/git-helpers');
+
+    // Create a mock GitHelpers that doesn't try to use Claude SDK
+    const mockGitHelpers = new GitHelpers(
+      undefined, // exec - use default
+      undefined, // getGitConfig - use default
+      mockClaudeSDK // Use our mock SDK
+    );
+
+    // Create a logger to see what's happening
+    const mockLogger = {
+      info: (msg: string, data?: any) => console.log('Hook:', msg, data),
+      debug: (msg: string, data?: any) => {},
+      warn: (msg: string, data?: any) => console.warn('Hook:', msg, data),
+      error: (msg: string, data?: any) => console.error('Hook:', msg, data),
+    };
+
+    // Mock execSync to skip push operations and log git commands
+    const realExecSync = require('child_process').execSync;
+    const mockExecSync = (command: string, options?: any) => {
+      const cmd = command.toString();
+      // Log git commands for debugging
+      if (cmd.includes('git')) {
+        console.log('Git command:', cmd);
+      }
+      // Skip push commands - they'll fail without origin
+      if (cmd.includes('git push')) {
+        console.log('Skipping git push in test');
+        return '';
+      }
+      return realExecSync(command, options);
+    };
+
+    const result = await capturePlanHook(fullInput, {
       claudeSDK: mockClaudeSDK,
+      gitHelpers: mockGitHelpers,
+      logger: mockLogger as any,
+      execSync: mockExecSync as any,
       enrichPlanWithResearch: async (plan, taskId, now, root, deps) => {
         // Use the mock SDK for enrichment
-        const enrichDeps = { ...deps, claudeSDK: mockClaudeSDK };
+        const enrichDeps = { ...deps, claudeSDK: mockClaudeSDK, logger: mockLogger as any };
         const { enrichPlanWithResearch: realEnrich } = await import('../hooks/capture-plan');
         return realEnrich(plan, taskId, now, root, enrichDeps);
       },
     });
+
+    return result;
   }
 
   if (hookName === 'stop-review') {
     const { stopReviewHook } = await import('../hooks/stop-review');
+    const { GitHelpers } = await import('../lib/git-helpers');
+
+    const mockGitHelpers = new GitHelpers(
+      undefined,
+      undefined,
+      mockClaudeSDK
+    );
+
     return await stopReviewHook(fullInput, {
       claudeSDK: mockClaudeSDK,
+      gitHelpers: mockGitHelpers,
     });
   }
 

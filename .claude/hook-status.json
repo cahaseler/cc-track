@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-09-18T17:51:15.488Z",
-  "message": "Could not review changes",
-  "status": "review_failed",
+  "timestamp": "2025-09-18T18:03:02.934Z",
+  "message": "Integration test infrastructure working, some hook behavior issues remain",
+  "status": "on_track",
   "source": "stop_review"
 }
