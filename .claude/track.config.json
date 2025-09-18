@@ -28,10 +28,11 @@
       "knip": {
         "enabled": true,
         "command": "bunx knip"
+      },
+      "tests": {
+        "enabled": true,
+        "command": "bun test"
       }
-    },
-    "test": {
-      "enabled": true
     },
     "pre_tool_validation": {
       "enabled": true,
