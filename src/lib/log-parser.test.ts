@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { Readable } from 'node:stream';
+import { createMockLogger } from '../test-utils/command-mocks';
 import { ClaudeLogParser, type FileOps, type SimplifiedEntry } from './log-parser';
 
 // Helper to create mock file operations
@@ -9,17 +10,6 @@ function createMockFileOps(mockData: Record<string, string[]>): FileOps {
       const lines = mockData[path] || [];
       return Readable.from(lines);
     }),
-  };
-}
-
-// Helper to create mock logger
-function createMockLogger() {
-  return {
-    info: mock(() => {}),
-    debug: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
   };
 }
 

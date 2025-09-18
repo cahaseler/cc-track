@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { GitHelpers } from '../lib/git-helpers';
-import type { createLogger } from '../lib/logger';
+import { createMockClaudeSDK, createMockLogger } from '../test-utils/command-mocks';
 import type { HookInput } from '../types';
 import {
   type CapturePlanDependencies,
@@ -9,29 +9,6 @@ import {
   findNextTaskNumber,
   generateResearchPrompt,
 } from './capture-plan';
-
-// Create a properly typed logger mock
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
-
-// Create mock ClaudeSDK
-function createMockClaudeSDK() {
-  return {
-    generateCommitMessage: mock(async () => 'chore: save work in progress'),
-    generateBranchName: mock(async () => 'feature/test-branch'),
-    prompt: mock(async () => ({
-      text: '# Task Title\n\nEnriched content',
-      success: true,
-    })),
-  };
-}
 
 describe('capture-plan', () => {
   beforeEach(() => {

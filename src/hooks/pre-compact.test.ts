@@ -1,18 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { createLogger } from '../lib/logger';
+import { createMockLogger } from '../test-utils/command-mocks';
 import type { HookInput } from '../types';
 import { type PreCompactDependencies, preCompactHook } from './pre-compact';
-
-// Create a properly typed logger mock
-function createMockLogger(): ReturnType<typeof createLogger> {
-  return {
-    debug: mock(() => {}),
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    exception: mock(() => {}),
-  } as unknown as ReturnType<typeof createLogger>;
-}
 
 describe('preCompactHook', () => {
   let mockLogger: ReturnType<typeof createLogger>;
