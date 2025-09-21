@@ -1,3 +1,13 @@
+## [1.37.1](https://github.com/cahaseler/cc-track/compare/v1.37.0...v1.37.1) (2025-09-21)
+
+
+### Bug Fixes
+
+* remove prepublishOnly script causing npm version issue ([8ffe85b](https://github.com/cahaseler/cc-track/commit/8ffe85b4ff47b621a80ea96bbf17ae1a57fef792))
+* remove prepublishOnly script causing version override ([da229ea](https://github.com/cahaseler/cc-track/commit/da229eaf4ca3461d8f940a4424ab79f706ba768e))
+* remove prepublishOnly script causing version overwrite ([dc1acec](https://github.com/cahaseler/cc-track/commit/dc1acec2145b873985301f932ac63c895535d759))
+* remove prepublishOnly script to fix npm package version display ([e28880d](https://github.com/cahaseler/cc-track/commit/e28880d113cbf2738251b6629b9235187139fa55))
+
 # [1.37.0](https://github.com/cahaseler/cc-track/compare/v1.36.0...v1.37.0) (2025-09-21)
 
 
