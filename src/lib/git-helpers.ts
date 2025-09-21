@@ -1,6 +1,7 @@
 import type { ExecSyncOptions } from 'node:child_process';
 import { execSync as nodeExecSync } from 'node:child_process';
 import { getGitConfig as defaultGetGitConfig } from './config';
+import { createLogger } from './logger';
 
 // Interface for dependency injection
 export type ExecFunction = (command: string, options?: ExecSyncOptions & { encoding?: BufferEncoding }) => string;
@@ -21,11 +22,18 @@ export class GitHelpers {
   private exec: ExecFunction;
   private getGitConfig: GetGitConfigFunction;
   private claudeSDK?: ClaudeSDKInterface;
+  private logger: ReturnType<typeof createLogger>;
 
-  constructor(exec?: ExecFunction, getGitConfig?: GetGitConfigFunction, claudeSDK?: ClaudeSDKInterface) {
+  constructor(
+    exec?: ExecFunction,
+    getGitConfig?: GetGitConfigFunction,
+    claudeSDK?: ClaudeSDKInterface,
+    logger?: ReturnType<typeof createLogger>,
+  ) {
     this.exec = exec || defaultExec;
     this.getGitConfig = getGitConfig || defaultGetGitConfig;
     this.claudeSDK = claudeSDK;
+    this.logger = logger || createLogger('git-helpers');
   }
 
   private async ensureClaudeSDK(): Promise<ClaudeSDKInterface> {
@@ -40,14 +48,51 @@ export class GitHelpers {
    * Get the default branch name (main or master)
    */
   getDefaultBranch(cwd: string): string {
-    // First check if there's a configured default branch
+    // First check if there's a configured default branch in track.config.json
     const gitConfig = this.getGitConfig();
     if (gitConfig?.defaultBranch) {
+      this.logger.debug(`Default branch from track.config.json: ${gitConfig.defaultBranch}`);
       return gitConfig.defaultBranch;
     }
 
+    // Try GitHub API if available (most reliable for GitHub repos)
     try {
-      // Try to get the default branch from remote tracking
+      const githubDefault = this.exec(
+        "gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null",
+        {
+          cwd,
+          shell: '/bin/bash',
+        },
+      ).trim();
+
+      if (githubDefault && githubDefault !== 'null') {
+        this.logger.debug(`Default branch from GitHub API: ${githubDefault}`);
+        return githubDefault;
+      }
+    } catch {
+      // GitHub CLI not available or not a GitHub repo
+    }
+
+    // Try git ls-remote to get the remote HEAD (more reliable than symbolic-ref)
+    try {
+      const remoteHead = this.exec(
+        "git ls-remote --symref origin HEAD 2>/dev/null | head -1 | sed 's/^ref: refs\\/heads\\///' | cut -f1",
+        {
+          cwd,
+          shell: '/bin/bash',
+        },
+      ).trim();
+
+      if (remoteHead && remoteHead !== 'HEAD') {
+        this.logger.debug(`Default branch from git remote HEAD: ${remoteHead}`);
+        return remoteHead;
+      }
+    } catch {
+      // Fall through to next method
+    }
+
+    // Fallback to the old symbolic-ref method (kept for compatibility)
+    try {
       const defaultBranch = this.exec(
         'git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@"',
         {
@@ -57,19 +102,21 @@ export class GitHelpers {
       ).trim();
 
       if (defaultBranch) {
+        this.logger.debug(`Default branch from symbolic-ref: ${defaultBranch}`);
         return defaultBranch;
       }
     } catch {
       // Fall through to check git config
     }
 
+    // Check git config for the default branch name
     try {
-      // Check git config for the default branch name
       const configDefault = this.exec('git config init.defaultBranch', { cwd }).trim();
       if (configDefault) {
         // Verify this branch actually exists
         try {
           this.exec(`git show-ref --verify --quiet refs/heads/${configDefault}`, { cwd });
+          this.logger.debug(`Default branch from git config: ${configDefault}`);
           return configDefault;
         } catch {
           // Configured default doesn't exist, continue checking
@@ -79,20 +126,23 @@ export class GitHelpers {
       // No config set, fall through to check common defaults
     }
 
+    // Check if main exists
     try {
-      // Check if main exists
       this.exec('git show-ref --verify --quiet refs/heads/main', { cwd });
+      this.logger.debug('Default branch: main (exists locally)');
       return 'main';
     } catch {
       // Fall through to master
     }
 
+    // Check if master exists
     try {
-      // Check if master exists
       this.exec('git show-ref --verify --quiet refs/heads/master', { cwd });
+      this.logger.debug('Default branch: master (exists locally)');
       return 'master';
     } catch {
       // Default to main if neither exists (follows modern git convention)
+      this.logger.debug('Default branch: main (fallback - no branch detected)');
       return 'main';
     }
   }
@@ -178,7 +228,7 @@ export class GitHelpers {
       // Fallback if nothing works
       return { message: fallbackMessage, source: 'timeout' };
     } catch (error) {
-      console.error('Failed to generate commit message:', error);
+      this.logger.error('Failed to generate commit message', { error });
       return { message: 'chore: save work in progress', source: 'error' };
     }
   }
@@ -214,7 +264,7 @@ export class GitHelpers {
       // Fallback to a generic name with task ID
       return `feature/task-${taskId.toLowerCase()}`;
     } catch (error) {
-      console.error('Failed to generate branch name:', error);
+      this.logger.error('Failed to generate branch name', { error });
       // Fallback to a generic name with task ID
       return `feature/task-${taskId.toLowerCase()}`;
     }
@@ -227,9 +277,9 @@ export class GitHelpers {
     try {
       // Create and switch to the new branch
       this.exec(`git checkout -b ${branchName}`, { cwd });
-      console.log(`Created and switched to branch: ${branchName}`);
+      this.logger.info(`Created and switched to branch: ${branchName}`);
     } catch (error) {
-      console.error(`Failed to create branch ${branchName}:`, error);
+      this.logger.error(`Failed to create branch ${branchName}`, { error });
       throw error;
     }
   }
@@ -245,10 +295,10 @@ export class GitHelpers {
       // Merge the task branch
       this.exec(`git merge ${branchName} --no-ff -m "Merge branch '${branchName}'"`, { cwd });
 
-      console.log(`Merged ${branchName} into ${defaultBranch}`);
+      this.logger.info(`Merged ${branchName} into ${defaultBranch}`);
       // Note: Not deleting the branch per user request
     } catch (error) {
-      console.error(`Failed to merge branch ${branchName}:`, error);
+      this.logger.error(`Failed to merge branch ${branchName}`, { error });
       throw error;
     }
   }
@@ -270,9 +320,9 @@ export class GitHelpers {
   switchToBranch(branchName: string, cwd: string): void {
     try {
       this.exec(`git checkout ${branchName}`, { cwd });
-      console.log(`Switched to branch: ${branchName}`);
+      this.logger.info(`Switched to branch: ${branchName}`);
     } catch (error) {
-      console.error(`Failed to switch to branch ${branchName}:`, error);
+      this.logger.error(`Failed to switch to branch ${branchName}`, { error });
       throw error;
     }
   }
