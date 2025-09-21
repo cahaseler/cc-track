@@ -39,7 +39,6 @@
     "build:windows": "bun run prebuild && bun build src/cli/index.ts --compile --target=bun-windows-x64 --outfile dist/cc-track-windows.exe",
     "build:cross-platform": "bun run build:linux && bun run build:windows",
     "build:hooks": "for hook in edit-validation pre-compact post-compact capture-plan stop-review; do bun build src/hooks/$hook.ts --compile --outfile dist/hooks/$hook; done",
-    "prepublishOnly": "bun run build",
     "release": "semantic-release"
   },
   "devDependencies": {
