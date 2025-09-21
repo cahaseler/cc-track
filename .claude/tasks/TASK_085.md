@@ -2,7 +2,7 @@
 
 **Purpose:** Remove the redundant prepublishOnly script that overwrites correctly-versioned executables built by semantic-release, causing npm packages to show "1.0.0-dev" instead of the actual version.
 
-**Status:** in_progress
+**Status:** completed
 **Started:** 2025-09-21 19:22
 **Task ID:** 085
 
@@ -63,7 +63,8 @@ File: `.releaserc.json:8-12`
 ```
 
 ## Current Focus
-Remove the prepublishOnly script from package.json:42
+
+Task completed on 2025-09-21
 
 ## Research Findings
 
