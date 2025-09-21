@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/cahaseler/cc-track/compare/v1.36.0...v1.37.0) (2025-09-21)
+
+
+### Features
+
+* complete TASK_084 - Fix Default Branch Detection to Use GitHub/Git APIs ([1e73e3e](https://github.com/cahaseler/cc-track/commit/1e73e3e56e830c5c80d92e4a1b768bb292f9f4c9))
+
 # [1.36.0](https://github.com/cahaseler/cc-track/compare/v1.35.0...v1.36.0) (2025-09-18)
 
 
