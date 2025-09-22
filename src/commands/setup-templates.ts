@@ -30,6 +30,22 @@ export function runSetupTemplates(deps: SetupTemplatesDeps): CommandResult<Setup
       messages.push('✅ Created .claude directory');
     }
 
+    // Create required subdirectories
+    const tasksDir = deps.path.join(targetDir, 'tasks');
+    const plansDir = deps.path.join(targetDir, 'plans');
+
+    if (!deps.fs.existsSync(tasksDir)) {
+      deps.fs.mkdirSync(tasksDir, { recursive: true });
+      logger.info('Created tasks directory', { path: tasksDir });
+      messages.push('✅ Created .claude/tasks directory');
+    }
+
+    if (!deps.fs.existsSync(plansDir)) {
+      deps.fs.mkdirSync(plansDir, { recursive: true });
+      logger.info('Created plans directory', { path: plansDir });
+      messages.push('✅ Created .claude/plans directory');
+    }
+
     const timestamp = deps.time.now().getTime();
 
     for (const [filename, content] of Object.entries(embeddedTemplates)) {

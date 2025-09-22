@@ -29,11 +29,39 @@ Fix the cc-track initialization/setup process to properly create all required di
 **Validation**: Add directory existence checks and error handling to prevent silent failures.
 
 ## Current Focus
-Investigating the current setup process implementation to determine the best place to add directory creation logic.
 
-## Next Steps
-1. Examine `src/commands/init.ts` and `src/commands/setup-templates.ts`
-2. Identify the most appropriate location for directory creation
-3. Implement the directory creation with proper error handling
-4. Test the fix in a clean environment
-5. Validate that capture-plan hook works correctly afterward
+Task completed on 2025-09-22
+
+## Recent Progress
+- Identified root cause: setup-templates.ts was not creating required `tasks/` and `plans/` directories
+- Added directory creation logic to `src/commands/setup-templates.ts` (lines 33-47)
+- Updated test suite to verify directory creation
+- All tests pass (377 tests), TypeScript check passes, linting clean
+- Code review completed and APPROVED with no required changes
+- Fixed immediate issue in walt project by manually creating directories
+
+## Implementation Details
+Added the following to setup-templates.ts after `.claude` directory creation:
+```typescript
+// Create required subdirectories
+const tasksDir = deps.path.join(targetDir, 'tasks');
+const plansDir = deps.path.join(targetDir, 'plans');
+
+if (!deps.fs.existsSync(tasksDir)) {
+  deps.fs.mkdirSync(tasksDir, { recursive: true });
+  logger.info('Created tasks directory', { path: tasksDir });
+  messages.push('✅ Created .claude/tasks directory');
+}
+
+if (!deps.fs.existsSync(plansDir)) {
+  deps.fs.mkdirSync(plansDir, { recursive: true });
+  logger.info('Created plans directory', { path: plansDir });
+  messages.push('✅ Created .claude/plans directory');
+}
+```
+
+This ensures directories exist before any hooks run, preventing silent failures in capture-plan hook.
+
+<!-- github_issue: 116 -->
+<!-- github_url: https://github.com/cahaseler/cc-track/issues/116 -->
+<!-- issue_branch: 116-task_087-fix-setup-process-directory-creation-bug -->
