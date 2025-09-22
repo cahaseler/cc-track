@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/cahaseler/cc-track/compare/v1.39.0...v2.0.0) (2025-09-22)
+
+
+### Features
+
+* trigger release for accumulated changes ([#123](https://github.com/cahaseler/cc-track/issues/123)) ([c58ae69](https://github.com/cahaseler/cc-track/commit/c58ae69878963b21944d84fc8ff42bf261497633))
+
+
+### BREAKING CHANGES
+
+* None
+
 # [1.39.0](https://github.com/cahaseler/cc-track/compare/v1.38.0...v1.39.0) (2025-09-22)
 
 
