@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/cahaseler/cc-track/compare/v1.38.0...v1.39.0) (2025-09-22)
+
+
+### Features
+
+* complete TASK_088 - Fix Hook Duplicate Output Issue ([ce7445a](https://github.com/cahaseler/cc-track/commit/ce7445a8d375f5c1c7ab72c29569b2735f106fe9))
+
 # [1.38.0](https://github.com/cahaseler/cc-track/compare/v1.37.1...v1.38.0) (2025-09-22)
 
 
