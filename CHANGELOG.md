@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/cahaseler/cc-track/compare/v1.37.1...v1.38.0) (2025-09-22)
+
+
+### Features
+
+* complete TASK_087 - TASK_087: Fix Setup Process Directory Creation Bug ([fe0c397](https://github.com/cahaseler/cc-track/commit/fe0c397cab2bf11669a85ebb7dd41d7d755c4dd1))
+
 ## [1.37.1](https://github.com/cahaseler/cc-track/compare/v1.37.0...v1.37.1) (2025-09-21)
 
 
