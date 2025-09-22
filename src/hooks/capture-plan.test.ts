@@ -236,6 +236,73 @@ describe('capture-plan', () => {
   });
 
   describe('HTML comment cleaning', () => {
+    test('enrichPlanWithResearch removes markdown wrappers and HTML comments', async () => {
+      const taskId = '001';
+      const now = new Date('2025-01-01T12:00:00Z');
+      const projectRoot = '/project';
+
+      // Mock task content wrapped in markdown code block with HTML comments
+      const taskContentWrapped = `\`\`\`markdown
+# Test Task
+
+**Purpose:** Test task creation
+
+**Status:** in_progress
+
+<!-- github_issue: 123 -->
+<!-- branch: feature/old-branch -->
+
+## Requirements
+- [ ] Test requirement
+\`\`\``;
+
+      const mockFileOps = {
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        writeFileSync: mock(() => {}),
+      };
+
+      const mockClaudeSDK = {
+        prompt: mock(async () => ({
+          text: taskContentWrapped,
+          success: true,
+        })),
+      };
+
+      const mockLogger = createMockLogger();
+
+      const deps: CapturePlanDependencies = {
+        fileOps: mockFileOps,
+        claudeSDK: mockClaudeSDK as any,
+        logger: mockLogger,
+      };
+
+      // Call enrichPlanWithResearch
+      const result = await enrichPlanWithResearch('Test plan', taskId, now, projectRoot, deps);
+
+      expect(result).toBe(true);
+
+      // Check that writeFileSync was called with cleaned content
+      const writeCalls = mockFileOps.writeFileSync.mock.calls;
+      expect(writeCalls.length).toBeGreaterThan(0);
+
+      const lastWriteCall = writeCalls[writeCalls.length - 1];
+      const cleanedContent = lastWriteCall[1];
+
+      // Verify markdown wrappers were removed
+      expect(cleanedContent).not.toContain('```markdown');
+      expect(cleanedContent).not.toContain('```');
+
+      // Verify HTML comments were removed
+      expect(cleanedContent).not.toContain('<!-- github_issue:');
+      expect(cleanedContent).not.toContain('<!-- branch:');
+
+      // Verify actual content remains
+      expect(cleanedContent).toContain('# Test Task');
+      expect(cleanedContent).toContain('**Purpose:** Test task creation');
+      expect(cleanedContent).toContain('## Requirements');
+    });
+
     test('enrichPlanWithResearch removes copied HTML comments from task file', async () => {
       const taskId = '001';
       const now = new Date('2025-01-01T12:00:00Z');

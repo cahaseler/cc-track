@@ -14,6 +14,22 @@ import type { GitHubIssue, HookInput, HookOutput } from '../types';
 // Regex pattern to match HTML metadata comments that should not be copied between task files
 const HTML_METADATA_COMMENT_REGEX = /<!--\s*(github_issue|github_url|issue_branch|branch):.*?-->/g;
 
+/**
+ * Strip markdown code block wrappers from content
+ */
+function stripMarkdownWrapper(content: string): string {
+  const trimmed = content.trim();
+  // Check if the content starts with markdown code block
+  if (trimmed.startsWith('```')) {
+    // Remove opening and closing code blocks
+    return trimmed
+      .replace(/^```[a-z]*\n?/i, '') // Remove opening with optional language
+      .replace(/\n?```$/i, '')        // Remove closing
+      .trim();
+  }
+  return trimmed;
+}
+
 export interface CapturePlanDependencies {
   execSync?: typeof execSync;
   fileOps?: {
@@ -196,7 +212,7 @@ export async function enrichPlanWithResearch(
     }
 
     // Write the content to the file
-    let taskContent = response.text.trim();
+    let taskContent = stripMarkdownWrapper(response.text);
     // Clean up any HTML comments that shouldn't be there yet
     taskContent = taskContent.replace(HTML_METADATA_COMMENT_REGEX, '');
     fileOps.writeFileSync(taskFilePath, taskContent);
@@ -325,8 +341,9 @@ export async function enrichPlanWithResearch(
       throw new Error('Research agent completed but did not create task file');
     }
 
-    // Clean up any HTML comments that shouldn't be there yet
+    // Clean up any HTML comments and markdown wrappers that shouldn't be there
     let content = fileOps.readFileSync(taskFilePath, 'utf-8');
+    content = stripMarkdownWrapper(content);
     const originalLength = content.length;
     content = content.replace(HTML_METADATA_COMMENT_REGEX, '');
     if (content.length !== originalLength) {
@@ -335,7 +352,7 @@ export async function enrichPlanWithResearch(
         bytesRemoved: originalLength - content.length,
       });
     }
-    fileOps.writeFileSync(taskFilePath, content.trim());
+    fileOps.writeFileSync(taskFilePath, content);
 
     logger.info('Task file created successfully', { path: taskFilePath });
     return true;
@@ -362,7 +379,7 @@ Respond with ONLY the markdown content.`;
     }
 
     // Write the fallback content to the file
-    let fallbackContent = response.text.trim();
+    let fallbackContent = stripMarkdownWrapper(response.text);
     // Clean up any HTML comments that shouldn't be there yet
     const originalLength = fallbackContent.length;
     fallbackContent = fallbackContent.replace(HTML_METADATA_COMMENT_REGEX, '');
