@@ -92,7 +92,7 @@ describe('runCompleteTask - git workflow scenarios', () => {
     expect(state.execCommands.some((cmd) => cmd.includes('git rev-list base123..origin/feature/TASK_001'))).toBeTrue();
   });
 
-  test('skips push when not on task branch', async () => {
+  test('pushes current branch regardless of task file branch', async () => {
     const taskContentExtra = '<!-- branch: feature/TASK_001 -->\n<!-- github_issue: 42 -->\n';
     const state = createMockCompleteTaskDeps(createInitialFiles(taskContentExtra));
 
@@ -108,10 +108,7 @@ describe('runCompleteTask - git workflow scenarios', () => {
 
     expect(result.success).toBeTrue();
     if (!result.success) return;
-    // Should NOT have called pushCurrentBranch since we're on wrong branch
-    expect(state.deps.pushCurrentBranch).not.toHaveBeenCalled();
-    expect(result.warnings?.some((w) => w.includes('Not on task branch'))).toBeTrue();
-    expect(result.data?.git.notes).toContain('not currently checked out');
+    expect(state.deps.pushCurrentBranch).toHaveBeenCalled();
   });
 
   test('updates metadata when existing PR is detected', async () => {

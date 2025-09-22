@@ -178,27 +178,13 @@ function buildSuccessResult(
   };
 }
 
-function detectBranchContext(
-  projectRoot: string,
-  taskContent: string,
-  deps: CompleteTaskDeps,
-  options: CompleteTaskOptions,
-): BranchContext {
-  const regularBranchMatch = taskContent.match(/^<!-- branch: (.*?) -->$/m);
-  const issueBranchMatch = taskContent.match(/^<!-- issue_branch: (.*?) -->$/m);
-
+function detectBranchContext(projectRoot: string, deps: CompleteTaskDeps, options: CompleteTaskOptions): BranchContext {
   const context: BranchContext = {
     currentBranch: deps.getCurrentBranch(projectRoot) || undefined,
     remoteHasCommits: false,
   };
 
-  if (regularBranchMatch?.[1]) {
-    context.taskBranchName = regularBranchMatch[1];
-  }
-
-  if (!context.taskBranchName && issueBranchMatch?.[1]) {
-    context.taskBranchName = issueBranchMatch[1];
-  }
+  context.taskBranchName = context.currentBranch;
 
   const githubConfig = deps.getGitHubConfig();
   const prWorkflow = deps.isGitHubIntegrationEnabled() && githubConfig?.auto_create_prs;
@@ -556,13 +542,15 @@ function handleGitHubWorkflow(
   if (prWorkflow) {
     const issueMatch = taskContent.match(/<!-- github_issue: (\d+) -->/);
 
-    // Check if we're on the correct branch before pushing
+    // Warn if we're not on the expected branch, but continue with the current branch
     if (branchContext.currentBranch !== branchContext.taskBranchName) {
-      state.git.notes = `Task branch ${branchContext.taskBranchName} not currently checked out`;
       warnings.push(
-        `Not on task branch (current: ${branchContext.currentBranch}, expected: ${branchContext.taskBranchName})`,
+        `Not on expected task branch (current: ${branchContext.currentBranch}, expected: ${branchContext.taskBranchName})`,
       );
-      return null;
+      deps.logger.warn('Branch name mismatch - using current branch for PR', {
+        current: branchContext.currentBranch,
+        expected: branchContext.taskBranchName,
+      });
     }
 
     const pushSuccess = deps.pushCurrentBranch(projectRoot);
@@ -832,7 +820,7 @@ export async function runCompleteTask(
     warnings.push('no_active_task.md not found');
   }
 
-  const branchContext = detectBranchContext(projectRoot, updatedTaskContent, deps, options);
+  const branchContext = detectBranchContext(projectRoot, deps, options);
   await performSquashAndSummary(projectRoot, options, deps, state, branchContext, warnings);
 
   const failureResult = handleGitHubWorkflow(
