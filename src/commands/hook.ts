@@ -101,7 +101,7 @@ async function readStdinJson(stdin: NodeJS.ReadableStream): Promise<HookInput> {
 export async function runHookCommand(
   deps: CommandDeps,
   stdin: NodeJS.ReadableStream = process.stdin,
-  stdout: NodeJS.WritableStream = process.stdout,
+  _stdout: NodeJS.WritableStream = process.stdout,
   handlers: typeof hookHandlers = hookHandlers,
 ): Promise<CommandResult<{ hookType?: string; output: HookOutput | { continue: true } }>> {
   const messages: string[] = [];
@@ -118,7 +118,6 @@ export async function runHookCommand(
 
     if (!hookType) {
       messages.push(JSON.stringify({ continue: true }));
-      stdout.write(`${messages[0]}\n`);
       return {
         success: true,
         messages,
@@ -135,7 +134,6 @@ export async function runHookCommand(
     deps.logger('hook-dispatcher').debug(`Executing ${hookType} hook`);
     const result = await handler(input);
     const payload = JSON.stringify(result);
-    stdout.write(`${payload}\n`);
 
     return {
       success: true,
@@ -148,10 +146,10 @@ export async function runHookCommand(
     const payload = JSON.stringify({
       error: err.message,
     });
-    stdout.write(`${payload}\n`);
     return {
       success: false,
       error: err.message,
+      messages: [payload],
       exitCode: err.exitCode,
       details: err.details,
       data: { output: { continue: true } },

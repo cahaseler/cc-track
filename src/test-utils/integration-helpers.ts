@@ -189,8 +189,11 @@ export async function createTempProject(options: TempProjectOptions = {}): Promi
   if (options.gitInit) {
     createTempGitRepo(projectDir, options.gitUser);
 
-    // Add .gitignore for hook-status.json
-    writeFileSync(join(projectDir, '.gitignore'), '.claude/hook-status.json\n');
+    // Create empty .gitignore if needed
+    const gitignorePath = join(projectDir, '.gitignore');
+    if (!existsSync(gitignorePath)) {
+      writeFileSync(gitignorePath, '');
+    }
   }
 
   // Return project interface

@@ -134,6 +134,64 @@ describe('runHookCommand', () => {
     const { deps, stdoutStream, stdout } = createDeps();
     const result = await runHookCommand(deps, Readable.from(['not-json']), stdoutStream);
     expect(result.success).toBeFalse();
-    expect(stdout.some((line) => line.includes('error'))).toBeTrue();
+    // Error should be in messages, not written directly to stdout
+    expect(result.messages?.[0]).toContain('error');
+    expect(stdout).toHaveLength(0); // Should not write directly to stdout
+  });
+
+  test('does not output duplicate JSON - writes to messages only', async () => {
+    const { deps, stdoutStream } = createDeps();
+
+    // Test with unknown hook event (should return continue: true)
+    const unknownInput = JSON.stringify({ hook_event_name: 'Unknown', cwd: '/project' });
+    const result = await runHookCommand(deps, Readable.from([unknownInput]), stdoutStream);
+
+    // Should be successful
+    expect(result.success).toBeTrue();
+
+    // Should have exactly one message in the result
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages?.[0]).toBe('{"continue":true}');
+
+    // Should NOT write directly to stdout (that's handled by applyCommandResult)
+    // The stdoutStream.write should never be called in runHookCommand
+    const stdout: string[] = [];
+    const mockStdout: NodeJS.WritableStream = {
+      write: (chunk: string) => {
+        stdout.push(chunk);
+        return true;
+      },
+    } as NodeJS.WritableStream;
+
+    const result2 = await runHookCommand(deps, Readable.from([unknownInput]), mockStdout);
+    expect(stdout).toHaveLength(0); // Should not write directly to stdout
+    expect(result2.messages).toHaveLength(1); // But should have message in result
+  });
+
+  test('does not output duplicate JSON for handled hooks', async () => {
+    const { deps } = createDeps();
+
+    // Mock the handlers to return a specific response
+    const mockHandlers = {
+      'pre-compact': mock(async () => ({ continue: true, message: 'pre-compact ran' })),
+    };
+
+    const stdout: string[] = [];
+    const mockStdout: NodeJS.WritableStream = {
+      write: (chunk: string) => {
+        stdout.push(chunk);
+        return true;
+      },
+    } as NodeJS.WritableStream;
+
+    const input = JSON.stringify({ hook_event_name: 'PreCompact', cwd: '/project' });
+    const result = await runHookCommand(deps, Readable.from([input]), mockStdout, mockHandlers as any);
+
+    // Should not write directly to stdout
+    expect(stdout).toHaveLength(0);
+
+    // Should have exactly one message in result
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages?.[0]).toContain('continue');
   });
 });
