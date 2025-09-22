@@ -24,7 +24,7 @@ function stripMarkdownWrapper(content: string): string {
     // Remove opening and closing code blocks
     return trimmed
       .replace(/^```[a-z]*\n?/i, '') // Remove opening with optional language
-      .replace(/\n?```$/i, '')        // Remove closing
+      .replace(/\n?```$/i, '') // Remove closing
       .trim();
   }
   return trimmed;
