@@ -125,10 +125,18 @@
 ### Semantic Release Process
 - Automated versioning based on conventional commit messages
 - GitHub Actions workflow builds cross-platform binaries (Linux x64, Windows x64)
-- Releases triggered on push to master branch
+- Releases triggered on push to main branch
 - Binary assets automatically attached to GitHub releases
 - Changelog generation from commit history
 - Version bumps: feat (minor), fix (patch), BREAKING CHANGE (major)
+- **Important**: Use squash merge for PRs to ensure semantic-release recognizes conventional commits
+
+### Pull Request Merge Process
+- **Always use squash merge** when merging PRs on GitHub
+- PR titles automatically use conventional format: `feat: complete TASK_XXX - Task Title`
+- Squash merge ensures the PR title becomes the commit message
+- This triggers semantic-release to create appropriate version bumps
+- Do NOT use regular merge commits - they won't trigger releases
 
 ### Commit Message Generation
 - All automated commits use conventional format
@@ -176,3 +184,5 @@
 [2025-09-12] - Added configurable log directory pattern to keep logs outside project directory
 
 [2025-09-15] - Added validation patterns and branch protection implementation
+
+[2025-09-22] - Updated PR merge process to require squash merge for semantic-release compatibility

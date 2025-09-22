@@ -57,3 +57,7 @@ Need to:
 3. Update GitHub repository merge settings
 4. Create manual release commit
 5. Document new process
+
+<!-- github_issue: 122 -->
+<!-- github_url: https://github.com/cahaseler/cc-track/issues/122 -->
+<!-- issue_branch: 122-task_090-fix-semantic-release-by-using-squash-merge-strategy -->
