@@ -1,42 +1,41 @@
-# TASK_089: Fix Markdown Parsing Issue in Branch Name Generation
+# TASK_089: Fix Markdown Parsing Issue in Task Creation
 
 ## Purpose
-Fix the markdown parsing issue in the `generateBranchName` method in `src/lib/git-helpers.ts` where LLM responses wrapped in markdown code blocks fail to extract the actual branch name, causing fallback to generic names like `387-markdown`.
+Fix the issue where task content wrapped in markdown code blocks by the LLM causes GitHub issues to be created with titles like `` ```markdown ``, which then creates branches named like `387-markdown`.
 
 ## Status
 - [x] in_progress
 
 ## Requirements
-- [ ] Strip markdown code block wrappers from LLM responses
-- [ ] Extract actual branch name from cleaned text
-- [ ] Handle responses with or without markdown blocks
-- [ ] Maintain existing branch name pattern matching (`^(feature|bug|chore|docs)/`)
-- [ ] Preserve task ID addition logic
-- [ ] Test with various response formats
+- [x] Strip markdown code block wrappers from LLM responses in task content
+- [x] Ensure clean task files without markdown wrappers
+- [x] Fix GitHub issue titles to use actual task titles
+- [x] Handle responses with or without markdown blocks
+- [x] Add tests for markdown wrapper stripping
+- [x] Verify all existing tests pass
 
 ## Success Criteria
-- Branch name generation works correctly for both plain text and markdown-wrapped responses
-- Plain text response `feature/merge-llm-tests-004` → `feature/merge-llm-tests-004`
-- Markdown wrapped response `` ```markdown\nfeature/merge-llm-tests-004\n``` `` → `feature/merge-llm-tests-004`
-- Generic fallback names are no longer generated when valid branch names exist in markdown blocks
+- Task files are created without markdown code block wrappers
+- GitHub issues get proper titles from the actual task content (e.g., "TASK_004: Merge PR...")
+- GitHub creates sensible branch names from proper issue titles
+- Both plain text and markdown-wrapped LLM responses work correctly
 
 ## Technical Approach
-Update the `generateBranchName` method in `src/lib/git-helpers.ts` (lines 239-271):
+**Updated approach based on investigation**: The root cause was in `capture-plan.ts` where task content from the LLM is processed. When the LLM wraps its response in markdown code blocks, this wrapper was being saved to the task file, causing `formatTaskForGitHub` to extract `` ```markdown `` as the title.
 
-1. **Pre-process response**: Strip markdown code blocks using regex patterns
-   - Remove opening: `/^```[a-z]*\n?/i`
-   - Remove closing: `/\n?```$/i`
-2. **Parse cleaned text**: Apply existing branch name pattern matching logic
-3. **Preserve existing logic**: Keep task ID addition and validation
+**Solution implemented**:
+1. Added `stripMarkdownWrapper` function in `capture-plan.ts`
+2. Applied the function in three places where task content is written:
+   - When using injected SDK (line 215)
+   - After research succeeds (line 346)
+   - In fallback enrichment (line 382)
+3. Added comprehensive test for markdown wrapper stripping
 
 ## Current Focus
-Implementing the markdown stripping logic before the existing branch name pattern matching in the `generateBranchName` method around lines 245-257.
+Completed - the fix has been implemented and tested.
 
 ## Next Steps
-1. Update the parsing logic in `git-helpers.ts`
-2. Test with various LLM response formats
-3. Verify existing functionality remains intact
-4. Document the change if needed
+✅ All requirements completed
 
 **Started**: 2025-09-22 18:06
 
