@@ -27,3 +27,5 @@
 - Git operations tests: Branch protection, automatic rebasing, git configuration
 - Hook chain tests: Complex hook interaction sequences and blocking behavior
 - Configuration propagation tests: Config inheritance and override behavior
+- [2025-01-23] Rewrite/rethink prompts based on spec-kit philosophy - After centralizing prompts, update them to align with Spec-Driven Development principles (forced clarification markers, structured questioning, constitutional constraints)
+- [2025-01-23] Add /clarify command for systematic ambiguity resolution - Implement interactive clarification system to identify and resolve unknowns in captured plans before implementation begins
