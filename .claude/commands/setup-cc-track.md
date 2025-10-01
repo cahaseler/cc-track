@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
-model: claude-sonnet-4-20250514
+model: claude-sonnet-4-5-20250929
 ---
 
 # Setup cc-track for this project
