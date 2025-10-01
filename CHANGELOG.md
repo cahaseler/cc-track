@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/cahaseler/cc-track/compare/v2.0.0...v2.1.0) (2025-10-01)
+
+
+### Features
+
+* complete TASK_092 - TASK_092: Update to Claude Sonnet 4.5 Model ([#129](https://github.com/cahaseler/cc-track/issues/129)) ([0a0715f](https://github.com/cahaseler/cc-track/commit/0a0715fef3a1172c94c81326dd5dae7e6796df7a))
+
 # [2.0.0](https://github.com/cahaseler/cc-track/compare/v1.39.0...v2.0.0) (2025-09-22)
 
 
