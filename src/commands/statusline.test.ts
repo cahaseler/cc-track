@@ -68,36 +68,31 @@ describe('statusline', () => {
   });
 
   describe('getUsageInfo', () => {
-    test('extracts hourly rate, tokens, and API window', () => {
-      const mockDeps = {
-        execSync: mock(() => '💰 $15.50/hr | 🧠 125,432 (45%) | (23m left)'),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getUsageInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+    test('extracts hourly rate and tokens from Claude Code cost data', () => {
+      const result = getUsageInfo({
+        model: { display_name: 'Claude Sonnet' },
+        cost: {
+          hourly_rate_usd: 15.5,
+          context_usage_percent: 45,
+        },
+      });
       expect(result.hourlyRate).toBe('$15.50/hr');
-      expect(result.tokens).toBe('125,432 (45%)');
-      expect(result.apiWindow).toBe('23m');
+      expect(result.tokens).toBe('90,000 (45%)');
     });
 
-    test('handles missing ccusage gracefully', () => {
-      const mockDeps = {
-        execSync: mock(() => {
-          throw new Error('ccusage not found');
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getUsageInfo({}, mockDeps);
+    test('handles missing cost data gracefully', () => {
+      const result = getUsageInfo({});
       expect(result.hourlyRate).toBe('');
       expect(result.tokens).toBe('');
-      expect(result.apiWindow).toBe('');
+    });
+
+    test('calculates tokens from context percentage', () => {
+      const result = getUsageInfo({
+        cost: {
+          context_usage_percent: 72,
+        },
+      });
+      expect(result.tokens).toBe('144,000 (72%)');
     });
   });
 
@@ -225,12 +220,6 @@ describe('statusline', () => {
               daily: [{ date: today, totalCost: 75.5 }],
             });
           }
-          if (cmd.includes('ccusage statusline')) {
-            return '💰 $12.25/hr | 🧠 89,234 (72%) | (45m left)';
-          }
-          if (cmd.includes('git branch --show-current')) {
-            return 'main\n';
-          }
           return '';
         }),
         existsSync: mock((path: string) => {
@@ -247,27 +236,29 @@ describe('statusline', () => {
           }
           return '';
         }),
-        getConfig: mock(() => ({
-          features: {
-            api_timer: {
-              display: 'sonnet-only',
-            },
-          },
-        })),
+        getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => 'main'),
       };
 
-      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const result = generateStatusLine(
+        {
+          model: { display_name: 'Claude Sonnet' },
+          cost: {
+            hourly_rate_usd: 12.25,
+            context_usage_percent: 72,
+          },
+        },
+        mockDeps,
+      );
 
       const lines = result.split('\n');
       expect(lines).toHaveLength(2);
 
       // First line should have model, cost, rate, tokens
       expect(lines[0]).toContain('🚅 Claude Sonnet');
-      expect(lines[0]).toContain('(reset in 45m)');
       expect(lines[0]).toContain('💵 $75.50 today');
       expect(lines[0]).toContain('$12.25/hr');
-      expect(lines[0]).toContain('89,234 (72%)');
+      expect(lines[0]).toContain('144,000 (72%)');
 
       // Second line should have branch and task
       expect(lines[1]).toContain('main');
@@ -291,68 +282,22 @@ describe('statusline', () => {
 
     test('adds fire emoji for high hourly rate', () => {
       const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '$25.00/hr';
-          }
-          return '';
-        }),
+        execSync: mock(() => ''),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
       };
 
-      const result = generateStatusLine({}, mockDeps);
+      const result = generateStatusLine(
+        {
+          cost: {
+            hourly_rate_usd: 25.0,
+          },
+        },
+        mockDeps,
+      );
       expect(result).toContain('🔥 $25.00/hr');
-    });
-
-    test('shows timer for Sonnet in sonnet-only mode', () => {
-      const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '(15m left)';
-          }
-          return '';
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({
-          features: {
-            api_timer: {
-              display: 'sonnet-only',
-            },
-          },
-        })),
-        getCurrentBranch: mock((_cwd: string) => 'main'),
-      };
-
-      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
-      expect(result).toContain('(reset in 15m)');
-    });
-
-    test('hides timer for non-Sonnet in sonnet-only mode', () => {
-      const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '(15m left)';
-          }
-          return '';
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({
-          features: {
-            api_timer: {
-              display: 'sonnet-only',
-            },
-          },
-        })),
-        getCurrentBranch: mock((_cwd: string) => 'main'),
-      };
-
-      const result = generateStatusLine({ model: { display_name: 'Claude Haiku' } }, mockDeps);
-      expect(result).not.toContain('reset in');
     });
   });
 

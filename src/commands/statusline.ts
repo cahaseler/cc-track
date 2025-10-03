@@ -11,6 +11,11 @@ interface StatusLineInput {
   model?: {
     display_name: string;
   };
+  cost?: {
+    total_cost_usd?: number;
+    context_usage_percent?: number;
+    hourly_rate_usd?: number;
+  };
 }
 
 // Dependency injection for testing
@@ -53,35 +58,22 @@ export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): strin
 }
 
 /**
- * Get usage info from ccusage statusline
+ * Get usage info from Claude Code's native cost data
  */
-export function getUsageInfo(
-  input: StatusLineInput,
-  deps = defaultDeps,
-): { hourlyRate: string; tokens: string; apiWindow: string } {
-  try {
-    const result = deps.execSync('bunx ccusage statusline', {
-      encoding: 'utf-8',
-      input: JSON.stringify(input),
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
+export function getUsageInfo(input: StatusLineInput): { hourlyRate: string; tokens: string } {
+  const hourlyRate = input.cost?.hourly_rate_usd
+    ? `$${input.cost.hourly_rate_usd.toFixed(2)}/hr`
+    : '';
 
-    // Extract hourly rate
-    const rateMatch = result.match(/\$[\d.]+\/hr/);
-    const hourlyRate = rateMatch ? rateMatch[0] : '';
-
-    // Extract tokens
-    const tokensMatch = result.match(/🧠 [\d,]+ \(\d+%\)/);
-    const tokens = tokensMatch ? tokensMatch[0].replace('🧠 ', '') : '';
-
-    // Extract API window time
-    const windowMatch = result.match(/\(([^)]+)left\)/);
-    const apiWindow = windowMatch ? windowMatch[1].replace(' left', '').trim() : '';
-
-    return { hourlyRate, tokens, apiWindow };
-  } catch {
-    return { hourlyRate: '', tokens: '', apiWindow: '' };
+  const contextPercent = input.cost?.context_usage_percent;
+  let tokens = '';
+  if (contextPercent !== undefined && contextPercent !== null) {
+    // Sonnet 4.5 has 200K context window
+    const totalTokens = Math.round((contextPercent / 100) * 200000);
+    tokens = `${totalTokens.toLocaleString()} (${contextPercent}%)`;
   }
+
+  return { hourlyRate, tokens };
 }
 
 /**
@@ -141,25 +133,12 @@ export function getCostEmoji(cost: number): string {
 export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): string {
   const modelName = input.model?.display_name || 'Unknown';
   const todaysCost = getTodaysCost(input, deps);
-  const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
+  const { hourlyRate, tokens } = getUsageInfo(input);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
 
-  // Get API timer config
-  const config = deps.getConfig();
-  const apiTimerDisplay = config.features?.api_timer?.display || 'sonnet-only';
-
   // Build first line
   let firstLine = `🚅 ${modelName}`;
-
-  // Handle API timer based on config
-  if (apiWindow) {
-    if (apiTimerDisplay === 'sonnet-only' && modelName.includes('Sonnet')) {
-      firstLine = `🚅 ${modelName} (reset in ${apiWindow})`;
-    } else if (apiTimerDisplay === 'show') {
-      firstLine += ` | ⏰ ${apiWindow}`;
-    }
-  }
 
   // Add cost
   if (todaysCost !== '0.00') {
