@@ -188,8 +188,11 @@ export async function runStatusline(
 
     if (stdinData) {
       input = JSON.parse(stdinData);
-      // Debug: Log what we're receiving
-      console.error('Statusline input:', JSON.stringify(input, null, 2));
+      // Debug: Log what we're receiving to a file
+      const fs = await import('node:fs');
+      fs.appendFileSync('/tmp/statusline-debug.log',
+        `${new Date().toISOString()}\n${JSON.stringify(input, null, 2)}\n---\n`
+      );
     }
   } catch {
     // Ignore parse errors, use empty input
