@@ -58,7 +58,7 @@ export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): strin
 }
 
 /**
- * Get usage info from ccusage statusline with full Claude Code JSON
+ * Get usage info from ccusage statusline, adjusted for Claude Code overhead
  */
 export function getUsageInfo(
   input: StatusLineInput,
@@ -75,9 +75,18 @@ export function getUsageInfo(
     const rateMatch = result.match(/\$[\d.]+\/hr/);
     const hourlyRate = rateMatch ? rateMatch[0] : '';
 
-    // Extract tokens
-    const tokensMatch = result.match(/🧠 [\d,]+ \(\d+%\)/);
-    const tokens = tokensMatch ? tokensMatch[0].replace('🧠 ', '') : '';
+    // Extract tokens from ccusage (only counts transcript messages + memory)
+    const tokensMatch = result.match(/🧠 ([\d,]+) \(\d+%\)/);
+    let tokens = '';
+
+    if (tokensMatch) {
+      const ccusageTokens = parseInt(tokensMatch[1].replace(/,/g, ''));
+      // Add static overhead: ~16k (system prompt + tools) + 45k (reserved) = 61k
+      const CLAUDE_CODE_OVERHEAD = 61000;
+      const adjustedTokens = ccusageTokens + CLAUDE_CODE_OVERHEAD;
+      const percentage = Math.round((adjustedTokens / 200000) * 100);
+      tokens = `${adjustedTokens.toLocaleString()} (${percentage}%)`;
+    }
 
     // Extract API window time
     const windowMatch = result.match(/\(([^)]+)left\)/);
