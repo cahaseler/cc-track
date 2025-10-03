@@ -80,7 +80,7 @@ export function getUsageInfo(
     let tokens = '';
 
     if (tokensMatch) {
-      const ccusageTokens = parseInt(tokensMatch[1].replace(/,/g, ''));
+      const ccusageTokens = parseInt(tokensMatch[1].replace(/,/g, ''), 10);
       // Add static overhead: ~16k (system prompt + tools) + 45k (reserved) = 61k
       const CLAUDE_CODE_OVERHEAD = 61000;
       const adjustedTokens = ccusageTokens + CLAUDE_CODE_OVERHEAD;
