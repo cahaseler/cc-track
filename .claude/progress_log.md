@@ -26,6 +26,11 @@
 
 ## Log Entries
 
+[2025-10-03 14:30] - Completed: TASK_094 - Add WebSearch Year Validation Hook
+  Details: Implemented smart detection to prevent outdated year patterns in WebSearch queries (e.g., "TypeScript 2024" → "TypeScript 2025")
+  Files: pre-tool-validation.ts, hook.ts, types.ts, settings.json, track.config.json, init.ts, README.md + comprehensive tests
+  Testing: 396 tests pass, live UAT successful, code review approved for production
+
 [2025-09-17 13:35] - Completed: TASK_070 - Fix CI Test Failures via Dependency Injection
   Details: Added DI to performCodeReview, eliminated global module mocking from index.test.ts
 

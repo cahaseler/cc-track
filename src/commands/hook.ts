@@ -21,8 +21,8 @@ export function determineHookType(input: HookInput): string | null {
   // Map event types to hook handlers
   switch (hook_event_name) {
     case 'PreToolUse':
-      // Check if this is an Edit/Write/MultiEdit event for pre-tool validation
-      if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
+      // Check if this is an Edit/Write/MultiEdit/WebSearch event for pre-tool validation
+      if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit' || tool_name === 'WebSearch') {
         return 'pre-tool-validation';
       }
       return null;

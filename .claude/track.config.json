@@ -79,6 +79,10 @@
       "enabled": true,
       "description": "Run comprehensive code review using Claude SDK or CodeRabbit CLI before task completion",
       "tool": "claude"
+    },
+    "websearch_validation": {
+      "enabled": true,
+      "description": "Validates WebSearch queries to prevent outdated year patterns (e.g., searching for '2024' when current year is 2025)"
     }
   },
   "logging": {

@@ -79,6 +79,38 @@ cc-track maintains several context files that Claude automatically references:
 - **Edit Validation** - Real-time TypeScript/linting feedback
 - **Custom Status Line** - Shows current task, costs, and API limits
 - **API Timer Display** - Configurable rate limit visibility
+- **WebSearch Year Validation** - Prevents outdated year searches (e.g., searching "TypeScript 2024" when it's 2025)
+
+### WebSearch Year Validation
+
+Claude's training data can make it default to searching for outdated years. The WebSearch validation hook catches this and helps you get current information:
+
+**What it blocks:**
+- `"TypeScript best practices 2024"` → Suggests `"TypeScript best practices 2025"`
+- `"2024 web development trends"` → Suggests `"2025 web development trends"`
+- `"latest 2024 React features"` → Suggests `"latest 2025 React features"`
+
+**What it allows:**
+- `"compare 2024 vs 2025 features"` (intentional comparison)
+- `"2024 election results"` (historical event)
+- `"bugs fixed in 2024"` (temporal reference)
+
+When blocked, you receive clear feedback with:
+- Explanation of why the search was blocked
+- The suggested corrected query
+- Current date context
+- Tips for historical searches
+
+Enable in `.claude/track.config.json`:
+```json
+{
+  "features": {
+    "websearch_validation": {
+      "enabled": true
+    }
+  }
+}
+```
 
 ## Configuration
 
