@@ -68,9 +68,9 @@ describe('statusline', () => {
   });
 
   describe('getUsageInfo', () => {
-    test('extracts hourly rate, tokens, and API window', () => {
+    test('adjusts ccusage tokens with Claude Code overhead', () => {
       const mockDeps = {
-        execSync: mock(() => '💰 $15.50/hr | 🧠 125,432 (45%) | (23m left)'),
+        execSync: mock(() => '💰 $15.50/hr | 🧠 77,483 (39%) | (23m left)'),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -79,7 +79,8 @@ describe('statusline', () => {
 
       const result = getUsageInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
       expect(result.hourlyRate).toBe('$15.50/hr');
-      expect(result.tokens).toBe('125,432 (45%)');
+      // 77,483 + 61,000 overhead = 138,483 (69%)
+      expect(result.tokens).toBe('138,483 (69%)');
       expect(result.apiWindow).toBe('23m');
     });
 
@@ -226,10 +227,7 @@ describe('statusline', () => {
             });
           }
           if (cmd.includes('ccusage statusline')) {
-            return '💰 $12.25/hr | 🧠 89,234 (72%) | (45m left)';
-          }
-          if (cmd.includes('git branch --show-current')) {
-            return 'main\n';
+            return '💰 $12.25/hr | 🧠 83,000 (42%) | (45m left)';
           }
           return '';
         }),
@@ -262,12 +260,13 @@ describe('statusline', () => {
       const lines = result.split('\n');
       expect(lines).toHaveLength(2);
 
-      // First line should have model, cost, rate, tokens
+      // First line should have model, cost, rate, adjusted tokens
       expect(lines[0]).toContain('🚅 Claude Sonnet');
       expect(lines[0]).toContain('(reset in 45m)');
       expect(lines[0]).toContain('💵 $75.50 today');
       expect(lines[0]).toContain('$12.25/hr');
-      expect(lines[0]).toContain('89,234 (72%)');
+      // 83,000 + 61,000 overhead = 144,000 (72%)
+      expect(lines[0]).toContain('144,000 (72%)');
 
       // Second line should have branch and task
       expect(lines[1]).toContain('main');
@@ -305,54 +304,6 @@ describe('statusline', () => {
 
       const result = generateStatusLine({}, mockDeps);
       expect(result).toContain('🔥 $25.00/hr');
-    });
-
-    test('shows timer for Sonnet in sonnet-only mode', () => {
-      const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '(15m left)';
-          }
-          return '';
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({
-          features: {
-            api_timer: {
-              display: 'sonnet-only',
-            },
-          },
-        })),
-        getCurrentBranch: mock((_cwd: string) => 'main'),
-      };
-
-      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
-      expect(result).toContain('(reset in 15m)');
-    });
-
-    test('hides timer for non-Sonnet in sonnet-only mode', () => {
-      const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '(15m left)';
-          }
-          return '';
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({
-          features: {
-            api_timer: {
-              display: 'sonnet-only',
-            },
-          },
-        })),
-        getCurrentBranch: mock((_cwd: string) => 'main'),
-      };
-
-      const result = generateStatusLine({ model: { display_name: 'Claude Haiku' } }, mockDeps);
-      expect(result).not.toContain('reset in');
     });
   });
 

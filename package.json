@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.112",
-    "ccusage": "latest",
+    "ccusage": "^17.1.1",
     "commander": "^14.0.0"
   }
 }
