@@ -75,6 +75,10 @@ export interface ConfigFeatures {
     level?: 'debug' | 'info' | 'warn' | 'error';
     retention_days?: number;
   };
+  websearch_validation?: {
+    enabled?: boolean;
+    description?: string;
+  };
 }
 
 export interface Config {

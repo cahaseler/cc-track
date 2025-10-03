@@ -49,6 +49,9 @@
     "code_review": {
       "enabled": false,
       "tool": "claude"
+    },
+    "websearch_validation": {
+      "enabled": false
     }
   },
   "logging": {

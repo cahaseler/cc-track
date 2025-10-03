@@ -38,6 +38,106 @@ export function isGitIgnored(filePath: string, cwd: string, exec: typeof execSyn
 }
 
 /**
+ * Get current year from environment or system
+ */
+export function getCurrentYear(): number {
+  // Get from environment date if available
+  const envDate = process.env.TODAY_DATE || new Date().toISOString();
+  const year = new Date(envDate).getFullYear();
+  return year;
+}
+
+/**
+ * Detect if a WebSearch query has an outdated year
+ * Returns: { isOutdated: boolean, detectedYear: number | null, suggestedQuery: string | null }
+ */
+export function detectOutdatedYear(query: string): {
+  isOutdated: boolean;
+  detectedYear: number | null;
+  suggestedQuery: string | null;
+  reason: string | null;
+} {
+  const currentYear = getCurrentYear();
+  const lastYear = currentYear - 1;
+
+  // Pattern 1: "topic 2024" at end (most common case)
+  const endYearPattern = new RegExp(`\\b(${lastYear})\\s*$`);
+  const endMatch = query.match(endYearPattern);
+  if (endMatch) {
+    return {
+      isOutdated: true,
+      detectedYear: lastYear,
+      suggestedQuery: query.replace(endYearPattern, currentYear.toString()),
+      reason: `Query ends with "${lastYear}" but current year is ${currentYear}`,
+    };
+  }
+
+  // Pattern 2: "2024 topic" at start
+  const startYearPattern = new RegExp(`^(${lastYear})\\b`);
+  const startMatch = query.match(startYearPattern);
+  if (startMatch) {
+    return {
+      isOutdated: true,
+      detectedYear: lastYear,
+      suggestedQuery: query.replace(startYearPattern, currentYear.toString()),
+      reason: `Query starts with "${lastYear}" but current year is ${currentYear}`,
+    };
+  }
+
+  // Pattern 3: "latest 2024" or "current 2024" (implies wanting recent info)
+  const latestPattern = new RegExp(`\\b(latest|current|newest|recent)\\s+(${lastYear})\\b`, 'i');
+  const latestMatch = query.match(latestPattern);
+  if (latestMatch) {
+    return {
+      isOutdated: true,
+      detectedYear: lastYear,
+      suggestedQuery: query.replace(latestPattern, `$1 ${currentYear}`),
+      reason: `Query uses "latest/current ${lastYear}" but current year is ${currentYear}`,
+    };
+  }
+
+  // Pattern 4: "YYYY documentation/guide/tutorial" where YYYY is last year
+  const docPattern = new RegExp(`\\b(${lastYear})\\s+(documentation|guide|tutorial|docs|practices|features)\\b`, 'i');
+  const docMatch = query.match(docPattern);
+  if (docMatch) {
+    return {
+      isOutdated: true,
+      detectedYear: lastYear,
+      suggestedQuery: query.replace(docPattern, `${currentYear} $2`),
+      reason: `Query searches for "${lastYear} documentation" but current year is ${currentYear}`,
+    };
+  }
+
+  // No outdated pattern detected
+  return {
+    isOutdated: false,
+    detectedYear: null,
+    suggestedQuery: null,
+    reason: null,
+  };
+}
+
+/**
+ * Check if a query is a legitimate historical search
+ */
+export function isHistoricalSearch(query: string): boolean {
+  const currentYear = getCurrentYear();
+  const lastYear = currentYear - 1;
+
+  // Patterns that indicate intentional historical reference
+  const historicalPatterns = [
+    /\b(compare|vs|versus|difference)\b.*\b\d{4}\b/i, // "compare 2024 vs 2025"
+    /\b\d{4}\s+\w*\s*(election|vote|campaign)\b/i, // "2024 election results", "2024 presidential campaign"
+    /\b(election|vote|campaign)\b.*\b\d{4}\b/i, // "election in 2024"
+    /\b(history|historical|archive)\b/i, // explicit historical context
+    /\b(in|during|from)\s+\d{4}\b/i, // "in 2024" (temporal reference)
+    new RegExp(`\\b${lastYear}\\b.*\\b${currentYear}\\b`, 'i'), // mentions both years (comparison)
+  ];
+
+  return historicalPatterns.some((pattern) => pattern.test(query));
+}
+
+/**
  * Extract file path from tool input
  */
 export function extractFilePath(toolName: string, toolInput: unknown): string | null {
@@ -163,13 +263,61 @@ export async function preToolValidationHook(
       return { continue: true };
     }
 
-    // Only process Edit, Write, and MultiEdit tools
+    const cwd = input.cwd || process.cwd();
+    const config = configGetter();
+
+    // WebSearch Year Validation (runs first, before file-based checks)
+    if (input.tool_name === 'WebSearch' && config.features?.websearch_validation?.enabled !== false) {
+      const toolInput = input.tool_input as { query?: string };
+      const query = toolInput?.query;
+
+      if (query) {
+        log.debug('WebSearch validation triggered', { query });
+
+        // Skip validation for historical searches
+        if (isHistoricalSearch(query)) {
+          log.debug('Allowing historical search', { query });
+          return { continue: true };
+        }
+
+        // Check for outdated year patterns
+        const yearCheck = detectOutdatedYear(query);
+        if (yearCheck.isOutdated && yearCheck.suggestedQuery) {
+          const currentYear = getCurrentYear();
+          log.warn('Blocking outdated WebSearch query', {
+            query,
+            detectedYear: yearCheck.detectedYear,
+            suggestedQuery: yearCheck.suggestedQuery,
+          });
+
+          return {
+            hookSpecificOutput: {
+              hookEventName: 'PreToolUse',
+              permissionDecision: 'deny' as const,
+              permissionDecisionReason: `🔍 Outdated Search Year Detected
+
+Your search query uses ${yearCheck.detectedYear} but the current year is ${currentYear} (today is ${new Date().toISOString().split('T')[0]}).
+
+${yearCheck.reason}
+
+**Suggested query:**
+\`\`\`
+${yearCheck.suggestedQuery}
+\`\`\`
+
+Please update your search to use ${currentYear} for the most current information.
+
+Note: If you genuinely need historical ${yearCheck.detectedYear} information, try adding temporal context like "in ${yearCheck.detectedYear}" or "historical" to your query.`,
+            },
+          };
+        }
+      }
+    }
+
+    // Only process Edit, Write, and MultiEdit tools for file-based validations
     if (input.tool_name !== 'Edit' && input.tool_name !== 'Write' && input.tool_name !== 'MultiEdit') {
       return { continue: true };
     }
-
-    const cwd = input.cwd || process.cwd();
-    const config = configGetter();
 
     // Branch Protection Check (runs first)
     if (config.features?.branch_protection?.enabled) {

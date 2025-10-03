@@ -3,9 +3,12 @@ import { createMockClaudeSDK, createMockGitHelpers, createMockLogger } from '../
 import type { HookInput } from '../types';
 import {
   buildValidationPrompt,
+  detectOutdatedYear,
   extractDiffInfo,
   extractFilePath,
+  getCurrentYear,
   isGitIgnored,
+  isHistoricalSearch,
   isTaskFile,
   preToolValidationHook,
 } from './pre-tool-validation';
@@ -497,6 +500,193 @@ describe('pre-tool-validation', () => {
         logger: createMockLogger(),
         getConfig: () => createMockConfig(false),
         gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+  });
+
+  describe('getCurrentYear', () => {
+    test('returns current year from system', () => {
+      const year = getCurrentYear();
+      expect(year).toBeGreaterThanOrEqual(2025);
+    });
+
+    test('uses TODAY_DATE env variable if set', () => {
+      const originalEnv = process.env.TODAY_DATE;
+      process.env.TODAY_DATE = '2025-10-03T00:00:00.000Z';
+
+      const year = getCurrentYear();
+      expect(year).toBe(2025);
+
+      // Restore
+      if (originalEnv) {
+        process.env.TODAY_DATE = originalEnv;
+      } else {
+        delete process.env.TODAY_DATE;
+      }
+    });
+  });
+
+  describe('detectOutdatedYear', () => {
+    test('detects year at end of query', () => {
+      const result = detectOutdatedYear('TypeScript best practices 2024');
+      expect(result.isOutdated).toBe(true);
+      expect(result.detectedYear).toBe(2024);
+      expect(result.suggestedQuery).toBe('TypeScript best practices 2025');
+    });
+
+    test('detects year at start of query', () => {
+      const result = detectOutdatedYear('2024 web development trends');
+      expect(result.isOutdated).toBe(true);
+      expect(result.detectedYear).toBe(2024);
+      expect(result.suggestedQuery).toBe('2025 web development trends');
+    });
+
+    test('detects "latest YYYY" pattern', () => {
+      const result = detectOutdatedYear('latest 2024 React features');
+      expect(result.isOutdated).toBe(true);
+      expect(result.detectedYear).toBe(2024);
+      expect(result.suggestedQuery).toBe('latest 2025 React features');
+    });
+
+    test('detects "current YYYY" pattern', () => {
+      const result = detectOutdatedYear('current 2024 JavaScript trends');
+      expect(result.isOutdated).toBe(true);
+      expect(result.suggestedQuery).toBe('current 2025 JavaScript trends');
+    });
+
+    test('detects "YYYY documentation" pattern', () => {
+      const result = detectOutdatedYear('2024 TypeScript documentation');
+      expect(result.isOutdated).toBe(true);
+      expect(result.suggestedQuery).toBe('2025 TypeScript documentation');
+    });
+
+    test('does not flag current year', () => {
+      const result = detectOutdatedYear('TypeScript 2025 features');
+      expect(result.isOutdated).toBe(false);
+    });
+
+    test('does not flag queries without years', () => {
+      const result = detectOutdatedYear('best TypeScript practices');
+      expect(result.isOutdated).toBe(false);
+    });
+  });
+
+  describe('isHistoricalSearch', () => {
+    test('allows comparison searches', () => {
+      expect(isHistoricalSearch('compare 2024 vs 2025 features')).toBe(true);
+      expect(isHistoricalSearch('differences between 2024 and 2025')).toBe(true);
+    });
+
+    test('allows election/political searches', () => {
+      expect(isHistoricalSearch('2024 election results')).toBe(true);
+      expect(isHistoricalSearch('2024 presidential campaign')).toBe(true);
+    });
+
+    test('allows explicit historical context', () => {
+      expect(isHistoricalSearch('historical trends in 2024')).toBe(true);
+      expect(isHistoricalSearch('archive of 2024 data')).toBe(true);
+    });
+
+    test('allows temporal references', () => {
+      expect(isHistoricalSearch('bugs fixed in 2024')).toBe(true);
+      expect(isHistoricalSearch('released during 2024')).toBe(true);
+    });
+
+    test('rejects non-historical searches', () => {
+      expect(isHistoricalSearch('TypeScript 2024')).toBe(false);
+      expect(isHistoricalSearch('best practices 2024')).toBe(false);
+    });
+  });
+
+  describe('WebSearch validation integration', () => {
+    test('blocks outdated year in WebSearch query', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'WebSearch',
+        tool_input: {
+          query: 'TypeScript best practices 2024',
+        },
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        logger: createMockLogger(),
+        getConfig: () => ({
+          features: {
+            websearch_validation: { enabled: true },
+          },
+        }),
+      });
+
+      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('2024');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('2025');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('TypeScript best practices 2025');
+    });
+
+    test('allows historical WebSearch queries', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'WebSearch',
+        tool_input: {
+          query: 'compare 2024 vs 2025 TypeScript features',
+        },
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        logger: createMockLogger(),
+        getConfig: () => ({
+          features: {
+            websearch_validation: { enabled: true },
+          },
+        }),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+
+    test('allows WebSearch when validation disabled', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'WebSearch',
+        tool_input: {
+          query: 'TypeScript 2024',
+        },
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        logger: createMockLogger(),
+        getConfig: () => ({
+          features: {
+            websearch_validation: { enabled: false },
+          },
+        }),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+
+    test('allows WebSearch with current year', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'WebSearch',
+        tool_input: {
+          query: 'TypeScript 2025 features',
+        },
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        logger: createMockLogger(),
+        getConfig: () => ({
+          features: {
+            websearch_validation: { enabled: true },
+          },
+        }),
       });
 
       expect(result).toEqual({ continue: true });

@@ -6,6 +6,16 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
         "matcher": "Edit|MultiEdit",
         "hooks": [
           {

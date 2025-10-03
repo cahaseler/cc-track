@@ -380,6 +380,16 @@ Example complete settings.json with all features:
     ],
     "PreToolUse": [
       {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx cc-track hook",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
         "matcher": "Edit|MultiEdit",
         "hooks": [
           {
