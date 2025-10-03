@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/cahaseler/cc-track/compare/v2.1.0...v2.2.0) (2025-10-03)
+
+
+### Features
+
+* complete TASK_093 - TASK_093: Fix Statusline Token Tracking for Sonnet 4.5 ([#131](https://github.com/cahaseler/cc-track/issues/131)) ([3e8b252](https://github.com/cahaseler/cc-track/commit/3e8b25210b10b82b3f94bd8818e6a583b1c135bf))
+
 # [2.1.0](https://github.com/cahaseler/cc-track/compare/v2.0.0...v2.1.0) (2025-10-01)
 
 
