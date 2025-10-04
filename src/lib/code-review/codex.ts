@@ -94,9 +94,9 @@ Your review should be thorough, actionable, and constructive. Include specific f
 
     // Run Codex CLI in non-interactive mode with exec
     // codex exec runs in read-only mode by default and doesn't prompt for approvals
-    // Use command substitution to read prompt from file, -o flag to write output
+    // Use command substitution to read prompt from file, --output-last-message to write output
     try {
-      exec(`codex exec -o ${JSON.stringify(filePath)} "$(cat ${JSON.stringify(tmpPromptFile)})"`, {
+      exec(`codex exec --output-last-message ${JSON.stringify(filePath)} "$(cat ${JSON.stringify(tmpPromptFile)})"`, {
         encoding: 'utf-8',
         cwd: projectRoot,
         maxBuffer: 10 * 1024 * 1024, // 10MB

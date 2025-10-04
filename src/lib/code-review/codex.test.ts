@@ -74,7 +74,7 @@ describe('performCodexReview', () => {
     const execCalls = mockExec.mock.calls;
     const codexCall = execCalls.find((call: any) => call[0].startsWith('codex exec'));
     expect(codexCall).toBeDefined();
-    expect(codexCall[0]).toContain('codex exec -o');
+    expect(codexCall[0]).toContain('codex exec --output-last-message');
     expect(codexCall[1]).toMatchObject({
       encoding: 'utf-8',
       cwd: '/project',
@@ -230,7 +230,7 @@ describe('performCodexReview', () => {
 
     // The command should use cat with a temp file for the prompt
     const commandStr = codexCall[0];
-    expect(commandStr).toContain('codex exec -o');
+    expect(commandStr).toContain('codex exec --output-last-message');
     expect(commandStr).toContain('$(cat');
     expect(commandStr).toContain('codex-prompt-TASK_006');
 
