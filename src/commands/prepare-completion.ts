@@ -92,10 +92,11 @@ export async function runCodeReview(
         messages.push('Skipping code review generation (only one review per task).\n');
       } else {
         const reviewTool = getReviewTool();
-        messages.push(
-          `Running comprehensive code review with ${reviewTool === 'claude' ? 'Claude SDK' : 'CodeRabbit CLI'}...`,
-        );
-        messages.push(`This may take up to ${reviewTool === 'claude' ? '10' : '30'} minutes for thorough analysis.\n`);
+        const toolName =
+          reviewTool === 'claude' ? 'Claude SDK' : reviewTool === 'coderabbit' ? 'CodeRabbit CLI' : 'Codex CLI';
+        const timeout = reviewTool === 'claude' ? '10' : '30';
+        messages.push(`Running comprehensive code review with ${toolName}...`);
+        messages.push(`This may take up to ${timeout} minutes for thorough analysis.\n`);
 
         try {
           // Get task details

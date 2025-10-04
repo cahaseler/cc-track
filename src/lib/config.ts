@@ -32,7 +32,7 @@ interface HookConfig {
 }
 
 export interface CodeReviewConfig extends HookConfig {
-  tool?: 'claude' | 'coderabbit';
+  tool?: 'claude' | 'coderabbit' | 'codex';
   max_diff_size?: number;
 }
 
@@ -274,7 +274,7 @@ export function isCodeReviewEnabled(configPath?: string): boolean {
   return codeReviewConfig?.enabled || false;
 }
 
-export function getCodeReviewTool(configPath?: string): 'claude' | 'coderabbit' {
+export function getCodeReviewTool(configPath?: string): 'claude' | 'coderabbit' | 'codex' {
   const codeReviewConfig = getCodeReviewConfig(configPath);
   return codeReviewConfig?.tool || 'claude';
 }

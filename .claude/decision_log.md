@@ -284,6 +284,17 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Reviews may take up to 30 minutes but will complete successfully. Claude Code bash operations also have 30-minute timeout to match. Users need to be patient during review process.
 - **Reversibility:** Easy - just change the timeout values in code and settings.json
 
+[2025-10-04 02:15] - Use Temporary File with Command Substitution for Codex Prompts
+- **Context:** Implementing Codex CLI code review integration required passing large multiline prompts with special characters to the shell
+- **Decision:** Write prompt to temporary file and use command substitution `"$(cat /tmp/prompt)"` instead of passing directly via arguments
+- **Rationale:** Direct argument passing via JSON.stringify caused shell parsing errors due to complex multiline content with special characters. The temp file approach is the documented workaround until Codex CLI adds native stdin support
+- **Alternatives Considered:**
+  - Direct JSON.stringify in command: Caused "Syntax error: end of file unexpected" - too fragile
+  - Heredoc approach: Complex escaping, still error-prone
+  - Wait for native stdin support: GitHub issue #1123 shows this is a requested feature but not yet implemented
+- **Implications:** Adds filesystem I/O but provides reliable prompt delivery. Temp files are cleaned up in finally block. Same pattern could be applied to other CLI tools requiring large text input
+- **Reversibility:** Easy - can switch to stdin piping when/if Codex adds native support
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

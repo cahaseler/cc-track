@@ -2,6 +2,7 @@ import { getCodeReviewTool, isCodeReviewEnabled } from '../config';
 import { createLogger } from '../logger';
 import { performClaudeReview } from './claude';
 import { performCodeRabbitReview } from './coderabbit';
+import { performCodexReview } from './codex';
 import type { CodeReviewOptions, CodeReviewResult, CodeReviewTool } from './types';
 
 export type { CodeReviewIssue, CodeReviewOptions, CodeReviewResult, CodeReviewTool } from './types';
@@ -11,6 +12,7 @@ export interface CodeReviewDeps {
   getCodeReviewTool?: typeof getCodeReviewTool;
   performClaudeReview?: typeof performClaudeReview;
   performCodeRabbitReview?: typeof performCodeRabbitReview;
+  performCodexReview?: typeof performCodexReview;
   logger?: ReturnType<typeof createLogger>;
 }
 
@@ -26,6 +28,7 @@ export async function performCodeReview(
     getCodeReviewTool: getTool = getCodeReviewTool,
     performClaudeReview: claudeReview = performClaudeReview,
     performCodeRabbitReview: codeRabbitReview = performCodeRabbitReview,
+    performCodexReview: codexReview = performCodexReview,
     logger = createLogger('code-review'),
   } = deps;
 
@@ -53,6 +56,9 @@ export async function performCodeReview(
 
       case 'coderabbit':
         return await codeRabbitReview(options);
+
+      case 'codex':
+        return await codexReview(options);
 
       default:
         logger.error('Unknown code review tool', { tool });
