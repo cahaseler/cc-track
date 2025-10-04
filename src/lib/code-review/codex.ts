@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLogger } from '../logger';
 import type { CodeReviewOptions, CodeReviewResult } from './types';
@@ -87,11 +88,15 @@ Your review should be thorough, actionable, and constructive. Include specific f
     const fileName = `${taskId}_${timestamp}-UTC.md`;
     const filePath = join(codeReviewsDir, fileName);
 
+    // Write prompt to temporary file to avoid shell escaping issues
+    const tmpPromptFile = join(tmpdir(), `codex-prompt-${taskId}-${Date.now()}.txt`);
+    fileOps.writeFileSync(tmpPromptFile, prompt);
+
     // Run Codex CLI in non-interactive mode with exec
     // codex exec runs in read-only mode by default and doesn't prompt for approvals
-    // Use -o flag to write output directly to file
+    // Use command substitution to read prompt from file, -o flag to write output
     try {
-      exec(`codex exec -o ${JSON.stringify(filePath)} ${JSON.stringify(prompt)}`, {
+      exec(`codex exec -o ${JSON.stringify(filePath)} "$(cat ${JSON.stringify(tmpPromptFile)})"`, {
         encoding: 'utf-8',
         cwd: projectRoot,
         maxBuffer: 10 * 1024 * 1024, // 10MB
@@ -106,6 +111,13 @@ Your review should be thorough, actionable, and constructive. Include specific f
         };
       }
       throw error;
+    } finally {
+      // Clean up temp file
+      try {
+        exec(`rm ${JSON.stringify(tmpPromptFile)}`);
+      } catch {
+        // Ignore cleanup errors
+      }
     }
 
     logger.debug('Codex exec completed, reading output file');

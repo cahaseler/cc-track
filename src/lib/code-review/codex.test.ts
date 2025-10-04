@@ -81,10 +81,10 @@ describe('performCodexReview', () => {
       timeout: 1800000, // 30 minutes
     });
 
-    // Check that directory was created and file was written twice (once by codex, once with metadata)
+    // Check that directory was created and files were written (temp prompt file + final with metadata)
     expect(mockFileOps.mkdirSync).toHaveBeenCalledWith('/project/code-reviews', { recursive: true });
     expect(mockFileOps.readFileSync).toHaveBeenCalled();
-    expect(mockFileOps.writeFileSync).toHaveBeenCalledTimes(1); // Writing with metadata
+    expect(mockFileOps.writeFileSync).toHaveBeenCalledTimes(2); // Temp prompt file + final with metadata
   });
 
   test('handles timeout gracefully', async () => {
@@ -228,12 +228,21 @@ describe('performCodexReview', () => {
     const codexCall = execCalls.find((call: any) => call[0].startsWith('codex exec'));
     expect(codexCall).toBeDefined();
 
-    // The prompt should be JSON-stringified and contain key elements
+    // The command should use cat with a temp file for the prompt
     const commandStr = codexCall[0];
-    expect(commandStr).toContain('TASK_006');
-    expect(commandStr).toContain('Prompt Test Task');
-    expect(commandStr).toContain('Requirements Alignment');
-    expect(commandStr).toContain('Security');
-    expect(commandStr).toContain('Code Quality');
+    expect(commandStr).toContain('codex exec -o');
+    expect(commandStr).toContain('$(cat');
+    expect(commandStr).toContain('codex-prompt-TASK_006');
+
+    // The prompt was written to a temp file - check writeFileSync calls
+    const writeFileCalls = mockFileOps.writeFileSync.mock.calls;
+    expect(writeFileCalls.length).toBeGreaterThanOrEqual(1);
+    const promptWrite = writeFileCalls.find((call: any) => call[0].includes('codex-prompt'));
+    expect(promptWrite).toBeDefined();
+    expect(promptWrite[1]).toContain('TASK_006');
+    expect(promptWrite[1]).toContain('Prompt Test Task');
+    expect(promptWrite[1]).toContain('Requirements Alignment');
+    expect(promptWrite[1]).toContain('Security');
+    expect(promptWrite[1]).toContain('Code Quality');
   });
 });
