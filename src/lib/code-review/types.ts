@@ -23,4 +23,4 @@ export interface CodeReviewIssue {
   fixCommand?: string;
 }
 
-export type CodeReviewTool = 'claude' | 'coderabbit';
+export type CodeReviewTool = 'claude' | 'coderabbit' | 'codex';
