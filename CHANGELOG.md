@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/cahaseler/cc-track/compare/v2.3.0...v2.4.0) (2025-10-04)
+
+
+### Features
+
+* complete TASK_095 - TASK_095: Add Codex Code Review Option ([#135](https://github.com/cahaseler/cc-track/issues/135)) ([4bb8e13](https://github.com/cahaseler/cc-track/commit/4bb8e134cbd3381f4643025026f1f9a87c25a676))
+
 # [2.3.0](https://github.com/cahaseler/cc-track/compare/v2.2.0...v2.3.0) (2025-10-03)
 
 
