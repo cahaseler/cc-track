@@ -2,7 +2,7 @@
 
 **Purpose:** Update the setup instructions in `src/commands/init.ts` to include Codex CLI as a third code review option, ensuring users are aware of all available tools during setup.
 
-**Status:** in_progress
+**Status:** completed
 **Started:** 2025-10-06 09:59
 **Task ID:** 097
 
@@ -77,8 +77,7 @@ This confirms the naming convention and timeout expectations for all three tools
 
 ## Current Focus
 
-**Start with**: `src/commands/init.ts:184-188`
-**Implement**: Add missing Codex documentation in the embedded template string
+Task completed on 2025-10-06
 
 ## Research Findings
 
