@@ -184,7 +184,8 @@ The \`.claude/track.config.json\` file has been created with all features disabl
      - Ask: "Which code review tool would you prefer?"
        - **Claude SDK** (default): Comprehensive agent-based review, ~10 minutes, thorough analysis
        - **CodeRabbit CLI**: Fast focused review, ~2-5 minutes, actionable feedback
-     - Set \`code_review: { enabled: true, tool: 'claude' | 'coderabbit' }\`
+       - **Codex CLI**: Deep systematic review with autonomous agent, ~30+ minutes, exhaustive multi-pass analysis
+     - Set \`code_review: { enabled: true, tool: 'claude' | 'coderabbit' | 'codex' }\`
    - Note: "This will only run once per task when validation passes, and won't block task completion."
 
    **Status Line**:
