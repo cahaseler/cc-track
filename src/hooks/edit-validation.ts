@@ -194,32 +194,46 @@ export function runLintCheck(
     return errors;
   }
 
-  try {
-    const lintConfig = getLintConfig();
-    const tool = lintConfig?.tool || config.lint?.tool || 'biome';
-    const command = `${config.lint.command} "${filePath}"`;
-    log.debug('Running lint check', { command, tool });
+  const lintConfig = getLintConfig();
+  const tool = lintConfig?.tool || config.lint?.tool || 'biome';
+  const command = `${config.lint.command} "${filePath}"`;
+  log.debug('Running lint check', { command, tool });
 
-    exec(command, {
+  let output = '';
+  let caughtError = false;
+  try {
+    // Try to execute - success means no errors
+    const result = exec(command, {
       encoding: 'utf-8',
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    output = result.toString();
+    log.debug('Lint check succeeded (no throw)', { outputLength: output.length });
   } catch (error) {
+    caughtError = true;
     const execError = error as { stdout?: string; stderr?: string; code?: string };
     // Re-throw timeout errors
     if (execError.code === 'ETIMEDOUT') {
       throw error;
     }
-    const output = execError.stdout || execError.stderr || '';
-    if (output) {
-      // Parse output using the appropriate parser
-      const lintConfig = getLintConfig();
-      const tool = lintConfig?.tool || config.lint?.tool || 'biome';
-      const parser = getLintParser(tool);
-      const parseResult = parser.parseOutput(output, filePath);
-      errors.push(...parseResult.errors);
-    }
+    // Capture output from error (most common case - linter found issues)
+    output = execError.stderr || execError.stdout || '';
+    log.debug('Lint check threw error', {
+      hasStderr: !!execError.stderr,
+      hasStdout: !!execError.stdout,
+      outputLength: output.length,
+    });
+  }
+
+  // Parse output if we have any (whether from success or error)
+  if (output) {
+    const parser = getLintParser(tool);
+    const parseResult = parser.parseOutput(output, filePath);
+    errors.push(...parseResult.errors);
+    log.debug('Parsed lint output', { errorCount: parseResult.errors.length });
+  } else {
+    log.debug('No lint output to parse', { caughtError });
   }
 
   return errors;

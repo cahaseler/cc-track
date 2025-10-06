@@ -33,6 +33,55 @@ src/test.ts:15:8 lint/correctness/noUnusedImports Unused import
     expect(result.errors[20]).toBe('... and more');
   });
 
+  test('parses verbose format with box characters', () => {
+    const output = `
+test.ts:1:1 lint/suspicious/noVar  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Use let or const instead of var.
+
+  > 1 │ var x = 1;
+      │ ^^^^^^^^^
+    2 │ debugger;
+    3 │
+
+test.ts:1:5 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This variable x is unused.
+
+  > 1 │ var x = 1;
+      │     ^
+    2 │ debugger;
+    3 │
+
+Checked 1 file in 2ms. No fixes applied.
+Found 2 errors.
+    `;
+    const result = parser.parseOutput(output, 'test.ts');
+    expect(result.errors).toHaveLength(2);
+    expect(result.errors[0]).toBe('Line 1: Use let or const instead of var.');
+    expect(result.errors[1]).toBe('Line 1: This variable x is unused.');
+    expect(result.issueCount).toBe(2);
+  });
+
+  test('parses verbose format with ! symbol', () => {
+    const output = `
+src/file.ts:10:5 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Template literals are preferred over string concatenation.
+
+    8 │ const name = 'World';
+  > 10 │ const greeting = 'Hello ' + name;
+       │                  ^^^^^^^^^^^^^^^^
+   11 │
+
+Checked 1 file in 1ms. No fixes applied.
+Found 1 error.
+    `;
+    const result = parser.parseOutput(output, 'src/file.ts');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBe('Line 10: Template literals are preferred over string concatenation.');
+  });
+
   test('returns auto-fix command', () => {
     expect(parser.getAutoFixCommand('bunx biome check')).toBe('bunx biome check --write');
     expect(parser.getAutoFixCommand('bunx biome check --write')).toBe('bunx biome check --write');

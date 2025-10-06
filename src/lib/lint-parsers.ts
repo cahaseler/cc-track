@@ -34,31 +34,74 @@ export class BiomeParser implements LintParser {
     const errors: string[] = [];
     let issueCount = 0;
 
-    // Parse diagnostic count (e.g., "Found 5 diagnostics")
-    const diagnosticMatch = output.match(/(\d+)\s+diagnostic/);
+    // Parse diagnostic count (e.g., "Found 5 diagnostics" or "Found 3 errors")
+    const diagnosticMatch = output.match(/(\d+)\s+(diagnostic|error)/);
     if (diagnosticMatch) {
       issueCount = parseInt(diagnosticMatch[1], 10);
     }
 
-    if (filePath) {
-      // Parse compact format for specific file
-      // Format: file:line:col lint/rule message
-      const lines = output.split('\n').filter((line) => line.includes(filePath));
-      for (const line of lines) {
-        const match = line.match(/:(\d+):\d+ \S+ (.+)/);
-        if (match) {
-          errors.push(`Line ${match[1]}: ${match[2]}`);
+    const lines = output.split('\n');
+
+    // Detect format: verbose (with box chars) or compact
+    const hasVerboseFormat = output.includes('━') || output.includes('×') || output.includes('✖');
+
+    logger.debug('Biome parser format detection', {
+      hasVerboseFormat,
+      lineCount: lines.length,
+      issueCount,
+      filePath,
+      sampleLines: lines.slice(0, 3),
+    });
+
+    if (hasVerboseFormat) {
+      // Parse verbose format - error messages are on lines starting with × or ✖ or !
+      // Extract basename from filePath for flexible matching
+      const fileToMatch = filePath ? filePath.split('/').pop() : null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Find file:line:col reference lines (optionally filter by filePath)
+        // Match either the full path or just the filename
+        const shouldProcess =
+          !fileToMatch || (filePath && line.includes(filePath)) || (fileToMatch && line.includes(fileToMatch));
+
+        if (shouldProcess) {
+          const match = line.match(/^[^:]+:(\d+):\d+\s+\S+/);
+          if (match) {
+            const lineNum = match[1];
+            // Look ahead for the error message (lines starting with ×, ✖, or !)
+            for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
+              const nextLine = lines[j].trim();
+              if (nextLine.startsWith('×') || nextLine.startsWith('✖') || nextLine.startsWith('!')) {
+                const message = nextLine.slice(1).trim(); // Remove the symbol and trim
+                errors.push(`Line ${lineNum}: ${message}`);
+                break;
+              }
+              // Stop if we hit another error or end of this error block
+              if (nextLine.match(/^[^:]+:\d+:\d+/) || nextLine.startsWith('check ━')) {
+                break;
+              }
+            }
+          }
         }
       }
     } else {
-      // Parse general output
-      // Look for lines that contain file paths with line/column numbers
-      const lines = output.split('\n');
-      for (const line of lines) {
-        // Match pattern like "path/to/file.ts:10:5 lint/style/rule message"
-        const match = line.match(/^[^:]+:(\d+):\d+ \S+ (.+)/);
-        if (match) {
-          errors.push(`Line ${match[1]}: ${match[2]}`);
+      // Parse compact format: file:line:col lint/rule message (all on one line)
+      if (filePath) {
+        const relevantLines = lines.filter((line) => line.includes(filePath));
+        for (const line of relevantLines) {
+          const match = line.match(/:(\d+):\d+ \S+ (.+)/);
+          if (match) {
+            errors.push(`Line ${match[1]}: ${match[2]}`);
+          }
+        }
+      } else {
+        for (const line of lines) {
+          const match = line.match(/^[^:]+:(\d+):\d+ \S+ (.+)/);
+          if (match) {
+            errors.push(`Line ${match[1]}: ${match[2]}`);
+          }
         }
       }
     }
