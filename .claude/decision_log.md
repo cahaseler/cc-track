@@ -12,6 +12,24 @@
 
 ## Log Entries
 
+[2025-10-06 08:30] - Integrate Clank Skills Library Code Review Guidance
+- **Context:** Installed Jesse's clank skills library globally, need to apply receiving-code-review skill principles to how Claude handles automated code review feedback from Codex/CodeRabbit/Claude SDK
+- **Decision:** Update prepare-completion command to incorporate clank's receiving-code-review skill principles when instructing Claude how to analyze review feedback
+- **Rationale:**
+  - Clank contains Jesse's extensive research on effective code review reception patterns
+  - Automated review tools generate feedback, but Claude needs guidance on receiving it with technical rigor
+  - Key improvements: YAGNI violation checking, verify-first approach, prevent performative agreement
+- **Alternatives Considered:**
+  - Reference skill file directly: Doesn't work - guidance needs to be inline in command output
+  - Keep existing simple instructions: Misses Jesse's research on common pitfalls (YAGNI, blind implementation)
+  - Make no changes: Would waste the valuable patterns clank provides
+- **Implications:**
+  - Claude will verify suggestions against codebase reality before agreeing
+  - YAGNI violations (implementing unused features) will be caught and questioned
+  - No performative agreement ("You're absolutely right!") or gratitude expressions
+  - Technical evaluation only - push back on suggestions that break functionality or lack context
+- **Reversibility:** Easy - single file change, can revert from git if needed
+
 [2025-09-10 17:20] - Filter Documentation from Stop Review Diffs Instead of Prompt Changes
 - **Context:** Stop review hook was flagging documentation updates as deviations, wasting tokens on large .md files
 - **Decision:** Parse and filter git diff to exclude .md files before sending to Claude for review

@@ -186,27 +186,35 @@ export async function runCodeReview(
               messages.push(reviewContent);
               messages.push('```\n');
 
-              messages.push('### 🎯 Required Actions for Claude\n');
-              messages.push('You MUST present a comprehensive analysis of this code review to the user:\n');
-              messages.push('1. **Share ALL findings** - Present every finding from the review above to the user');
-              messages.push('2. **For issues you will fix:**');
-              messages.push('   - List each issue you plan to address');
-              messages.push('   - Explain exactly how you will fix it');
-              messages.push('   - Provide your reasoning for the fix');
-              messages.push('3. **For issues you disagree with:**');
-              messages.push('   - Clearly identify which findings you disagree with');
-              messages.push('   - Provide detailed technical justification for your disagreement');
-              messages.push('   - Explain why the suggested change would not improve the code');
-              messages.push('4. **For low-priority issues:**');
-              messages.push('   - Identify findings you consider non-critical');
-              messages.push('   - Explain why they are low priority');
-              messages.push('   - Justify why they should not block task completion');
-              messages.push('5. **Summary** - Provide a clear summary of:');
-              messages.push('   - Critical issues that MUST be fixed before completion');
-              messages.push('   - Nice-to-have improvements for future consideration');
-              messages.push('   - Review findings that are incorrect or not applicable\n');
+              messages.push('### 🎯 Code Review Response Guidelines\n');
               messages.push(
-                '**IMPORTANT:** Do not proceed with fixes until you have presented this analysis to the user and received their feedback.\n',
+                'Analyze this code review with technical rigor (based on clank receiving-code-review skill):\n',
+              );
+              messages.push('');
+              messages.push('**Response Principles:**');
+              messages.push('- **Verify first** - Check suggestions against codebase reality before agreeing');
+              messages.push(
+                '- **Question YAGNI violations** - If review suggests implementing unused features, push back',
+              );
+              messages.push("- **Check for breaking changes** - Verify suggestions don't break existing functionality");
+              messages.push(
+                '- **Technical evaluation only** - No performative agreement (never say "You\'re absolutely right!")',
+              );
+              messages.push(
+                '- **No gratitude expressions** - Actions speak. Just fix issues or explain disagreement.\n',
+              );
+              messages.push('');
+              messages.push('**Required Analysis:**');
+              messages.push('1. **Issues to fix** - List each with exact approach and technical reasoning');
+              messages.push('2. **Issues to reject** - Identify with detailed technical justification');
+              messages.push('   - Would it break existing functionality?');
+              messages.push('   - Does reviewer lack full context?');
+              messages.push('   - Is it a YAGNI violation (implementing unused features)?');
+              messages.push("3. **Low-priority items** - Explain why non-critical and shouldn't block completion");
+              messages.push("4. **Summary** - What must be fixed vs. what's incorrect/inapplicable\n");
+              messages.push('');
+              messages.push(
+                '**IMPORTANT:** Present this analysis to Craig and get his feedback before implementing fixes.\n',
               );
 
               return {
