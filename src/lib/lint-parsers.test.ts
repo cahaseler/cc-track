@@ -125,6 +125,24 @@ Found 2 errors.
     expect(result.errors[0]).toBe('Line 10: Use let or const instead of var.');
   });
 
+  test('strips ANSI color codes from filenames', () => {
+    // Biome may output filenames with ANSI color codes when running in a terminal
+    const output = `
+\u001b[36msrc/test.ts\u001b[0m:5:1 lint/suspicious/noDebugger  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This is an unexpected use of the debugger statement.
+
+  > 5 │ debugger;
+      │ ^^^^^^^^^
+
+Checked 1 file in 2ms. No fixes applied.
+Found 1 error.
+    `;
+    const result = parser.parseOutput(output, 'src/test.ts');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBe('Line 5: This is an unexpected use of the debugger statement.');
+  });
+
   test('returns auto-fix command', () => {
     expect(parser.getAutoFixCommand('bunx biome check')).toBe('bunx biome check --write');
     expect(parser.getAutoFixCommand('bunx biome check --write')).toBe('bunx biome check --write');

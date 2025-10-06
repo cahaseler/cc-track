@@ -7,6 +7,15 @@ import { createLogger } from './logger';
 
 const logger = createLogger('lint-parsers');
 
+/**
+ * Strip ANSI color escape sequences from a string
+ * Biome may include color codes in terminal output which breaks filename matching
+ */
+function stripAnsi(str: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences use control chars
+  return str.replace(/\u001b\[[0-9;]*m/g, '');
+}
+
 export interface ParsedLintResult {
   errors: string[];
   issueCount: number;
@@ -68,8 +77,10 @@ export class BiomeParser implements LintParser {
         const match = line.match(/^([^:]+):(\d+):\d+\s+\S+/);
         if (match) {
           const [, lineFile, lineNum] = match;
+          // Strip ANSI color codes that Biome may add in terminal output
+          const cleanLineFile = stripAnsi(lineFile);
           // Normalize the line's file path too
-          const normalizedLineFile = lineFile.replace(/\\/g, '/');
+          const normalizedLineFile = cleanLineFile.replace(/\\/g, '/');
           const lineBasename = basename(normalizedLineFile);
 
           // Compare basenames for exact match (not substring)
