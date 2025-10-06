@@ -8,10 +8,10 @@
 
 ## Requirements
 
-- [ ] Add Codex CLI description to the code review section in setup template (line ~186-187)
-- [ ] Update configuration instruction to include 'codex' as valid tool option (line ~187)
-- [ ] Ensure the new instructions match the existing pattern and style
-- [ ] Verify that all three tools (claude, coderabbit, codex) are clearly differentiated in descriptions
+- [x] Add Codex CLI description to the code review section in setup template (line ~186-187)
+- [x] Update configuration instruction to include 'codex' as valid tool option (line ~187)
+- [x] Ensure the new instructions match the existing pattern and style
+- [x] Verify that all three tools (claude, coderabbit, codex) are clearly differentiated in descriptions
 
 ## Success Criteria
 
@@ -101,6 +101,16 @@ This confirms the naming convention and timeout expectations for all three tools
 - **Exact Location**: Lines 184-188 contain the code review tool selection section
 - **Style Consistency**: Match existing bullet format and description pattern
 - **Tool Characteristics**: Codex is autonomous, comprehensive, and takes longest (~30+ minutes vs 2-10 minutes for others)
+
+## Recent Progress
+
+**2025-10-06 14:08** - Task completed successfully
+- Updated `src/commands/init.ts:184-188` to add Codex CLI as third code review option
+- Added description: "Deep systematic review with autonomous agent, ~30+ minutes, exhaustive multi-pass analysis"
+- Updated configuration instruction to show complete tool union: `'claude' | 'coderabbit' | 'codex'`
+- All requirements met: three tools clearly differentiated by timing, approach, and thoroughness
+- Code review by Codex CLI flagged CHANGELOG/package.json version mismatch (expected - semantic-release manages these)
+- Fix is simple, complete, and follows existing pattern perfectly
 
 <!-- github_issue: 138 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/138 -->

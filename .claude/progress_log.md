@@ -305,3 +305,8 @@
   Details: Updated all hardcoded Claude model references from Sonnet 4 to Sonnet 4.5
   Files: .claude/commands/setup-cc-track.md, src/commands/slash-commands/cc-track-uninstall.md, src/commands/init.ts, src/lib/embedded-resources.ts (regenerated)
   Key Achievement: Systematic update of model identifier from claude-sonnet-4-20250514 to claude-sonnet-4-5-20250929 across all configuration files. Verified TypeScript SDK files correctly continue using generic model names for automatic version resolution. Zero breaking changes, approved by comprehensive code review.
+
+[2025-10-06 14:10] - Completed: Task 097 - Fix Missing Codex Review Option in Installation Instructions
+  Details: Added Codex CLI as third code review tool option in setup instructions
+  Files: src/commands/init.ts (lines 184-188)
+  Key Achievement: Setup instructions now document all three available code review tools (Claude SDK, CodeRabbit CLI, Codex CLI) with clear differentiation by timing and approach. Simple two-line documentation fix ensuring users discover all available features during installation.
