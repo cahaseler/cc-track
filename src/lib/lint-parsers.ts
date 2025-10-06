@@ -2,7 +2,6 @@
  * Lint parser abstraction for different linting tools
  */
 
-import { basename } from 'node:path';
 import { createLogger } from './logger';
 
 const logger = createLogger('lint-parsers');
@@ -65,15 +64,13 @@ export class BiomeParser implements LintParser {
 
     if (hasVerboseFormat) {
       // Parse verbose format - error messages are on lines starting with × or ✖ or !
-      // Extract basename from filePath for cross-platform matching
       // Normalize path separators to handle both Windows (\) and Unix (/) paths
       const normalizedFilePath = filePath ? filePath.replace(/\\/g, '/') : null;
-      const fileToMatch = normalizedFilePath ? basename(normalizedFilePath) : null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Find file:line:col reference lines and extract the filename for exact comparison
+        // Find file:line:col reference lines and extract the filename for comparison
         const match = line.match(/^([^:]+):(\d+):\d+\s+\S+/);
         if (match) {
           const [, lineFile, lineNum] = match;
@@ -81,10 +78,10 @@ export class BiomeParser implements LintParser {
           const cleanLineFile = stripAnsi(lineFile);
           // Normalize the line's file path too
           const normalizedLineFile = cleanLineFile.replace(/\\/g, '/');
-          const lineBasename = basename(normalizedLineFile);
 
-          // Compare basenames for exact match (not substring)
-          const shouldProcess = !fileToMatch || lineBasename === fileToMatch;
+          // Match full path using endsWith to avoid false positives from files with same basename
+          // in different directories (e.g., src/utils/index.ts vs src/components/index.ts)
+          const shouldProcess = !normalizedFilePath || normalizedFilePath.endsWith(normalizedLineFile);
 
           if (shouldProcess) {
             // Look ahead for the error message (lines starting with ×, ✖, or !)
