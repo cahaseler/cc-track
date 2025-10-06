@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/cahaseler/cc-track/compare/v2.5.0...v2.6.0) (2025-10-06)
+
+
+### Features
+
+* complete TASK_097 - Fix Missing Codex Review Option in Installation Instructions ([#139](https://github.com/cahaseler/cc-track/issues/139)) ([43d320e](https://github.com/cahaseler/cc-track/commit/43d320e79e2d0230b2945000ba44f02dd6178e30))
+
 # [2.5.0](https://github.com/cahaseler/cc-track/compare/v2.4.0...v2.5.0) (2025-10-06)
 
 
