@@ -214,7 +214,7 @@ export async function runCodeReview(
               messages.push("4. **Summary** - What must be fixed vs. what's incorrect/inapplicable\n");
               messages.push('');
               messages.push(
-                '**IMPORTANT:** Present this analysis to Craig and get his feedback before implementing fixes.\n',
+                '**IMPORTANT:** Do not proceed with fixes until you have presented this analysis to the user and received their feedback.\n',
               );
 
               return {
