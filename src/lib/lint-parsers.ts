@@ -71,7 +71,8 @@ export class BiomeParser implements LintParser {
         const line = lines[i];
 
         // Find file:line:col reference lines and extract the filename for comparison
-        const match = line.match(/^([^:]+):(\d+):\d+\s+\S+/);
+        // Use non-greedy match to handle Windows absolute paths (C:\path\file.ts)
+        const match = line.match(/^(.+?):(\d+):\d+\s+\S+/);
         if (match) {
           const [, lineFile, lineNum] = match;
           // Strip ANSI color codes that Biome may add in terminal output
@@ -95,7 +96,8 @@ export class BiomeParser implements LintParser {
                 break;
               }
               // Stop if we hit another error or end of this error block
-              if (cleanNextLine.match(/^[^:]+:\d+:\d+/) || cleanNextLine.startsWith('check ━')) {
+              // Use non-greedy match to handle Windows absolute paths
+              if (cleanNextLine.match(/^.+?:\d+:\d+/) || cleanNextLine.startsWith('check ━')) {
                 break;
               }
             }
