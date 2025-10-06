@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/cahaseler/cc-track/compare/v2.4.0...v2.5.0) (2025-10-06)
+
+
+### Features
+
+* complete TASK_096 - TASK_096: Integrate Clank Code Review Reception Guidance ([#137](https://github.com/cahaseler/cc-track/issues/137)) ([ea916f0](https://github.com/cahaseler/cc-track/commit/ea916f0b5a28ef1b01f441f7ab98736caa73a192))
+
 # [2.4.0](https://github.com/cahaseler/cc-track/compare/v2.3.0...v2.4.0) (2025-10-04)
 
 
