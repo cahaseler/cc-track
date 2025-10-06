@@ -143,6 +143,24 @@ Found 1 error.
     expect(result.errors[0]).toBe('Line 5: This is an unexpected use of the debugger statement.');
   });
 
+  test('strips ANSI color codes from error message lines', () => {
+    // Biome adds color codes to error symbols when running in a TTY
+    const output = `
+src/test.ts:5:1 lint/suspicious/noDebugger  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  \u001b[31m×\u001b[0m This is an unexpected use of the debugger statement.
+
+  > 5 │ debugger;
+      │ ^^^^^^^^^
+
+Checked 1 file in 2ms. No fixes applied.
+Found 1 error.
+    `;
+    const result = parser.parseOutput(output, 'src/test.ts');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBe('Line 5: This is an unexpected use of the debugger statement.');
+  });
+
   test('returns auto-fix command', () => {
     expect(parser.getAutoFixCommand('bunx biome check')).toBe('bunx biome check --write');
     expect(parser.getAutoFixCommand('bunx biome check --write')).toBe('bunx biome check --write');

@@ -87,13 +87,15 @@ export class BiomeParser implements LintParser {
             // Look ahead for the error message (lines starting with ×, ✖, or !)
             for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
               const nextLine = lines[j].trim();
-              if (nextLine.startsWith('×') || nextLine.startsWith('✖') || nextLine.startsWith('!')) {
-                const message = nextLine.slice(1).trim(); // Remove the symbol and trim
+              // Strip ANSI codes before checking for error symbols (Biome adds color codes in TTY)
+              const cleanNextLine = stripAnsi(nextLine);
+              if (cleanNextLine.startsWith('×') || cleanNextLine.startsWith('✖') || cleanNextLine.startsWith('!')) {
+                const message = cleanNextLine.slice(1).trim(); // Remove the symbol and trim
                 errors.push(`Line ${lineNum}: ${message}`);
                 break;
               }
               // Stop if we hit another error or end of this error block
-              if (nextLine.match(/^[^:]+:\d+:\d+/) || nextLine.startsWith('check ━')) {
+              if (cleanNextLine.match(/^[^:]+:\d+:\d+/) || cleanNextLine.startsWith('check ━')) {
                 break;
               }
             }
