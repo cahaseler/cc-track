@@ -30,15 +30,30 @@ Fix the BiomeParser in `src/lib/lint-parsers.ts` that incorrectly extracts decor
    - Look for lines starting with error indicators (`×`, `✖`, `!`)
 3. **Implementation:** Update parseOutput() method logic and regex patterns
 
-## Current Focus
-Analyzing current BiomeParser implementation in `src/lib/lint-parsers.ts` to understand the parsing logic and identify the exact fix needed.
+## Recent Progress
 
-## Next Steps
-1. Examine current BiomeParser.parseOutput() method
-2. Implement fix for verbose format handling
-3. Add comprehensive test case
-4. Validate fix with real Biome output
-5. Test integration in target projects
+**2025-10-06 18:05** - Task completed successfully
+- Fixed BiomeParser to handle Biome's verbose output format
+- Implemented lookahead parsing for error messages on separate lines
+- Added cross-platform path handling using `path.basename()` with separator normalization
+- Fixed filename collision issue by using exact basename comparison instead of substring matching
+- Added comprehensive tests for verbose format, Windows paths, and filename collisions
+- All 406 tests pass including 2 new tests for edge cases
+- Verified fix works end-to-end with real Biome output
+- Addressed Codex code review findings:
+  - Windows path separator issue (used path normalization)
+  - Filename collision issue (changed from substring to exact match)
+
+**Root causes identified:**
+1. Parser regex captured box decoration line instead of actual error message
+2. Error messages in verbose format appear on subsequent lines starting with `×`, `✖`, or `!`
+3. File path matching was too loose (substring) causing false positives
+4. Windows backslash paths weren't normalized causing no matches on Windows
+
+**Files modified:**
+- `src/lib/lint-parsers.ts` - BiomeParser.parseOutput() completely rewritten
+- `src/lib/lint-parsers.test.ts` - Added 2 new test cases
+- `src/hooks/edit-validation.ts` - Enhanced output capture and debug logging
 
 <!-- github_issue: 140 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/140 -->

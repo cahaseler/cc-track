@@ -2,6 +2,7 @@
  * Lint parser abstraction for different linting tools
  */
 
+import { basename } from 'node:path';
 import { createLogger } from './logger';
 
 const logger = createLogger('lint-parsers');
@@ -55,21 +56,26 @@ export class BiomeParser implements LintParser {
 
     if (hasVerboseFormat) {
       // Parse verbose format - error messages are on lines starting with × or ✖ or !
-      // Extract basename from filePath for flexible matching
-      const fileToMatch = filePath ? filePath.split('/').pop() : null;
+      // Extract basename from filePath for cross-platform matching
+      // Normalize path separators to handle both Windows (\) and Unix (/) paths
+      const normalizedFilePath = filePath ? filePath.replace(/\\/g, '/') : null;
+      const fileToMatch = normalizedFilePath ? basename(normalizedFilePath) : null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Find file:line:col reference lines (optionally filter by filePath)
-        // Match either the full path or just the filename
-        const shouldProcess =
-          !fileToMatch || (filePath && line.includes(filePath)) || (fileToMatch && line.includes(fileToMatch));
+        // Find file:line:col reference lines and extract the filename for exact comparison
+        const match = line.match(/^([^:]+):(\d+):\d+\s+\S+/);
+        if (match) {
+          const [, lineFile, lineNum] = match;
+          // Normalize the line's file path too
+          const normalizedLineFile = lineFile.replace(/\\/g, '/');
+          const lineBasename = basename(normalizedLineFile);
 
-        if (shouldProcess) {
-          const match = line.match(/^[^:]+:(\d+):\d+\s+\S+/);
-          if (match) {
-            const lineNum = match[1];
+          // Compare basenames for exact match (not substring)
+          const shouldProcess = !fileToMatch || lineBasename === fileToMatch;
+
+          if (shouldProcess) {
             // Look ahead for the error message (lines starting with ×, ✖, or !)
             for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
               const nextLine = lines[j].trim();

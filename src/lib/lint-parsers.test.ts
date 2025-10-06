@@ -82,6 +82,49 @@ Found 1 error.
     expect(result.errors[0]).toBe('Line 10: Template literals are preferred over string concatenation.');
   });
 
+  test('handles Windows absolute paths', () => {
+    const output = `
+src\\test.ts:5:1 lint/suspicious/noDebugger  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This is an unexpected use of the debugger statement.
+
+  > 5 │ debugger;
+      │ ^^^^^^^^^
+
+Checked 1 file in 2ms. No fixes applied.
+Found 1 error.
+    `;
+    // Test with Windows-style absolute path
+    const result = parser.parseOutput(output, 'C:\\projects\\repo\\src\\test.ts');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBe('Line 5: This is an unexpected use of the debugger statement.');
+  });
+
+  test('prevents filename collision (test.ts vs latest.ts)', () => {
+    const output = `
+src/test.ts:10:1 lint/suspicious/noVar  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Use let or const instead of var.
+
+  > 10 │ var x = 1;
+       │ ^^^^^^^^^^
+
+src/latest.ts:20:1 lint/suspicious/noVar  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Use let or const instead of var.
+
+  > 20 │ var y = 2;
+       │ ^^^^^^^^^^
+
+Checked 2 files in 3ms. No fixes applied.
+Found 2 errors.
+    `;
+    // Should only get error from test.ts, not latest.ts
+    const result = parser.parseOutput(output, 'src/test.ts');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toBe('Line 10: Use let or const instead of var.');
+  });
+
   test('returns auto-fix command', () => {
     expect(parser.getAutoFixCommand('bunx biome check')).toBe('bunx biome check --write');
     expect(parser.getAutoFixCommand('bunx biome check --write')).toBe('bunx biome check --write');
