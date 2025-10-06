@@ -1,3 +1,10 @@
+# [2.7.0](https://github.com/cahaseler/cc-track/compare/v2.6.0...v2.7.0) (2025-10-06)
+
+
+### Features
+
+* complete TASK_098 - TASK_098: Fix Biome Lint Validation Parser ([#141](https://github.com/cahaseler/cc-track/issues/141)) ([9c41ea0](https://github.com/cahaseler/cc-track/commit/9c41ea09daffc916d2b4c89170fb88170db19b64))
+
 # [2.6.0](https://github.com/cahaseler/cc-track/compare/v2.5.0...v2.6.0) (2025-10-06)
 
 
