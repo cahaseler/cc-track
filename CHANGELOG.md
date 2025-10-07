@@ -1,3 +1,10 @@
+# [2.8.0](https://github.com/cahaseler/cc-track/compare/v2.7.0...v2.8.0) (2025-10-07)
+
+
+### Features
+
+* add test script for explicit Claude model name validation ([04c906a](https://github.com/cahaseler/cc-track/commit/04c906aa1a9e6bfbcec2cd6753e690ce22cf2184))
+
 # [2.7.0](https://github.com/cahaseler/cc-track/compare/v2.6.0...v2.7.0) (2025-10-06)
 
 
