@@ -380,7 +380,7 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
   return query({
     prompt: p,
     options: {
-      model: 'sonnet', // Use generic model name for latest version
+      model: 'claude-sonnet-4-5-20250929',
       maxTurns: 10,
       allowedTools: ['Read', 'Grep', 'Glob', 'TodoWrite'],
       pathToClaudeCodeExecutable,
@@ -452,7 +452,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
     const stream = query({
       prompt: createMessageStream(p),
       options: {
-        model: 'sonnet',
+        model: 'claude-sonnet-4-5-20250929',
         maxTurns: 30,
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above

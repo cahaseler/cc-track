@@ -240,7 +240,7 @@ export async function enrichPlanWithResearch(
     const stream = query({
       prompt: createMessageStream(prompt),
       options: {
-        model: 'sonnet',
+        model: 'claude-sonnet-4-5-20250929',
         maxTurns: 20,
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above

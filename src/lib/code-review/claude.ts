@@ -70,7 +70,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
     const stream = query({
       prompt: createMessageStream(p),
       options: {
-        model: 'sonnet',
+        model: 'claude-sonnet-4-5-20250929',
         maxTurns: 30,
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above
