@@ -9,7 +9,7 @@ async function testModelAlias() {
   console.log('Check ccusage output to see which model was actually used\n');
 
   const stream = query({
-    prompt: 'Say "hello" and nothing else',
+    prompt: 'Reply with EXACTLY: MODEL_TEST_XYZABC_789',
     options: {
       model: 'sonnet',
       maxTurns: 1,
