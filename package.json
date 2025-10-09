@@ -4,7 +4,7 @@
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
   "bin": {
-    "cc-track": "dist/cc-track.js"    
+    "cc-track": "dist/cc-track.js"
   },
   "files": [
     "dist/"
@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.112",
+    "cc-track": "file:cc-track-2.8.0.tgz",
     "ccusage": "^17.1.1",
     "commander": "^14.0.0"
   }
