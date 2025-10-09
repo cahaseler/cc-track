@@ -4,7 +4,7 @@
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
   "bin": {
-    "cc-track": "dist/cc-track.js"    
+    "cc-track": "dist/cc-track.js"
   },
   "files": [
     "dist/"
