@@ -1,3 +1,10 @@
+# [2.9.0](https://github.com/cahaseler/cc-track/compare/v2.8.0...v2.9.0) (2025-10-13)
+
+
+### Features
+
+* complete TASK_099 - Migrate from Claude Code SDK to Claude Agent SDK ([#144](https://github.com/cahaseler/cc-track/issues/144)) ([6b4f923](https://github.com/cahaseler/cc-track/commit/6b4f9231206146bbbbd8f5b5f6757f5498d642bf))
+
 # [2.8.0](https://github.com/cahaseler/cc-track/compare/v2.7.0...v2.8.0) (2025-10-07)
 
 
