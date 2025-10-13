@@ -8,13 +8,13 @@
 
 ## Requirements
 
-- [ ] Update package.json dependency from `@anthropic-ai/claude-code: ^1.0.112` to `@anthropic-ai/claude-agent-sdk: ^1.0.0`
-- [ ] Update 9 import statements across 5 TypeScript files from `'@anthropic-ai/claude-code'` to `'@anthropic-ai/claude-agent-sdk'`
-- [ ] Update 2 CLI path references from `claude-code/cli.js` to `claude-agent-sdk/cli.js`
-- [ ] Add explicit Claude Code system prompt configuration to all 6 query() calls to prevent behavioral changes
-- [ ] Verify compilation with TypeScript (`bun run typecheck`)
-- [ ] Run all tests to ensure compatibility (`bun test`)
-- [ ] Build CLI and perform basic smoke tests
+- [x] Update package.json dependency from `@anthropic-ai/claude-code: ^1.0.112` to `@anthropic-ai/claude-agent-sdk: ^1.0.0`
+- [x] Update 9 import statements across 5 TypeScript files from `'@anthropic-ai/claude-code'` to `'@anthropic-ai/claude-agent-sdk'`
+- [x] Update 2 CLI path references from `claude-code/cli.js` to `claude-agent-sdk/cli.js`
+- [x] Add explicit Claude Code system prompt configuration to all 6 query() calls to prevent behavioral changes
+- [x] Verify compilation with TypeScript (`bun run typecheck`)
+- [x] Run all tests to ensure compatibility (`bun test`)
+- [x] Build CLI and perform basic smoke tests
 
 ## Success Criteria
 
@@ -118,9 +118,24 @@ Start with package.json update and imports, then add system prompt configuration
 7. Build CLI with `bun run build` and test basic operations
 8. Compare behavior with previous version to ensure no regressions
 
+## Recent Progress
+
+**2025-10-13 15:30** - Migration completed successfully:
+- Updated package.json dependency to `@anthropic-ai/claude-agent-sdk: ^0.1.14`
+- Updated all 9 import statements across 5 TypeScript files
+- Updated 2 CLI path references (bench-stop-review.ts and claude-sdk.ts)
+- Added `systemPrompt: { type: 'preset', preset: 'claude_code' }` to all 6 query() calls
+- Fixed test mock in capture-plan.test.ts to reference new package
+- Discovered and resolved CLI version mismatch: upgraded Claude Code CLI from 1.0.124 to 2.0.14
+- All 409 tests pass ✓
+- TypeScript compilation passes with no errors ✓
+- CLI builds successfully and runs ✓
+
+**Key Discovery:** The new SDK version (0.1.14) passes `--setting-sources` flag when systemPrompt is configured, which requires Claude Code CLI 2.0.14+ to support. The CLI auto-update mechanism hadn't run, so manual update was required via `npm install -g @anthropic-ai/claude-code@latest`.
+
 ## Open Questions & Blockers
 
-No genuine unknowns identified - the migration path is well-documented and straightforward. All necessary files and line numbers have been identified through codebase research.
+None - migration is complete and verified.
 
 <!-- github_issue: 143 -->
 <!-- github_url: https://github.com/cahaseler/cc-track/issues/143 -->
