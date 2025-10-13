@@ -15,7 +15,7 @@ import type {
   SDKAssistantMessage,
   SDKResultMessage,
   SDKUserMessage,
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 import { createLogger } from './logger';
 
 export interface ClaudeResponse {
@@ -78,7 +78,7 @@ export function findClaudeCodeExecutable(): string | undefined {
 
   // Fallback to local project install
   try {
-    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-code/cli.js`;
+    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-agent-sdk/cli.js`;
     if (existsSync(localCli)) return localCli;
   } catch {}
 
@@ -109,7 +109,7 @@ async function prompt(
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
 
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
     logger.debug('ClaudeSDK.prompt start', {
       model: modelMap[model],
       timeout_ms: options?.timeoutMs,
@@ -445,7 +445,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
   try {
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
     logger.info('Starting code review', { taskId, timeout: 600000, maxTurns: 30 });
 
