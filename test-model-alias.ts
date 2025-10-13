@@ -13,6 +13,7 @@ async function testModelAlias() {
     options: {
       model: 'sonnet',
       maxTurns: 1,
+      systemPrompt: { type: 'preset', preset: 'claude_code' },
     },
   });
 

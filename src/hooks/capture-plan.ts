@@ -245,6 +245,7 @@ export async function enrichPlanWithResearch(
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above
         pathToClaudeCodeExecutable,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
         cwd: projectRoot, // Allow research and writing in project directory
         canUseTool: (async (toolName, input, _options) => {
           // Only restrict Write tool to task directory

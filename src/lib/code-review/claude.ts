@@ -75,6 +75,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above
         pathToClaudeCodeExecutable,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
         cwd: projectRoot,
         canUseTool: (async (toolName, input, _options) => {
           // Only restrict Write tool to code-reviews directory

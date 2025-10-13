@@ -4,7 +4,7 @@
     "": {
       "name": "cc-pars",
       "dependencies": {
-        "@anthropic-ai/claude-code": "^1.0.112",
+        "@anthropic-ai/claude-agent-sdk": "^0.1.14",
         "ccusage": "^17.1.1",
         "commander": "^14.0.0",
       },
@@ -23,7 +23,7 @@
     },
   },
   "packages": {
-    "@anthropic-ai/claude-code": ["@anthropic-ai/claude-code@1.0.112", "", { "optionalDependencies": { "@img/sharp-darwin-arm64": "^0.33.5", "@img/sharp-darwin-x64": "^0.33.5", "@img/sharp-linux-arm": "^0.33.5", "@img/sharp-linux-arm64": "^0.33.5", "@img/sharp-linux-x64": "^0.33.5", "@img/sharp-win32-x64": "^0.33.5" }, "bin": { "claude": "cli.js" } }, "sha512-UMGxS1iLA8RlrDGpSzMfnJpVHXxcL7AdD8kQfqFy/hAFqwyKpoJPHGBwXt5KjuVDwcWwkpXc3tXDVt//4z6icg=="],
+    "@anthropic-ai/claude-agent-sdk": ["@anthropic-ai/claude-agent-sdk@0.1.14", "", { "optionalDependencies": { "@img/sharp-darwin-arm64": "^0.33.5", "@img/sharp-darwin-x64": "^0.33.5", "@img/sharp-linux-arm": "^0.33.5", "@img/sharp-linux-arm64": "^0.33.5", "@img/sharp-linux-x64": "^0.33.5", "@img/sharp-win32-x64": "^0.33.5" }, "peerDependencies": { "zod": "^3.24.1" } }, "sha512-FdFPxeogLCOzk+ok5ITTwaemr1gGj104ynHt3LJdTADE8idsWlbJjaWlybx5WYpN+UtJTeVi3bQ8BQLojpO8ww=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.27.1", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.27.1", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg=="],
 
@@ -552,6 +552,8 @@
     "yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
 
     "yoctocolors": ["yoctocolors@2.1.2", "", {}, "sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug=="],
+
+    "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@pnpm/network.ca-file/graceful-fs": ["graceful-fs@4.2.10", "", {}, "sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA=="],
 
