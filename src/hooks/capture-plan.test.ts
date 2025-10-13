@@ -341,8 +341,8 @@ describe('capture-plan', () => {
         } as any;
       });
 
-      // Mock the claude-code module
-      mock.module('@anthropic-ai/claude-code', () => ({
+      // Mock the claude-agent-sdk module
+      mock.module('@anthropic-ai/claude-agent-sdk', () => ({
         query: mockQuery,
       }));
 

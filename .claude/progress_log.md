@@ -318,3 +318,8 @@
   Details: Added Codex CLI as third code review tool option in setup instructions
   Files: src/commands/init.ts (lines 184-188)
   Key Achievement: Setup instructions now document all three available code review tools (Claude SDK, CodeRabbit CLI, Codex CLI) with clear differentiation by timing and approach. Simple two-line documentation fix ensuring users discover all available features during installation.
+
+[2025-10-13 19:40] - Completed: Task 099 - Migrate from Claude Code SDK to Claude Agent SDK
+  Details: Upgraded from @anthropic-ai/claude-code to @anthropic-ai/claude-agent-sdk following migration guide
+  Files: package.json, src/lib/claude-sdk.ts, src/hooks/capture-plan.ts, src/lib/code-review/claude.ts, test-model-alias.ts, src/hooks/capture-plan.test.ts, scripts/bench-stop-review.ts
+  Key Achievement: Complete SDK migration with explicit Claude Code system prompt configuration. Updated 9 import statements across 5 files, added systemPrompt to all 6 query() calls. Discovered and resolved CLI version mismatch (upgraded Claude Code CLI from 1.0.124 to 2.0.14). Applied clank receiving-code-review principles to reject false positive review findings (version complaint, PostToolUse hook concern). All 409 tests passing, TypeScript compilation clean, CLI builds successfully.

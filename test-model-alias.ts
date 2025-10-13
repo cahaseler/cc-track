@@ -2,7 +2,7 @@
 // ABOUTME: Quick test script to verify which model the 'sonnet' alias resolves to
 // ABOUTME: Run this and check ccusage to see which model was actually used
 
-import { query } from '@anthropic-ai/claude-code';
+import { query } from '@anthropic-ai/claude-agent-sdk';
 
 async function testModelAlias() {
   console.log('Testing model alias "sonnet"...');
@@ -13,6 +13,7 @@ async function testModelAlias() {
     options: {
       model: 'sonnet',
       maxTurns: 1,
+      systemPrompt: { type: 'preset', preset: 'claude_code' },
     },
   });
 

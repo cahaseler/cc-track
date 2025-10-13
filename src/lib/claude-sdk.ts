@@ -15,7 +15,7 @@ import type {
   SDKAssistantMessage,
   SDKResultMessage,
   SDKUserMessage,
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 import { createLogger } from './logger';
 
 export interface ClaudeResponse {
@@ -78,7 +78,7 @@ export function findClaudeCodeExecutable(): string | undefined {
 
   // Fallback to local project install
   try {
-    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-code/cli.js`;
+    const localCli = `${process.cwd()}/node_modules/@anthropic-ai/claude-agent-sdk/cli.js`;
     if (existsSync(localCli)) return localCli;
   } catch {}
 
@@ -109,7 +109,7 @@ async function prompt(
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
 
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
     logger.debug('ClaudeSDK.prompt start', {
       model: modelMap[model],
       timeout_ms: options?.timeoutMs,
@@ -124,6 +124,7 @@ async function prompt(
         allowedTools: options?.allowedTools,
         disallowedTools: options?.disallowedTools ?? ['*'],
         pathToClaudeCodeExecutable,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
         // Use provided cwd or default to temp directory to avoid triggering project hooks
         cwd: options?.cwd || tmpdir(),
         stderr: (data: string) => {
@@ -374,7 +375,7 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
 
   // Find Claude Code executable
   const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
-  const { query } = await import('@anthropic-ai/claude-code');
+  const { query } = await import('@anthropic-ai/claude-agent-sdk');
   const logger = createLogger('claude-sdk');
   logger.debug('ClaudeSDK.createValidationAgent start', { pathToClaudeCodeExecutable });
   return query({
@@ -384,6 +385,7 @@ You can read files but cannot modify them. Provide a detailed analysis.`;
       maxTurns: 10,
       allowedTools: ['Read', 'Grep', 'Glob', 'TodoWrite'],
       pathToClaudeCodeExecutable,
+      systemPrompt: { type: 'preset', preset: 'claude_code' },
       // Allow the agent to read the repository while preventing hook recursion
       cwd: tmpdir(),
       additionalDirectories: [codebasePath],
@@ -445,7 +447,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
   try {
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
     logger.info('Starting code review', { taskId, timeout: 600000, maxTurns: 30 });
 
@@ -457,6 +459,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
         allowedTools: ['Read', 'Grep', 'Glob', 'Write'],
         disallowedTools: ['*'], // Only allow the specific tools above
         pathToClaudeCodeExecutable,
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
         cwd: projectRoot,
         canUseTool: (async (toolName, input, _options) => {
           // Only restrict Write tool to code-reviews directory

@@ -36,16 +36,6 @@
             "timeout": 10000
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/ubuntu/projects/cc-pars/dist/cc-track hook",
-            "timeout": 5000
-          }
-        ]
       }
     ],
     "PreCompact": [

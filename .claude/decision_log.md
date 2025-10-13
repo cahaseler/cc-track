@@ -313,6 +313,21 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Adds filesystem I/O but provides reliable prompt delivery. Temp files are cleaned up in finally block. Same pattern could be applied to other CLI tools requiring large text input
 - **Reversibility:** Easy - can switch to stdin piping when/if Codex adds native support
 
+[2025-10-13 19:40] - Reject Code Review Findings Based on Codebase Reality (TASK_099)
+- **Context:** Codex CLI code review flagged 4 major/moderate issues during SDK migration task completion review
+- **Decision:** Applied clank receiving-code-review principles to verify each finding against codebase reality before accepting
+- **Rationale:** Code review tools lack full context and can produce false positives. Each finding must be verified:
+  - Version complaint: No 1.x version of claude-agent-sdk exists, 0.1.14 is latest (verified via npm)
+  - PostToolUse hook removal: Intentionally disabled per user request at session start due to crashes
+  - zod peer dependency: Bun auto-installs peer deps, all tests pass, not blocking
+  - test-explicit-model.ts: Valid finding, but file was outdated and should be deleted
+- **Alternatives Considered:**
+  - Accept all findings without verification: Would waste time implementing unnecessary changes
+  - Add zod explicitly: Low priority since Bun handles it and all tests pass
+  - Restore PostToolUse hook: Would reintroduce crashes user explicitly asked to fix
+- **Implications:** Technical rigor prevents wasted effort on false positives, maintains user-requested changes, focuses on actual issues
+- **Reversibility:** Easy - could implement any rejected suggestion if context changes
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
