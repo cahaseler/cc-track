@@ -133,6 +133,15 @@ Start with package.json update and imports, then add system prompt configuration
 
 **Key Discovery:** The new SDK version (0.1.14) passes `--setting-sources` flag when systemPrompt is configured, which requires Claude Code CLI 2.0.14+ to support. The CLI auto-update mechanism hadn't run, so manual update was required via `npm install -g @anthropic-ai/claude-code@latest`.
 
+**2025-10-13 19:35** - Code review analysis and cleanup:
+- Ran Codex CLI code review which flagged several issues
+- Analyzed each finding against codebase reality:
+  - Rejected version complaint: no 1.x version exists, 0.1.14 is latest
+  - Rejected PostToolUse hook concern: intentionally disabled per user request at session start
+  - Identified zod peer dependency as low-priority (Bun auto-installs, works fine)
+  - Removed outdated test-explicit-model.ts script
+- Migration verified as complete and functional
+
 ## Open Questions & Blockers
 
 None - migration is complete and verified.
