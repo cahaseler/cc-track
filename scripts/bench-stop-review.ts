@@ -9,7 +9,7 @@ function sh(cmd: string, cwd: string) {
 async function main() {
   const projectRoot = process.cwd();
   const bin = resolve(projectRoot, 'dist', 'cc-track');
-  const localClaudeCli = resolve(projectRoot, 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
+  const localClaudeCli = resolve(projectRoot, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
 
   if (!existsSync(bin)) {
     console.error('dist/cc-track not found. Run `bun run build` first.');

@@ -5,7 +5,7 @@ import type {
   Query,
   SDKAssistantMessage,
   SDKResultMessage,
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 // Import necessary functions from claude-sdk
 import { createMessageStream, findClaudeCodeExecutable } from '../claude-sdk';
 import { createLogger } from '../logger';
@@ -63,7 +63,7 @@ Your review should be thorough, actionable, and constructive. Include specific f
   try {
     // Find Claude Code executable
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
     logger.info('Starting Claude code review', { taskId, timeout: 600000, maxTurns: 30 });
 

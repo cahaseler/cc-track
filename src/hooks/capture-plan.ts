@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { CanUseTool, PermissionResult, Query, SDKResultMessage } from '@anthropic-ai/claude-code';
+import type { CanUseTool, PermissionResult, Query, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
 import { ClaudeMdHelpers } from '../lib/claude-md';
 import { createMessageStream, findClaudeCodeExecutable } from '../lib/claude-sdk';
 import { getGitHubConfig, isGitHubIntegrationEnabled, isHookEnabled } from '../lib/config';
@@ -225,7 +225,7 @@ export async function enrichPlanWithResearch(
     const prompt = generateResearchPrompt(plan, taskId, now, projectRoot);
 
     // Import Claude Code SDK for multi-turn capability
-    const { query } = await import('@anthropic-ai/claude-code');
+    const { query } = await import('@anthropic-ai/claude-agent-sdk');
 
     // Use the shared function from claude-sdk.ts
     const pathToClaudeCodeExecutable = findClaudeCodeExecutable();
