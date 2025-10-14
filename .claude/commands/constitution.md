@@ -76,11 +76,9 @@ Any specific technical constraints?
 ```
 
 **If updating existing**:
-```typescript
-const existing = readFileSync('.claude/constitution.md', 'utf-8');
-// Parse and understand current principles
-// Ask what needs to change and why
-```
+- Read `.claude/constitution.md`
+- Parse and understand current principles, guardrails, and version
+- Ask what needs to change and why
 
 ---
 
@@ -259,9 +257,7 @@ Which fits better?"
 ## Phase 4: Save & Document
 
 ### Save Constitution
-```typescript
-writeFileSync('.claude/constitution.md', constitutionContent);
-```
+**Write** constitution content to `.claude/constitution.md`
 
 ### Update Decision Log
 ```markdown

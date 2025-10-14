@@ -12,11 +12,15 @@ description: Generate technical implementation plan with constitution checks and
 
 ## Prerequisites Check
 
-```typescript
-const specDir = getActiveSpecDirectory(projectRoot);
-const spec = readSpecFile(specDir, 'spec.md');
-const metadata = readMetadata(specDir);
-```
+**Find active spec directory**:
+- Read `CLAUDE.md`
+- Find line starting with `## Active Task`
+- Extract the `@.claude/specs/NNN-feature-name/spec.md` path
+- Parse out the directory: `.claude/specs/NNN-feature-name`
+
+**Read spec files**:
+- Read `.claude/specs/NNN-feature-name/spec.md`
+- Read `.claude/specs/NNN-feature-name/.metadata.json`
 
 **Verify**:
 - [ ] Active spec exists
@@ -38,9 +42,7 @@ Run `/clarify` first to resolve ambiguities, or explicitly tell me to proceed an
 **If `.claude/constitution.md` exists**:
 
 ### Load and Parse Constitution
-```typescript
-const constitution = readFileSync('.claude/constitution.md', 'utf-8');
-```
+**Read** `.claude/constitution.md`
 
 ### Extract Guardrails
 - Complexity limits (max services, max dependencies, etc.)
@@ -319,11 +321,11 @@ Thoughts?"
 
 ## Implementation Notes
 
-- Use spec-helpers for all file operations
+- Use Read/Write/Bash tools for all file operations
 - Reference constitution by path (`.claude/constitution.md`)
-- Create contracts/ subdirectory if needed
+- Create contracts/ subdirectory if needed: `mkdir -p .claude/specs/NNN-feature-name/contracts`
 - Don't create tasks.md yet (that's `/tasks` job)
-- Update metadata status if needed
+- Update `.metadata.json` if status changes
 - Use WebSearch for recent tech docs
 - Apply YAGNI ruthlessly
 

@@ -40,11 +40,18 @@ description: Create a feature specification through Socratic questioning and ite
 Once you have complete understanding (not before!):
 
 ### Step 1: Generate Task ID and Feature Name
-```typescript
-// Use spec-helpers to get next ID
-const taskId = getNextTaskId(projectRoot);
-const featureName = generateFeatureName(title); // e.g., "add-user-authentication"
-```
+**Find next task ID**:
+- List `.claude/specs/` directory
+- Find directories matching pattern `NNN-*` (e.g., `001-feature`, `002-another`)
+- Extract highest number, add 1, pad to 3 digits
+- If no directories exist, use `001`
+
+**Generate feature name** from title:
+- Convert to lowercase
+- Replace non-alphanumeric with dashes
+- Remove leading/trailing dashes
+- Limit to 50 chars
+- Example: "Add User Authentication" → "add-user-authentication"
 
 ### Step 2: Create Git Branch
 ```bash
@@ -52,13 +59,13 @@ git checkout -b ${taskId}-${featureName}
 ```
 
 ### Step 3: Create Spec Directory
-```typescript
-const specDir = createSpecDirectory(projectRoot, taskId, featureName);
-// Creates: .claude/specs/001-add-user-authentication/
+```bash
+mkdir -p .claude/specs/${taskId}-${featureName}
 ```
+Example: `.claude/specs/001-add-user-authentication/`
 
 ### Step 4: Generate spec.md from Template
-Use `templates/spec-template.md` and fill in:
+**Read** `templates/spec-template.md` and fill in:
 - **Feature ID**: `${taskId}`
 - **Title**: Extracted from understanding phase
 - **User Scenarios**: From gathered information
@@ -66,31 +73,47 @@ Use `templates/spec-template.md` and fill in:
 - **Non-Functional Requirements**: Performance, security, etc.
 - **[NEEDS CLARIFICATION]**: Mark ANY remaining ambiguities
 
+**Write** to `.claude/specs/${taskId}-${featureName}/spec.md`
+
 **Critical**: If you had to make ANY assumptions, mark them with `[NEEDS CLARIFICATION: specific question]`
 
 ### Step 5: Create Metadata
-```typescript
-const metadata: SpecMetadata = {
-  task_id: taskId,
-  feature_name: featureName,
-  branch: `${taskId}-${featureName}`,
-  status: 'draft',
-  started: new Date().toISOString()
-};
-createMetadata(specDir, metadata);
+**Write** `.claude/specs/${taskId}-${featureName}/.metadata.json`:
+```json
+{
+  "task_id": "001",
+  "feature_name": "add-user-authentication",
+  "branch": "001-add-user-authentication",
+  "status": "draft",
+  "started": "2025-01-14T10:30:00Z"
+}
 ```
 
 ### Step 6: GitHub Integration (if enabled)
-```typescript
-if (isGitHubIntegrationEnabled()) {
-  const issue = githubHelpers.createGitHubIssue(title, specContent, projectRoot);
-  // Update metadata with issue info
+**Check** `.claude/track.config.json` for `github.enabled: true`
+
+If enabled:
+```bash
+gh issue create --title "Feature: ${title}" --body "${spec content}"
+```
+
+Update `.metadata.json` with issue info:
+```json
+{
+  "github": {
+    "issue": 123,
+    "url": "https://github.com/user/repo/issues/123"
+  }
 }
 ```
 
 ### Step 7: Update CLAUDE.md
-```typescript
-claudeMdHelpers.setActiveTask(projectRoot, `.claude/specs/${taskId}-${featureName}/spec.md`);
+**Find** line starting with `## Active Task`
+
+**Replace** the `@` import line with:
+```markdown
+## Active Task
+@.claude/specs/${taskId}-${featureName}/spec.md
 ```
 
 ---

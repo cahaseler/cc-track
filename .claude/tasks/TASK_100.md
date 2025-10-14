@@ -90,7 +90,17 @@ in_progress
 Valid status values: `planning`, `in_progress`, `blocked`, `completed`
 
 ## Current Focus
-Creating all template files with appropriate structure and inline guidance.
+Defining architectural decisions for spec-driven workflow integration with cc-track.
+
+## Recent Progress
+- **2025-10-14**: Brainstorming session to define workflow architecture
+  - Reviewed spec-kit codebase structure and templates (spec.md, plan.md, tasks.md)
+  - Reviewed spec-kit's command prompts (/specify, /clarify, /plan, /tasks)
+  - **Decision**: Adopt full spec-plan-task three-part flow from spec-kit
+  - **Decision**: Constitution will be optional, stored alongside other context files
+  - Clarified that constitution provides prescriptive constraints vs descriptive patterns (system_patterns.md) or historical records (decision_log.md)
+  - Confirmed cc-track will wrap spec-kit prompts with git/github management, hooks, validation, and tracking
+  - Determined constitution template should include: Technical Constraints, Quality Standards, Architectural Guardrails
 
 ## Next Steps
 1. Review spec-kit templates for structure and content

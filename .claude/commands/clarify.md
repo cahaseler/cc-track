@@ -6,21 +6,26 @@ description: Systematically resolve ambiguities in specifications through struct
 
 **Goal**: Identify and resolve underspecified areas using structured taxonomy and sequential questioning.
 
-**Core Principle**: Ask ONE question at a time, integrate answer immediately, move to next. Maximum 5 questions per session.
+**Core Principle**: Ask ONE question at a time, integrate answer immediately, move to next. Continue until all ambiguities resolved.
 
 ---
 
 ## Phase 1: Load Active Spec
 
-```typescript
-const specDir = getActiveSpecDirectory(projectRoot);
-const specContent = readSpecFile(specDir, 'spec.md');
-```
+**Find active spec directory**:
+- Read `CLAUDE.md`
+- Find line starting with `## Active Task`
+- Extract the `@.claude/specs/NNN-feature-name/spec.md` path
+- Parse out the directory: `.claude/specs/NNN-feature-name`
+
+**Read spec content**:
+- Read `.claude/specs/NNN-feature-name/spec.md`
+- Read `.claude/specs/NNN-feature-name/.metadata.json`
 
 **Verify**:
 - Active spec exists
-- Not already in implementation (check metadata.status)
-- Spec is Draft or needs refinement
+- Metadata status is not "completed" (check metadata.status)
+- Spec is "draft" or needs refinement
 
 ---
 
@@ -77,7 +82,7 @@ From gaps identified, create priority queue (internally):
 3. **Coverage**: Balance across categories
 
 **Rules**:
-- Maximum 5 questions per session
+- Continue until all critical ambiguities resolved
 - Only high-impact unknowns
 - Cover different categories when possible
 - Skip if answer wouldn't materially affect implementation
@@ -116,9 +121,9 @@ Example: "Under 200ms p95"
 5. **Move to next question** (or stop if done/quota reached)
 
 **Stop when**:
-- 5 questions asked
 - User says "done", "good", "no more"
 - Critical ambiguities resolved (remaining are low-impact)
+- All [NEEDS CLARIFICATION] markers addressed
 
 ---
 
@@ -175,9 +180,7 @@ If answer invalidates earlier assumptions:
 - Keep spec evergreen
 
 ### Step 4: Save Immediately
-```typescript
-writeSpecFile(specDir, 'spec.md', updatedContent);
-```
+**Write** updated content to `.claude/specs/NNN-feature-name/spec.md`
 
 ---
 
@@ -188,7 +191,7 @@ After all questions (or early termination):
 ```
 Clarification session complete!
 
-Questions answered: X / 5
+Questions answered: X
 Sections updated:
 - Functional Requirements (added 2 items)
 - Non-Functional Requirements (added performance targets)
@@ -243,7 +246,7 @@ Which approach?"
 - Preserve all markdown formatting
 - Don't reorder unrelated sections
 - Track question count internally
-- Use spec-helpers for all file operations
+- Use Read/Write tools for all file operations
 
 ---
 

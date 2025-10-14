@@ -12,12 +12,16 @@ description: Generate actionable task breakdown following TDD principles
 
 ## Prerequisites Check
 
-```typescript
-const specDir = getActiveSpecDirectory(projectRoot);
-const plan = readSpecFile(specDir, 'plan.md');
-const dataModel = readSpecFile(specDir, 'data-model.md');
-const contracts = readdirSync(join(specDir, 'contracts'));
-```
+**Find active spec directory**:
+- Read `CLAUDE.md`
+- Find line starting with `## Active Task`
+- Extract the `@.claude/specs/NNN-feature-name/spec.md` path
+- Parse out the directory: `.claude/specs/NNN-feature-name`
+
+**Read design files**:
+- Read `.claude/specs/NNN-feature-name/plan.md`
+- Read `.claude/specs/NNN-feature-name/data-model.md` (if exists)
+- List `.claude/specs/NNN-feature-name/contracts/` (if exists)
 
 **Verify**:
 - [ ] plan.md exists and complete
@@ -194,27 +198,16 @@ Save to `tasks.md`.
 **Self-check before presenting**:
 
 ### TDD Order Check
-```typescript
-const testTasks = tasks.filter(t => t.phase === 'Tests');
-const implTasks = tasks.filter(t => t.phase === 'Implementation');
-const maxTestNum = Math.max(...testTasks.map(t => t.number));
-const minImplNum = Math.min(...implTasks.map(t => t.number));
-
-if (minImplNum <= maxTestNum) {
-  throw new Error('TDD violation: Implementation task before test task');
-}
-```
+Verify that ALL test tasks have lower numbers than ALL implementation tasks:
+- Find highest test task number (e.g., T008)
+- Find lowest implementation task number (e.g., T009)
+- If any implementation task has a lower number than any test task → **TDD violation**
 
 ### Parallel Safety Check
-```typescript
-const parallelTasks = tasks.filter(t => t.parallel);
-const filePaths = parallelTasks.map(t => t.filePath);
-const duplicates = filePaths.filter((f, i) => filePaths.indexOf(f) !== i);
-
-if (duplicates.length > 0) {
-  throw new Error(`Parallel tasks modify same file: ${duplicates}`);
-}
-```
+For all tasks marked `[P]`:
+- List the file path each task modifies
+- Check for duplicate file paths
+- If two `[P]` tasks modify the same file → **Parallel conflict**
 
 ### Coverage Check
 - All contracts → tests? ✓
@@ -300,13 +293,13 @@ Still want to proceed?"
 
 ## Implementation Notes
 
-- Use templates/tasks-template.md as base
+- Read `templates/tasks-template.md` as base structure
 - Number sequentially (T001, T002, etc.)
 - Include exact file paths in descriptions
 - Reference specific line numbers from plan if helpful
 - Mark dependencies clearly
 - Generate realistic task count (20-30 typical)
-- Update metadata.status to 'in_progress' when tasks created
+- Update `.claude/specs/NNN-feature-name/.metadata.json` status to "in_progress" when tasks created
 
 ---
 
