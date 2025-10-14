@@ -210,7 +210,20 @@ The \`.claude/track.config.json\` file has been created with all features disabl
 
 Update the config file with the user's choices.
 
-## Step 4: Populate Context Files
+## Step 4: Optional - Create Project Constitution
+
+Ask the user: "Would you like to create a project constitution? This establishes governing principles and guardrails for technical decisions."
+
+If yes, run the \`/constitution\` command to guide them through creating \`.claude/constitution.md\`.
+
+If no, inform them: "You can create a constitution later by running \`/constitution\` anytime."
+
+The constitution is optional but recommended for:
+- Projects where you want to enforce YAGNI/simplicity
+- Teams needing consistent technical standards
+- Projects that tend to grow too complex
+
+## Step 5: Populate Context Files
 
 ### For NEW/EMPTY projects:
 Ask the user:

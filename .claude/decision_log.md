@@ -328,6 +328,31 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
 - **Implications:** Technical rigor prevents wasted effort on false positives, maintains user-requested changes, focuses on actual issues
 - **Reversibility:** Easy - could implement any rejected suggestion if context changes
 
+[2025-10-14] - Adopt Spec-Driven Development Workflow Over Hook-Based Task Capture
+- **Context:** The hook-based workflow (capture-plan, pre-compact, stop-review) had reliability issues and coupling problems. Inspired by spec-kit's approach to systematic feature development with forced clarification and separation of concerns.
+- **Decision:** Replace automatic hook-based task capture with explicit command-driven workflow using five new slash commands (/specify, /clarify, /plan, /tasks, /constitution) and structured spec folders
+- **Rationale:**
+  - **Separation of concerns**: Spec (what/why) → Plan (how) → Tasks (breakdown) keeps requirements distinct from implementation
+  - **Forced clarification**: Explicit /clarify command with structured questioning taxonomy prevents underspecified features
+  - **Constitution checks**: Optional guardrails in /plan command catch complexity/YAGNI violations early
+  - **Better DX**: Commands suggest next step, Claude Code's command execution handles flow naturally
+  - **Reliability**: Hook-based approach had issues with capture-plan timing, pre-compact failures, stop-review false positives
+  - **Flexibility**: User controls workflow progression instead of hooks triggering automatically
+- **Alternatives Considered:**
+  - Fix existing hooks: Fundamental architecture issues with event-driven capture, would still have timing/coupling problems
+  - Hybrid approach (hooks + commands): Would maintain complexity and reliability issues of hooks
+  - Other spec systems (ADRs, RFC process): Too heavyweight, not integrated with Claude Code workflow
+  - Continue without structured specs: Loses benefits of forced clarification and constitution checks
+- **Implications:**
+  - **Breaking change**: Old `.claude/tasks/TASK_*.md` structure replaced with `.claude/specs/NNN-feature-name/` folders
+  - **Migration path**: `/migrate` command converts old tasks to new structure, backs up originals
+  - **Deprecated hooks**: capture-plan, pre-compact, stop-review disabled by default (can re-enable during transition)
+  - **New structure**: Each spec folder contains spec.md, plan.md, tasks.md, progress.md, .metadata.json
+  - **Backward compatibility**: All commands check for new structure first, fall back to old for existing tasks
+  - **Template approach**: Start with spec-kit templates largely intact, iterate based on usage
+  - **Distribution**: New templates and slash commands embedded via build-time packaging system
+- **Reversibility:** Medium - Migration command exists and old hooks can be re-enabled, but reversing would lose benefits of structured workflow. Both structures supported for transition period.
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]

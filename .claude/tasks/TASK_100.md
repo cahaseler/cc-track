@@ -90,7 +90,7 @@ in_progress
 Valid status values: `planning`, `in_progress`, `blocked`, `completed`
 
 ## Current Focus
-Refining constitution template design and its relationship to existing cc-track context files.
+Finalizing constitution template structure and determining its optional role in the workflow alongside existing context files (system_patterns.md, decision_log.md).
 
 ## Recent Progress
 - **2025-10-14**: Brainstorming session to define workflow architecture
@@ -108,6 +108,12 @@ Refining constitution template design and its relationship to existing cc-track 
     - constitution.md = prescriptive constraints ("You MUST NOT do X unless justified")
   - Constitution will complement rather than replace existing context files
   - User projects (non-meta) will have their own constitution specific to that project's needs
+  - Clarified that constitution serves as pre-emptive guardrails with explicit validation checklist during `/plan`
+  - Confirmed constitution template structure: Technical Constraints, Quality Standards, Architectural Guardrails
+  - **Decision**: Constitution will be optional context file, imported by CLAUDE.md like other context files
+  - Templates can be used minimally (skip constitution) or comprehensively (use all guardrails)
+  - Constitution enables users to specify prescriptive constraints (e.g., "no more than 3 services," "avoid pattern X unless justified")
+  - Existing context files (system_patterns.md, decision_log.md, product_context) already cover much of constitution's purpose for many projects
 
 ## Next Steps
 1. Review spec-kit templates for structure and content
