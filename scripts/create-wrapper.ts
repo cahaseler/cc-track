@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const wrapper = `#!/usr/bin/env node
 import { spawnSync } from 'child_process';
