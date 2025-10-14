@@ -1,11 +1,12 @@
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getActiveTaskId } from './claude-md';
 import { type EditValidationConfig, getConfig, getLintConfig, getTestConfig } from './config';
 import { isWipCommit } from './git-helpers';
 import { getLintParser } from './lint-parsers';
 import { createLogger } from './logger';
+import { getActiveSpecDirectory, readMetadata, type SpecFileOperations } from './spec-helpers';
 
 const logger = createLogger('validation');
 
@@ -152,7 +153,7 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
  * Run tests
  */
 function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationResult['tests'] {
-  const fs = deps.fileOps || { existsSync, readFileSync };
+  const fs = deps.fileOps || { existsSync, mkdirSync, readFileSync, writeFileSync };
   const exec = deps.execSync || execSync;
   const getTestConfigFn = deps.getTestConfig || getTestConfig;
   const log = deps.logger || logger;
@@ -364,7 +365,9 @@ function getGitStatus(projectRoot: string, taskId?: string, deps: ValidationDeps
  */
 function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
   const getActiveTaskIdFn = deps.getActiveTaskId || getActiveTaskId;
-  const fs = deps.fileOps || { existsSync, readFileSync };
+  const getActiveSpecDirFn = deps.getActiveSpecDirectory || getActiveSpecDirectory;
+  const readMetadataFn = deps.readMetadata || readMetadata;
+  const fs = deps.fileOps || { existsSync, mkdirSync, readFileSync, writeFileSync };
   const log = deps.logger || logger;
 
   try {
@@ -373,29 +376,34 @@ function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
       return { exists: false };
     }
 
-    const taskFilePath = join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
-    if (!fs.existsSync(taskFilePath)) {
+    const specDir = getActiveSpecDirFn(projectRoot, fs);
+    if (!specDir) {
       return { exists: false };
     }
 
-    const taskContent = fs.readFileSync(taskFilePath, 'utf-8');
+    const metadata = readMetadataFn(specDir, fs);
+    if (!metadata) {
+      return { exists: false };
+    }
 
-    // Extract task title
-    const titleMatch = taskContent.match(/^# (.+)$/m);
-    const taskTitle = titleMatch ? titleMatch[1] : taskId;
+    const specMdPath = join(specDir, 'spec.md');
+    const specContent = fs.readFileSync(specMdPath, 'utf-8');
 
-    // Extract status
-    const statusMatch = taskContent.match(/\*\*Status:\*\* (\w+)/);
-    const status = statusMatch ? statusMatch[1] : 'unknown';
+    const titleMatch = specContent.match(/^# (.+)$/m);
+    const taskTitle = titleMatch ? titleMatch[1] : metadata.feature_name;
 
-    log.info('Task info', { taskId, taskTitle, status });
+    log.info('Task info', {
+      taskId: metadata.task_id,
+      taskTitle,
+      status: metadata.status,
+    });
 
     return {
       exists: true,
-      taskId,
+      taskId: metadata.task_id,
       taskTitle,
-      status,
-      filePath: taskFilePath,
+      status: metadata.status,
+      filePath: specMdPath,
     };
   } catch (error) {
     log.error('Failed to get task info', { error });
@@ -405,14 +413,13 @@ function getTaskInfo(projectRoot: string, deps: ValidationDeps = {}): TaskInfo {
 
 export interface ValidationDeps {
   execSync?: typeof execSync;
-  fileOps?: {
-    existsSync: typeof existsSync;
-    readFileSync: typeof readFileSync;
-  };
+  fileOps?: SpecFileOperations;
   getConfig?: typeof getConfig;
   getLintConfig?: typeof getLintConfig;
   getTestConfig?: typeof getTestConfig;
   getActiveTaskId?: typeof getActiveTaskId;
+  getActiveSpecDirectory?: typeof getActiveSpecDirectory;
+  readMetadata?: typeof readMetadata;
   isWipCommit?: typeof isWipCommit;
   getLintParser?: typeof getLintParser;
   logger?: ReturnType<typeof createLogger>;

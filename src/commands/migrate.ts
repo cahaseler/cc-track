@@ -2,8 +2,7 @@
 // ABOUTME: Converts tasks/TASK_XXX.md files to specs/XXX-feature-name/ directories with spec/plan/tasks/progress files
 
 import { Command } from 'commander';
-import { ClaudeMdHelpers } from '../lib/claude-md';
-import type { SpecMetadata } from '../lib/spec-helpers';
+import type { SpecFileOperations, SpecMetadata } from '../lib/spec-helpers';
 import {
   createMetadata,
   createPlanFile,
@@ -16,7 +15,9 @@ import {
 import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
 import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
-export type MigrateDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'path' | 'logger'>;
+export type MigrateDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'path' | 'logger'> & {
+  fileOps?: SpecFileOperations;
+};
 
 export interface MigrateResultData {
   migratedCount: number;
@@ -41,10 +42,10 @@ function extractOldTaskMetadata(content: string, taskId: string): OldTaskMetadat
   const titleMatch = content.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1] : `Task ${taskId}`;
 
-  const branchMatch = content.match(/<!--\s*branch:\s*([^\s-]+)\s*-->/);
+  const branchMatch = content.match(/<!--\s*branch:\s*([^\s]+)\s*-->/);
   const githubIssueMatch = content.match(/<!--\s*github_issue:\s*(\d+)\s*-->/);
-  const githubUrlMatch = content.match(/<!--\s*github_url:\s*([^\s-]+)\s*-->/);
-  const issueBranchMatch = content.match(/<!--\s*issue_branch:\s*([^\s-]+)\s*-->/);
+  const githubUrlMatch = content.match(/<!--\s*github_url:\s*([^\s]+)\s*-->/);
+  const issueBranchMatch = content.match(/<!--\s*issue_branch:\s*([^\s]+)\s*-->/);
 
   return {
     taskId,
@@ -160,6 +161,7 @@ function migrateTask(
   taskId: string,
   oldContent: string,
   logger: ReturnType<MigrateDeps['logger']>,
+  fileOps?: SpecFileOperations,
 ): { success: boolean; featureName: string; error?: string } {
   try {
     // Extract metadata from old task
@@ -169,23 +171,23 @@ function migrateTask(
     logger.info(`Migrating TASK_${taskId}: ${metadata.title} -> ${taskId}-${featureName}`);
 
     // Create spec directory
-    const specDir = createSpecDirectory(projectRoot, taskId, featureName);
+    const specDir = createSpecDirectory(projectRoot, taskId, featureName, fileOps);
 
     // Create spec.md (user-facing requirements)
     const specContent = generateSpecFromOldTask(metadata, oldContent);
-    createSpecFile(specDir, specContent);
+    createSpecFile(specDir, specContent, fileOps);
 
     // Create plan.md (copy old task content)
     // Old task files were implementation-focused, so they become the "plan"
-    createPlanFile(specDir, oldContent);
+    createPlanFile(specDir, oldContent, fileOps);
 
     // Create tasks.md placeholder
     const tasksContent = generateTasksPlaceholder(metadata);
-    createTasksFile(specDir, tasksContent);
+    createTasksFile(specDir, tasksContent, fileOps);
 
     // Create progress.md
     const progressContent = generateProgressFromMigration(metadata);
-    createProgressFile(specDir, progressContent);
+    createProgressFile(specDir, progressContent, fileOps);
 
     // Create metadata.json
     const newMetadata: SpecMetadata = {
@@ -203,7 +205,7 @@ function migrateTask(
       };
     }
 
-    createMetadata(specDir, newMetadata);
+    createMetadata(specDir, newMetadata, fileOps);
 
     logger.info(`Successfully migrated TASK_${taskId}`);
     return { success: true, featureName };
@@ -265,7 +267,7 @@ export function runMigrate(deps: MigrateDeps): CommandResult<MigrateResultData> 
       const oldPath = deps.path.join(tasksDir, file);
       const oldContent = deps.fs.readFileSync(oldPath, 'utf-8');
 
-      const result = migrateTask(projectRoot, taskId, oldContent, logger);
+      const result = migrateTask(projectRoot, taskId, oldContent, logger, deps.fileOps);
       results.push({ taskId, ...result });
 
       if (result.success) {
@@ -305,17 +307,21 @@ export function runMigrate(deps: MigrateDeps): CommandResult<MigrateResultData> 
     }
 
     // Update CLAUDE.md if there's an active task
-    const claudeMdHelpers = new ClaudeMdHelpers();
-    const activeTaskId = claudeMdHelpers.getActiveTaskId(projectRoot);
+    const claudeMdPath = deps.path.join(projectRoot, 'CLAUDE.md');
     let claudeMdUpdated = false;
 
-    if (activeTaskId) {
-      const taskNum = activeTaskId.match(/\d{3}/)?.[0];
-      if (taskNum) {
+    if (deps.fs.existsSync(claudeMdPath)) {
+      let claudeMdContent = deps.fs.readFileSync(claudeMdPath, 'utf-8');
+      const activeTaskMatch = claudeMdContent.match(/@\.claude\/tasks\/TASK_(\d{3})\.md/);
+
+      if (activeTaskMatch) {
+        const taskNum = activeTaskMatch[1];
         const migratedTask = results.find((r) => r.taskId === taskNum);
         if (migratedTask?.success) {
-          const newPath = `.claude/specs/${taskNum}-${migratedTask.featureName}/spec.md`;
-          claudeMdHelpers.setActiveTask(projectRoot, newPath);
+          const newPath = `@.claude/specs/${taskNum}-${migratedTask.featureName}/spec.md`;
+          // Replace old task reference with new spec reference
+          claudeMdContent = claudeMdContent.replace(/@\.claude\/tasks\/TASK_\d{3}\.md/, newPath);
+          deps.fs.writeFileSync(claudeMdPath, claudeMdContent);
           messages.push('');
           messages.push(`✅ Updated CLAUDE.md active task reference to: ${newPath}`);
           claudeMdUpdated = true;
@@ -362,17 +368,15 @@ export function runMigrate(deps: MigrateDeps): CommandResult<MigrateResultData> 
 }
 
 export function createMigrateCommand(overrides?: PartialCommandDeps): Command {
-  return new Command('migrate')
-    .description('Convert old task structure to spec-driven workflow')
-    .action(async () => {
-      const deps = resolveCommandDeps(overrides);
-      try {
-        const result = runMigrate(deps);
-        applyCommandResult(result, deps);
-      } catch (error) {
-        handleCommandException(error, deps);
-      }
-    });
+  return new Command('migrate').description('Convert old task structure to spec-driven workflow').action(async () => {
+    const deps = resolveCommandDeps(overrides);
+    try {
+      const result = runMigrate(deps);
+      applyCommandResult(result, deps);
+    } catch (error) {
+      handleCommandException(error, deps);
+    }
+  });
 }
 
 export const migrateCommand = createMigrateCommand();

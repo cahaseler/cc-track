@@ -1,9 +1,17 @@
 #!/usr/bin/env bun
 import { execSync as nodeExecSync } from 'node:child_process';
-import { existsSync as nodeExistsSync, readFileSync as nodeReadFileSync } from 'node:fs';
+import {
+  existsSync as nodeExistsSync,
+  mkdirSync as nodeMkdirSync,
+  readFileSync as nodeReadFileSync,
+  writeFileSync as nodeWriteFileSync,
+} from 'node:fs';
+import { join } from 'node:path';
 import { Command } from 'commander';
+import { getActiveTaskId } from '../lib/claude-md';
 import { getConfig as getConfigImpl } from '../lib/config';
 import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
+import { getActiveSpecDirectory } from '../lib/spec-helpers';
 import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
 import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
@@ -25,6 +33,8 @@ interface StatusLineDeps {
   readFileSync: typeof nodeReadFileSync;
   getConfig: typeof getConfigImpl;
   getCurrentBranch: typeof getCurrentBranchImpl;
+  getActiveTaskId: typeof getActiveTaskId;
+  getActiveSpecDirectory: typeof getActiveSpecDirectory;
 }
 
 const defaultDeps: StatusLineDeps = {
@@ -33,6 +43,8 @@ const defaultDeps: StatusLineDeps = {
   readFileSync: nodeReadFileSync,
   getConfig: getConfigImpl,
   getCurrentBranch: getCurrentBranchImpl,
+  getActiveTaskId,
+  getActiveSpecDirectory,
 };
 
 /**
@@ -113,28 +125,42 @@ export function getCurrentBranch(deps = defaultDeps): string {
  * Get active task from CLAUDE.md
  */
 export function getActiveTask(deps = defaultDeps): string {
-  const claudeMdPath = 'CLAUDE.md';
-  if (!deps.existsSync(claudeMdPath)) {
-    return '';
-  }
+  const cwd = process.cwd();
 
-  const content = deps.readFileSync(claudeMdPath, 'utf-8');
-  const taskMatch = content.match(/@\.claude\/tasks\/(TASK_\d+\.md)/);
-
-  if (!taskMatch) {
-    if (content.includes('@.claude/no_active_task.md')) {
-      return 'No active task';
+  // Check if there's an active task
+  const taskId = deps.getActiveTaskId(cwd);
+  if (!taskId) {
+    // Check if no_active_task.md is referenced
+    const claudeMdPath = join(cwd, 'CLAUDE.md');
+    if (deps.existsSync(claudeMdPath)) {
+      const content = deps.readFileSync(claudeMdPath, 'utf-8');
+      if (content.includes('@.claude/no_active_task.md')) {
+        return 'No active task';
+      }
     }
     return '';
   }
 
-  const taskFilePath = `.claude/tasks/${taskMatch[1]}`;
-  if (!deps.existsSync(taskFilePath)) {
+  // Get the spec directory and read the title from spec.md
+  const fileOps = {
+    existsSync: deps.existsSync,
+    readFileSync: deps.readFileSync,
+    writeFileSync: nodeWriteFileSync,
+    mkdirSync: nodeMkdirSync,
+  };
+
+  const specDir = deps.getActiveSpecDirectory(cwd, fileOps);
+  if (!specDir) {
     return '';
   }
 
-  const taskContent = deps.readFileSync(taskFilePath, 'utf-8');
-  const titleMatch = taskContent.match(/^# (.+)$/m);
+  const specMdPath = join(specDir, 'spec.md');
+  if (!deps.existsSync(specMdPath)) {
+    return '';
+  }
+
+  const specContent = deps.readFileSync(specMdPath, 'utf-8');
+  const titleMatch = specContent.match(/^# (.+)$/m);
   return titleMatch ? titleMatch[1] : '';
 }
 
@@ -244,6 +270,8 @@ function mapStatuslineDeps(deps: CommandDeps): StatusLineDeps {
     readFileSync: deps.fs.readFileSync,
     getConfig: deps.config.getConfig,
     getCurrentBranch: deps.git.getCurrentBranch,
+    getActiveTaskId: deps.claudeMd.getActiveTaskId,
+    getActiveSpecDirectory,
   };
 }
 

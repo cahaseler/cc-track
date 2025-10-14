@@ -11,6 +11,20 @@ describe('validation', () => {
     mock.restore();
   });
 
+  // Helper to create common spec-related mocks
+  function createSpecMocks() {
+    return {
+      getActiveSpecDirectory: mock(() => '/test/project/.claude/specs/001-test-task'),
+      readMetadata: mock(() => ({
+        task_id: '001',
+        feature_name: 'test-task',
+        branch: 'main',
+        status: 'in_progress',
+        started: '2025-01-01T00:00:00.000Z',
+      })),
+    };
+  }
+
   describe('runValidationChecks', () => {
     test('passes validation when TypeScript is disabled', async () => {
       // Mock dependencies
@@ -43,6 +57,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -107,6 +122,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -166,6 +182,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -248,6 +265,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -297,6 +315,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -349,6 +368,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: true, command: customTestCommand })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -412,6 +432,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: true, command: 'npm test' })),
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),
@@ -461,6 +482,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: true })), // No command specified
         getActiveTaskId: mock(() => 'TASK_001'),
+        ...createSpecMocks(),
         isWipCommit: mock(() => false),
         getLintParser: mock(() => ({ parseOutput: () => ({ issueCount: 0 }) })),
         logger: createMockLogger(),

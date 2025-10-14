@@ -26,7 +26,7 @@ export async function performCodexReview(options: CodeReviewOptions, deps: Codex
     logger = createLogger('codex-review'),
   } = deps;
 
-  const { taskId, taskTitle, taskRequirements, gitDiff, projectRoot } = options;
+  const { taskId, taskTitle, projectRoot, specFolderPath, mergeBase } = options;
 
   try {
     // Check if codex is installed
@@ -46,40 +46,44 @@ export async function performCodexReview(options: CodeReviewOptions, deps: Codex
       fileOps.mkdirSync(codeReviewsDir, { recursive: true });
     }
 
-    // Create comprehensive review prompt
+    // Determine where to find spec files
+    const specLocation = specFolderPath || join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
+
+    // Create concise review prompt that points to files instead of including full content
     const prompt = `You are performing a comprehensive code review for task ${taskId}.
 
 # Task Information
 - **Task ID:** ${taskId}
 - **Title:** ${taskTitle}
 - **Project Root:** ${projectRoot}
-
-# Task Requirements
-${taskRequirements}
-
-# Changes to Review (Git Diff)
-${gitDiff}
+- **Spec Location:** ${specLocation}
+${mergeBase ? `- **Merge Base:** ${mergeBase}` : ''}
 
 # Your Review Task
 
-Perform a thorough code review analyzing:
-1. **Requirements Alignment:** Do the changes fulfill all task requirements?
-2. **Security:** Are there any security vulnerabilities or concerns?
-3. **Code Quality:** Is the code well-structured, readable, and maintainable?
-4. **Performance:** Are there any performance issues or optimizations needed?
-5. **Architecture:** Does the implementation follow project patterns and conventions?
-6. **Error Handling:** Is error handling comprehensive and appropriate?
-7. **Testing:** Are the changes adequately tested? Are there missing test cases?
-8. **Documentation:** Is the code properly documented? Are there missing explanations?
+1. **Read the task requirements** from ${specLocation}
+   - If it's a directory, read spec.md, plan.md, and tasks.md
+   - If it's a file, read the entire task file
 
-You have access to read any file in the project to understand context and patterns.
-You can only write to the code-reviews/ directory.
+2. **Review the changes** by running: \`git diff ${mergeBase || 'HEAD~1'}..HEAD\`
 
-Write your complete review to a file named: code-reviews/${taskId}_[DATE].md
+3. **Analyze the implementation** against requirements:
+   - Requirements Alignment: Do the changes fulfill all task requirements?
+   - Security: Any vulnerabilities or concerns?
+   - Code Quality: Is the code well-structured, readable, and maintainable?
+   - Performance: Any issues or optimizations needed?
+   - Architecture: Does it follow project patterns and conventions?
+   - Error Handling: Is error handling comprehensive?
+   - Testing: Are the changes adequately tested?
+   - Documentation: Is the code properly documented?
 
-Use the current UTC timestamp for [DATE] in format: YYYY-MM-DD_HHmm-UTC
+4. **Write your review** to: code-reviews/${taskId}_[DATE].md
+   - Use current UTC timestamp for [DATE] in format: YYYY-MM-DD_HHmm-UTC
+   - Be thorough, actionable, and constructive
+   - Include specific file/line references
 
-Your review should be thorough, actionable, and constructive. Include specific file/line references where applicable.`;
+You have read access to the entire project.
+You can only write to the code-reviews/ directory.`;
 
     logger.info('Starting Codex review', { taskId, timeout: '30 minutes' });
 

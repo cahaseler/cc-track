@@ -181,6 +181,16 @@
 
 ---
 
+## Notes
+
+*Freeform notes, observations, and context that don't fit elsewhere*
+
+- [Note 1]
+- [Note 2]
+- [Note 3]
+
+---
+
 ## Session Notes
 
 ### Session [YYYY-MM-DD]

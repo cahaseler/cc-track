@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(npx cc-track setup-templates), Bash(npx cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
+allowed-tools: Bash(/home/ubuntu/projects/cc-pars/dist/cc-track setup-templates), Bash(/home/ubuntu/projects/cc-pars/dist/cc-track setup-commands), Bash(git status), Bash(gh auth status), Read, Grep, Glob
 description: Complete cc-track setup with Claude's assistance
 model: claude-sonnet-4-5-20250929
 ---
@@ -10,8 +10,8 @@ You are setting up cc-track (Task Review And Context Keeper) for this project. F
 
 ## Step 1: Installation of Templates and Commands
 
-!`npx cc-track setup-templates`
-!`npx cc-track setup-commands`
+!`/home/ubuntu/projects/cc-pars/dist/cc-track setup-templates`
+!`/home/ubuntu/projects/cc-pars/dist/cc-track setup-commands`
 
 ## Step 2: Quick Environment Check
 
@@ -167,7 +167,7 @@ Add or update the statusLine configuration:
 ```json
 "statusLine": {
   "type": "command",
-  "command": "npx cc-track statusline",
+  "command": "/home/ubuntu/projects/cc-pars/dist/cc-track statusline",
   "padding": 0
 }
 ```
@@ -175,11 +175,11 @@ Add or update the statusLine configuration:
 ### For hooks (based on what's enabled):
 Add to the hooks section (preserve any existing hooks):
 
-- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "npx cc-track hook"
-- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "npx cc-track hook"
-- If stop_review enabled: Add Stop hook → command "npx cc-track hook"
-- If pre_compact enabled: Add PreCompact hook → command "npx cc-track hook"
-- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "npx cc-track hook"
+- If capture_plan enabled: Add PostToolUse hook with matcher "ExitPlanMode" → command "/home/ubuntu/projects/cc-pars/dist/cc-track hook"
+- If edit_validation enabled: Add PostToolUse hook with matcher "Edit|Write|MultiEdit" → command "/home/ubuntu/projects/cc-pars/dist/cc-track hook"
+- If stop_review enabled: Add Stop hook → command "/home/ubuntu/projects/cc-pars/dist/cc-track hook"
+- If pre_compact enabled: Add PreCompact hook → command "/home/ubuntu/projects/cc-pars/dist/cc-track hook"
+- If post_compact enabled: Add SessionStart hook with matcher "compact" → command "/home/ubuntu/projects/cc-pars/dist/cc-track hook"
 
 Use the Edit tool to make these changes, merging with any existing configuration.
 

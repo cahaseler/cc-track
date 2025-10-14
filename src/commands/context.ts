@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import * as path from 'node:path';
 import process from 'node:process';
-import { ClaudeMdHelpers, clearActiveTask, getActiveTaskId } from '../lib/claude-md';
+import { ClaudeMdHelpers, getActiveTaskId } from '../lib/claude-md';
 import { ClaudeSDK } from '../lib/claude-sdk';
 import { getConfig, getGitHubConfig, isCodeReviewEnabled, isGitHubIntegrationEnabled } from '../lib/config';
 import { getCurrentBranch, getDefaultBranch, getMergeBase, isWipCommit } from '../lib/git-helpers';
@@ -76,7 +76,6 @@ export interface ConfigBindings {
 
 export interface ClaudeMdBindings {
   getActiveTaskId: typeof getActiveTaskId;
-  clearActiveTask: typeof clearActiveTask;
   createHelpers: (fileOps?: ConstructorParameters<typeof ClaudeMdHelpers>[0]) => ClaudeMdHelpers;
 }
 
@@ -177,7 +176,6 @@ export function createDefaultCommandDeps(): CommandDeps {
     },
     claudeMd: {
       getActiveTaskId,
-      clearActiveTask,
       createHelpers: (fileOps?: ConstructorParameters<typeof ClaudeMdHelpers>[0]) => new ClaudeMdHelpers(fileOps),
     },
     validation: {

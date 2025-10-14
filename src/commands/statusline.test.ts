@@ -137,21 +137,20 @@ describe('statusline', () => {
       const mockDeps = {
         execSync: mock(() => ''),
         existsSync: mock((path: string) => {
-          if (path === 'CLAUDE.md') return true;
-          if (path === '.claude/tasks/TASK_026.md') return true;
+          if (path.includes('CLAUDE.md')) return true;
+          if (path.includes('/spec.md')) return true;
           return false;
         }),
         readFileSync: mock((path: string) => {
-          if (path === 'CLAUDE.md') {
-            return '# Project\n\n## Active Task\n@.claude/tasks/TASK_026.md\n';
-          }
-          if (path === '.claude/tasks/TASK_026.md') {
+          if (path.includes('spec.md')) {
             return '# Refactor CLI Tool\n\nTask description...';
           }
           return '';
         }),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => 'TASK_026'),
+        getActiveSpecDirectory: mock(() => '/project/.claude/specs/026-refactor-cli-tool'),
       };
 
       const result = getActiveTask(mockDeps);
@@ -161,10 +160,12 @@ describe('statusline', () => {
     test('shows "No active task" when no_active_task.md is referenced', () => {
       const mockDeps = {
         execSync: mock(() => ''),
-        existsSync: mock((path: string) => path === 'CLAUDE.md'),
+        existsSync: mock((path: string) => path.includes('CLAUDE.md')),
         readFileSync: mock(() => '## Active Task\n@.claude/no_active_task.md\n'),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
       };
 
       const result = getActiveTask(mockDeps);
@@ -178,6 +179,8 @@ describe('statusline', () => {
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
       };
 
       const result = getActiveTask(mockDeps);
@@ -232,15 +235,12 @@ describe('statusline', () => {
           return '';
         }),
         existsSync: mock((path: string) => {
-          if (path === 'CLAUDE.md') return true;
-          if (path === '.claude/tasks/TASK_001.md') return true;
+          if (path.includes('CLAUDE.md')) return true;
+          if (path.includes('/spec.md')) return true;
           return false;
         }),
         readFileSync: mock((path: string) => {
-          if (path === 'CLAUDE.md') {
-            return '@.claude/tasks/TASK_001.md';
-          }
-          if (path === '.claude/tasks/TASK_001.md') {
+          if (path.includes('/spec.md')) {
             return '# Fix authentication bug';
           }
           return '';
@@ -253,6 +253,8 @@ describe('statusline', () => {
           },
         })),
         getCurrentBranch: mock((_cwd: string) => 'main'),
+        getActiveTaskId: mock(() => 'TASK_001'),
+        getActiveSpecDirectory: mock(() => '/project/.claude/specs/001-fix-authentication-bug'),
       };
 
       const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
@@ -282,6 +284,8 @@ describe('statusline', () => {
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
       };
 
       const result = generateStatusLine({}, mockDeps);
@@ -300,6 +304,8 @@ describe('statusline', () => {
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
       };
 
       const result = generateStatusLine({}, mockDeps);

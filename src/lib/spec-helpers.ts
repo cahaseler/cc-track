@@ -24,12 +24,18 @@ export interface SpecFileOperations {
   writeFileSync: typeof writeFileSync;
 }
 
+// Helper for testing - allows injecting readdirSync
+export function _readSpecDirs(specsDir: string): Array<{ name: string; isDirectory: () => boolean }> {
+  return readdirSync(specsDir, { withFileTypes: true }) as Array<{ name: string; isDirectory: () => boolean }>;
+}
+
 /**
  * Generate the next available task ID (e.g., "001", "002")
  */
 export function getNextTaskId(
   projectRoot: string,
   fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
+  readDirs: typeof _readSpecDirs = _readSpecDirs,
 ): string {
   const specsDir = join(projectRoot, '.claude', 'specs');
 
@@ -38,7 +44,7 @@ export function getNextTaskId(
   }
 
   // Find existing spec directories
-  const dirs = readdirSync(specsDir, { withFileTypes: true })
+  const dirs = readDirs(specsDir)
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => dirent.name);
 
@@ -137,15 +143,20 @@ export function updateMetadata(
 /**
  * Get the spec directory path for a given task ID
  */
-export function getSpecDirectory(projectRoot: string, taskId: string): string | null {
+export function getSpecDirectory(
+  projectRoot: string,
+  taskId: string,
+  fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
+  readDirs: typeof _readSpecDirs = _readSpecDirs,
+): string | null {
   const specsDir = join(projectRoot, '.claude', 'specs');
 
-  if (!existsSync(specsDir)) {
+  if (!fileOps.existsSync(specsDir)) {
     return null;
   }
 
   // Find directory matching the task ID pattern
-  const dirs = readdirSync(specsDir, { withFileTypes: true })
+  const dirs = readDirs(specsDir)
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => dirent.name);
 
@@ -290,14 +301,18 @@ export function generateFeatureName(title: string): string {
 /**
  * Get all spec directories in the project
  */
-export function getAllSpecDirectories(projectRoot: string): string[] {
+export function getAllSpecDirectories(
+  projectRoot: string,
+  fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
+  readDirs: typeof _readSpecDirs = _readSpecDirs,
+): string[] {
   const specsDir = join(projectRoot, '.claude', 'specs');
 
-  if (!existsSync(specsDir)) {
+  if (!fileOps.existsSync(specsDir)) {
     return [];
   }
 
-  return readdirSync(specsDir, { withFileTypes: true })
+  return readDirs(specsDir)
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => join(specsDir, dirent.name));
 }

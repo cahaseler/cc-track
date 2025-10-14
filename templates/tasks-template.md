@@ -3,11 +3,19 @@
 **Feature ID**: `[###]`
 **Branch**: `[###-feature-name]`
 **Prerequisites**: plan.md, spec.md
+**Input**: Design documents from `.claude/specs/[###-feature-name]/`
 
 ## Format: `[ID] [P?] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)
 - Include exact file paths in task descriptions
 - Tasks are numbered sequentially (T001, T002, etc.)
+
+## Path Conventions
+Tasks below assume standard project structure. Adjust based on plan.md:
+- **Single project**: `src/`, `tests/` at repository root
+- **Web app**: `backend/src/`, `frontend/src/`, separate `tests/` dirs
+- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
+- Always use exact paths from plan.md Project Structure section
 
 ## Task Execution Rules
 1. **TDD Order**: Tests MUST be written and MUST FAIL before implementation
@@ -127,6 +135,26 @@ Task: "Implement Project model in src/models/project.ts"
 - [ ] Dependencies are clearly documented
 
 ---
+
+## Task Generation Rules
+*Applied when generating tasks from design documents*
+
+1. **From Contracts** (if contracts/ directory exists):
+   - Each contract file → contract test task marked [P]
+   - Each endpoint → implementation task
+
+2. **From Data Model** (if data-model.md exists):
+   - Each entity → model creation task marked [P]
+   - Relationships → service layer tasks
+
+3. **From User Stories** (in spec.md):
+   - Each story → integration test marked [P]
+   - Quickstart scenarios → validation tasks
+
+4. **Ordering Strategy**:
+   - Setup → Tests → Models → Services → Endpoints → Polish
+   - Dependencies block parallel execution
+   - TDD order: Tests before implementation
 
 ## Implementation Notes
 

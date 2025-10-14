@@ -2,7 +2,6 @@
 import { Command } from 'commander';
 import { backlogCommand } from '../commands/backlog';
 import { completeTaskCommand } from '../commands/complete-task';
-import { createTaskFromIssueCommand } from '../commands/create-task-from-issue';
 import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
@@ -34,7 +33,6 @@ program.addCommand(setupCommandsCommand);
 program.addCommand(migrateCommand);
 program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
-program.addCommand(createTaskFromIssueCommand);
 program.addCommand(gitSessionCommand);
 program.addCommand(createPrepareCompletionCommand());
 program.addCommand(statuslineCommand);

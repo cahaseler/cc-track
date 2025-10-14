@@ -1,6 +1,6 @@
 import type { execSync } from 'node:child_process';
 import { Command } from 'commander';
-import type { clearActiveTask, getActiveTaskId } from '../lib/claude-md';
+import type { getActiveTaskId } from '../lib/claude-md';
 import type { getConfig, getGitHubConfig, isGitHubIntegrationEnabled } from '../lib/config';
 import type { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import type { pushCurrentBranch } from '../lib/github-helpers';
@@ -94,7 +94,6 @@ export interface CompleteTaskDeps {
   path: CommandDeps['path'];
   execSync: typeof execSync;
   getActiveTaskId: typeof getActiveTaskId;
-  clearActiveTask: typeof clearActiveTask;
   getConfig: typeof getConfig;
   getGitHubConfig: typeof getGitHubConfig;
   isGitHubIntegrationEnabled: typeof isGitHubIntegrationEnabled;
@@ -132,7 +131,6 @@ function mapCompleteTaskDeps(deps: CommandDeps): CompleteTaskDeps {
     path: deps.path,
     execSync: deps.childProcess.execSync,
     getActiveTaskId: deps.claudeMd.getActiveTaskId,
-    clearActiveTask: deps.claudeMd.clearActiveTask,
     getConfig: deps.config.getConfig,
     getGitHubConfig: deps.config.getGitHubConfig,
     isGitHubIntegrationEnabled: deps.config.isGitHubIntegrationEnabled,
@@ -411,15 +409,6 @@ function revertTaskChanges(projectRoot: string, state: CompleteTaskState, deps: 
     const noActiveTaskPath = deps.path.join(projectRoot, '.claude', 'no_active_task.md');
     deps.fs.writeFileSync(noActiveTaskPath, state.originalNoActiveTaskContent);
   }
-}
-
-function ensureCurrentFocusSection(taskContent: string, todayIso: string): string {
-  const focusSectionPattern = /## Current Focus\n[\s\S]*?(?=\n## |$)/;
-  if (focusSectionPattern.test(taskContent)) {
-    return taskContent.replace(focusSectionPattern, `## Current Focus\n\nTask completed on ${todayIso}\n`);
-  }
-
-  return `${taskContent.trim()}\n\n## Current Focus\n\nTask completed on ${todayIso}\n`;
 }
 
 function sanitizeCommitMessage(message: string): string {
@@ -726,7 +715,6 @@ export async function runCompleteTask(
   const warnings: string[] = [];
   const projectRoot = deps.cwd();
   const claudeDir = deps.path.join(projectRoot, '.claude');
-  const tasksDir = deps.path.join(claudeDir, 'tasks');
   const claudeMdPath = deps.path.join(projectRoot, 'CLAUDE.md');
   const noActiveTaskPath = deps.path.join(claudeDir, 'no_active_task.md');
 
@@ -790,91 +778,44 @@ export async function runCompleteTask(
 
   state.originalClaudeMdContent = deps.fs.readFileSync(claudeMdPath, 'utf-8');
 
-  // Try new spec-driven structure first
+  // Get active spec directory and metadata
   const activeSpecDir = deps.getActiveSpecDirectory(projectRoot, deps.specFileOps);
   const activeMetadata = activeSpecDir ? deps.getActiveMetadata(projectRoot, deps.specFileOps) : null;
 
-  let taskId: string;
-  let taskTitle: string;
-  let finalTaskContent: string;
-
-  if (activeSpecDir && activeMetadata) {
-    // New spec-driven structure
-    taskId = activeMetadata.task_id;
-
-    // Read title from spec.md
-    const specContent = deps.readSpecFile(activeSpecDir, 'spec.md', deps.specFileOps);
-    const titleMatch = specContent?.match(/^# (.+)$/m);
-    taskTitle = titleMatch ? titleMatch[1] : `Feature ${taskId}`;
-
-    // Check status
-    if (activeMetadata.status !== 'in_progress') {
-      warnings.push(`Task status is ${activeMetadata.status}, not in_progress - continuing anyway`);
-    }
-
-    // Update metadata to completed
-    const todayIso = deps.todayISO();
-    deps.updateMetadata(activeSpecDir, { status: 'completed', completed: todayIso }, deps.specFileOps);
-    state.updates.taskFile = 'metadata updated';
-    state.taskId = taskId;
-    state.taskTitle = taskTitle;
-
-    // Use spec content for GitHub workflow
-    finalTaskContent = specContent || '';
-  } else {
-    // Fall back to old task structure
-    const oldTaskId = deps.getActiveTaskId(projectRoot);
-    if (!oldTaskId) {
-      return buildFailureResult(state, {
-        messages: [
-          '## ❌ Task Completion Failed\n',
-          'Error: No active task found in CLAUDE.md\n',
-          'Ensure an active task is set before running `/complete-task`.',
-        ],
-        warnings,
-        error: 'No active task found in CLAUDE.md',
-      });
-    }
-
-    taskId = oldTaskId;
-    state.taskId = taskId;
-    const taskFilePath = deps.path.join(tasksDir, `${taskId}.md`);
-
-    if (!deps.fs.existsSync(taskFilePath)) {
-      return buildFailureResult(state, {
-        messages: [
-          '## ❌ Task Completion Failed\n',
-          `Error: Task file not found: ${taskFilePath}\n`,
-          'The task referenced in CLAUDE.md does not exist. Check the task file path.',
-        ],
-        warnings,
-        error: `Task file not found: ${taskFilePath}`,
-      });
-    }
-
-    const originalTaskContent = deps.fs.readFileSync(taskFilePath, 'utf-8');
-    state.originalTaskContent = originalTaskContent;
-
-    const titleMatch = originalTaskContent.match(/^# (.+)$/m);
-    taskTitle = titleMatch ? titleMatch[1] : taskId;
-    state.taskTitle = taskTitle;
-
-    if (!originalTaskContent.includes('**Status:** in_progress')) {
-      warnings.push('Task is not marked as in_progress, continuing anyway');
-    }
-
-    const todayIso = deps.todayISO();
-    let updatedTaskContent = originalTaskContent.replace(/\*\*Status:\*\* .+/, '**Status:** completed');
-    updatedTaskContent = ensureCurrentFocusSection(updatedTaskContent, todayIso);
-    deps.fs.writeFileSync(taskFilePath, updatedTaskContent);
-    state.updates.taskFile = 'updated';
-
-    // Use updated task content for GitHub workflow
-    finalTaskContent = updatedTaskContent;
+  if (!activeSpecDir || !activeMetadata) {
+    return buildFailureResult(state, {
+      messages: [
+        '## ❌ Task Completion Failed\n',
+        'Error: No active task found in CLAUDE.md\n',
+        'Ensure an active task is set before running `/complete-task`.',
+      ],
+      warnings,
+      error: 'No active task found in CLAUDE.md',
+    });
   }
 
-  deps.clearActiveTask(projectRoot);
-  state.updates.claudeMd = 'updated';
+  // Use spec-driven structure
+  const taskId = activeMetadata.task_id;
+
+  // Read title from spec.md
+  const specContent = deps.readSpecFile(activeSpecDir, 'spec.md', deps.specFileOps);
+  const titleMatch = specContent?.match(/^# (.+)$/m);
+  const taskTitle = titleMatch ? titleMatch[1] : `Feature ${taskId}`;
+
+  // Check status
+  if (activeMetadata.status !== 'in_progress') {
+    warnings.push(`Task status is ${activeMetadata.status}, not in_progress - continuing anyway`);
+  }
+
+  // Update metadata to completed
+  const todayIso = deps.todayISO();
+  deps.updateMetadata(activeSpecDir, { status: 'completed', completed: todayIso }, deps.specFileOps);
+  state.updates.taskFile = 'metadata updated';
+  state.taskId = taskId;
+  state.taskTitle = taskTitle;
+
+  // Use spec content for GitHub workflow
+  const finalTaskContent = specContent || '';
 
   if (deps.fs.existsSync(noActiveTaskPath)) {
     const originalNoActiveTaskContent = deps.fs.readFileSync(noActiveTaskPath, 'utf-8');
