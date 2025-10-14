@@ -86,6 +86,8 @@ interface CompleteTaskState extends CompleteTaskResultData {
   originalTaskContent?: string;
   originalClaudeMdContent?: string;
   originalNoActiveTaskContent?: string;
+  originalMetadataContent?: string; // For spec structure revert
+  activeSpecDir?: string; // Track which spec directory was being completed
 }
 
 export interface CompleteTaskDeps {
@@ -394,17 +396,19 @@ function buildSuccessMessages(state: CompleteTaskState, warnings: string[]): Com
 }
 
 function revertTaskChanges(projectRoot: string, state: CompleteTaskState, deps: CompleteTaskDeps): void {
-  if (state.originalTaskContent) {
-    const claudeDir = deps.path.join(projectRoot, '.claude');
-    const taskPath = deps.path.join(claudeDir, 'tasks', `${state.taskId}.md`);
-    deps.fs.writeFileSync(taskPath, state.originalTaskContent);
+  // Revert metadata for spec structure
+  if (state.originalMetadataContent && state.activeSpecDir) {
+    const metadataPath = deps.path.join(state.activeSpecDir, '.metadata.json');
+    deps.fs.writeFileSync(metadataPath, state.originalMetadataContent);
   }
 
+  // Restore CLAUDE.md (which contains the active spec reference)
   if (state.originalClaudeMdContent) {
     const claudeMdPath = deps.path.join(projectRoot, 'CLAUDE.md');
     deps.fs.writeFileSync(claudeMdPath, state.originalClaudeMdContent);
   }
 
+  // Revert no_active_task.md if it was updated
   if (state.originalNoActiveTaskContent) {
     const noActiveTaskPath = deps.path.join(projectRoot, '.claude', 'no_active_task.md');
     deps.fs.writeFileSync(noActiveTaskPath, state.originalNoActiveTaskContent);
@@ -794,6 +798,9 @@ export async function runCompleteTask(
     });
   }
 
+  // Store active spec directory for potential revert
+  state.activeSpecDir = activeSpecDir;
+
   // Use spec-driven structure
   const taskId = activeMetadata.task_id;
 
@@ -806,6 +813,10 @@ export async function runCompleteTask(
   if (activeMetadata.status !== 'in_progress') {
     warnings.push(`Task status is ${activeMetadata.status}, not in_progress - continuing anyway`);
   }
+
+  // Store original metadata content for potential revert
+  const metadataPath = deps.path.join(activeSpecDir, '.metadata.json');
+  state.originalMetadataContent = deps.fs.readFileSync(metadataPath, 'utf-8');
 
   // Update metadata to completed
   const todayIso = deps.todayISO();
@@ -846,6 +857,12 @@ export async function runCompleteTask(
     revertTaskChanges(projectRoot, state, deps);
     return buildFailureResult(state, failureResult);
   }
+
+  // Clear active spec reference from CLAUDE.md on successful completion
+  let updatedClaudeMd = deps.fs.readFileSync(claudeMdPath, 'utf-8');
+  updatedClaudeMd = updatedClaudeMd.replace(/@\.claude\/specs\/\d+-[^/]+\/spec\.md/, '@.claude/no_active_task.md');
+  deps.fs.writeFileSync(claudeMdPath, updatedClaudeMd);
+  state.updates.claudeMd = 'cleared active spec';
 
   const messages = buildSuccessMessages(state, warnings);
   return buildSuccessResult(state, messages);
