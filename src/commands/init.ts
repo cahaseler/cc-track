@@ -77,18 +77,14 @@ The \`.claude/track.config.json\` file has been created with all features disabl
 ### Current minimal config (already created):
 \`\`\`json
 {
-  "capture_plan": false,
-  "stop_review": false,
   "edit_validation": false,
-  "pre_tool_validation": false,
-  "pre_compact": false,
-  "post_compact": false,
-  "statusline": false,
+  "pre_tool_validation": true,
+  "statusline": true,
   "git_branching": false,
   "branch_protection": false,
   "code_review": false,
   "api_timer": {
-    "display": "hide"
+    "display": "sonnet-only"
   },
   "github_integration": {
     "enabled": false,
@@ -105,28 +101,28 @@ The \`.claude/track.config.json\` file has been created with all features disabl
 
 ### Configure features based on environment and needs:
 
-1. **Core Task Management System**:
-   - Explain: "The primary functionality of cc-track involves capturing the output of planning mode to generate TASKs, and then validating changes made against those tasks. This requires at minimum a local git repository."
+1. **Core Workflow - Spec-Driven Development**:
+   - Explain: "cc-track uses a spec-driven workflow with explicit commands:"
+     - \`/specify\` - Start a new task with user-facing requirements
+     - \`/clarify\` - Resolve ambiguities in specifications
+     - \`/plan\` - Create technical design from spec
+     - \`/tasks\` - Generate implementation task breakdown
+     - \`/complete-task\` - Finalize and merge completed work
 
    **If git is NOT available**:
    - Ask: "This doesn't appear to be a git repository. Would you like me to set up git for task tracking?"
    - If yes: run \`git init\`, help configure user.name and user.email
 
    **If git IS available**:
-   - Ask: "Would you like to enable the core task management features (plan capture and change validation)?"
-   - If yes: enable \`capture_plan: true\` and \`stop_review: true\`
-
-   **Additional git features**:
+   - Explain: "Use /specify to start new tasks, which creates branches and specs automatically"
    - Ask: "Would you like automatic git branch creation/merging for each task?"
    - If yes: enable \`git_branching: true\`
-
-   - If the user doesn't want to set up git or enable the task management system, they can still use the edit validation feature, but most other features won't work.
 
 2. **GitHub Integration** (if git enabled):
    **If GitHub CLI is authenticated and remote exists**:
    - Ask: "Would you like GitHub integration for automatic issue and PR management?"
    - If yes, enable \`github_integration.enabled: true\` and ask:
-     - "Autoatically create GitHub issues for each task?" → \`auto_create_issues: true\`
+     - "Automatically create GitHub issues for each task?" → \`auto_create_issues: true\`
      - "Link branches to GitHub issues?" → \`use_issue_branches: true\`
      - "Create PRs instead of direct merges?" → \`auto_create_prs: true\`
 
@@ -135,10 +131,10 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - If no gh auth: "Would you like help setting up GitHub CLI? (run \`gh auth login\`)"
    - If no remote: "Would you like help adding a GitHub remote repository?"
 
-3. **Optional Features**:
+3. **Development Features**:
 
    **Edit Validation** (if TypeScript/JavaScript project detected):
-   - Ask: "Would you like real-time validation when editing files? This gives Claude instant feedback on lint or type issues to help fix errors as they happen."
+   - Ask: "Would you like real-time validation when editing files? This gives Claude instant feedback on lint or type issues."
    - If yes: enable \`edit_validation: true\`
    - Detect which linter is available:
      - If \`biome.json\` exists or \`bunx biome --version\` works: Configure for Biome
@@ -163,21 +159,17 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - If lint/typecheck commands unclear, ask: "What command runs your linter? What command runs type checking?"
 
    **Pre-Tool Validation**:
-   - Explain: "Pre-tool validation includes task file protection (prevents marking tasks complete without using /complete-task) and optional branch protection."
-   - Ask: "Would you like to enable pre-tool validation to protect task files from improper edits?"
+   - Explain: "Pre-tool validation protects task files from improper edits (requires using /complete-task command)."
+   - Ask: "Would you like to enable pre-tool validation?"
    - If yes: enable \`pre_tool_validation: true\`
 
    **Branch Protection** (if git enabled):
-   - Ask: "Would you like to block Claude from editing files directly on the main/master branch? This enforces a feature branch workflow."
+   - Ask: "Would you like to block Claude from editing files directly on the main/master branch? This enforces feature branch workflow."
    - If yes: enable \`branch_protection: true\`
    - Then ask: "Which branches should be protected? (default: main, master)"
    - Ask: "Should Claude be allowed to edit gitignored files on protected branches? (default: yes)"
 
-   **Context Preservation**:
-   - Ask: "Would you like automatic task documentation updates before compaction? This triggers an attempt to update the Task file before compaction to preserve progress."
-   - If yes: enable \`pre_compact: true\` and \`post_compact: true\`
-
-   **Code Review** (if task management is enabled):
+   **Code Review**:
    - Explain: "Code review analyzes changes before task completion to review against requirements, check for security issues, and assess code quality."
    - Ask: "Would you like automatic code review before completing tasks?"
    - If yes:
@@ -202,9 +194,9 @@ The \`.claude/track.config.json\` file has been created with all features disabl
    - If available:
      - Ask: "I see you have the Private Journal MCP available. Would you like cc-track to use it for preserving context and insights across sessions?"
      - If yes: enable \`private_journal: true\`
-     - Explain: "This will enhance context preservation after compaction and help track technical learnings."
+     - Explain: "This will enhance context preservation and help track technical learnings."
    - If not available:
-     - Inform: "The Private Journal MCP could enhance cc-track's context preservation capabilities. You can install it from: https://github.com/modelcontextprotocol/servers (look for 'private-journal')"
+     - Inform: "The Private Journal MCP could enhance cc-track's context preservation. Install from: https://github.com/modelcontextprotocol/servers"
      - Ask: "Would you like to configure cc-track to use it once installed?"
      - If yes: enable \`private_journal: true\` with a note that it will activate once the MCP is available
 
@@ -274,52 +266,21 @@ Start with this base structure:
 
 Then populate the hooks object based on enabled features:
 
-### If capture_plan is enabled:
+### If edit_validation is enabled:
 Add to hooks object:
 \`\`\`json
 "PostToolUse": [
   {
-    "matcher": "ExitPlanMode",
+    "matcher": "Edit|Write|MultiEdit",
     "hooks": [
       {
         "type": "command",
         "command": "npx cc-track hook",
-        "timeout": 30000
+        "timeout": 5000
       }
     ]
   }
 ]
-\`\`\`
-
-### If stop_review is enabled:
-Add to hooks object:
-\`\`\`json
-"Stop": [
-  {
-    "hooks": [
-      {
-        "type": "command",
-        "command": "npx cc-track hook",
-        "timeout": 30000
-      }
-    ]
-  }
-]
-\`\`\`
-
-### If edit_validation is enabled:
-Add to PostToolUse array (merge with capture_plan if both enabled):
-\`\`\`json
-{
-  "matcher": "Edit|Write|MultiEdit",
-  "hooks": [
-    {
-      "type": "command",
-      "command": "npx cc-track hook",
-      "timeout": 5000
-    }
-  ]
-}
 \`\`\`
 
 ### If pre_tool_validation OR branch_protection is enabled:
@@ -339,23 +300,6 @@ Add to hooks object:
 ]
 \`\`\`
 
-### If pre_compact is enabled:
-Add to hooks object:
-\`\`\`json
-"PreCompact": [
-  {
-    "hooks": [
-      {
-        "type": "command",
-        "command": "npx cc-track hook",
-        "timeout": 60000
-      }
-    ]
-  }
-]
-\`\`\`
-
-
 ### If statusline is enabled:
 Add statusLine property at root level:
 \`\`\`json
@@ -372,16 +316,6 @@ Example complete settings.json with all features:
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx cc-track hook",
-            "timeout": 30000
-          }
-        ]
-      },
-      {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
@@ -394,44 +328,12 @@ Example complete settings.json with all features:
     ],
     "PreToolUse": [
       {
-        "matcher": "WebSearch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx cc-track hook",
-            "timeout": 5000
-          }
-        ]
-      },
-      {
         "matcher": "Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
             "command": "npx cc-track hook",
             "timeout": 15000
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx cc-track hook",
-            "timeout": 30000
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx cc-track hook",
-            "timeout": 60000
           }
         ]
       }
