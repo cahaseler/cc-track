@@ -1,0 +1,7 @@
+{
+  "task_id": "059",
+  "feature_name": "handle-second-runs-of-complete-task-command",
+  "branch": "(.*?)",
+  "status": "in_progress",
+  "started": "2025-10-14T18:03:29.848Z"
+}

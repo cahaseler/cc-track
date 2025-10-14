@@ -1,0 +1,7 @@
+{
+  "task_id": "099",
+  "feature_name": "migrate-from-claude-code-sdk-to-claude-agent-sdk",
+  "branch": "099-migrate-from-claude-code-sdk-to-claude-agent-sdk",
+  "status": "in_progress",
+  "started": "2025-10-14T18:03:29.822Z"
+}

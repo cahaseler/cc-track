@@ -7,6 +7,7 @@ import { gitSessionCommand } from '../commands/git-session';
 // Import commands
 import { hookCommand } from '../commands/hook';
 import { initCommand } from '../commands/init';
+import { migrateCommand } from '../commands/migrate';
 import { parseLogsCommand } from '../commands/parse-logs';
 import { createPrepareCompletionCommand } from '../commands/prepare-completion';
 import { setupCommandsCommand } from '../commands/setup-commands';
@@ -30,6 +31,7 @@ program.addCommand(hookCommand);
 program.addCommand(initCommand);
 program.addCommand(setupTemplatesCommand);
 program.addCommand(setupCommandsCommand);
+program.addCommand(migrateCommand);
 program.addCommand(backlogCommand);
 program.addCommand(completeTaskCommand);
 program.addCommand(createTaskFromIssueCommand);

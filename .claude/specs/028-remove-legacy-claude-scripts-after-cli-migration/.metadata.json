@@ -1,0 +1,7 @@
+{
+  "task_id": "028",
+  "feature_name": "remove-legacy-claude-scripts-after-cli-migration",
+  "branch": "028-remove-legacy-claude-scripts-after-cli-migration",
+  "status": "in_progress",
+  "started": "2025-10-14T18:03:29.812Z"
+}

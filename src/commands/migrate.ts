@@ -1,10 +1,8 @@
 // ABOUTME: Command to migrate old cc-track task structure to new spec-driven structure
 // ABOUTME: Converts tasks/TASK_XXX.md files to specs/XXX-feature-name/ directories with spec/plan/tasks/progress files
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from 'node:fs';
-import { join } from 'node:path';
+import { Command } from 'commander';
 import { ClaudeMdHelpers } from '../lib/claude-md';
-import { createLogger } from '../lib/logger';
 import type { SpecMetadata } from '../lib/spec-helpers';
 import {
   createMetadata,
@@ -15,8 +13,17 @@ import {
   createTasksFile,
   generateFeatureName,
 } from '../lib/spec-helpers';
+import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
+import { applyCommandResult, handleCommandException, resolveCommandDeps } from './context';
 
-const logger = createLogger('migrate');
+export type MigrateDeps = Pick<CommandDeps, 'console' | 'process' | 'fs' | 'path' | 'logger'>;
+
+export interface MigrateResultData {
+  migratedCount: number;
+  failedCount: number;
+  backupCreated: boolean;
+  claudeMdUpdated: boolean;
+}
 
 interface OldTaskMetadata {
   taskId: string;
@@ -34,10 +41,10 @@ function extractOldTaskMetadata(content: string, taskId: string): OldTaskMetadat
   const titleMatch = content.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1] : `Task ${taskId}`;
 
-  const branchMatch = content.match(/<!--\s*branch:\s*([^-]+)\s*-->/);
+  const branchMatch = content.match(/<!--\s*branch:\s*([^\s-]+)\s*-->/);
   const githubIssueMatch = content.match(/<!--\s*github_issue:\s*(\d+)\s*-->/);
-  const githubUrlMatch = content.match(/<!--\s*github_url:\s*([^-]+)\s*-->/);
-  const issueBranchMatch = content.match(/<!--\s*issue_branch:\s*([^-]+)\s*-->/);
+  const githubUrlMatch = content.match(/<!--\s*github_url:\s*([^\s-]+)\s*-->/);
+  const issueBranchMatch = content.match(/<!--\s*issue_branch:\s*([^\s-]+)\s*-->/);
 
   return {
     taskId,
@@ -152,6 +159,7 @@ function migrateTask(
   projectRoot: string,
   taskId: string,
   oldContent: string,
+  logger: ReturnType<MigrateDeps['logger']>,
 ): { success: boolean; featureName: string; error?: string } {
   try {
     // Extract metadata from old task
@@ -207,108 +215,164 @@ function migrateTask(
 }
 
 /**
- * Main migrate command
+ * Main migrate function
  */
-export async function migrateCommand(projectRoot = process.cwd()): Promise<void> {
-  console.log('🚅 CC-Track Migration Tool');
-  console.log('Converting old task structure to spec-driven workflow...\n');
+export function runMigrate(deps: MigrateDeps): CommandResult<MigrateResultData> {
+  const logger = deps.logger('migrate-command');
+  const messages: string[] = [];
 
-  const tasksDir = join(projectRoot, '.claude', 'tasks');
-  const backupDir = join(projectRoot, '.claude', 'tasks.backup');
+  try {
+    const projectRoot = deps.process.cwd();
+    const tasksDir = deps.path.join(projectRoot, '.claude', 'tasks');
+    const backupDir = deps.path.join(projectRoot, '.claude', 'tasks.backup');
 
-  // Check if old tasks directory exists
-  if (!existsSync(tasksDir)) {
-    console.log('❌ No tasks directory found. Nothing to migrate.');
-    return;
-  }
+    messages.push('🚅 CC-Track Migration Tool');
+    messages.push('Converting old task structure to spec-driven workflow...');
+    messages.push('');
 
-  // Find all old task files
-  const files = readdirSync(tasksDir).filter((f) => f.match(/^TASK_\d{3}\.md$/));
-
-  if (files.length === 0) {
-    console.log('✅ No old task files found. Already using new structure!');
-    return;
-  }
-
-  console.log(`Found ${files.length} task(s) to migrate:\n`);
-
-  // Migrate each task
-  const results: Array<{ taskId: string; success: boolean; featureName: string; error?: string }> = [];
-
-  for (const file of files) {
-    const taskId = file.match(/^TASK_(\d{3})\.md$/)?.[1];
-    if (!taskId) continue;
-
-    const oldPath = join(tasksDir, file);
-    const oldContent = readFileSync(oldPath, 'utf-8');
-
-    const result = migrateTask(projectRoot, taskId, oldContent);
-    results.push({ taskId, ...result });
-
-    if (result.success) {
-      console.log(`  ✅ TASK_${taskId} -> specs/${taskId}-${result.featureName}/`);
-    } else {
-      console.log(`  ❌ TASK_${taskId} failed: ${result.error}`);
+    // Check if old tasks directory exists
+    if (!deps.fs.existsSync(tasksDir)) {
+      messages.push('❌ No tasks directory found. Nothing to migrate.');
+      return {
+        success: true,
+        messages,
+        data: { migratedCount: 0, failedCount: 0, backupCreated: false, claudeMdUpdated: false },
+      };
     }
-  }
 
-  // Check for constitution.md
-  const constitutionPath = join(projectRoot, '.claude', 'constitution.md');
-  if (!existsSync(constitutionPath)) {
-    console.log('\n📋 Constitution file not found.');
-    console.log('Consider creating one with `/constitution` command for project guardrails.');
-  }
+    // Find all old task files
+    const files = deps.fs.readdirSync(tasksDir).filter((f: string) => f.match(/^TASK_\d{3}\.md$/));
 
-  // Backup old tasks directory
-  console.log('\n📦 Creating backup of old tasks...');
-  if (existsSync(backupDir)) {
-    console.log('  ⚠️  Backup directory already exists, skipping backup');
-  } else {
-    mkdirSync(backupDir, { recursive: true });
+    if (files.length === 0) {
+      messages.push('✅ No old task files found. Already using new structure!');
+      return {
+        success: true,
+        messages,
+        data: { migratedCount: 0, failedCount: 0, backupCreated: false, claudeMdUpdated: false },
+      };
+    }
+
+    messages.push(`Found ${files.length} task(s) to migrate:`);
+    messages.push('');
+
+    // Migrate each task
+    const results: Array<{ taskId: string; success: boolean; featureName: string; error?: string }> = [];
+
     for (const file of files) {
-      const oldPath = join(tasksDir, file);
-      const backupPath = join(backupDir, file);
-      renameSync(oldPath, backupPath);
-    }
-    console.log(`  ✅ Old tasks backed up to .claude/tasks.backup/`);
-  }
+      const taskId = file.match(/^TASK_(\d{3})\.md$/)?.[1];
+      if (!taskId) continue;
 
-  // Update CLAUDE.md if there's an active task
-  const claudeMdHelpers = new ClaudeMdHelpers();
-  const activeTaskId = claudeMdHelpers.getActiveTaskId(projectRoot);
+      const oldPath = deps.path.join(tasksDir, file);
+      const oldContent = deps.fs.readFileSync(oldPath, 'utf-8');
 
-  if (activeTaskId) {
-    const taskNum = activeTaskId.match(/\d{3}/)?.[0];
-    if (taskNum) {
-      const migratedTask = results.find((r) => r.taskId === taskNum);
-      if (migratedTask?.success) {
-        const newPath = `.claude/specs/${taskNum}-${migratedTask.featureName}/spec.md`;
-        claudeMdHelpers.setActiveTask(projectRoot, newPath);
-        console.log(`\n✅ Updated CLAUDE.md active task reference to: ${newPath}`);
+      const result = migrateTask(projectRoot, taskId, oldContent, logger);
+      results.push({ taskId, ...result });
+
+      if (result.success) {
+        messages.push(`  ✅ TASK_${taskId} -> specs/${taskId}-${result.featureName}/`);
+      } else {
+        messages.push(`  ❌ TASK_${taskId} failed: ${result.error}`);
       }
     }
-  }
 
-  // Summary
-  const successful = results.filter((r) => r.success).length;
-  const failed = results.length - successful;
+    // Check for constitution.md
+    const constitutionPath = deps.path.join(projectRoot, '.claude', 'constitution.md');
+    if (!deps.fs.existsSync(constitutionPath)) {
+      messages.push('');
+      messages.push('📋 Constitution file not found.');
+      messages.push('Consider creating one with `/constitution` command for project guardrails.');
+    }
 
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`Migration complete: ${successful} successful, ${failed} failed`);
+    // Backup old tasks directory
+    messages.push('');
+    messages.push('📦 Creating backup of old tasks...');
+    let backupCreated = false;
 
-  if (successful > 0) {
-    console.log('\nNext steps:');
-    console.log('1. Review migrated specs in .claude/specs/');
-    console.log('2. Run `/clarify` on each spec to refine requirements');
-    console.log('3. Run `/plan` to add technical design');
-    console.log('4. Run `/tasks` to generate task breakdowns');
+    if (deps.fs.existsSync(backupDir)) {
+      messages.push('  ⚠️  Backup directory already exists, skipping backup');
+    } else {
+      deps.fs.mkdirSync(backupDir, { recursive: true });
+      for (const file of files) {
+        const oldPath = deps.path.join(tasksDir, file);
+        const backupPath = deps.path.join(backupDir, file);
+        // Copy file to backup, then remove original
+        const content = deps.fs.readFileSync(oldPath, 'utf-8');
+        deps.fs.writeFileSync(backupPath, content);
+        deps.fs.unlinkSync(oldPath);
+      }
+      messages.push('  ✅ Old tasks backed up to .claude/tasks.backup/');
+      backupCreated = true;
+    }
+
+    // Update CLAUDE.md if there's an active task
+    const claudeMdHelpers = new ClaudeMdHelpers();
+    const activeTaskId = claudeMdHelpers.getActiveTaskId(projectRoot);
+    let claudeMdUpdated = false;
+
+    if (activeTaskId) {
+      const taskNum = activeTaskId.match(/\d{3}/)?.[0];
+      if (taskNum) {
+        const migratedTask = results.find((r) => r.taskId === taskNum);
+        if (migratedTask?.success) {
+          const newPath = `.claude/specs/${taskNum}-${migratedTask.featureName}/spec.md`;
+          claudeMdHelpers.setActiveTask(projectRoot, newPath);
+          messages.push('');
+          messages.push(`✅ Updated CLAUDE.md active task reference to: ${newPath}`);
+          claudeMdUpdated = true;
+        }
+      }
+    }
+
+    // Summary
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.length - successful;
+
+    messages.push('');
+    messages.push('='.repeat(60));
+    messages.push(`Migration complete: ${successful} successful, ${failed} failed`);
+
+    if (successful > 0) {
+      messages.push('');
+      messages.push('Next steps:');
+      messages.push('1. Review migrated specs in .claude/specs/');
+      messages.push('2. Run `/clarify` on each spec to refine requirements');
+      messages.push('3. Run `/plan` to add technical design');
+      messages.push('4. Run `/tasks` to generate task breakdowns');
+    }
+
+    return {
+      success: true,
+      messages,
+      data: {
+        migratedCount: successful,
+        failedCount: failed,
+        backupCreated,
+        claudeMdUpdated,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Migration failed', { error: message });
+    return {
+      success: false,
+      error: `Migration failed: ${message}`,
+      exitCode: 1,
+    };
   }
 }
 
-// CLI execution
-if (require.main === module) {
-  migrateCommand().catch((error) => {
-    console.error('Migration failed:', error);
-    process.exit(1);
-  });
+export function createMigrateCommand(overrides?: PartialCommandDeps): Command {
+  return new Command('migrate')
+    .description('Convert old task structure to spec-driven workflow')
+    .action(async () => {
+      const deps = resolveCommandDeps(overrides);
+      try {
+        const result = runMigrate(deps);
+        applyCommandResult(result, deps);
+      } catch (error) {
+        handleCommandException(error, deps);
+      }
+    });
 }
+
+export const migrateCommand = createMigrateCommand();
