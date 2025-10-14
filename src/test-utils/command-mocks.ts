@@ -456,6 +456,22 @@ export function createMockCompleteTaskDeps(initialFiles?: Record<string, string>
   const execCommands: string[] = [];
   let claudeCleared = false;
 
+  // Mock spec file operations
+  const specFileOps = {
+    existsSync: (targetPath: string) => files.has(targetPath),
+    mkdirSync: mock(() => {}),
+    readFileSync: (targetPath: string) => {
+      const content = files.get(targetPath);
+      if (content === undefined) {
+        throw new Error(`File not found: ${targetPath}`);
+      }
+      return content;
+    },
+    writeFileSync: (targetPath: string, value: string | NodeJS.ArrayBufferView) => {
+      files.set(targetPath, value.toString());
+    },
+  };
+
   const baseDeps: CompleteTaskDeps = {
     cwd: () => '/project',
     fs: {
@@ -531,6 +547,13 @@ export function createMockCompleteTaskDeps(initialFiles?: Record<string, string>
     })),
     todayISO: () => '2025-01-01',
     logger: createMockLogger(),
+    // Spec-driven workflow helpers
+    getActiveSpecDirectory: mock(() => null), // Default: no spec directory (old structure)
+    getActiveMetadata: mock(() => null),
+    getSpecDirectory: mock(() => null),
+    readSpecFile: mock(() => null),
+    updateMetadata: mock(() => {}),
+    specFileOps,
   } satisfies CompleteTaskDeps;
 
   let deps = baseDeps;

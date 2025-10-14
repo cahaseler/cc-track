@@ -51,10 +51,12 @@ describe('config', () => {
     test('returns expected values for default hooks', () => {
       // Test with a non-existent config path to force default values
       const nonExistentPath = '/tmp/nonexistent/config.json';
-      expect(isHookEnabled('capture_plan', nonExistentPath)).toBe(true);
-      expect(isHookEnabled('pre_compact', nonExistentPath)).toBe(true);
-      expect(isHookEnabled('stop_review', nonExistentPath)).toBe(true);
+      // Deprecated hooks are disabled by default
+      expect(isHookEnabled('capture_plan', nonExistentPath)).toBe(false);
+      expect(isHookEnabled('pre_compact', nonExistentPath)).toBe(false);
+      expect(isHookEnabled('stop_review', nonExistentPath)).toBe(false);
       expect(isHookEnabled('edit_validation', nonExistentPath)).toBe(false); // Disabled by default
+      expect(isHookEnabled('pre_tool_validation', nonExistentPath)).toBe(true); // Enabled by default
     });
 
     test('returns expected values for features with defaults', () => {
