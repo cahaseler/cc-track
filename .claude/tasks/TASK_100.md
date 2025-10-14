@@ -90,7 +90,7 @@ in_progress
 Valid status values: `planning`, `in_progress`, `blocked`, `completed`
 
 ## Current Focus
-Defining architectural decisions for spec-driven workflow integration with cc-track.
+Refining constitution template design and its relationship to existing cc-track context files.
 
 ## Recent Progress
 - **2025-10-14**: Brainstorming session to define workflow architecture
@@ -101,6 +101,13 @@ Defining architectural decisions for spec-driven workflow integration with cc-tr
   - Clarified that constitution provides prescriptive constraints vs descriptive patterns (system_patterns.md) or historical records (decision_log.md)
   - Confirmed cc-track will wrap spec-kit prompts with git/github management, hooks, validation, and tracking
   - Determined constitution template should include: Technical Constraints, Quality Standards, Architectural Guardrails
+  - Refined constitution design: will be imported by CLAUDE.md, explicitly checked during `/plan`, serves as pre-emptive guardrails
+  - Distinguished constitution role from existing context files:
+    - system_patterns.md = descriptive patterns ("Here's how we do X")
+    - decision_log.md = historical record ("We decided Y because Z")
+    - constitution.md = prescriptive constraints ("You MUST NOT do X unless justified")
+  - Constitution will complement rather than replace existing context files
+  - User projects (non-meta) will have their own constitution specific to that project's needs
 
 ## Next Steps
 1. Review spec-kit templates for structure and content
