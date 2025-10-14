@@ -1,3 +1,10 @@
+# [2.10.0](https://github.com/cahaseler/cc-track/compare/v2.9.0...v2.10.0) (2025-10-14)
+
+
+### Features
+
+* complete 100 - Feature Specification: TASK_100: Create Templates for Spec-Driven Workflow ([#146](https://github.com/cahaseler/cc-track/issues/146)) ([d3e3449](https://github.com/cahaseler/cc-track/commit/d3e344935add25452354d61b4e7a4197cca50919))
+
 # [2.9.0](https://github.com/cahaseler/cc-track/compare/v2.8.0...v2.9.0) (2025-10-13)
 
 
