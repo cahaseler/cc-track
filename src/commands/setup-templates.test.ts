@@ -109,11 +109,9 @@ describe('runSetupTemplates', () => {
     const claudeDir = path.join('/project', '.claude');
     expect(deps.directories.has(claudeDir)).toBeTrue();
 
-    // Check that tasks and plans directories are created
-    const tasksDir = path.join(claudeDir, 'tasks');
-    const plansDir = path.join(claudeDir, 'plans');
-    expect(deps.directories.has(tasksDir)).toBeTrue();
-    expect(deps.directories.has(plansDir)).toBeTrue();
+    // Check that specs directory is created (new spec-driven workflow structure)
+    const specsDir = path.join(claudeDir, 'specs');
+    expect(deps.directories.has(specsDir)).toBeTrue();
 
     for (const filename of Object.keys(embeddedTemplates)) {
       const targetPath = filename === 'CLAUDE.md' ? path.join('/project', filename) : path.join(claudeDir, filename);

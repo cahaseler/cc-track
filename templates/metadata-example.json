@@ -1,0 +1,40 @@
+{
+  "_comment": "Example .metadata.json structure for cc-track spec directories",
+  "_usage": "This file is automatically created in .claude/specs/NNN-feature-name/ when using /specify or /migrate commands",
+
+  "task_id": "001",
+  "_task_id_description": "REQUIRED - Numeric ID matching the spec directory prefix (e.g., '001' for '001-feature-name/')",
+
+  "feature_name": "example-feature",
+  "_feature_name_description": "REQUIRED - Kebab-case feature name matching the spec directory name",
+
+  "branch": "001-example-feature",
+  "_branch_description": "REQUIRED - Git branch name for this feature (usually matches directory name)",
+
+  "status": "in_progress",
+  "_status_description": "REQUIRED - Current status of the feature. Valid values: 'draft', 'in_progress', 'completed'",
+  "_status_values": {
+    "draft": "Specification phase - requirements being defined via /specify and /clarify",
+    "in_progress": "Implementation phase - tasks being executed",
+    "completed": "Feature complete - all validation passed, ready for merge"
+  },
+
+  "started": "2025-01-15T10:30:00.000Z",
+  "_started_description": "REQUIRED - ISO 8601 timestamp when feature work began (set by /specify or /migrate)",
+
+  "completed": "2025-01-20T14:45:00.000Z",
+  "_completed_description": "OPTIONAL - ISO 8601 timestamp when feature was completed (set by /complete-task). Omit if not completed.",
+
+  "github": {
+    "issue": 123,
+    "url": "https://github.com/owner/repo/issues/123"
+  },
+  "_github_description": "OPTIONAL - GitHub integration data. Omit entire 'github' object if not using GitHub integration.",
+  "_github_fields": {
+    "issue": "GitHub issue number linked to this feature",
+    "url": "Full URL to the GitHub issue"
+  },
+
+  "notes": "Optional freeform notes about the feature. Can be multiline string.",
+  "_notes_description": "OPTIONAL - Any additional context or notes about the feature. Omit if not needed."
+}

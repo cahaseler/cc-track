@@ -30,20 +30,13 @@ export function runSetupTemplates(deps: SetupTemplatesDeps): CommandResult<Setup
       messages.push('✅ Created .claude directory');
     }
 
-    // Create required subdirectories
-    const tasksDir = deps.path.join(targetDir, 'tasks');
-    const plansDir = deps.path.join(targetDir, 'plans');
+    // Create required subdirectories for spec-driven workflow
+    const specsDir = deps.path.join(targetDir, 'specs');
 
-    if (!deps.fs.existsSync(tasksDir)) {
-      deps.fs.mkdirSync(tasksDir, { recursive: true });
-      logger.info('Created tasks directory', { path: tasksDir });
-      messages.push('✅ Created .claude/tasks directory');
-    }
-
-    if (!deps.fs.existsSync(plansDir)) {
-      deps.fs.mkdirSync(plansDir, { recursive: true });
-      logger.info('Created plans directory', { path: plansDir });
-      messages.push('✅ Created .claude/plans directory');
+    if (!deps.fs.existsSync(specsDir)) {
+      deps.fs.mkdirSync(specsDir, { recursive: true });
+      logger.info('Created specs directory', { path: specsDir });
+      messages.push('✅ Created .claude/specs directory');
     }
 
     const timestamp = deps.time.now().getTime();

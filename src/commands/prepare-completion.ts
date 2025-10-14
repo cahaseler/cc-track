@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { getActiveTaskId } from '../lib/claude-md';
@@ -14,6 +14,7 @@ import {
 import { truncateGitDiff } from '../lib/diff-truncator';
 import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../lib/git-helpers';
 import { createLogger } from '../lib/logger';
+import { getActiveSpecDirectory } from '../lib/spec-helpers';
 import { type PreparationResult, runValidationChecks } from '../lib/validation';
 import type { CommandResult, PartialCommandDeps } from './context';
 import { applyCommandResult, handleCommandException, isCommandSuccess, resolveCommandDeps } from './context';
@@ -25,9 +26,11 @@ export interface PrepareCompletionDeps {
     mkdirSync: typeof mkdirSync;
     readFileSync: typeof readFileSync;
     readdirSync: typeof readdirSync;
+    writeFileSync: typeof writeFileSync;
   };
   performCodeReview?: typeof performCodeReview;
   getActiveTaskId?: typeof getActiveTaskId;
+  getActiveSpecDirectory?: typeof getActiveSpecDirectory;
   isCodeReviewEnabled?: typeof isCodeReviewEnabled;
   getCodeReviewTool?: typeof getCodeReviewTool;
   getConfig?: typeof getConfig;
@@ -54,9 +57,10 @@ export async function runCodeReview(
 ): Promise<CommandResult<CodeReviewResultData>> {
   const {
     execSync: exec = execSync,
-    fileOps = { existsSync, mkdirSync, readFileSync, readdirSync },
+    fileOps = { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync },
     performCodeReview: performReview = performCodeReview,
     getActiveTaskId: getTaskId = getActiveTaskId,
+    getActiveSpecDirectory: getSpecDir = getActiveSpecDirectory,
     isCodeReviewEnabled: isReviewEnabled = isCodeReviewEnabled,
     getCodeReviewTool: getReviewTool = getCodeReviewTool,
     getCurrentBranch: getCurrent = getCurrentBranch,
@@ -99,13 +103,24 @@ export async function runCodeReview(
         messages.push(`This may take up to ${timeout} minutes for thorough analysis.\n`);
 
         try {
-          // Get task details
-          const taskFilePath = join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
-          const taskContent = fileOps.readFileSync(taskFilePath, 'utf-8');
+          // Get task details - check for new spec structure first
+          const activeSpecDir = getSpecDir(projectRoot, fileOps);
+          let taskContent: string;
+          let taskTitle: string;
 
-          // Extract task title
-          const titleMatch = taskContent.match(/^# (.+)$/m);
-          const taskTitle = titleMatch ? titleMatch[1] : taskId;
+          if (activeSpecDir) {
+            // New spec-driven structure - pass folder path to reviewer
+            const specMdPath = join(activeSpecDir, 'spec.md');
+            taskContent = fileOps.readFileSync(specMdPath, 'utf-8');
+            const titleMatch = taskContent.match(/^# (.+)$/m);
+            taskTitle = titleMatch ? titleMatch[1] : `Feature ${taskId}`;
+          } else {
+            // Old task structure - read from .claude/tasks/
+            const taskFilePath = join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
+            taskContent = fileOps.readFileSync(taskFilePath, 'utf-8');
+            const titleMatch = taskContent.match(/^# (.+)$/m);
+            taskTitle = titleMatch ? titleMatch[1] : taskId;
+          }
 
           // Get git diff from merge base
           const currentBranch = getCurrent(projectRoot);
@@ -166,6 +181,7 @@ export async function runCodeReview(
             gitDiff: truncationResult.diff,
             projectRoot,
             mergeBase: mergeBase || undefined,
+            specFolderPath: activeSpecDir || undefined,
           });
 
           if (reviewResult.success) {
@@ -401,7 +417,7 @@ export async function prepareCompletionAction(
       messages.push('3. Document any new patterns in system_patterns.md');
       messages.push('4. Update progress_log.md with what was accomplished');
       messages.push('5. If this task came from the backlog, remove it from backlog.md');
-      messages.push('6. Let the stop-review hook automatically commit your changes\n');
+      messages.push('6. Commit your changes manually or wait for auto-commit\n');
     }
 
     // Journal reflection reminder (only if validation passed and private journal is enabled)
@@ -494,6 +510,7 @@ export function createPrepareCompletionCommand(overrides?: PartialCommandDeps): 
             mkdirSync: deps.fs.mkdirSync,
             readFileSync: deps.fs.readFileSync,
             readdirSync: deps.fs.readdirSync,
+            writeFileSync: deps.fs.writeFileSync,
           },
           performCodeReview,
           getActiveTaskId: deps.claudeMd.getActiveTaskId,

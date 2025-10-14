@@ -1,10 +1,7 @@
 import { Command } from 'commander';
-import { capturePlanHook } from '../hooks/capture-plan';
 // Import all hooks
 import { editValidationHook } from '../hooks/edit-validation';
-import { preCompactHook } from '../hooks/pre-compact';
 import { preToolValidationHook } from '../hooks/pre-tool-validation';
-import { stopReviewHook } from '../hooks/stop-review';
 import { createLogger } from '../lib/logger';
 import type { HookInput, HookOutput } from '../types';
 import type { CommandDeps, CommandResult, PartialCommandDeps } from './context';
@@ -21,8 +18,8 @@ export function determineHookType(input: HookInput): string | null {
   // Map event types to hook handlers
   switch (hook_event_name) {
     case 'PreToolUse':
-      // Check if this is an Edit/Write/MultiEdit/WebSearch event for pre-tool validation
-      if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit' || tool_name === 'WebSearch') {
+      // Check if this is an Edit/Write/MultiEdit event for pre-tool validation
+      if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
         return 'pre-tool-validation';
       }
       return null;
@@ -32,28 +29,7 @@ export function determineHookType(input: HookInput): string | null {
       if (tool_name === 'Edit' || tool_name === 'Write' || tool_name === 'MultiEdit') {
         return 'edit-validation';
       }
-      // Heuristic: capture-plan on explicit ExitPlanMode or when a plan payload is present
-      if (
-        tool_name === 'ExitPlanMode' ||
-        (typeof tool_name === 'string' && /ExitPlan/i.test(tool_name)) ||
-        (input.tool_response !== undefined &&
-          input.tool_response !== null &&
-          typeof input.tool_response === 'object' &&
-          'plan' in (input.tool_response as Record<string, unknown>)) ||
-        (input.tool_input !== undefined &&
-          input.tool_input !== null &&
-          typeof input.tool_input === 'object' &&
-          'plan' in (input.tool_input as Record<string, unknown>))
-      ) {
-        return 'capture-plan';
-      }
       return null;
-
-    case 'PreCompact':
-      return 'pre-compact';
-
-    case 'Stop':
-      return 'stop-review';
 
     default:
       return null;
@@ -64,10 +40,7 @@ export function determineHookType(input: HookInput): string | null {
  * Map of hook types to their handler functions
  */
 const hookHandlers: Record<string, (input: HookInput) => Promise<HookOutput>> = {
-  'capture-plan': capturePlanHook,
   'edit-validation': editValidationHook,
-  'pre-compact': preCompactHook,
-  'stop-review': stopReviewHook,
   'pre-tool-validation': preToolValidationHook,
 };
 

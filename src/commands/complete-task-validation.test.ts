@@ -5,16 +5,22 @@ import { runCompleteTask } from './complete-task';
 
 describe('runCompleteTask - validation scenarios', () => {
   const claudePath = path.join('/project', 'CLAUDE.md');
-  const taskPath = path.join('/project', '.claude', 'tasks', 'TASK_001.md');
+  const specDir = path.join('/project', '.claude', 'specs', '001-example-task');
+  const specPath = path.join(specDir, 'spec.md');
+  const metadataPath = path.join(specDir, '.metadata.json');
   const noActiveTaskPath = path.join('/project', '.claude', 'no_active_task.md');
 
-  function createInitialFiles(extraTaskContent?: string): Record<string, string> {
-    const branchSection = extraTaskContent ? `${extraTaskContent}\n` : '';
-    const baseTask = `# Task 001: Example\n\n${branchSection}**Status:** in_progress\n\n## Current Focus\n\nDo the work\n`;
-    const taskWithExtras = baseTask;
+  function createInitialFiles(): Record<string, string> {
     return {
-      [claudePath]: '# CLAUDE\n@.claude/tasks/TASK_001.md\n',
-      [taskPath]: taskWithExtras,
+      [claudePath]: '# CLAUDE\n@.claude/specs/001-example-task/spec.md\n',
+      [specPath]: '# Task 001: Example\n\nTask description...\n',
+      [metadataPath]: JSON.stringify({
+        task_id: '001',
+        feature_name: 'example-task',
+        branch: '001-example-task',
+        status: 'in_progress',
+        started: '2025-01-01T00:00:00.000Z',
+      }),
       [noActiveTaskPath]: 'The following tasks are being tracked in this project:\n',
     };
   }
@@ -25,7 +31,7 @@ describe('runCompleteTask - validation scenarios', () => {
       runValidationChecks: mock(async () => ({
         success: true,
         readyForCompletion: false,
-        task: { exists: true, taskId: 'TASK_001', status: 'in_progress' },
+        task: { exists: true, taskId: '001', status: 'in_progress' },
         validation: {
           typescript: { passed: false, errorCount: 2, errors: 'TS errors' },
           lint: { passed: false, issueCount: 1, errors: 'Lint issue' },
@@ -49,23 +55,44 @@ describe('runCompleteTask - validation scenarios', () => {
     if (result.success) return;
     expect(result.error).toContain('Pre-flight validation failed');
     expect(result.data?.validation.typescript).toBe('2 errors');
-    expect(state.files.get(taskPath)).toContain('**Status:** in_progress');
+    const metadata = JSON.parse(state.files.get(metadataPath) ?? '{}');
+    expect(metadata.status).toBe('in_progress');
   });
 
   test('completes task without branching when validation passes', async () => {
     const state = createMockCompleteTaskDeps(createInitialFiles());
 
+    // Override spec-related mocks to support new structure
+    state.setDeps({
+      getActiveSpecDirectory: mock(() => specDir),
+      getActiveMetadata: mock(() => {
+        const content = state.files.get(metadataPath);
+        return content ? JSON.parse(content) : null;
+      }),
+      readSpecFile: mock((dir: string, filename: string) => {
+        const filePath = path.join(dir, filename);
+        return state.files.get(filePath) ?? null;
+      }),
+      updateMetadata: mock((_dir: string, updates: Record<string, unknown>) => {
+        const existingContent = state.files.get(metadataPath);
+        const existing = existingContent ? JSON.parse(existingContent) : {};
+        const updated = { ...existing, ...updates };
+        state.files.set(metadataPath, JSON.stringify(updated));
+      }),
+    });
+
     const options = { skipValidation: true, noSquash: true, noBranch: true };
     const result = await runCompleteTask(options, state.deps);
 
+    if (!result.success) {
+      console.error('Test failed with error:', result.error);
+      console.error('Messages:', result.messages);
+    }
     expect(result.success).toBeTrue();
     if (!result.success) return;
-    expect(result.data?.updates.taskFile).toBe('updated');
-    const taskContent = state.files.get(taskPath) ?? '';
-    expect(taskContent).toContain('**Status:** completed');
-    expect(taskContent).toContain('Task completed on 2025-01-01');
-    expect(state.claudeCleared()).toBeTrue();
-    const noActiveContent = state.files.get(noActiveTaskPath) ?? '';
-    expect(noActiveContent).toContain('- TASK_001: Task 001: Example');
+    expect(result.data?.updates.taskFile).toBe('metadata updated');
+    const metadata = JSON.parse(state.files.get(metadataPath) ?? '{}');
+    expect(metadata.status).toBe('completed');
+    expect(metadata.completed).toBe('2025-01-01');
   });
 });

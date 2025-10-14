@@ -71,16 +71,17 @@ const DEFAULT_CONFIG: InternalConfig = {
   },
   hooks: {
     capture_plan: {
-      enabled: true,
-      description: 'Captures plans from ExitPlanMode and creates task files',
+      enabled: false,
+      description:
+        '[DEPRECATED] Captures plans from ExitPlanMode and creates task files - replaced by /specify command',
     },
     pre_compact: {
-      enabled: true,
-      description: 'Updates task files with progress before compaction',
+      enabled: false,
+      description: '[DEPRECATED] Updates task files with progress before compaction - no longer needed',
     },
     stop_review: {
-      enabled: true,
-      description: 'Reviews changes and auto-commits with conventional format',
+      enabled: false,
+      description: '[DEPRECATED] Reviews changes and auto-commits with conventional format - had reliability issues',
     },
     edit_validation: {
       enabled: false,

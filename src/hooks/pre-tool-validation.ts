@@ -158,6 +158,13 @@ export function isTaskFile(filePath: string): boolean {
 }
 
 /**
+ * Check if a file path is in the specs directory
+ */
+export function isSpecFile(filePath: string): boolean {
+  return /\.claude\/specs\//.test(filePath);
+}
+
+/**
  * Extract the diff information from Edit/MultiEdit tool input
  */
 export function extractDiffInfo(
@@ -354,6 +361,32 @@ Note: If you genuinely need historical ${yearCheck.detectedYear} information, tr
           log.debug('Allowing gitignored file edit on protected branch', { filePath, branch: currentBranch });
         }
       }
+    }
+
+    // Specs Directory Protection Check
+    const filePath = extractFilePath(input.tool_name, input.tool_input);
+    if (filePath && isSpecFile(filePath)) {
+      const currentBranch = gitHelpers.getCurrentBranch(cwd);
+      const defaultBranch = gitHelpers.getDefaultBranch(cwd);
+
+      // Block edits to specs/ files when not on a feature branch
+      if (currentBranch === defaultBranch) {
+        log.warn('Blocking spec file edit on main branch', {
+          branch: currentBranch,
+          filePath,
+          tool: input.tool_name,
+        });
+
+        return {
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'deny' as const,
+            permissionDecisionReason: `🚫 Specs Directory Protection: Cannot edit spec files on main branch '${currentBranch}'\n\nSpec files should only be modified on feature branches during active task work.\n\nTo make changes:\n1. Use /specify to start a new task (creates feature branch automatically)\n2. Or switch to the feature branch for the task you're working on\n\nSpec files are managed through the spec-driven workflow commands (/specify, /clarify, /plan, /tasks).`,
+          },
+        };
+      }
+
+      log.debug('Allowing spec file edit on feature branch', { filePath, branch: currentBranch });
     }
 
     // Task Validation Check (only for Edit and MultiEdit, not Write)

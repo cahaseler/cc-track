@@ -29,20 +29,6 @@ describe('determineHookType', () => {
     expect(determineHookType(input)).toBe('edit-validation');
   });
 
-  test('routes capture-plan when plan present in payload', () => {
-    const input = {
-      hook_event_name: 'PostToolUse',
-      tool_name: 'SomeTool',
-      tool_response: { plan: 'do something' },
-    } satisfies HookInput;
-    expect(determineHookType(input)).toBe('capture-plan');
-  });
-
-  test('routes PreCompact and Stop events', () => {
-    expect(determineHookType({ hook_event_name: 'PreCompact' })).toBe('pre-compact');
-    expect(determineHookType({ hook_event_name: 'Stop' })).toBe('stop-review');
-  });
-
   test('returns null for unknown input', () => {
     expect(determineHookType({ hook_event_name: 'Unknown' })).toBeNull();
   });
@@ -111,7 +97,6 @@ describe('runHookCommand', () => {
       },
       claudeMd: {
         getActiveTaskId: mock(() => null),
-        clearActiveTask: mock(() => {}),
         createHelpers: mock(() => ({})),
       },
       validation: {
@@ -173,7 +158,7 @@ describe('runHookCommand', () => {
 
     // Mock the handlers to return a specific response
     const mockHandlers = {
-      'pre-compact': mock(async () => ({ continue: true, message: 'pre-compact ran' })),
+      'edit-validation': mock(async () => ({ continue: true, message: 'edit-validation ran' })),
     };
 
     const stdout: string[] = [];
@@ -184,7 +169,7 @@ describe('runHookCommand', () => {
       },
     } as NodeJS.WritableStream;
 
-    const input = JSON.stringify({ hook_event_name: 'PreCompact', cwd: '/project' });
+    const input = JSON.stringify({ hook_event_name: 'PostToolUse', tool_name: 'Edit', cwd: '/project' });
     const result = await runHookCommand(deps, Readable.from([input]), mockStdout, mockHandlers as any);
 
     // Should not write directly to stdout

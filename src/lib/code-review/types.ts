@@ -12,6 +12,7 @@ export interface CodeReviewOptions {
   gitDiff: string;
   projectRoot: string;
   mergeBase?: string;
+  specFolderPath?: string; // Path to spec folder for new spec-driven structure
 }
 
 export interface CodeReviewIssue {

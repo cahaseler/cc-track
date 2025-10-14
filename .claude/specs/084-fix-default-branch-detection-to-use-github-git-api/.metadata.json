@@ -1,0 +1,7 @@
+{
+  "task_id": "084",
+  "feature_name": "fix-default-branch-detection-to-use-github-git-api",
+  "branch": "084-fix-default-branch-detection-to-use-github-git-api",
+  "status": "in_progress",
+  "started": "2025-10-14T18:03:29.836Z"
+}
