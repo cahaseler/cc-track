@@ -31,13 +31,16 @@
   "include": [
     ".claude/**/*.ts",
     "scripts/**/*.ts",
-    "src/**/*.ts"
+    "commands/**/*.ts",
+    "hooks/**/*.ts",
+    "lib/**/*.ts",
+    "types.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "src",
     "**/*.test.ts",
-    "src/test/**/*",
-    "src/test-utils/**/*"
+    "test-utils/**/*"
   ]
 }

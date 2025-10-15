@@ -6,71 +6,98 @@ This repository implements cc-track — a Task Review And Context Keeper that he
 
 You may be asked to operate in one or more of these modes:
 
-- Builder: Implement features, refactors, bug fixes, and tests according to `.claude/tasks/TASK_###.md` specs.
+- Builder: Implement features, refactors, bug fixes, and tests according to `.claude/specs/[spec-id]/` specifications.
 - Reviewer: Perform detached code reviews and produce timestamped artifacts under `code-reviews/`.
-- Maintainer: Improve docs, hooks, and build/test pipelines; align behavior with the workflow defined in `.claude/*`.
+- Maintainer: Improve docs, hooks, and test pipelines; align behavior with the workflow defined in `.claude/*`.
 
-Across all modes, treat `.claude/tasks/TASK_###.md` as the source of truth for acceptance criteria and current scope. Keep user‑visible behavior stable unless a spec explicitly requests a change.
+Across all modes, treat `.claude/specs/[spec-id]/spec.md` as the source of truth for acceptance criteria and current scope. Keep user‑visible behavior stable unless a spec explicitly requests a change.
 
 ## Project Overview
 
 - Name: cc-track (Task Review And Context Keeper)
-- Purpose: Lightweight guardrails and workflow for AI‑assisted development (Claude Code compatible) with automatic validation, task lifecycle management, and optional GitHub PR flow.
-- Language/Tooling: TypeScript (strict), Bun, Commander CLI, Biome (lint/format), Bun test.
-- Binary: Built via `bun build` into `dist/cc-track` (plus OS‑specific variants).
+- Purpose: Claude Code plugin providing lightweight guardrails and workflow for AI‑assisted development with automatic validation, task lifecycle management, and optional GitHub PR flow.
+- Language/Tooling: TypeScript (strict), Bun runtime, Biome (lint/format), Bun test.
+- Distribution: Plugin via Claude Code marketplace (npm package deprecated).
 
 ### Repository Landmarks
 
-- `src/cli/index.ts` – CLI entrypoint that registers commands.
-- `src/commands/*` – CLI commands: `init`, `prepare-completion`, `complete-task`, `hook`, `backlog`, `statusline`, `git-session`.
-- `src/hooks/*` – Claude Code hooks (capture-plan, edit-validation, pre/post-compact, stop-review).
-- `src/lib/*` – Shared utilities (config, git/github helpers, validation, logger, claude-md helpers) and tests.
-- `.claude/*` – Project context, workflow, tasks, and settings:
-  - `tasks/TASK_###.md` – Task specs and lifecycle.
-  - `track.config.json` – Hook and feature configuration (validation commands, GitHub integration, statusline, logging, default branch).
-  - `cc-track-workflow.md` – End‑to‑end workflow from plan → PR.
+**Plugin Structure** (distributed to users):
+- `commands/*.md` – Slash commands that execute TypeScript via ${CLAUDE_PLUGIN_ROOT}.
+- `commands/scripts/*.ts` – Command implementations: `complete-task`, `prepare-completion`, `backlog`, `hook`, `parse-logs`, `git-session`, `migrate`.
+- `hooks/*.ts` – Hook implementations: `edit-validation` (PostToolUse), `pre-tool-validation` (PreToolUse).
+- `hooks/hooks.json` – Hook registration file for Claude Code.
+- `lib/*.ts` – Shared utilities (config, git/github helpers, validation, logger, claude-md helpers, spec-helpers).
+- `scripts/*.ts` – Statusline and other non-hook scripts.
+- `templates/*.md` – Reference template files (not copied, used via ${CLAUDE_PLUGIN_ROOT}).
+- `.claude-plugin/plugin.json` – Plugin metadata (version, description, author).
+- `package.json` – Dependencies (@anthropic-ai/claude-agent-sdk, ccusage).
+
+**Tests** (not distributed):
+- `tests/commands/*.test.ts` – Command implementation tests.
+- `tests/hooks/*.test.ts` – Hook tests.
+- `lib/*.test.ts` – Library unit tests.
+- `test-utils/*.ts` – Test helpers and mocks.
+
+**Project Context** (our development setup, not distributed):
+- `.claude/*` – This project's own cc-track configuration:
+  - `specs/[id]-feature-name/` – Feature specifications (spec.md, plan.md, tasks.md, progress.md).
+  - `track.config.json` – Hook and feature configuration for this project.
+  - `cc-track-workflow.md` – End‑to‑end workflow from /specify → PR.
   - `decision_log.md`, `system_patterns.md`, `progress_log.md`, `user_context.md`, `product_context.md` – Context/state docs.
-  - `commands/*.md` – Claude Code “slash command” wrappers that call built artifacts.
-- `reference/*` – Background research and docs for commands, hooks, SDKs, and integration.
+  - `commands/*.md` – Our own slash commands (dogfooding the plugin).
+
+**Documentation**:
 - `code-reviews/` – Storage for review artifacts when operating in Reviewer mode.
-- `dist/` – Compiled binaries for the CLI and hooks.
+- `docs/` – Reference docs and testing guidance.
+- `MIGRATION.md` – npm-to-plugin migration guide.
+- `README.md` – Plugin installation and quickstart.
+
+**NOT distributed**:
+- `tests/` – Test files (428 tests, all must pass).
+- `.claude/` – Our development project configuration.
+- `dist/`, `src/`, `build scripts` – Removed in plugin migration (no longer compile to binary).
 
 ## Development Repo & Self‑Hosting
 
 - This repository is the development repo for cc-track and it self‑hosts cc-track to manage its own work.
-- The CLI is designed primarily for automated, rule‑based triggering by Claude Code hooks/commands (see `.claude/` and `reference/*`).
-- Codex CLI does not provide equivalent first‑class hooks; manual use is acceptable but a bit clunky. Treat the CLI as the source of truth for behavior, and use it to simulate hook flows when needed.
+- cc-track runs as a native Claude Code plugin executed via Bun runtime.
+- Codex CLI does not provide equivalent first‑class hooks; manual simulation acceptable but hooks are designed for Claude Code event-driven execution.
 
-### Manual Use from Codex CLI (Common Cases)
+### Plugin Execution Model
 
-- Prepare/complete a task manually:
-  - `dist/cc-track prepare-completion`
-  - `dist/cc-track complete-task`
-- Simulate hook events via stdin JSON:
-  - Edit validation (on save):
-    - `echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"src/lib/config.ts"}}' | dist/cc-track hook`
-  - Pre‑compact / Post‑compact:
-    - `echo '{"hook_event_name":"PreCompact"}' | dist/cc-track hook`
-    - `echo '{"hook_event_name":"SessionStart","source":"compact"}' | dist/cc-track hook`
-  - Stop review (end of a working block):
-    - `echo '{"hook_event_name":"Stop"}' | dist/cc-track hook`
-  - Capture plan (after planning approval):
-    - `echo '{"hook_event_name":"PostToolUse","tool_name":"ExitPlanMode","tool_input":{"plan":"..."},"tool_response":{"plan":"..."}}' | dist/cc-track hook`
+Commands are executed via slash commands in Claude Code:
+- `/complete-task` → executes `bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/complete-task.ts`
+- `/prepare-completion` → executes `bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/prepare-completion.ts`
+- `/add-to-backlog "item"` → executes `bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/backlog.ts`
 
-Notes:
-- Some flows (capture‑plan enrichment, GitHub PR/issue actions) require network/CLI tools; they may no‑op or warn in restricted environments. GitHub behavior is controlled by `.claude/track.config.json.features.github_integration`.
+Hooks are registered in `hooks/hooks.json` and execute automatically:
+- PostToolUse (Edit, Write, MultiEdit) → `hooks/edit-validation.ts`
+- PreToolUse (Edit, Write, etc.) → `hooks/pre-tool-validation.ts`
+
+### Manual Testing for Codex
+
+When testing without Claude Code:
+```bash
+# Run commands directly
+bun run commands/scripts/complete-task.ts
+bun run commands/scripts/prepare-completion.ts
+
+# Simulate hook execution (test individual hooks directly)
+echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"lib/config.ts"}}' | bun run hooks/edit-validation.ts
+echo '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"lib/config.ts"}}' | bun run hooks/pre-tool-validation.ts
+```
 
 ## Core Workflows
 
-High‑level lifecycle: Plan → Task Created → Development → Validation → Documentation → Completion → PR → Merge.
+High‑level lifecycle: /specify → /clarify → /plan → /tasks → Development → /prepare-completion → /complete-task → PR → Merge.
 
 Key responsibilities for agents:
 
-- Plan and scope work from `.claude/tasks/TASK_###.md` and `CLAUDE.md` imports.
+- Plan and scope work from `.claude/specs/[id]-feature-name/spec.md` and plan.md.
 - Implement minimal, surgical changes that satisfy the spec; add or update tests near changed code.
-- Use validation routinely: `bun run check` and `bun test`. For task completion, run `prepare-completion` and then `complete-task` (usually invoked by the user; see below).
-- Keep docs current: task file “Recent Progress”, `decision_log.md`, `system_patterns.md`, and `progress_log.md` where applicable.
-- Respect `.claude/track.config.json` (validation commands, default branch, GitHub settings, logging).
+- Use validation routinely: `bun run check` and `bun test`. For task completion, run `/prepare-completion` and then `/complete-task` (invoked by user via slash command).
+- Keep docs current: `progress.md`, `decision_log.md`, `system_patterns.md`, and `progress_log.md` where applicable.
+- Respect `.claude/track.config.json` (validation commands, GitHub settings, logging).
 
 ## Build, Test, Validate
 
@@ -80,98 +107,137 @@ Key responsibilities for agents:
 - Format (write): `bun run format`
 - Fix (lint + write): `bun run fix`
 - Combined checks: `bun run check`
-- Tests: `bun test`
-- Build CLI (default): `bun run build` → `dist/cc-track`
-- Cross‑platform builds: `bun run build:cross-platform`
-- Build hooks: `bun run build:hooks`
+- Tests: `bun test` (428 tests in tests/ directory)
 
 Notes:
-- Tests live alongside implementation in `src/**.test.ts`. Prefer focused unit tests that assert observable behavior; avoid re‑implementing logic in tests.
-- Biome is the source of truth for lint/format. Keep code style consistent; don’t introduce new linters/formatters.
+- Tests live in `tests/` directory, separate from implementation.
+- Test files use `../../` imports to reference implementation in `commands/scripts/`, `hooks/`, and `lib/`.
+- Biome is the source of truth for lint/format. Keep code style consistent.
+- **No binary compilation** - plugin distributes TypeScript source executed by Bun.
 
-## CLI Commands (Summary)
+## Plugin Architecture
 
-The CLI exposes several commands via `dist/cc-track`:
+### Directory Structure (What Gets Distributed)
 
-- `init` – Initialize cc-track in the current project (sets up `.claude` assets, templates, and imports in `CLAUDE.md`).
-- `prepare-completion` – Run validation and generate dynamic fix instructions.
-- `complete-task` – Finalize the active task: update docs, squash WIP, push/PR or merge per config.
-- `hook` – Dispatch entrypoint for Claude Code hook events.
-- `backlog` – Manage backlog entries.
-- `statusline` – Output status line (integrates with `ccusage` if present).
-- `git-session` – Utilities for WIP squashing, diffing, and push preparation.
+```
+cc-track/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin metadata
+├── commands/
+│   ├── *.md                 # Slash command definitions
+│   └── scripts/*.ts         # Command implementations
+├── hooks/
+│   ├── *.ts                 # Hook implementations
+│   └── hooks.json           # Hook registration
+├── lib/*.ts                 # Shared libraries
+├── scripts/*.ts             # Statusline and utilities
+├── templates/*.md           # Reference templates
+├── package.json             # Dependencies
+└── README.md               # Installation guide
+```
 
-In Claude Code, many of these are wrapped by `.claude/commands/*.md` files. Prefer relative commands (e.g., `dist/cc-track ...`) when running locally rather than absolute paths.
+### What Doesn't Get Distributed
+
+```
+tests/                       # Test suite (428 tests)
+.claude/                     # Our development config
+docs/                        # Internal documentation
+code-reviews/                # Review artifacts
+```
+
+## Commands Overview (in commands/scripts/)
+
+TypeScript implementations executed by slash commands:
+
+- `complete-task.ts` – Finalize the active task: update docs, squash WIP, create PR.
+- `prepare-completion.ts` – Run validation, code review, generate fix instructions.
+- `backlog.ts` – Manage backlog entries.
+- `parse-logs.ts` – Parse and filter Claude Code logs.
+- `git-session.ts` – Utilities for WIP squashing, diffing, push preparation.
+- `migrate.ts` – Migrate old task structure to new spec format.
+- `context.ts` – Shared context and dependency injection for commands.
+
+In Claude Code, these are invoked via `.claude/commands/*.md` files that use `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Hooks Overview
 
-Hook enablement and commands come from `.claude/track.config.json`:
+Hook enablement comes from `.claude/track.config.json`:
 
-- `capture_plan` – Creates `.claude/tasks/TASK_###.md` when leaving planning mode and sets the active task in `CLAUDE.md`.
-- `edit_validation` – Runs TypeScript/Biome checks on edited files. Skips TS checks for test files to reduce noise.
-- `pre_compact` / `post_compact` – Preserve and restore context around compaction; guides doc updates from imported context.
-- `stop_review` – Periodic WIP reviews and auto‑commits. Treat its findings as strong signals to realign with the task spec.
+- `edit_validation` (PostToolUse) – Runs TypeScript/Biome checks on edited files. **Blocks** if errors found.
+  - Configurable: `typecheck.enabled`, `lint.enabled`
+- `pre_tool_validation` (PreToolUse) – Multiple validations before tool execution:
+  - Branch protection: Blocks edits on main/master branches
+  - Task file validation: Prevents manual status changes
+  - Plugin dependency checks: Ensures Bun and node_modules present
+  - npm conflict detection: Blocks if npm version installed
 
-These hooks are re‑implemented in `src/hooks/*` and exercised via the `hook` command for headless/CLI use.
+These hooks are implemented in `hooks/*.ts` and registered in `hooks/hooks.json`.
 
 ## Spec Alignment & Sources of Truth
 
-- Primary spec: `.claude/tasks/TASK_###.md`. Build to the acceptance criteria, not incidental existing behavior.
-- Behavioral parity: When touching hook behavior or CLI commands, verify parity (or explicitly documented deltas) between any original `.claude/hooks/*` scripts and refactored `src/**` modules.
-- `CLAUDE.md` imports establish the active context; do not silently remove required imports without updating the workflow docs.
+- Primary spec: `.claude/specs/[id]-feature-name/spec.md` - WHAT and WHY (tech-agnostic requirements).
+- Technical design: `.claude/specs/[id]-feature-name/plan.md` - HOW (implementation approach).
+- Task breakdown: `.claude/specs/[id]-feature-name/tasks.md` - Sequential implementation steps.
+- Progress tracking: `.claude/specs/[id]-feature-name/progress.md` - What actually happened.
+- Build to the acceptance criteria in spec.md, not incidental existing behavior.
+- `CLAUDE.md` imports establish the active context; do not silently remove required imports.
 
 ## Coding Standards
 
 - TypeScript strict mode; no implicit any; explicit, intention‑revealing names.
 - Keep changes minimal and scoped; avoid unrelated refactors.
 - Prefer composition over deep inheritance; avoid accidental public APIs.
-- Log with `src/lib/logger.ts` and honor `.claude/track.config.json` logging settings.
+- Log with `lib/logger.ts` and honor `.claude/track.config.json` logging settings.
 - Do not add new external dependencies without a task/justification.
+- Tests in `tests/` directory, separate from implementation.
+- Use dependency injection for testability (see test-utils/command-mocks.ts).
 
 ## Reviewer Mode (When Requested)
 
 When explicitly asked to review instead of implement:
 
 - Write a timestamped review file per substantial change under `code-reviews/`.
-- Filename: `code-reviews/TASK_XXX_YYYY-MM-DD_HHMM-UTC.md` (e.g., `TASK_026_2025-09-11_1045-UTC.md`).
-- Include: Summary, Spec Alignment (link to `.claude/tasks/TASK_###.md`), Behavioral Diffs, Tests & Coverage, Risks, Required Fixes, Optional Improvements, Verified Commands.
-- Default review scope is the diff between the default branch (see `git.defaultBranch` in `track.config.json`) and the current branch.
-- Each new `TASK_###` should be on its own branch; compare that branch to the default branch.
-- If functional behavior changes, update relevant docs (`reference/*` or project docs) to reflect approved deltas.
+- Filename: `code-reviews/TASK_XXX_YYYY-MM-DD_HHMM-UTC.md` (e.g., `TASK_101_2025-10-15_1740-UTC.md`).
+- Include: Summary, Spec Alignment (link to `.claude/specs/[id]-feature-name/spec.md`), Behavioral Diffs, Tests & Coverage, Risks, Required Fixes, Optional Improvements, Verified Commands.
+- Default review scope is the diff between main and the current branch.
+- Each new task should be on its own branch; compare that branch to main.
+- **CRITICAL**: Review the ACTUAL codebase structure (hooks/, commands/scripts/, lib/), NOT the old src/ structure.
 
 ## Task Completion Flow (for Agents + Users)
 
 Typical endgame for a task:
 
-1) Run `dist/cc-track prepare-completion` and ensure checks pass (or fix issues per instructions).
-2) Update docs: task “Recent Progress”, `decision_log.md`, `system_patterns.md`.
-3) Ask the user to run `dist/cc-track complete-task` (or they will run it). This will:
+1) Run `/prepare-completion` and ensure checks pass (or fix issues per instructions).
+2) Update docs: `progress.md` in spec folder, `decision_log.md`, `system_patterns.md`.
+3) Ask the user to run `/complete-task` (slash command). This will:
    - Perform a final validation (unless skipped).
-   - Update task + `CLAUDE.md`, append to `no_active_task.md`.
-   - Squash WIP commits when safe; handle push/PR or merge depending on config.
-   - Optionally enhance PR description via GitHub CLI.
+   - Update task metadata + `CLAUDE.md`, append to `no_active_task.md`.
+   - Squash WIP commits when safe; handle push/PR depending on config.
+   - Optionally create PR via GitHub CLI.
 
 Notes:
 - GitHub workflows depend on `.claude/track.config.json.features.github_integration.*`.
-- Default branch is configured in `.claude/track.config.json.git.defaultBranch` (often `main`).
+- Default branch is usually `main`.
 
 ## Known Integrations
 
-- `ccusage` – Used by `statusline` to show session cost/context and 5‑hour billing block info. Optional, auto‑detected by scripts.
-- GitHub CLI – Used by `complete-task` for PR creation and enhancement when enabled.
+- `ccusage` – Used by `scripts/statusline.ts` to show session cost/context and 5‑hour billing block info. Optional, auto‑detected.
+- GitHub CLI (`gh`) – Used by `commands/scripts/complete-task.ts` for PR creation when enabled.
+- Bun runtime – Required for executing TypeScript directly (no compilation step).
+- Claude Code plugin system – Native integration via hooks and slash commands.
 
 ## Verified Commands (Quick Reference)
 
 - Quality gates: `bun run check`, `bun test`
-- Build CLI: `bun run build` → run `dist/cc-track -h`
-- Prepare completion: `dist/cc-track prepare-completion`
-- Complete task: `dist/cc-track complete-task`
-- Build hooks: `bun run build:hooks`
+- Run commands: `bun run commands/scripts/complete-task.ts`
+- Run hooks: `echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"test.ts"}}' | bun run hooks/edit-validation.ts`
+- All 428 tests must pass before completion
 
-## Do / Don’t
+## Do / Don't
 
-- Do: Be precise, cite file paths in findings, keep action items prioritized and testable, and keep user‑visible behavior stable unless spec says otherwise.
-- Don’t: Gold‑plate, re‑architect, or mix unrelated refactors with scoped work.
+- Do: Be precise, cite ACTUAL file paths (commands/scripts/, hooks/, lib/), keep action items prioritized and testable, and keep user‑visible behavior stable unless spec says otherwise.
+- Don't: Reference old src/ paths, assume binary compilation, gold‑plate, re‑architect, or mix unrelated refactors with scoped work.
+- **CRITICAL**: Review the actual plugin structure, not the old npm/binary structure.
 
 ---
 

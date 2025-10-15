@@ -1,0 +1,16 @@
+{
+  "PostToolUse": [
+    {
+      "name": "edit-validation",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/edit-validation.ts",
+      "description": "Validates TypeScript and Biome compliance after file edits"
+    }
+  ],
+  "PreToolUse": [
+    {
+      "name": "pre-tool-validation",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-validation.ts",
+      "description": "Validates branch protection and task file integrity before tool use"
+    }
+  ]
+}

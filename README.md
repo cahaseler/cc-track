@@ -21,35 +21,67 @@ cc-track solves these problems by:
 
 ## Installation
 
-```bash
-# Navigate to your project
-cd your-project
+cc-track is distributed as a Claude Code plugin. Installation is a one-time setup that makes cc-track available to all your projects.
 
-# Initialize cc-track
-npx cc-track init
-```
-
-This creates a single `/setup-cc-track` Claude Code command inside your project. Start up Claude Code, run this command, and Claude will walk you through the installation and configuration. The command itself checks some things like your git status, and creates some template files, but will still require your permission and approval before enabling any features or doing anything that might be destructive.
-
-### Optional: Pin a specific version
-If you want to ensure consistency across your team, you can install cc-track as a dev dependency:
+### Quick Start
 
 ```bash
-npm install --save-dev cc-track
-# or
-bun add -d cc-track
+# 1. Add the cc-track marketplace
+/plugin marketplace add cahaseler/cc-track-marketplace
+
+# 2. Install the plugin
+/plugin install cc-track@cc-track-marketplace
+
+# 3. Install plugin dependencies
+cd $(dirname $(which claude-code))/../plugins/cc-track
+bun install
+
+# 4. Navigate to your project and run setup
+cd /path/to/your-project
+/setup-cc-track
 ```
 
-But this is entirely optional - the hooks will use `npx` which works with or without local installation.
+The `/setup-cc-track` command guides you through configuration:
+- Analyzes your project structure
+- Configures features based on your needs
+- Sets up git/GitHub integration if desired
+- Creates context files tailored to your project
+
+### Prerequisites
+
+- **Claude Code** with plugin support (October 2025+)
+- **Bun runtime** - Install via `curl -fsSL https://bun.sh/install | bash`
+- **Git** (for task management features)
+- **GitHub CLI** (optional, for GitHub integration)
+
+Verify Bun installation:
+```bash
+bun --version  # Should show 1.0.0+
+```
+
+### Migrating from npm Version
+
+If you previously used the npm-distributed version (v2.x), see [MIGRATION.md](MIGRATION.md) for step-by-step instructions.
+
+**Quick migration**:
+```bash
+# Uninstall npm version
+npm uninstall -g cc-track
+
+# Install plugin (follow Quick Start above)
+
+# Your .claude/ project files work unchanged!
+```
 
 ## How It Works
 
 ### 1. Smart Setup Process
-When you run `cc-track init`, it creates a single slash command (`/setup-cc-track`) that Claude uses to:
-- Analyze your project structure
-- Configure features based on your needs
-- Set up git/GitHub integration if desired
-- Create context files tailored to your project
+When you run `/setup-cc-track`, Claude guides you through setup:
+- Verifies plugin dependencies are installed
+- Analyzes your project structure
+- Configures features based on your needs
+- Sets up git/GitHub integration if desired
+- Creates context files tailored to your project
 
 ### 2. Core Task Management Workflow
 
@@ -139,19 +171,18 @@ Claude Code's hook configuration (managed by cc-track based on your config)
 
 ## Commands
 
-### Slash Commands (in Claude Code)
-- `/setup-cc-track` - Initial setup wizard
-- `/prepare-completion` - Check if task is ready for completion
-- `/complete-task` - Complete the current task
-- `/add-to-backlog` - Add items to backlog without disruption
-- `/config-track` - Modify configuration
+All cc-track functionality is accessed through slash commands in Claude Code:
 
-### CLI Commands
-- `cc-track init` - Initialize in a new project
-- `cc-track setup-templates` - Install context templates
-- `cc-track setup-commands` - Install slash commands
-- `cc-track statusline` - Generate status line (point Claude Code's configuration to this command)
-- `cc-track hook` - Hook dispatcher (point Claude Code's configuration to this command)
+- `/setup-cc-track` - Initial setup wizard (verifies dependencies, configures features)
+- `/specify` - Create new feature specification through Socratic questioning
+- `/clarify` - Refine requirements and resolve ambiguities
+- `/plan` - Generate technical implementation plan
+- `/tasks` - Create task breakdown from plan
+- `/prepare-completion` - Validate task readiness (tests, lint, code review)
+- `/complete-task` - Complete task and create PR
+- `/add-to-backlog` - Add items to backlog without disrupting current work
+- `/constitution` - Create or update project guardrails
+- `/config-track` - Modify feature configuration
 
 ## Project Structure
 
@@ -173,8 +204,8 @@ your-project/
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/code) subscription
-- Node.js 18+ for npm installation
+- [Claude Code](https://claude.ai/code) with plugin support (October 2025+)
+- [Bun runtime](https://bun.sh) 1.0.0+ for TypeScript execution
 - Git (for task management features)
 - GitHub CLI (optional, for GitHub integration)
 
@@ -185,6 +216,41 @@ cc-track is designed to be:
 - **Transparent** - You see exactly what's being configured
 - **Flexible** - Works with any language or framework
 - **Intelligent** - Adapts to your project's needs
+
+## Plugin Architecture
+
+cc-track uses Claude Code's plugin system for distribution and execution.
+
+### ${CLAUDE_PLUGIN_ROOT} Pattern
+
+All slash commands reference the plugin directory using the `${CLAUDE_PLUGIN_ROOT}` environment variable:
+
+```markdown
+# Example command in commands/complete-task.md
+!bun run ${CLAUDE_PLUGIN_ROOT}/commands/complete-task.ts
+```
+
+This ensures commands work regardless of where the plugin is installed. The variable is automatically provided by Claude Code.
+
+### TypeScript Execution
+
+The plugin runs TypeScript directly via Bun (no compilation needed):
+- **Hooks**: Registered in `hooks/hooks.json`, executed by Claude Code's hook system
+- **Commands**: Invoked via slash commands, executed by Bun
+- **Scripts**: Called by Claude Code UI (e.g., statusline)
+
+### Plugin Structure
+
+```
+cc-track-plugin/
+├── .claude-plugin/        # Plugin metadata
+│   └── plugin.json
+├── commands/              # Slash command markdown + TypeScript implementations
+├── hooks/                 # Hook TypeScript files + registration config
+├── lib/                   # Shared libraries
+├── scripts/               # Statusline and other scripts
+└── templates/             # Reference templates (not copied to projects)
+```
 
 ## Development
 
@@ -198,12 +264,11 @@ cd cc-track
 # Install dependencies
 bun install
 
-# Build the project
-bun run build
-
 # Run tests
 bun test
 ```
+
+**Note**: There's no build step - TypeScript is executed directly via Bun.
 
 ## License
 

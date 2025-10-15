@@ -1,0 +1,520 @@
+import { execSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { getActiveTaskId } from '../../lib/claude-md';
+import { performCodeReview } from '../../lib/code-review';
+import {
+  getCodeReviewMaxDiffSize,
+  getCodeReviewTool,
+  getConfig,
+  getLintConfig,
+  isCodeReviewEnabled,
+} from '../../lib/config';
+import { truncateGitDiff } from '../../lib/diff-truncator';
+import { getCurrentBranch, getDefaultBranch, getMergeBase } from '../../lib/git-helpers';
+import { createLogger } from '../../lib/logger';
+import { getActiveSpecDirectory } from '../../lib/spec-helpers';
+import { type PreparationResult, runValidationChecks } from '../../lib/validation';
+import type { CommandResult } from './context';
+import { isCommandSuccess } from './context';
+
+export interface PrepareCompletionDeps {
+  execSync?: typeof execSync;
+  fileOps?: {
+    existsSync: typeof existsSync;
+    mkdirSync: typeof mkdirSync;
+    readFileSync: typeof readFileSync;
+    readdirSync: typeof readdirSync;
+    writeFileSync: typeof writeFileSync;
+  };
+  performCodeReview?: typeof performCodeReview;
+  getActiveTaskId?: typeof getActiveTaskId;
+  getActiveSpecDirectory?: typeof getActiveSpecDirectory;
+  isCodeReviewEnabled?: typeof isCodeReviewEnabled;
+  getCodeReviewTool?: typeof getCodeReviewTool;
+  getConfig?: typeof getConfig;
+  getCurrentBranch?: typeof getCurrentBranch;
+  getDefaultBranch?: typeof getDefaultBranch;
+  getMergeBase?: typeof getMergeBase;
+  runValidationChecks?: typeof runValidationChecks;
+  logger?: ReturnType<typeof createLogger>;
+  cwd?: () => string;
+}
+
+/**
+ * Run code review for the active task
+ */
+export interface CodeReviewResultData {
+  reviewFile?: string;
+  reviewGenerated?: boolean;
+}
+
+export async function runCodeReview(
+  projectRoot: string,
+  validationPassed: boolean,
+  deps: PrepareCompletionDeps = {},
+): Promise<CommandResult<CodeReviewResultData>> {
+  const {
+    execSync: exec = execSync,
+    fileOps = { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync },
+    performCodeReview: performReview = performCodeReview,
+    getActiveTaskId: getTaskId = getActiveTaskId,
+    getActiveSpecDirectory: getSpecDir = getActiveSpecDirectory,
+    isCodeReviewEnabled: isReviewEnabled = isCodeReviewEnabled,
+    getCodeReviewTool: getReviewTool = getCodeReviewTool,
+    getCurrentBranch: getCurrent = getCurrentBranch,
+    getDefaultBranch: getDefault = getDefaultBranch,
+    getMergeBase: getMerge = getMergeBase,
+    logger = createLogger('prepare-completion'),
+  } = deps;
+
+  const messages: string[] = [];
+  const warnings: string[] = [];
+
+  // Run code review if validation passed and feature is enabled
+  if (validationPassed && isReviewEnabled()) {
+    messages.push('### 🔍 Code Review\n');
+
+    const taskId = getTaskId(projectRoot);
+
+    if (!taskId) {
+      messages.push('⚠️ Could not run code review: No active task found\n');
+    } else {
+      // Check if review already exists for this task
+      const codeReviewsDir = join(projectRoot, 'code-reviews');
+      let existingReview: string | null = null;
+
+      if (fileOps.existsSync(codeReviewsDir)) {
+        const files = fileOps.readdirSync(codeReviewsDir);
+        const reviewPattern = new RegExp(`^${taskId}_.*\\.md$`);
+        existingReview = files.find((f) => reviewPattern.test(f)) || null;
+      }
+
+      if (existingReview) {
+        messages.push(`✅ Code review already exists: code-reviews/${existingReview}`);
+        messages.push('Skipping code review generation (only one review per task).\n');
+      } else {
+        const reviewTool = getReviewTool();
+        const toolName =
+          reviewTool === 'claude' ? 'Claude SDK' : reviewTool === 'coderabbit' ? 'CodeRabbit CLI' : 'Codex CLI';
+        const timeout = reviewTool === 'claude' ? '10' : '30';
+        messages.push(`Running comprehensive code review with ${toolName}...`);
+        messages.push(`This may take up to ${timeout} minutes for thorough analysis.\n`);
+
+        try {
+          // Get task details - check for new spec structure first
+          const activeSpecDir = getSpecDir(projectRoot, fileOps);
+          let taskContent: string;
+          let taskTitle: string;
+
+          if (activeSpecDir) {
+            // New spec-driven structure - pass folder path to reviewer
+            const specMdPath = join(activeSpecDir, 'spec.md');
+            taskContent = fileOps.readFileSync(specMdPath, 'utf-8');
+            const titleMatch = taskContent.match(/^# (.+)$/m);
+            taskTitle = titleMatch ? titleMatch[1] : `Feature ${taskId}`;
+          } else {
+            // Old task structure - read from .claude/tasks/
+            const taskFilePath = join(projectRoot, '.claude', 'tasks', `${taskId}.md`);
+            taskContent = fileOps.readFileSync(taskFilePath, 'utf-8');
+            const titleMatch = taskContent.match(/^# (.+)$/m);
+            taskTitle = titleMatch ? titleMatch[1] : taskId;
+          }
+
+          // Get git diff from merge base
+          const currentBranch = getCurrent(projectRoot);
+          const defaultBranch = getDefault(projectRoot);
+          let gitDiff = '';
+          let mergeBase: string | null = null;
+
+          if (currentBranch && currentBranch !== defaultBranch) {
+            mergeBase = getMerge(currentBranch, defaultBranch, projectRoot);
+            if (mergeBase) {
+              try {
+                gitDiff = exec(`git diff ${mergeBase}..HEAD`, {
+                  encoding: 'utf-8',
+                  cwd: projectRoot,
+                  maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large diffs
+                });
+              } catch (diffError) {
+                logger.warn('Failed to get git diff', { error: diffError });
+                gitDiff = 'Failed to retrieve git diff';
+              }
+            }
+          } else {
+            // On default branch, use last commit
+            try {
+              gitDiff = exec('git diff HEAD~1..HEAD', {
+                encoding: 'utf-8',
+                cwd: projectRoot,
+                maxBuffer: 10 * 1024 * 1024,
+              });
+            } catch {
+              gitDiff = 'No changes to review';
+            }
+          }
+
+          // Truncate git diff if too large for review
+          const maxDiffSize = getCodeReviewMaxDiffSize();
+          const truncationResult = truncateGitDiff(gitDiff, maxDiffSize);
+
+          if (truncationResult.truncated) {
+            logger.warn('Git diff truncated for code review', {
+              originalSize: truncationResult.originalSize,
+              truncatedSize: truncationResult.truncatedSize,
+              filesOmitted: truncationResult.filesOmitted,
+              linesOmitted: truncationResult.linesOmitted,
+            });
+          }
+
+          // Ensure code-reviews directory exists
+          if (!fileOps.existsSync(codeReviewsDir)) {
+            fileOps.mkdirSync(codeReviewsDir, { recursive: true });
+          }
+
+          logger.info('Starting code review', { taskId, taskTitle });
+          const reviewResult = await performReview({
+            taskId,
+            taskTitle,
+            taskRequirements: taskContent,
+            gitDiff: truncationResult.diff,
+            projectRoot,
+            mergeBase: mergeBase || undefined,
+            specFolderPath: activeSpecDir || undefined,
+          });
+
+          if (reviewResult.success) {
+            // Check if a review file was created
+            const files = fileOps.readdirSync(codeReviewsDir);
+            const reviewPattern = new RegExp(`^${taskId}_.*\\.md$`);
+            const newReview = files.find((f) => reviewPattern.test(f));
+
+            if (newReview) {
+              messages.push(`✅ Code review completed: code-reviews/${newReview}\n`);
+
+              // Read and display the full review content
+              const reviewPath = join(codeReviewsDir, newReview);
+              const reviewContent = fileOps.readFileSync(reviewPath, 'utf-8');
+
+              messages.push('### 📄 Code Review Results\n');
+              messages.push('```markdown');
+              messages.push(reviewContent);
+              messages.push('```\n');
+
+              messages.push('### 🎯 Code Review Response Guidelines\n');
+              messages.push(
+                'Analyze this code review with technical rigor (based on clank receiving-code-review skill):\n',
+              );
+              messages.push('');
+              messages.push('**Response Principles:**');
+              messages.push('- **Verify first** - Check suggestions against codebase reality before agreeing');
+              messages.push(
+                '- **Question YAGNI violations** - If review suggests implementing unused features, push back',
+              );
+              messages.push("- **Check for breaking changes** - Verify suggestions don't break existing functionality");
+              messages.push(
+                '- **Technical evaluation only** - No performative agreement (never say "You\'re absolutely right!")',
+              );
+              messages.push(
+                '- **No gratitude expressions** - Actions speak. Just fix issues or explain disagreement.\n',
+              );
+              messages.push('');
+              messages.push('**Required Analysis:**');
+              messages.push('1. **Issues to fix** - List each with exact approach and technical reasoning');
+              messages.push('2. **Issues to reject** - Identify with detailed technical justification');
+              messages.push('   - Would it break existing functionality?');
+              messages.push('   - Does reviewer lack full context?');
+              messages.push('   - Is it a YAGNI violation (implementing unused features)?');
+              messages.push("3. **Low-priority items** - Explain why non-critical and shouldn't block completion");
+              messages.push("4. **Summary** - What must be fixed vs. what's incorrect/inapplicable\n");
+              messages.push('');
+              messages.push(
+                '**IMPORTANT:** Do not proceed with fixes until you have presented this analysis to the user and received their feedback.\n',
+              );
+
+              return {
+                success: true,
+                messages,
+                warnings,
+                data: { reviewFile: join('code-reviews', newReview), reviewGenerated: true },
+              };
+            } else {
+              warnings.push('⚠️ Code review completed but no review file was created.');
+            }
+          } else {
+            warnings.push(`⚠️ Code review failed: ${reviewResult.error || 'Unknown error'}`);
+            messages.push('You can proceed without the code review.\n');
+          }
+        } catch (reviewError) {
+          logger.error('Code review failed', { error: reviewError });
+          warnings.push(`⚠️ Code review error: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
+          messages.push('You can proceed without the code review.\n');
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    messages,
+    warnings,
+  };
+}
+
+/**
+ * Prepare completion command action
+ * Runs validation checks and generates dynamic instructions based on results
+ */
+export interface PrepareCompletionResultData {
+  validation?: PreparationResult;
+  readyForCompletion?: boolean;
+  codeReview?: CodeReviewResultData;
+  error?: string;
+}
+
+export async function prepareCompletionAction(
+  deps: PrepareCompletionDeps = {},
+): Promise<CommandResult<PrepareCompletionResultData>> {
+  const { runValidationChecks: runValidation = runValidationChecks, getConfig: getConf = getConfig } = deps;
+
+  const projectRoot = deps.cwd ? deps.cwd() : process.cwd();
+  const messages: string[] = [];
+  const warnings: string[] = [];
+
+  try {
+    // Run validation checks directly
+    const result: PreparationResult = await runValidation(projectRoot);
+
+    // Handle case where validation failed to run
+    if (!result.success && result.error) {
+      throw new Error(result.error);
+    }
+
+    // Generate dynamic instructions based on the results
+    messages.push('## Prepare Task for Completion\n');
+
+    // Check if validation passed
+    const validationPassed = result.readyForCompletion;
+
+    // Show validation status
+    if (validationPassed) {
+      messages.push('### ✅ Validation Passed\n');
+      messages.push('All validation checks have passed successfully!\n');
+    } else {
+      messages.push('### ⚠️ Validation Issues Found\n');
+      messages.push('The following issues need to be resolved before task completion:\n');
+
+      // TypeScript errors
+      if (result.validation?.typescript?.passed === false) {
+        messages.push('#### TypeScript Errors');
+        messages.push(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
+        if (result.validation.typescript.errors) {
+          messages.push('```');
+          messages.push(result.validation.typescript.errors.substring(0, 1000));
+          if (result.validation.typescript.errors.length > 1000) {
+            messages.push('... (truncated)');
+          }
+          messages.push('```\n');
+        }
+        messages.push(
+          '**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n',
+        );
+      }
+
+      // Linting issues
+      if (result.validation?.lint?.passed === false) {
+        messages.push('#### Linting Issues');
+        messages.push(`Found ${result.validation.lint.issueCount || 'multiple'} linting issues.\n`);
+        if (result.validation.lint.errors) {
+          messages.push('```');
+          messages.push(result.validation.lint.errors.substring(0, 1000));
+          if (result.validation.lint.errors.length > 1000) {
+            messages.push('... (truncated)');
+          }
+          messages.push('```\n');
+        }
+
+        // Generate tool-specific fix advice
+        const lintConfig = getLintConfig();
+        const tool = lintConfig?.tool || 'biome';
+        let fixAdvice = 'Fix linting issues';
+
+        if (lintConfig?.autoFixCommand) {
+          fixAdvice = `Fix linting issues. Many can be auto-fixed with \`${lintConfig.autoFixCommand}\``;
+        } else if (tool === 'biome') {
+          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `bunx biome check --write`';
+        } else if (tool === 'eslint') {
+          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `npx eslint --fix`';
+        }
+
+        messages.push(`**Action:** ${fixAdvice}.\n`);
+      }
+
+      // Test failures
+      if (result.validation?.tests?.passed === false) {
+        messages.push('#### Test Failures');
+        messages.push(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
+        if (result.validation.tests.errors) {
+          messages.push('```');
+          messages.push(result.validation.tests.errors.substring(0, 1000));
+          if (result.validation.tests.errors.length > 1000) {
+            messages.push('... (truncated)');
+          }
+          messages.push('```\n');
+        }
+        messages.push('**Action:** Fix failing tests or update test expectations as needed.\n');
+      }
+
+      // Knip unused code warnings (non-blocking)
+      if (result.validation?.knip?.passed === false) {
+        messages.push('#### Unused Code (Optional)');
+        const issues = [];
+        if (result.validation.knip.unusedFiles) {
+          issues.push(`${result.validation.knip.unusedFiles} unused files`);
+        }
+        if (result.validation.knip.unusedExports) {
+          issues.push(`${result.validation.knip.unusedExports} unused exports`);
+        }
+        if (result.validation.knip.unusedDeps) {
+          issues.push(`${result.validation.knip.unusedDeps} unused dependencies`);
+        }
+        messages.push(`Knip found: ${issues.join(', ')}\n`);
+        messages.push("**Note:** These are warnings and won't block completion, but consider cleaning them up.\n");
+      }
+    }
+
+    // Git status information
+    if (result.git?.hasUncommittedChanges) {
+      messages.push('#### Uncommitted Changes');
+      messages.push(`Found ${result.git.modifiedFiles?.length || 'uncommitted'} modified files.\n`);
+      messages.push('**Note:** These will be automatically committed during task completion.\n');
+    }
+
+    if (result.git?.wipCommitCount > 0) {
+      messages.push('#### WIP Commits');
+      messages.push(`Found ${result.git.wipCommitCount} WIP commits that will be squashed during completion.\n`);
+    }
+
+    // Task status check
+    if (result.task?.status !== 'in_progress') {
+      messages.push('#### Task Status');
+      messages.push(`Task status is '${result.task?.status || 'unknown'}', expected 'in_progress'.\n`);
+      messages.push("**Note:** This won't block completion but is unusual.\n");
+    }
+
+    // Run code review
+    const codeReviewResult = await runCodeReview(projectRoot, validationPassed, deps);
+    messages.push(...(codeReviewResult.messages ?? []));
+    warnings.push(...(codeReviewResult.warnings ?? []));
+
+    // Documentation update reminder - only if validation passed
+    if (validationPassed) {
+      messages.push('### Documentation Updates\n');
+      messages.push('Update the task documentation:');
+      messages.push('1. Update "## Recent Progress" section in the task file, but do not update the status yet');
+      messages.push('2. Note any significant decisions in decision_log.md');
+      messages.push('3. Document any new patterns in system_patterns.md');
+      messages.push('4. Update progress_log.md with what was accomplished');
+      messages.push('5. If this task came from the backlog, remove it from backlog.md');
+      messages.push('6. Commit your changes manually or wait for auto-commit\n');
+    }
+
+    // Journal reflection reminder (only if validation passed and private journal is enabled)
+    const config = getConf();
+    const hasPrivateJournal = config.features?.private_journal?.enabled === true;
+
+    if (validationPassed && hasPrivateJournal) {
+      messages.push('### Journal Reflection\n');
+      messages.push('Consider recording insights about:');
+      messages.push('- Technical challenges encountered and solutions');
+      messages.push('- Patterns that worked well or poorly');
+      messages.push('- Any learnings for future tasks\n');
+    }
+
+    messages.push('### Next Steps\n');
+    if (!validationPassed) {
+      messages.push('1. Fix the validation issues listed above');
+      messages.push('2. Ask the user to run `/prepare-completion` again to verify all issues are resolved\n');
+    } else {
+      messages.push('1. Complete all documentation updates above');
+      if (hasPrivateJournal) {
+        messages.push('2. Record any insights in your journal');
+        messages.push('3. Ask the user to run `/complete-task` to finalize the task\n');
+      } else {
+        messages.push('2. Ask the user to run `/complete-task` to finalize the task\n');
+      }
+      messages.push('**✅ Task is ready for completion!**\n');
+    }
+
+    const codeReviewData = isCommandSuccess(codeReviewResult) ? codeReviewResult.data : undefined;
+
+    return {
+      success: true,
+      messages,
+      warnings,
+      data: {
+        validation: result,
+        readyForCompletion: validationPassed,
+        codeReview: codeReviewData,
+      },
+      exitCode: 0,
+    };
+  } catch (error) {
+    // Handle cases where validation-checks command fails completely
+    messages.push('## ❌ Validation Check Failed\n');
+
+    const err = error as { code?: string; status?: number; message?: string; stderr?: string };
+    if (err.code === 'ENOENT') {
+      messages.push('Error: Could not run validation checks.\n');
+      messages.push('Please ensure plugin dependencies are installed: `bun install` in the plugin directory');
+    } else if (err.status === 127) {
+      messages.push('Error: validation command not found.\n');
+      messages.push('Please ensure plugin dependencies are installed properly.');
+    } else {
+      messages.push(`Error running validation checks: ${err.message || 'Unknown error'}\n`);
+      if (err.stderr) {
+        messages.push('Error details:');
+        messages.push(err.stderr);
+      }
+    }
+
+    return {
+      success: true,
+      messages,
+      warnings,
+      data: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      exitCode: 0,
+    };
+  }
+}
+
+/**
+ * Create prepare-completion command
+ */
+
+// CLI entrypoint
+if (import.meta.main) {
+  prepareCompletionAction()
+    .then((result) => {
+      if (result.messages) {
+        for (const msg of result.messages) {
+          console.log(msg);
+        }
+      }
+      if (result.warnings) {
+        for (const warn of result.warnings) {
+          console.warn(warn);
+        }
+      }
+      if (!result.success && result.error) {
+        console.error(result.error);
+      }
+      process.exitCode = result.exitCode ?? 0;
+    })
+    .catch((error) => {
+      console.error('Unexpected error:', error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    });
+}

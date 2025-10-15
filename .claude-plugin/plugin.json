@@ -1,0 +1,20 @@
+{
+  "name": "cc-track",
+  "description": "Task Review And Context Keeper: Keep your vibe coding on track",
+  "version": "3.0.0",
+  "author": {
+    "name": "Craig",
+    "url": "https://github.com/cahaseler/cc-track"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cahaseler/cc-track"
+  },
+  "keywords": [
+    "claude-code",
+    "task-tracking",
+    "context-management",
+    "workflow",
+    "productivity"
+  ]
+}

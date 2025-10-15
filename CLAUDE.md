@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.claude/specs/100-task-100-create-templates-for-spec-driven-workflow/spec.md
+@.claude/specs/101-migrate-to-claude-code-plugin-system/spec.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
@@ -28,8 +28,5 @@
 Additional information can be found in the following files. Reference them as needed during research or planning.
 
 .claude/progress_log.md - project progress and updates over time
-.claude/tasks/TASK_XXX.md - Detailed task descriptions and outcomes
+.claude/specs/ - Detailed task specifications and outcomes
 
-NOTE:
-- You never need to commit your work, even at the end of a task. This is taken care of you automatically by hooks and commands.
-- When you have completed a task, let the user know and they will perform any needed checks or discussion and then invoke the /complete-task command.
