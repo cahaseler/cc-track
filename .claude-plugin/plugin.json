@@ -6,10 +6,7 @@
     "name": "Craig",
     "url": "https://github.com/cahaseler/cc-track"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/cahaseler/cc-track"
-  },
+  "repository": "https://github.com/cahaseler/cc-track",
   "keywords": [
     "claude-code",
     "task-tracking",
