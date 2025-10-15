@@ -1,3 +1,10 @@
+## [2.11.1](https://github.com/cahaseler/cc-track/compare/v2.11.0...v2.11.1) (2025-10-15)
+
+
+### Bug Fixes
+
+* change repository field from object to string per Claude Code schema ([#149](https://github.com/cahaseler/cc-track/issues/149)) ([7b0d81c](https://github.com/cahaseler/cc-track/commit/7b0d81cda6b6419c3da37ca8b343c14b63d2041e))
+
 # [2.11.0](https://github.com/cahaseler/cc-track/compare/v2.10.0...v2.11.0) (2025-10-15)
 
 
