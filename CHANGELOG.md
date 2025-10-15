@@ -1,3 +1,17 @@
+# [2.12.0](https://github.com/cahaseler/cc-track/compare/v2.11.1...v2.12.0) (2025-10-15)
+
+
+### Bug Fixes
+
+* change repository field from object to string per Claude Code schema ([38ba8fb](https://github.com/cahaseler/cc-track/commit/38ba8fba4f99acc00ca24643dde462ecdc1401b4))
+* remove incorrect :* wildcard from migrate command allowed-tools ([3bf93d9](https://github.com/cahaseler/cc-track/commit/3bf93d9a9ea3cc3f436c37a342171955b7a6822a))
+* resolve merge conflict in migrate.md - remove :* wildcard ([14caba1](https://github.com/cahaseler/cc-track/commit/14caba15f94f6a96b17f57f332dfe9a1bc6a44b9))
+
+
+### Features
+
+* add missing /migrate slash command ([1d16b61](https://github.com/cahaseler/cc-track/commit/1d16b6146a276ea6f3ec44018f0a9fddc424c507))
+
 ## [2.11.1](https://github.com/cahaseler/cc-track/compare/v2.11.0...v2.11.1) (2025-10-15)
 
 
