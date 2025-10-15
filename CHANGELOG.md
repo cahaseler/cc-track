@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/cahaseler/cc-track/compare/v2.10.0...v2.11.0) (2025-10-15)
+
+
+### Features
+
+* complete 101 - Feature Specification: Migrate cc-track to Claude Code Plugin System ([#148](https://github.com/cahaseler/cc-track/issues/148)) ([373054d](https://github.com/cahaseler/cc-track/commit/373054d6a0494533406f9a3d571e976ded42bdec))
+
 # [2.10.0](https://github.com/cahaseler/cc-track/compare/v2.9.0...v2.10.0) (2025-10-14)
 
 
