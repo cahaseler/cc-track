@@ -2,15 +2,18 @@
 node_modules/
 *.node
 
-# Build outputs
-dist/
+# Build outputs (legacy from npm package days)
 build/
+dist/
 *.js
 *.d.ts
 *.map
 
-# Generated files
+# Generated files (legacy from npm package days)
 src/lib/embedded-resources.ts
+
+# Plugin-specific
+# Note: node_modules already excluded above
 
 # IDE
 .vscode/

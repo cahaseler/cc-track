@@ -63,10 +63,109 @@
 
 ## Testing Patterns
 
-- Test framework: None currently (would use Bun test)
-- Coverage target: Not set
-- Test organization: Would be in `/tests`
-- Mocking strategy: File system mocking for hooks
+### Test Framework and Organization
+- **Framework:** Bun test with built-in mocking support
+- **Test location:** Tests colocated with source files (e.g., `commands/backlog.test.ts`)
+- **Coverage target:** 428+ tests covering 83%+ of files
+- **Test naming:** `*.test.ts` files alongside implementation
+
+### Dependency Injection for Testability
+- **Principle:** Inject side effects (filesystem, child_process, network, config, logging) via constructor args or deps parameter
+- **Production defaults:** Provide narrow interfaces and production defaults inside modules; tests pass mocks, production uses defaults
+- **No mutable state:** Avoid module-level mutable state; if caching required, expose reset (e.g., `clearConfigCache()`)
+- **Per-test isolation:** Each test creates fresh instances and restores with `mock.restore()` to avoid cross-test leakage
+
+### DI Implementation Patterns
+
+**Deps object (hooks):**
+```typescript
+// Example: preToolValidationHook(input, deps)
+export async function exampleHook(input: HookInput, deps: {
+  execSync?: typeof execSync;
+  fileOps?: { existsSync: typeof existsSync };
+  logger?: ReturnType<typeof createLogger>;
+} = {}) {
+  const exec = deps.execSync || execSync;
+  const fs = deps.fileOps || { existsSync };
+  const log = deps.logger || createLogger('example');
+  // ...use exec, fs, log...
+  return { continue: true };
+}
+```
+
+**Constructor injection (libs):**
+```typescript
+// Example: GitHelpers(exec?, getGitConfig?, claudeSDK?)
+export class MyService {
+  constructor(
+    private exec: ExecFn = defaultExec,
+    private fs: FileOps = defaultFs,
+    private log = createLogger('my-service')
+  ) {}
+
+  run(cwd: string) {
+    this.exec('echo hi', { cwd });
+  }
+}
+```
+
+**Command deps objects:**
+```typescript
+// Example: runCompleteTask(options, deps)
+export interface CompleteTaskDeps {
+  console: ConsoleLike;
+  process: ProcessLike;
+  fs: FileSystemLike;
+  time: TimeLike;
+  logger: () => LoggerLike;
+  // ... other dependencies
+}
+```
+
+### Shared Test Utilities
+The codebase provides reusable test utilities in `test-utils/command-mocks.ts`:
+
+```typescript
+import {
+  createMockLogger,
+  createMockConsole,
+  createMockProcess,
+  createMockFileSystem,
+  createTestDeps,
+  createMockCompleteTaskDeps
+} from '../test-utils/command-mocks';
+
+// Create all test dependencies at once
+const deps = createTestDeps({ cwd: '/project', fixedDate: '2025-01-01' });
+
+// Or create individual mocks
+const logger = createMockLogger();
+const console = createMockConsole();
+const fs = createMockFileSystem({ '/file.txt': 'content' });
+
+// Command-specific helpers
+const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
+```
+
+### Parallel-Safe Testing
+- Always inject per-test instances: `new GitHelpers(mockExec, mockGetGitConfig, mockClaudeSDK)`
+- Reset global mocks between tests: `beforeEach(() => { mock.restore(); clearConfigCache(); })`
+- Prefer DI over `mock.module` for Node built-ins
+- If `mock.module` unavoidable, restore in `afterEach` with fresh dynamic imports
+- Avoid mutating process-wide state (e.g., `process.env`) without restoration
+
+### Integration Testing
+- Test complete workflows rather than isolated units for complex commands
+- Example: `complete-task-integration.test.ts` tests full success path, failure/rollback, option flags, edge cases
+- Mock all external dependencies (git, github, file system, time)
+- Verify state changes and side effects comprehensively
+
+### Mocking Strategy
+- **File system:** Use mock FileSystemLike interface with in-memory Map
+- **Process execution:** Mock execSync with predefined command responses
+- **Console output:** Capture log/error/warn calls to arrays for assertion
+- **Time:** Mock Date.now() and date string generation for deterministic tests
+- **Config cache:** Call `clearConfigCache()` in beforeEach when config involved
 
 ## Workflow Patterns
 
@@ -176,3 +275,5 @@
 [2025-09-12] - Added configurable log directory pattern to keep logs outside project directory
 
 [2025-09-15] - Added validation patterns and branch protection implementation
+
+[2025-10-15] - Expanded Testing Patterns section with comprehensive DI/mocking patterns from testing-guidance.md (TASK_093a)

@@ -1,17 +1,24 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
-    "src/cli/index.ts"
+    "hooks/*.ts",
+    "commands/scripts/*.ts",
+    "scripts/*.ts"
   ],
   "project": [
-    "src/**/*.ts"
+    "hooks/**/*.ts",
+    "commands/**/*.ts",
+    "scripts/**/*.ts",
+    "lib/**/*.ts",
+    "test-utils/**/*.ts",
+    "types.ts"
   ],
   "ignore": [
     "**/*.md",
-    ".claude/tasks/**",
-    ".claude/plans/**",
+    ".claude/**",
     "templates/**",
-    "docs/**"
+    "docs/**",
+    "dist/**"
   ],
   "ignoreDependencies": [
     "ccusage",
