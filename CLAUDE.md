@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.claude/specs/101-migrate-to-claude-code-plugin-system/spec.md
+@.claude/no_active_task.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
