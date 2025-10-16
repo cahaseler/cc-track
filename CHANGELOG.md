@@ -1,3 +1,10 @@
+# [2.14.0](https://github.com/cahaseler/cc-track/compare/v2.13.0...v2.14.0) (2025-10-16)
+
+
+### Features
+
+* complete 102 - Fix Plugin Script Execution ([#152](https://github.com/cahaseler/cc-track/issues/152)) ([7769f20](https://github.com/cahaseler/cc-track/commit/7769f20e3b4f2dc5c051736b19de24faa3be4a97))
+
 # [2.13.0](https://github.com/cahaseler/cc-track/compare/v2.12.0...v2.13.0) (2025-10-16)
 
 
