@@ -1,8 +1,8 @@
 # Project Constitution
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Ratified**: 2025-10-15
-**Last Amended**: 2025-10-15
+**Last Amended**: 2025-10-15 (TASK_102: Clarified environment variable usage)
 
 ## Purpose
 
@@ -22,7 +22,8 @@ This constitution establishes the technical guardrails and architectural princip
 ### II. Plugin-Native Architecture
 - Distributed as Claude Code plugin via git repository
 - TypeScript executed by Bun runtime (no compilation to binary)
-- Commands, hooks, and scripts reference `${CLAUDE_PLUGIN_ROOT}`
+- Hooks and MCP servers reference `${CLAUDE_PLUGIN_ROOT}` (available when Claude Code spawns processes)
+- Slash commands use `${CC_TRACK_SCRIPTS_ROOT}` (set to plugin scripts directory by SessionStart hook)
 - Separate hook files per event type (no unified dispatcher)
 - Templates stay in plugin directory (not copied to projects)
 
@@ -137,8 +138,8 @@ templates/              # Project initialization templates
 - **Testing**: Bun's built-in test runner
 
 ### Plugin Integration
-- **Commands**: Markdown files with `!bun run ${CLAUDE_PLUGIN_ROOT}/path/to/script.ts`
-- **Hooks**: Registered in `.claude-plugin/hooks.json`, executed via `bun run`
+- **Commands**: Markdown files with `!bun run ${CC_TRACK_SCRIPTS_ROOT}/script.ts` (SessionStart hook sets this to plugin scripts directory)
+- **Hooks**: Registered in `.claude-plugin/hooks.json`, use `${CLAUDE_PLUGIN_ROOT}`, executed via `bun run`
 - **Statusline**: Command-based, defined in project `.claude/settings.json`
 - **Configuration**: Per-project `.claude/track.config.json`
 

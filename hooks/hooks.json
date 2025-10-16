@@ -1,4 +1,11 @@
 {
+  "SessionStart": [
+    {
+      "name": "session-start",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.ts",
+      "description": "Sets CC_TRACK_SCRIPTS_ROOT to plugin scripts directory"
+    }
+  ],
   "PostToolUse": [
     {
       "name": "edit-validation",
