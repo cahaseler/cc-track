@@ -1,3 +1,10 @@
+# [2.16.0](https://github.com/cahaseler/cc-track/compare/v2.15.0...v2.16.0) (2025-10-16)
+
+
+### Features
+
+* **agents:** Add tool whitelisting to avoid permission prompts ([c86e027](https://github.com/cahaseler/cc-track/commit/c86e02784638cf30f4cf537da0779e3a57dc7a0e))
+
 # [2.15.0](https://github.com/cahaseler/cc-track/compare/v2.14.0...v2.15.0) (2025-10-16)
 
 
