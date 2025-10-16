@@ -23,7 +23,7 @@ This constitution establishes the technical guardrails and architectural princip
 - Distributed as Claude Code plugin via git repository
 - TypeScript executed by Bun runtime (no compilation to binary)
 - Hooks and MCP servers reference `${CLAUDE_PLUGIN_ROOT}` (available when Claude Code spawns processes)
-- Slash commands use `${CC_TRACK_SCRIPTS_ROOT}` (scripts copied to known location by SessionStart hook)
+- Slash commands use `${CC_TRACK_SCRIPTS_ROOT}` (set to plugin scripts directory by SessionStart hook)
 - Separate hook files per event type (no unified dispatcher)
 - Templates stay in plugin directory (not copied to projects)
 
@@ -138,7 +138,7 @@ templates/              # Project initialization templates
 - **Testing**: Bun's built-in test runner
 
 ### Plugin Integration
-- **Commands**: Markdown files with `!bun run ${CC_TRACK_SCRIPTS_ROOT}/script.ts` (scripts installed by SessionStart hook)
+- **Commands**: Markdown files with `!bun run ${CC_TRACK_SCRIPTS_ROOT}/script.ts` (SessionStart hook sets this to plugin scripts directory)
 - **Hooks**: Registered in `.claude-plugin/hooks.json`, use `${CLAUDE_PLUGIN_ROOT}`, executed via `bun run`
 - **Statusline**: Command-based, defined in project `.claude/settings.json`
 - **Configuration**: Per-project `.claude/track.config.json`

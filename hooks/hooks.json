@@ -3,7 +3,7 @@
     {
       "name": "session-start",
       "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.ts",
-      "description": "Installs plugin scripts to user directory and sets CC_TRACK_SCRIPTS_ROOT"
+      "description": "Sets CC_TRACK_SCRIPTS_ROOT to plugin scripts directory"
     }
   ],
   "PostToolUse": [
