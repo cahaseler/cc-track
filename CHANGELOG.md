@@ -1,3 +1,11 @@
+# [2.15.0](https://github.com/cahaseler/cc-track/compare/v2.14.0...v2.15.0) (2025-10-16)
+
+
+### Features
+
+* Add Haiku 4.5 subagent research and comprehensive validation tests ([eb6f289](https://github.com/cahaseler/cc-track/commit/eb6f2896a8a804806f73e4873bee8f2e6b6de08d))
+* Bundle researcher and test-generation agents with cc-track plugin ([31a8e61](https://github.com/cahaseler/cc-track/commit/31a8e61a099bf47ae903bffb132e78f204a0d186))
+
 # [2.14.0](https://github.com/cahaseler/cc-track/compare/v2.13.0...v2.14.0) (2025-10-16)
 
 
