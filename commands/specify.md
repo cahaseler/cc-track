@@ -28,6 +28,15 @@ description: Create a feature specification through Socratic questioning and ite
 ### Critical Rule:
 **Continue questioning while ANY aspect remains unclear.** Don't rush to artifact creation. A well-understood spec takes 5-10 clarifying questions minimum.
 
+**Tip**: If you need background research on a domain, technology, or pattern during specification:
+```
+Task: "Research [domain/pattern] to inform feature specification for [feature]"
+Subagent: researcher
+Output: .claude/specs/research-[topic].md
+```
+
+This is useful when the user requests a feature in an unfamiliar domain (e.g., "Add OAuth2 authentication" but you're unsure of OAuth2 flows).
+
 ### Examples of Good Questions:
 - "This feature has 3 main user types - which should we focus on first?"
 - "For authentication, choose one: A) Email/password B) OAuth only C) Both D) Something else?"

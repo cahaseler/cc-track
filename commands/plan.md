@@ -101,7 +101,14 @@ Researching [chosen tech] best practices...
 - Security considerations
 ```
 
-**Use WebSearch** for recent docs if needed.
+**Tip**: For comprehensive research on specific technologies or patterns, consider using the **researcher** subagent:
+```
+Task: "Research [technology] best practices for [specific requirement]"
+Subagent: researcher
+Output: .claude/specs/NNN-feature-name/research-[topic].md
+```
+
+This delegates deep research to a specialized agent, saving your context for design work.
 
 ### Document Decisions
 Create `research.md`:

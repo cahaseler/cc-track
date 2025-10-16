@@ -94,6 +94,19 @@ T007 [P] Integration test registration
 T008 [P] Integration test login
 ```
 
+**Tip**: For generating comprehensive test suites, consider using the **test-generation** subagent:
+```
+Task: "Create comprehensive tests for [module/function] following TDD principles"
+Subagent: test-generation
+```
+
+The test-generation agent will:
+- Generate tests that fail first (TDD-compliant)
+- Test behavior, not mocks
+- Use proper dependency injection
+- Follow project testing patterns
+- Escalate if code isn't testable (needs refactoring)
+
 **3. Implementation After Tests**
 ```
 ## Phase 3: Core Implementation (ONLY after tests failing)
