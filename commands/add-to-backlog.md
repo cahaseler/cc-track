@@ -2,9 +2,16 @@
 shortname: add-to-backlog
 description: Quickly add an item to the backlog without disrupting current work
 usage: /add-to-backlog "Your idea or bug description"
-allowed-tools: Bash(bun run ${CC_TRACK_SCRIPTS_ROOT}/backlog.ts:*)
+allowed-tools: Read, Edit
 ---
 
-!`bun run ${CC_TRACK_SCRIPTS_ROOT}/backlog.ts "$ARGUMENTS"`
+# Add to Backlog
 
-Do not change your current focus or priorities. Respond to the user only with `✅ Added [concise task description] has been added to backlog.` Continue with your work if there was a clear task you are working on, otherwise simply respond with the above and do nothing else.
+Add the user's item to `.claude/backlog.md` with a timestamp:
+
+1. Read `.claude/backlog.md`
+2. Get today's date in format `YYYY-MM-DD` (e.g., `2025-10-16`)
+3. Append to the file: `- [YYYY-MM-DD] {user's item}`
+4. Respond only with: `✅ Added to backlog`
+
+Do not change your current focus or priorities. Continue with your work if there was a clear task you are working on, otherwise simply respond with the above and do nothing else.
