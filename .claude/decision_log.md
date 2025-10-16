@@ -353,6 +353,28 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
   - **Distribution**: New templates and slash commands embedded via build-time packaging system
 - **Reversibility:** Medium - Migration command exists and old hooks can be re-enabled, but reversing would lose benefits of structured workflow. Both structures supported for transition period.
 
+[2025-10-16] - Replace Script Execution with Natural Language Instructions in Slash Commands
+- **Context:** Plugin script execution broken because `${CLAUDE_PLUGIN_ROOT}` not available in slash command bash execution. Attempted SessionStart hook to copy scripts and set env var, but discovered env vars from hooks don't persist to slash command execution.
+- **Decision:** Replace `!` bash script execution with natural language instructions telling Claude what to do via CLI commands
+- **Rationale:**
+  - Works immediately without waiting for Anthropic to fix upstream bug
+  - More flexible - Claude can adapt instructions to different project setups (identify appropriate test/lint/typecheck commands)
+  - Simpler mental model - no hidden automation, Claude explains what went wrong
+  - Actually better UX for some operations - Claude can generate PR descriptions from spec files rather than templating
+  - Complex error handling replaced with "explain and stop" which is more transparent
+- **Alternatives Considered:**
+  - Wait for Anthropic fix: Leaves plugin broken indefinitely, no ETA from Anthropic
+  - SessionStart hook with script copying: Discovered this doesn't work - env vars don't persist across processes
+  - Jesse's pattern (prompt injection): Only works for reading paths, not for bash execution via `!` prefix
+  - Disable commands entirely: Would make plugin unusable for key workflows
+- **Implications:**
+  - 4 commands updated: add-to-backlog (trivial), prepare-completion (validation + review), complete-task (git + PR), migrate (active task only)
+  - Slightly slower than automated scripts but still fast enough
+  - Better error messages and user feedback
+  - May keep this approach even after Anthropic fixes bug - instructions might be better than automation
+  - Historical task migration (migrate command) deferred until bug fix or manual implementation needed
+- **Reversibility:** Easy - can revert to script execution once `${CLAUDE_PLUGIN_ROOT}` works in slash commands, all scripts still exist and functional
+
 ### Template Entry
 ```
 [YYYY-MM-DD HH:MM] - [Decision Summary]
