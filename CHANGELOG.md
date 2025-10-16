@@ -1,3 +1,10 @@
+# [2.13.0](https://github.com/cahaseler/cc-track/compare/v2.12.0...v2.13.0) (2025-10-16)
+
+
+### Features
+
+* Fix plugin script execution via SessionStart hook ([#151](https://github.com/cahaseler/cc-track/issues/151)) ([eceabef](https://github.com/cahaseler/cc-track/commit/eceabef0336bfd59029576e3e2a0473dcbc18294))
+
 # [2.12.0](https://github.com/cahaseler/cc-track/compare/v2.11.1...v2.12.0) (2025-10-15)
 
 
