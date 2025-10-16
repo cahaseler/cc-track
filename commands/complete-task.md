@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/complete-task.ts), Bash(gh pr edit:*), Edit, Read
+allowed-tools: Bash(bun run ${CC_TRACK_SCRIPTS_ROOT}/complete-task.ts), Bash(gh pr edit:*), Edit, Read
 description: Complete the current active task (Phase 2 of task completion workflow)
 ---
 
@@ -7,4 +7,4 @@ description: Complete the current active task (Phase 2 of task completion workfl
 
 ## Phase 2: Task Completion
 
-!`bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/complete-task.ts`
+!`bun run ${CC_TRACK_SCRIPTS_ROOT}/complete-task.ts`

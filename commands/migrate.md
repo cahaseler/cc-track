@@ -2,10 +2,10 @@
 shortname: migrate
 description: Migrate from old task structure to spec-driven workflow format
 usage: /migrate
-allowed-tools: Bash(bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/migrate.ts)
+allowed-tools: Bash(bun run ${CC_TRACK_SCRIPTS_ROOT}/migrate.ts)
 ---
 
-!`bun run ${CLAUDE_PLUGIN_ROOT}/commands/scripts/migrate.ts`
+!`bun run ${CC_TRACK_SCRIPTS_ROOT}/migrate.ts`
 
 The migration process will:
 1. Scan for old `.claude/tasks/TASK_*.md` files
