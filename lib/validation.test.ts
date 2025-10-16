@@ -836,10 +836,7 @@ describe('validation', () => {
       expect(result.success).toBe(true);
       expect(result.validation.tests?.passed).toBe(true);
       // Tests should not be executed
-      expect(mockExecSync).not.toHaveBeenCalledWith(
-        expect.stringContaining('bun test'),
-        expect.any(Object),
-      );
+      expect(mockExecSync).not.toHaveBeenCalledWith(expect.stringContaining('bun test'), expect.any(Object));
     });
 
     test('handles Knip check with unused code detected', async () => {
@@ -904,9 +901,7 @@ describe('validation', () => {
       expect(result.validation.knip?.unusedFiles).toBe(2);
       expect(result.validation.knip?.unusedExports).toBe(5);
       expect(result.validation.knip?.unusedDeps).toBe(1);
-      expect(result.warnings).toContainEqual(
-        expect.stringContaining('Knip found:'),
-      );
+      expect(result.warnings).toContainEqual(expect.stringContaining('Knip found:'));
     });
 
     test('handles Knip check when disabled', async () => {
@@ -954,10 +949,7 @@ describe('validation', () => {
       expect(result.success).toBe(true);
       expect(result.readyForCompletion).toBe(true);
       expect(result.validation.knip?.passed).toBe(true);
-      expect(mockExecSync).not.toHaveBeenCalledWith(
-        expect.stringContaining('knip'),
-        expect.any(Object),
-      );
+      expect(mockExecSync).not.toHaveBeenCalledWith(expect.stringContaining('knip'), expect.any(Object));
     });
 
     test('parses multiple TypeScript errors correctly', async () => {
