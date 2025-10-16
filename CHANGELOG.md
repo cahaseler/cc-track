@@ -1,3 +1,10 @@
+## [2.16.1](https://github.com/cahaseler/cc-track/compare/v2.16.0...v2.16.1) (2025-10-16)
+
+
+### Bug Fixes
+
+* **agents:** Add Edit tool to both agents for file modifications ([c45d1ba](https://github.com/cahaseler/cc-track/commit/c45d1ba27a2e12f34d3c88dad1becf16a8936ea7))
+
 # [2.16.0](https://github.com/cahaseler/cc-track/compare/v2.15.0...v2.16.0) (2025-10-16)
 
 
