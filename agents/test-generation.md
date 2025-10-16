@@ -2,6 +2,7 @@
 description: Generates comprehensive test suites following TDD principles with proper mocking and behavior verification
 capabilities: ["testing", "test-generation", "tdd", "quality-assurance", "code-coverage"]
 model: haiku
+tools: Read, Grep, Glob, Write, Bash(bun test:*)
 ---
 
 # Test Generation Subagent

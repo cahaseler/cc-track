@@ -2,6 +2,7 @@
 description: Researches topics and synthesizes findings from documentation, web sources, and codebases
 capabilities: ["research", "web-search", "synthesis", "documentation", "analysis"]
 model: haiku
+tools: Read, Grep, Glob, WebSearch, WebFetch, Write, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 ---
 
 # Research Subagent
