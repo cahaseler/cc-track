@@ -13,5 +13,6 @@
     "context-management",
     "workflow",
     "productivity"
-  ]
+  ],
+  "agents": "./agents/"
 }
