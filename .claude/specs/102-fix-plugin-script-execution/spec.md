@@ -3,7 +3,24 @@
 **Feature ID**: `102`
 **Branch**: `102-fix-plugin-script-execution`
 **Created**: 2025-10-15
-**Status**: Draft
+**Status**: Postponed
+
+---
+
+## 🚧 Implementation Status
+
+**POSTPONED** - This specification describes a SessionStart hook approach that was investigated but postponed due to a Claude Code bug.
+
+**Root Cause:** Environment variables set by hooks do not persist to slash command bash execution context (using `!` prefix in command markdown files). This makes the SessionStart hook approach non-viable until Anthropic resolves the upstream bug.
+
+**Temporary Solution Implemented:** Slash commands have been updated to use natural language instructions instead of `!` bash script execution. Claude now receives instructions to run CLI commands directly, which:
+- Works immediately without environment variable support
+- Provides more flexibility for different project setups
+- Offers better UX for some operations (e.g., generating PR descriptions from spec files)
+
+**Future Consideration:** This specification may be revisited if/when Claude Code fixes the environment variable persistence bug. The SessionStart hook approach described below remains a valid solution design for that scenario.
+
+**Reference:** See decision log entry [2025-10-16] for full context on the temporary natural language solution.
 
 ## ⚡ Quick Guidelines
 - ✅ Focus on WHAT users need and WHY
