@@ -1,3 +1,10 @@
+# [2.17.0](https://github.com/cahaseler/cc-track/compare/v2.16.1...v2.17.0) (2025-10-17)
+
+
+### Features
+
+* enhance specify and clarify commands with AskUserQuestion tool ([a372fbb](https://github.com/cahaseler/cc-track/commit/a372fbb64514a54da920c7e47271fa19970a9277))
+
 ## [2.16.1](https://github.com/cahaseler/cc-track/compare/v2.16.0...v2.16.1) (2025-10-16)
 
 
