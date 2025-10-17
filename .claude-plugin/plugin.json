@@ -14,5 +14,8 @@
     "workflow",
     "productivity"
   ],
-  "agents": "./agents/"
+  "agents": [
+    "./agents/researcher.md",
+    "./agents/test-generation.md"
+  ]
 }
