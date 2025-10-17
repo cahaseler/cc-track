@@ -1,0 +1,12 @@
+{
+  "task_id": "103",
+  "feature_name": "context-maintenance-command",
+  "branch": "103-context-maintenance-command",
+  "status": "completed",
+  "started": "2025-10-17T00:00:00Z",
+  "completed": "2025-10-17",
+  "github": {
+    "issue": 153,
+    "url": "https://github.com/cahaseler/cc-track/issues/153"
+  }
+}

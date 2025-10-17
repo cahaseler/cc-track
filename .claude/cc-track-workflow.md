@@ -292,6 +292,19 @@ Optional files for complex features:
 
 ---
 
+### `/context-maintenance` - Clean Up Context Files
+
+**Purpose:** Reduce bloat in context files through structured cleanup guidance
+
+**What happens:**
+1. Provides file-by-file instructions for cleaning system_patterns.md, decision_log.md, progress_log.md, and other context files
+2. Offers explicit rules for common bloat (duplicates, outdated refs, verbose logs)
+3. Includes judgment principles for edge cases
+
+**When to use:** When context files feel bloated, Update Logs are growing long, or token usage is increasing without proportional value
+
+---
+
 ## Quality Enforcement
 
 ### Validation Hooks (Always Active)

@@ -7,6 +7,7 @@
 - Include *why* the decision was made and alternatives considered
 - Do **NOT** modify existing entries - append chronologically
 - Format: `[YYYY-MM-DD HH:MM] - [Summary of Decision]` followed by details
+- **Note:** Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisions - they're corrections. Only log actual architectural or design choices where multiple valid approaches exist.
 
 ---
 
@@ -74,8 +75,6 @@
 - **Implications:** All hooks must specify cwd when executing external commands
 - **Reversibility:** Easy - just change cwd parameter
 
-### Note on Decision Criteria
-Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisions - they're corrections. Only log actual architectural or design choices where multiple valid approaches exist.
 
 [2025-09-10 07:40] - Use Sonnet for Task Enrichment Instead of Haiku
 - **Context:** Initial attempt to use Haiku for task enrichment to save costs resulted in broken task files
@@ -374,16 +373,3 @@ Bug fixes, typo corrections, and fixing incorrect implementations are NOT decisi
   - May keep this approach even after Anthropic fixes bug - instructions might be better than automation
   - Historical task migration (migrate command) deferred until bug fix or manual implementation needed
 - **Reversibility:** Easy - can revert to script execution once `${CLAUDE_PLUGIN_ROOT}` works in slash commands, all scripts still exist and functional
-
-### Template Entry
-```
-[YYYY-MM-DD HH:MM] - [Decision Summary]
-- **Context:** [What prompted this decision]
-- **Decision:** [What was decided]
-- **Rationale:** [Why this choice was made]
-- **Alternatives Considered:**
-  - [Alternative 1]: [Why rejected]
-  - [Alternative 2]: [Why rejected]
-- **Implications:** [What this means for the project]
-- **Reversibility:** [Easy/Hard/Impossible to change later]
-```
