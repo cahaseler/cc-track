@@ -51,13 +51,14 @@ After review completes, present the review results to the user with these respon
 
 **IMPORTANT:** Present this analysis to the user and wait for their feedback before proceeding with fixes.
 
-## Step 4: Documentation Reminder
+## Step 4: Update Documentation
 
-Remind user to update:
-1. Task progress file with final state
-2. `decision_log.md` for architectural choices (if any)
-3. `system_patterns.md` for new conventions (if any)
-4. Consider journal reflection (if private journal MCP available)
+Update the following documentation files:
+
+1. **Task progress file** - Update with final implementation state
+2. **`decision_log.md`** - Add entry for any architectural decisions made (if applicable)
+3. **`system_patterns.md`** - Document any new patterns or conventions established (if applicable)
+4. **Private journal** - Record technical insights and learnings (if private journal MCP available)
 
 ## Next Steps
 
