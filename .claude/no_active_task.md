@@ -6,3 +6,4 @@ To begin a new task, the user should run the /specify command to begin creating 
 
 ## Completed Tasks:
 - 102: Fix Plugin Script Execution
+- 103: Context Maintenance Command
