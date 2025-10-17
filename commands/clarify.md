@@ -89,39 +89,60 @@ From gaps identified, create priority queue (internally):
 
 ---
 
-## Phase 4: Sequential Questioning
+## Phase 4: Interactive Questioning
 
-### Question Format Rules:
+### Using AskUserQuestion Tool:
 
-**Option A: Multiple Choice (Preferred)**
+**Present questions in batches of 1-4** using the tool's clean UI. Group questions intelligently:
+- **Independent questions**: Ask together (up to 4 at once)
+- **Dependent questions**: Ask separately if early answers change later questions
+
+### Question Format:
+
+**Use AskUserQuestion tool with:**
+```typescript
+AskUserQuestion({
+  questions: [
+    {
+      question: "How should users authenticate?",
+      header: "Auth",  // Max 12 chars
+      multiSelect: false,
+      options: [
+        { label: "Email/password", description: "Traditional auth with password reset" },
+        { label: "OAuth only", description: "Google, GitHub, etc." },
+        { label: "Both", description: "Email and OAuth options" }
+      ]
+      // "Other" option auto-provided for free-form responses
+    }
+  ]
+})
 ```
-Question: How should users authenticate?
 
-| Option | Description |
-|--------|-------------|
-| A | Email/password with password reset |
-| B | OAuth only (Google, GitHub) |
-| C | Both email and OAuth |
-| D | Different approach (specify) |
-```
-
-**Option B: Short Answer (≤5 words)**
-```
-Question: What's the target response time for API calls?
-
-Format: Short answer (≤5 words)
-Example: "Under 200ms p95"
+**For numeric/specific values** - use descriptive options:
+```typescript
+{
+  question: "What's the target API response time?",
+  header: "Performance",
+  multiSelect: false,
+  options: [
+    { label: "<100ms p95", description: "Very fast, higher infrastructure cost" },
+    { label: "<200ms p95", description: "Fast, balanced approach" },
+    { label: "<500ms p95", description: "Acceptable for most use cases" }
+  ]
+}
 ```
 
 ### Question Flow:
-1. **Present ONE question**
-2. **Wait for answer**
-3. **Immediately integrate into spec** (see Phase 5)
-4. **Save spec.md**
-5. **Move to next question** (or stop if done/quota reached)
+1. **Identify 1-5 high-priority ambiguities** from scan
+2. **Group by independence** - can answers be given in parallel?
+3. **Present batch via AskUserQuestion** (1-4 questions)
+4. **Immediately integrate answers into spec** (see Phase 5)
+5. **Save spec.md after each batch**
+6. **Continue with next batch** (or stop if done)
 
 **Stop when**:
-- User says "done", "good", "no more"
+- User indicates completion ("done", "good", "no more questions")
+- 5 questions answered in this session (prevents overload)
 - Critical ambiguities resolved (remaining are low-impact)
 - All [NEEDS CLARIFICATION] markers addressed
 
@@ -214,28 +235,41 @@ Next step: Ready to run `/plan` for technical design?
 ## Common Patterns
 
 ### When User Gives Vague Answer:
-```
-User: "Make it fast"
-
-Claude: "Got it, but I need specifics. For API response time, which target?
-A) <100ms p95 (very fast, more expensive)
-B) <200ms p95 (fast, balanced)
-C) <500ms p95 (acceptable for most use cases)
-D) Different target (specify)"
+Use AskUserQuestion with specific options:
+```typescript
+AskUserQuestion({
+  questions: [{
+    question: "What's the target API response time?",
+    header: "Performance",
+    multiSelect: false,
+    options: [
+      { label: "<100ms p95", description: "Very fast, more expensive infrastructure" },
+      { label: "<200ms p95", description: "Fast, balanced cost/performance" },
+      { label: "<500ms p95", description: "Acceptable for most use cases" }
+    ]
+    // "Other" auto-provided for custom values
+  }]
+})
 ```
 
 ### When Answer Creates New Questions:
-**DON'T** immediately ask follow-up within same turn.
-**DO** add to internal queue, continue with highest priority.
+**DON'T** immediately ask follow-up within same batch.
+**DO** add to queue for next batch, continue with highest priority questions.
 
 ### When User Says "I Don't Know":
-```
-Claude: "No problem! Let me mark this as [NEEDS CLARIFICATION] with your permission, and we can:
-A) Research industry standards and propose something
-B) Leave it flexible for now
-C) Make it configurable
-
-Which approach?"
+```typescript
+AskUserQuestion({
+  questions: [{
+    question: "We need to define [the unclear aspect]. How should we proceed?",
+    header: "Approach",
+    multiSelect: false,
+    options: [
+      { label: "Research standards", description: "Look up industry best practices" },
+      { label: "Make configurable", description: "Allow runtime configuration" },
+      { label: "Defer decision", description: "Mark for later, use reasonable default" }
+    ]
+  }]
+})
 ```
 
 ---

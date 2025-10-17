@@ -15,18 +15,19 @@ description: Create a feature specification through Socratic questioning and ite
 **DO NOT create any files yet.** First, build complete understanding through questions.
 
 ### Questioning Approach:
-1. **Ask ONE question at a time** - Wait for answer before next question
-2. **Prefer multiple choice** when possible - Makes answering easier
-3. **Be specific** - "What authentication method?" not "How will users log in?"
-4. **Gather systematically**:
+1. **Use AskUserQuestion tool** - Provides clean UI for multiple questions at once
+2. **Group questions smartly** - Ask 2-4 questions per batch, but only if early answers won't invalidate later ones
+3. **Always prefer multiple choice** - Tool presents these cleanly (2-4 options per question)
+4. **Include "Other" for flexibility** - Auto-provided by tool for free-form responses
+5. **Be specific** - "What authentication method?" not "How will users log in?"
+6. **Gather just enough to start**:
    - **Purpose**: What problem does this solve? For whom?
    - **Scope**: What's included? What's explicitly out of scope?
    - **Success criteria**: How do we know it's working?
-   - **Constraints**: Tech limitations? Timeline? Resources?
-   - **User flows**: Who does what, and why?
+   - **User flows**: Core happy path clear?
 
 ### Critical Rule:
-**Continue questioning while ANY aspect remains unclear.** Don't rush to artifact creation. A well-understood spec takes 5-10 clarifying questions minimum.
+**Ask just enough questions to create a workable first draft (2-4 questions total).** Mark remaining ambiguities with [NEEDS CLARIFICATION] for the /clarify command to resolve. Better to create the spec sooner with clear markers than delay for complete understanding.
 
 **Tip**: If you need background research on a domain, technology, or pattern during specification:
 ```
@@ -37,10 +38,52 @@ Output: .claude/specs/research-[topic].md
 
 This is useful when the user requests a feature in an unfamiliar domain (e.g., "Add OAuth2 authentication" but you're unsure of OAuth2 flows).
 
-### Examples of Good Questions:
-- "This feature has 3 main user types - which should we focus on first?"
-- "For authentication, choose one: A) Email/password B) OAuth only C) Both D) Something else?"
-- "What happens when a user tries to delete something that's in use?"
+### Examples Using AskUserQuestion Tool:
+
+**Single question batch (if answer might affect follow-ups):**
+```typescript
+AskUserQuestion({
+  questions: [{
+    question: "What's the primary purpose of this feature?",
+    header: "Purpose",
+    multiSelect: false,
+    options: [
+      { label: "User management", description: "Handle user accounts, profiles, permissions" },
+      { label: "Data processing", description: "Transform, analyze, or export data" },
+      { label: "Integration", description: "Connect with external services/APIs" },
+      { label: "UI enhancement", description: "Improve user interface or experience" }
+    ]
+  }]
+})
+```
+
+**Multiple question batch (when independent):**
+```typescript
+AskUserQuestion({
+  questions: [
+    {
+      question: "Who are the primary users?",
+      header: "Users",
+      multiSelect: true,  // Can select multiple user types
+      options: [
+        { label: "End users", description: "Regular application users" },
+        { label: "Admins", description: "System administrators" },
+        { label: "API clients", description: "External systems via API" }
+      ]
+    },
+    {
+      question: "What's the expected scale?",
+      header: "Scale",
+      multiSelect: false,
+      options: [
+        { label: "Small", description: "<100 users, <1000 records" },
+        { label: "Medium", description: "100-10K users, <1M records" },
+        { label: "Large", description: ">10K users, >1M records" }
+      ]
+    }
+  ]
+})
+```
 
 ---
 
@@ -140,8 +183,8 @@ Show the user:
 
 ## Common Pitfalls to Avoid
 
-❌ **Don't**: Create spec after 1-2 questions
-✅ **Do**: Ask 5-10 questions minimum
+❌ **Don't**: Ask too many questions upfront - defeats the purpose of /clarify
+✅ **Do**: Ask 2-4 focused questions to get a workable first draft
 
 ❌ **Don't**: Guess at requirements
 ✅ **Do**: Mark ambiguities explicitly
@@ -159,37 +202,37 @@ Show the user:
 ```
 User: "I want to add user authentication"
 
-Claude: "Let me understand this better. For authentication, which approach fits best?
-A) Email/password with registration
-B) OAuth only (Google, GitHub, etc.)
-C) Both email and OAuth
-D) Something else"
+Claude: [Uses AskUserQuestion tool with 3 questions]
 
-User: "A - email and password"
+Questions presented in UI:
+1. Authentication Method (header: "Auth Method")
+   - Email/password: Traditional username and password
+   - OAuth only: Google, GitHub, etc.
+   - Both: Email and OAuth options
+   [Other option auto-provided]
 
-Claude: "Got it. For password security, should we:
-A) Basic requirements (8+ chars)
-B) Strict requirements (uppercase, numbers, symbols)
-C) Let user choose strength"
+2. Primary Users (header: "Users", multiSelect: true)
+   - End users: Regular app users
+   - Admins: System administrators
+   - API clients: External systems
+   [Other option auto-provided]
 
-User: "B"
+3. Security Level (header: "Security")
+   - Basic: 8+ character passwords
+   - Standard: Length + complexity requirements
+   - High: MFA required
+   [Other option auto-provided]
 
-Claude: "When a user forgets their password, how should reset work?
-A) Email link that expires in 24 hours
-B) Security questions
-C) Admin must reset
-D) Different approach"
-
-... (continue until clear) ...
+User: Selects "Email/password", "End users" + "Admins", "Standard"
 
 Claude: "Perfect! I have enough to create the spec. Let me create:
 - Branch: 001-add-user-authentication
-- Spec with functional requirements including password reset flow
-- Marked 2 areas needing clarification (session timeout, max login attempts)
+- Spec with functional requirements for email/password auth with standard security
+- Marked 3 areas needing clarification (session timeout, password reset method, max login attempts)
 
 [Creates all artifacts]
 
-Ready to run `/clarify` to resolve those 2 open questions?"
+Ready to run `/clarify` to resolve those 3 open questions?"
 ```
 
 ---
