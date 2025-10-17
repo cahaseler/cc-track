@@ -1,3 +1,10 @@
+## [2.17.1](https://github.com/cahaseler/cc-track/compare/v2.17.0...v2.17.1) (2025-10-17)
+
+
+### Bug Fixes
+
+* update agents field to array of .md files per schema validation ([79fed9d](https://github.com/cahaseler/cc-track/commit/79fed9dedeebbefafa51cc678d69ced58bffb52b))
+
 # [2.17.0](https://github.com/cahaseler/cc-track/compare/v2.16.1...v2.17.0) (2025-10-17)
 
 
