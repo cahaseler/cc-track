@@ -1,3 +1,10 @@
+## [2.17.2](https://github.com/cahaseler/cc-track/compare/v2.17.1...v2.17.2) (2025-10-17)
+
+
+### Bug Fixes
+
+* change prepare-completion to actively update docs instead of reminding user ([abc5338](https://github.com/cahaseler/cc-track/commit/abc5338d4bb76d19beb2235f488b3386fdf6777d))
+
 ## [2.17.1](https://github.com/cahaseler/cc-track/compare/v2.17.0...v2.17.1) (2025-10-17)
 
 
