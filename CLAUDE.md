@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.cc-track/specs/106-fix-backlog-command-and-complete-task-warning/spec.md
+@.cc-track/no_active_task.md
 
 ## Product Vision
 @.cc-track/product_context.md
