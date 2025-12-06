@@ -1,3 +1,10 @@
+## [3.0.4](https://github.com/cahaseler/cc-track/compare/v3.0.3...v3.0.4) (2025-12-06)
+
+
+### Bug Fixes
+
+* add backticks to backlog command and warning to complete-task ([#157](https://github.com/cahaseler/cc-track/issues/157)) ([03792a2](https://github.com/cahaseler/cc-track/commit/03792a283c6837328056c147284da53a1f722777))
+
 ## [3.0.3](https://github.com/cahaseler/cc-track/compare/v3.0.2...v3.0.3) (2025-12-06)
 
 
