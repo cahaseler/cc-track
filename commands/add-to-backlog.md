@@ -5,7 +5,7 @@ usage: /add-to-backlog "Your idea or bug description"
 allowed-tools: Bash(echo:*)
 ---
 
-!echo "- [$(date +%Y-%m-%d)] $ARGUMENTS" >> .cc-track/backlog.md
+!`echo "- [$(date +%Y-%m-%d)] $ARGUMENTS" >> .cc-track/backlog.md`
 
 ✅ Added to backlog
 
