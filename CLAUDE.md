@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.claude/specs/103-context-maintenance-command/spec.md
+@.claude/no_active_task.md
 
 ## Product Vision
 @.claude/product_context.md
