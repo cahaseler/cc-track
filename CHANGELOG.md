@@ -1,3 +1,10 @@
+## [3.0.3](https://github.com/cahaseler/cc-track/compare/v3.0.2...v3.0.3) (2025-12-06)
+
+
+### Bug Fixes
+
+* use valid agent colors (gray/lime -> cyan/green) ([be99d5a](https://github.com/cahaseler/cc-track/commit/be99d5a2a6b117c1be620668191da88042484790))
+
 ## [3.0.2](https://github.com/cahaseler/cc-track/compare/v3.0.1...v3.0.2) (2025-12-06)
 
 
