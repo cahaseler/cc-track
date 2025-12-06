@@ -4,7 +4,7 @@ shortname: config-track
 
 # Config cc-track Command
 
-Update the configuration file at `.claude/track.config.json` based on the user's request.
+Update the configuration file at `.cc-track/track.config.json` based on the user's request.
 
 If called without parameters, show the current configuration and ask what they'd like to adjust.
 
@@ -127,6 +127,6 @@ Example:
 
 ## Usage
 
-Read current config, update based on user request, write back to `.claude/track.config.json`.
+Read current config, update based on user request, write back to `.cc-track/track.config.json`.
 
 Always explain what changes were made and what the new settings mean.

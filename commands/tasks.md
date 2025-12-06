@@ -15,13 +15,13 @@ description: Generate actionable task breakdown following TDD principles
 **Find active spec directory**:
 - Read `CLAUDE.md`
 - Find line starting with `## Active Task`
-- Extract the `@.claude/specs/NNN-feature-name/spec.md` path
-- Parse out the directory: `.claude/specs/NNN-feature-name`
+- Extract the `@.cc-track/specs/NNN-feature-name/spec.md` path
+- Parse out the directory: `.cc-track/specs/NNN-feature-name`
 
 **Read design files**:
-- Read `.claude/specs/NNN-feature-name/plan.md`
-- Read `.claude/specs/NNN-feature-name/data-model.md` (if exists)
-- List `.claude/specs/NNN-feature-name/contracts/` (if exists)
+- Read `.cc-track/specs/NNN-feature-name/plan.md`
+- Read `.cc-track/specs/NNN-feature-name/data-model.md` (if exists)
+- List `.cc-track/specs/NNN-feature-name/contracts/` (if exists)
 
 **Verify**:
 - [ ] plan.md exists and complete
@@ -245,7 +245,7 @@ TDD compliance: ✅ All tests before implementation
 Parallel opportunities: 13 tasks marked [P]
 File conflicts: None
 
-Created: .claude/specs/[ID]-[name]/tasks.md
+Created: .cc-track/specs/[ID]-[name]/tasks.md
 
 Ready to begin implementation?
 
@@ -312,7 +312,7 @@ Still want to proceed?"
 - Reference specific line numbers from plan if helpful
 - Mark dependencies clearly
 - Generate realistic task count (20-30 typical)
-- Update `.claude/specs/NNN-feature-name/.metadata.json` status to "in_progress" when tasks created
+- Update `.cc-track/specs/NNN-feature-name/.metadata.json` status to "in_progress" when tasks created
 
 ---
 

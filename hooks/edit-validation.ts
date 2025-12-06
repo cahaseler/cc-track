@@ -97,7 +97,7 @@ export function loadEditValidationConfig(cwd: string): EditValidationConfig {
     },
   };
 
-  const configPath = join(cwd, '.claude', 'track.config.json');
+  const configPath = join(cwd, '.cc-track', 'track.config.json');
 
   if (!existsSync(configPath)) {
     return defaultConfig;

@@ -167,9 +167,9 @@ This constitution establishes the governing principles and guardrails for [PROJE
 ## References
 
 ### Related Documents
-- **System Patterns**: `.claude/system_patterns.md` - Established implementation patterns
-- **Decision Log**: `.claude/decision_log.md` - Historical decisions and rationale
-- **Product Context**: `.claude/product_context.md` - Product vision and goals
+- **System Patterns**: `.cc-track/system_patterns.md` - Established implementation patterns
+- **Decision Log**: `.cc-track/decision_log.md` - Historical decisions and rationale
+- **Product Context**: `.cc-track/product_context.md` - Product vision and goals
 
 ### External Standards
 - [Link to coding standards]

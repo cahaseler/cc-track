@@ -3,7 +3,7 @@
 **Feature ID**: `[###]`
 **Branch**: `[###-feature-name]`
 **Prerequisites**: plan.md, spec.md
-**Input**: Design documents from `.claude/specs/[###-feature-name]/`
+**Input**: Design documents from `.cc-track/specs/[###-feature-name]/`
 
 ## Format: `[ID] [P?] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)

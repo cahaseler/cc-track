@@ -1,24 +1,24 @@
 # Project: [Your Project Name]
 
 ## Active Task
-@.claude/no_active_task.md
+@.cc-track/no_active_task.md
 <!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
 
 ## Product Vision
-@.claude/product_context.md
+@.cc-track/product_context.md
 
 ## System Patterns
-@.claude/system_patterns.md
+@.cc-track/system_patterns.md
 
 ## Decision Log
-@.claude/decision_log.md
+@.cc-track/decision_log.md
 
 ## Progress Log
-@.claude/progress_log.md
+@.cc-track/progress_log.md
 
 ## Code Index
-@.claude/code_index.md
+@.cc-track/code_index.md
 
 ## User Context
-@.claude/user_context.md
+@.cc-track/user_context.md
 

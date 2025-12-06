@@ -13,7 +13,7 @@ Run a comprehensive code review using multiple specialized agents, each checking
 
 Read CLAUDE.md to find the active spec folder path:
 - Look for `## Active Task` section
-- Extract the `@.claude/specs/NNN-feature-name/` path
+- Extract the `@.cc-track/specs/NNN-feature-name/` path
 - Verify the spec folder exists
 
 If no active spec:
@@ -69,7 +69,7 @@ Prompt: "Scan the changed files for bugs, silent failures, and security issues.
         Report bugs with confidence >= 80."
 
 Task: guidelines-reviewer
-Prompt: "Review code against CLAUDE.md and .claude/constitution.md guidelines.
+Prompt: "Review code against CLAUDE.md and .cc-track/constitution.md guidelines.
         Run git diff to see changes. Check project conventions are followed.
         Report violations with confidence >= 80."
 

@@ -46,7 +46,7 @@ describe('ClaudeMdHelpers', () => {
 
     test('extracts task ID from spec pattern', () => {
       const fileOps = createMockFileOps({
-        '/project/CLAUDE.md': '# Active Task\n@.claude/specs/100-feature-name/spec.md\n',
+        '/project/CLAUDE.md': '# Active Task\n@.cc-track/specs/100-feature-name/spec.md\n',
       });
       const helpers = new ClaudeMdHelpers(fileOps);
 
@@ -55,7 +55,7 @@ describe('ClaudeMdHelpers', () => {
 
     test('handles multi-digit task IDs', () => {
       const fileOps = createMockFileOps({
-        '/project/CLAUDE.md': '@.claude/specs/042-my-feature/spec.md',
+        '/project/CLAUDE.md': '@.cc-track/specs/042-my-feature/spec.md',
       });
       const helpers = new ClaudeMdHelpers(fileOps);
 
@@ -64,7 +64,7 @@ describe('ClaudeMdHelpers', () => {
 
     test('handles single-digit task IDs', () => {
       const fileOps = createMockFileOps({
-        '/project/CLAUDE.md': '@.claude/specs/001-initial-setup/spec.md',
+        '/project/CLAUDE.md': '@.cc-track/specs/001-initial-setup/spec.md',
       });
       const helpers = new ClaudeMdHelpers(fileOps);
 
@@ -82,7 +82,7 @@ describe('ClaudeMdHelpers', () => {
 
     test('extracts task ID from spec pattern', () => {
       const fileOps = createMockFileOps({
-        '/project/CLAUDE.md': '@.claude/specs/100-feature-name/spec.md',
+        '/project/CLAUDE.md': '@.cc-track/specs/100-feature-name/spec.md',
       });
       const helpers = new ClaudeMdHelpers(fileOps);
 
@@ -91,7 +91,7 @@ describe('ClaudeMdHelpers', () => {
 
     test('extracts multi-digit task IDs', () => {
       const fileOps = createMockFileOps({
-        '/project/CLAUDE.md': '@.claude/specs/042-my-awesome-feature/spec.md',
+        '/project/CLAUDE.md': '@.cc-track/specs/042-my-awesome-feature/spec.md',
       });
       const helpers = new ClaudeMdHelpers(fileOps);
 

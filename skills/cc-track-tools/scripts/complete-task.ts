@@ -364,7 +364,7 @@ function revertTaskChanges(projectRoot: string, state: CompleteTaskState, deps: 
 
   // Revert no_active_task.md if it was updated
   if (state.originalNoActiveTaskContent) {
-    const noActiveTaskPath = deps.path.join(projectRoot, '.claude', 'no_active_task.md');
+    const noActiveTaskPath = deps.path.join(projectRoot, '.cc-track', 'no_active_task.md');
     deps.fs.writeFileSync(noActiveTaskPath, state.originalNoActiveTaskContent);
   }
 }
@@ -672,9 +672,9 @@ export async function runCompleteTask(
   const state = createBaseState();
   const warnings: string[] = [];
   const projectRoot = deps.cwd();
-  const claudeDir = deps.path.join(projectRoot, '.claude');
+  const ccTrackDir = deps.path.join(projectRoot, '.cc-track');
   const claudeMdPath = deps.path.join(projectRoot, 'CLAUDE.md');
-  const noActiveTaskPath = deps.path.join(claudeDir, 'no_active_task.md');
+  const noActiveTaskPath = deps.path.join(ccTrackDir, 'no_active_task.md');
 
   try {
     if (!options.skipValidation) {
@@ -814,7 +814,7 @@ export async function runCompleteTask(
 
   // Clear active spec reference from CLAUDE.md on successful completion
   let updatedClaudeMd = deps.fs.readFileSync(claudeMdPath, 'utf-8');
-  updatedClaudeMd = updatedClaudeMd.replace(/@\.claude\/specs\/\d+-[^/]+\/spec\.md/, '@.claude/no_active_task.md');
+  updatedClaudeMd = updatedClaudeMd.replace(/@\.cc-track\/specs\/\d+-[^/]+\/spec\.md/, '@.cc-track/no_active_task.md');
   deps.fs.writeFileSync(claudeMdPath, updatedClaudeMd);
   state.updates.claudeMd = 'cleared active spec';
 

@@ -68,16 +68,17 @@ describe('pre-tool-validation', () => {
 
   describe('isTaskFile', () => {
     test('identifies task files correctly', () => {
-      expect(isTaskFile('.claude/tasks/TASK_001.md')).toBe(true);
-      expect(isTaskFile('/home/user/.claude/tasks/TASK_999.md')).toBe(true);
-      expect(isTaskFile('.claude/tasks/TASK_0123.md')).toBe(true);
+      expect(isTaskFile('.cc-track/specs/001-feature-name/tasks.md')).toBe(true);
+      expect(isTaskFile('/home/user/.cc-track/specs/999-another-feature/tasks.md')).toBe(true);
+      expect(isTaskFile('.cc-track/specs/123-test-task/tasks.md')).toBe(true);
     });
 
     test('rejects non-task files', () => {
-      expect(isTaskFile('.claude/tasks/README.md')).toBe(false);
-      expect(isTaskFile('.claude/TASK_001.md')).toBe(false);
+      expect(isTaskFile('.cc-track/specs/001-feature-name/spec.md')).toBe(false);
+      expect(isTaskFile('.cc-track/specs/001-feature-name/plan.md')).toBe(false);
+      expect(isTaskFile('.cc-track/tasks.md')).toBe(false);
       expect(isTaskFile('src/file.ts')).toBe(false);
-      expect(isTaskFile('.claude/tasks/task_001.md')).toBe(false);
+      expect(isTaskFile('.cc-track/specs/no-number/tasks.md')).toBe(false);
     });
   });
 
@@ -123,9 +124,13 @@ describe('pre-tool-validation', () => {
 
   describe('buildValidationPrompt', () => {
     test('includes all required elements', () => {
-      const prompt = buildValidationPrompt('.claude/tasks/TASK_001.md', 'Status: in_progress', 'Status: completed');
+      const prompt = buildValidationPrompt(
+        '.cc-track/specs/001-test-feature/tasks.md',
+        'Status: in_progress',
+        'Status: completed',
+      );
 
-      expect(prompt).toContain('TASK FILE: .claude/tasks/TASK_001.md');
+      expect(prompt).toContain('TASK FILE: .cc-track/specs/001-test-feature/tasks.md');
       expect(prompt).toContain('OLD CONTENT:\nStatus: in_progress');
       expect(prompt).toContain('NEW CONTENT:\nStatus: completed');
       expect(prompt).toContain('100% of tests must pass');
@@ -326,7 +331,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: 'Status: in_progress',
           new_string: 'Status: completed',
         },
@@ -358,7 +363,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: '- [ ] All tests pass',
           new_string: '- [x] Most tests pass (environment issues with 2 tests)',
         },
@@ -392,7 +397,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: 'Progress: Started implementation',
           new_string: 'Progress: Implemented core functionality, tests in progress',
         },
@@ -422,7 +427,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: 'old',
           new_string: 'new',
         },
@@ -456,7 +461,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: 'old',
           new_string: 'new',
         },
@@ -489,7 +494,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           old_string: 'Status: in_progress',
           new_string: 'Status: completed',
         },
@@ -509,7 +514,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'Write',
         tool_input: {
-          file_path: '.claude/tasks/TASK_001.md',
+          file_path: '.cc-track/specs/001-test-feature/tasks.md',
           content: 'new content',
         },
       };

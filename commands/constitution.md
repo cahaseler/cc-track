@@ -76,7 +76,7 @@ Any specific technical constraints?
 ```
 
 **If updating existing**:
-- Read `.claude/constitution.md`
+- Read `.cc-track/constitution.md`
 - Parse and understand current principles, guardrails, and version
 - Ask what needs to change and why
 
@@ -257,7 +257,7 @@ Which fits better?"
 ## Phase 4: Save & Document
 
 ### Save Constitution
-**Write** constitution content to `.claude/constitution.md`
+**Write** constitution content to `.cc-track/constitution.md`
 
 ### Update Decision Log
 ```markdown
@@ -272,7 +272,7 @@ Which fits better?"
 
 ### Present Completion
 ```
-✅ Constitution created: .claude/constitution.md
+✅ Constitution created: .cc-track/constitution.md
 
 Version: 1.0.0
 Ratified: 2025-01-14
@@ -288,7 +288,7 @@ Key principles:
 3. [Principle 3]
 
 To update later: Run `/constitution` with update request
-To view: cat .claude/constitution.md
+To view: cat .cc-track/constitution.md
 ```
 
 ---
@@ -344,7 +344,7 @@ Approve?"
 
 ## Implementation Notes
 
-- Save to `.claude/constitution.md` (not in specs/)
+- Save to `.cc-track/constitution.md` (not in specs/)
 - Version number in file (semantic versioning)
 - Ratified date and last amended date
 - Reference from CLAUDE.md if desired

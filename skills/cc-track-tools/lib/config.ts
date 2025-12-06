@@ -152,14 +152,14 @@ export function getConfigPath(startPath?: string): string {
   let currentPath = startPath || process.cwd();
 
   while (currentPath !== '/') {
-    const configPath = join(currentPath, '.claude', 'track.config.json');
+    const configPath = join(currentPath, '.cc-track', 'track.config.json');
     if (existsSync(configPath)) {
       return configPath;
     }
     currentPath = join(currentPath, '..');
   }
 
-  return join(startPath || process.cwd(), '.claude', 'track.config.json');
+  return join(startPath || process.cwd(), '.cc-track', 'track.config.json');
 }
 
 export function getConfig(configPath?: string): InternalConfig {
