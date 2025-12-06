@@ -7,7 +7,7 @@ import {
   writeFileSync as nodeWriteFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import { getActiveTaskId } from '../lib/claude-md';
+import { getActiveTaskId } from '../skills/cc-track-tools/lib/claude-md';
 
 // Simple result type for statusline
 interface CommandResult<T = unknown> {
@@ -16,9 +16,9 @@ interface CommandResult<T = unknown> {
   data?: T;
 }
 
-import { getConfig as getConfigImpl } from '../lib/config';
-import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
-import { getActiveSpecDirectory } from '../lib/spec-helpers';
+import { getConfig as getConfigImpl } from '../skills/cc-track-tools/lib/config';
+import { getCurrentBranch as getCurrentBranchImpl } from '../skills/cc-track-tools/lib/git-helpers';
+import { getActiveSpecDirectory } from '../skills/cc-track-tools/lib/spec-helpers';
 
 interface StatusLineInput {
   model?: {

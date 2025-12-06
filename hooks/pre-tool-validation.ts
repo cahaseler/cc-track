@@ -7,16 +7,16 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { ClaudeSDK } from '../lib/claude-sdk';
-import { getConfig, isHookEnabled } from '../lib/config';
-import { detectNpmPackage, verifyBunInstalled, verifyPluginDependencies } from '../lib/detection';
+import { ClaudeSDK } from '../skills/cc-track-tools/lib/claude-sdk';
+import { getConfig, isHookEnabled } from '../skills/cc-track-tools/lib/config';
+import { detectNpmPackage, verifyBunInstalled, verifyPluginDependencies } from '../skills/cc-track-tools/lib/detection';
 import {
   getBunNotInstalledMessage,
   getMissingDependenciesMessage,
   getNpmPluginConflictMessage,
-} from '../lib/error-messages';
-import { GitHelpers } from '../lib/git-helpers';
-import { createLogger } from '../lib/logger';
+} from '../skills/cc-track-tools/lib/error-messages';
+import { GitHelpers } from '../skills/cc-track-tools/lib/git-helpers';
+import { createLogger } from '../skills/cc-track-tools/lib/logger';
 import type { HookInput, HookOutput } from '../types';
 
 const logger = createLogger('pre-tool-validation');

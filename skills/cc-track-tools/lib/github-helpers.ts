@@ -1,8 +1,18 @@
 import { execSync as nodeExecSync } from 'node:child_process';
-import type { GitHubIssue } from '../types';
 import { createLogger } from './logger';
 
 const logger = createLogger('github-helpers');
+
+export interface GitHubIssue {
+  number: number;
+  url: string;
+  title: string;
+  state: string;
+  body?: string;
+  labels?: Array<{ name: string }>;
+  assignees?: Array<{ login: string }>;
+  milestone?: { title: string };
+}
 
 export interface GitHubPR {
   number: number;

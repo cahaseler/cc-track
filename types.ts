@@ -31,14 +31,3 @@ export interface HookOutput {
     permissionDecisionReason?: string;
   };
 }
-
-export interface GitHubIssue {
-  number: number;
-  url: string;
-  title: string;
-  state: string;
-  body?: string;
-  labels?: Array<{ name: string }>;
-  assignees?: Array<{ login: string }>;
-  milestone?: { title: string };
-}

@@ -1,7 +1,7 @@
 import { mock } from 'bun:test';
-import type { ClaudeResponse } from '../lib/claude-sdk';
-import type { ClaudeSDKInterface, GitHelpers } from '../lib/git-helpers';
-import type { createLogger } from '../lib/logger';
+import type { ClaudeResponse } from '../skills/cc-track-tools/lib/claude-sdk';
+import type { ClaudeSDKInterface, GitHelpers } from '../skills/cc-track-tools/lib/git-helpers';
+import type { createLogger } from '../skills/cc-track-tools/lib/logger';
 
 /**
  * Create a mock logger instance

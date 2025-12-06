@@ -370,7 +370,7 @@ describe('statusline', () => {
     test('getCurrentBranch suppresses git stderr output', async () => {
       // This test verifies that getCurrentBranch in git-helpers.ts
       // uses stdio options to suppress stderr
-      const gitHelpers = await import('../lib/git-helpers');
+      const gitHelpers = await import('../skills/cc-track-tools/lib/git-helpers');
       const mockExec = mock((_cmd: string, options?: any) => {
         // Verify stdio option is passed to suppress stderr
         expect(options?.stdio).toEqual(['pipe', 'pipe', 'ignore']);

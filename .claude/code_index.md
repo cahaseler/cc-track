@@ -17,42 +17,32 @@
 │   ├── plans/         # Captured plans from planning mode
 │   ├── specs/         # Feature specifications (new workflow)
 │   └── *.md           # Context files (imported by CLAUDE.md)
-├── src/               # Source code for CLI
-│   ├── cli/           # CLI entry point
-│   ├── commands/      # Command implementations
-│   ├── hooks/         # Hook implementations
-│   └── lib/           # Shared libraries
+├── hooks/             # Claude Code hook implementations
+├── scripts/           # Utility scripts (statusline, etc.)
 ├── skills/            # Claude Code skills (plugin)
-│   └── cc-track-tools/  # Utility scripts accessible via skill invocation
-│       ├── scripts/   # Executable TypeScript scripts
-│       └── lib/       # Shared libraries for scripts
+│   └── cc-track-tools/  # Main skill with shared libraries
+│       ├── lib/       # Shared libraries (single source of truth)
+│       └── scripts/   # Executable TypeScript scripts
 ├── commands/          # Plugin slash commands
-├── dist/              # Compiled CLI binary
+├── agents/            # Subagent definitions
+├── test-utils/        # Test utilities
 ├── templates/         # Templates for initialization
 └── docs/              # Research and documentation
 ```
 
 ## Key Files & Purpose
 
-### CLI Implementation (src/)
+### Hooks (hooks/)
 | File | Purpose |
 |------|---------|
-| src/cli/index.ts | Main CLI entry point with Commander setup |
-| src/hooks/capture-plan.ts | Captures plans from ExitPlanMode, creates task files |
-| src/hooks/pre-compact.ts | Updates task files with progress before compaction |
-| src/hooks/stop-review.ts | Reviews changes at Stop event, auto-commits |
-| src/hooks/edit-validation.ts | Real-time TypeScript and Biome validation on edits |
+| hooks/edit-validation.ts | Real-time TypeScript and Biome validation on edits |
+| hooks/pre-tool-validation.ts | Branch protection and task file validation |
+| hooks/session-start.ts | Session initialization |
 
-### CLI Commands (src/commands/)
+### Scripts (scripts/)
 | File | Purpose |
 |------|---------|
-| src/commands/init.ts | Initializes cc-track in a project |
-| src/commands/git-session.ts | Git utilities for managing WIP commits |
-| src/commands/backlog.ts | Appends items to backlog with date stamps |
-| src/commands/complete-task.ts | Automated task completion with git squashing |
-| src/commands/hook.ts | Unified hook dispatcher for all events |
-| src/commands/statusline.ts | Generate status line for Claude Code |
-| src/commands/parse-logs.ts | Parse and filter Claude Code JSONL logs |
+| scripts/statusline.ts | Generate status line for Claude Code |
 
 ### Slash Commands (.claude/commands/)
 | File | Purpose |
@@ -84,24 +74,28 @@
 | .claude/track.config.json | Configuration for enabling/disabling hooks |
 | .claude/backlog.md | List of future ideas and improvements |
 
-### Libraries (src/lib/)
+### Shared Libraries (skills/cc-track-tools/lib/)
+All shared code lives in the skill's lib directory. Hooks and scripts import from here.
+
 | File | Purpose |
 |------|---------|
-| src/lib/config.ts | Configuration management helpers |
-| src/lib/git-helpers.ts | Git operations for branch management |
-| src/lib/github-helpers.ts | GitHub CLI wrapper functions |
-| src/lib/logger.ts | Centralized logging system with rotation |
-| src/lib/log-parser.ts | JSONL log parser with filtering and formatting |
+| lib/config.ts | Configuration management helpers |
+| lib/git-helpers.ts | Git operations for branch management |
+| lib/github-helpers.ts | GitHub CLI wrapper functions |
+| lib/logger.ts | Centralized logging system with rotation |
+| lib/log-parser.ts | JSONL log parser with filtering and formatting |
+| lib/validation.ts | Validation checks for task completion |
+| lib/claude-sdk.ts | Claude AI SDK wrapper |
+| lib/spec-helpers.ts | Spec directory and metadata helpers |
 
-### Skills (skills/)
-| Directory | Purpose |
-|-----------|---------|
-| skills/cc-track-tools/ | Utility scripts for task completion workflow |
-| skills/cc-track-tools/scripts/prepare-completion.ts | Validation suite runner |
-| skills/cc-track-tools/scripts/complete-task.ts | Task completion automation |
-| skills/cc-track-tools/scripts/backlog.ts | Backlog management |
-| skills/cc-track-tools/scripts/git-session.ts | Git session utilities |
-| skills/cc-track-tools/lib/ | Shared libraries (copy of src/lib for standalone execution) |
+### Skill Scripts (skills/cc-track-tools/scripts/)
+| File | Purpose |
+|------|---------|
+| scripts/prepare-completion.ts | Validation suite runner |
+| scripts/complete-task.ts | Task completion automation |
+| scripts/backlog.ts | Backlog management |
+| scripts/git-session.ts | Git session utilities |
+| scripts/context.ts | Context gathering utilities |
 
 ---
 
@@ -113,3 +107,4 @@
 [2025-09-11 19:30] - Migrated all code to src/ directory, removed legacy .claude script locations
 [2025-09-12 21:30] - Added log parser library and parse-logs command
 [2025-12-06] - Added skills/ directory for cc-track-tools skill with utility scripts
+[2025-12-06] - Consolidated lib/ into skills/cc-track-tools/lib/ as single source of truth

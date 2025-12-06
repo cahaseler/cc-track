@@ -2,12 +2,14 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
     "hooks/*.ts",
-    "scripts/*.ts"
+    "scripts/*.ts",
+    "skills/cc-track-tools/scripts/*.ts"
   ],
   "project": [
     "hooks/**/*.ts",
     "scripts/**/*.ts",
-    "lib/**/*.ts",
+    "skills/cc-track-tools/lib/**/*.ts",
+    "skills/cc-track-tools/scripts/**/*.ts",
     "test-utils/**/*.ts",
     "types.ts"
   ],
@@ -16,8 +18,7 @@
     ".claude/**",
     "templates/**",
     "docs/**",
-    "dist/**",
-    "skills/**"
+    "dist/**"
   ],
   "ignoreDependencies": [
     "ccusage",
