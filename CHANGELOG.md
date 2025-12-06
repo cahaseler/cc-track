@@ -1,3 +1,10 @@
+# [2.19.0](https://github.com/cahaseler/cc-track/compare/v2.18.1...v2.19.0) (2025-12-06)
+
+
+### Features
+
+* add allowed-tools and inline context to slash commands ([a3d5496](https://github.com/cahaseler/cc-track/commit/a3d54966faade5349072c09076720dc137a69b46))
+
 ## [2.18.1](https://github.com/cahaseler/cc-track/compare/v2.18.0...v2.18.1) (2025-12-06)
 
 
