@@ -13,19 +13,11 @@
 ## Items
 
 <!-- Items will be added below -->
-- [2025-09-11] investigate consistent issues with pre-compaction hook when invoked on manual compaction (Known Claude Code bug: https://github.com/anthropics/claude-code/issues/7530)
-- Add automatic file header summaries for all TypeScript files. Each file should start with a block comment containing a one-sentence ai-written summary plus an auto-generated `@exports` list of functions/classes with line numbers. Use the TypeScript compiler API in a Node script to parse ASTs, extract exports, and update headers. Wire it into a pre-commit or post-edit hook so the `@exports` section stays current without manual edits. This makes files self-describing in the first 20 lines for AI tools and repo navigation.
-- extract prompts into dedicated config file sections (or their own files? to allow for users to more easily customize them) (may not be practical depending on how dynamically we're building them)
-- [2025-09-15] block attempts to add stupid comments with the preToolUse hook
-- [2025-09-15] Enable interactive multi-turn code reviews with persistent sessions - allow Claude to reply to reviewer feedback, push back on criticisms, and have a dialogue about the changes
-- [2025-09-16] Add targeted unit tests for `src/lib/claude-sdk.ts` (retry/timeout/fallback paths) once DI seams are ready
-- [2025-09-16] Test quality improvements: Standardize mock patterns across 25+ test files, split complete-task.test.ts (365+ lines) into focused files, add integration tests for critical paths
-- [2025-09-17] If Claude Code hook output bug isn't resolved by 2025-09-20, add comprehensive unit tests and first-class config support for the hook status statusline workaround
-- [2025-09-18] Add integration tests for critical end-to-end workflows (multi-component interactions, command chaining, hook sequences) to complement existing 366 unit tests
-[2025-09-18] Add focused integration tests for specific features:
-- Context management tests: CLAUDE.md imports, backlog commands, context file structure  
-- Git operations tests: Branch protection, automatic rebasing, git configuration
-- Hook chain tests: Complex hook interaction sequences and blocking behavior
-- Configuration propagation tests: Config inheritance and override behavior
-- [2025-01-23] Rewrite/rethink prompts based on spec-kit philosophy - After centralizing prompts, update them to align with Spec-Driven Development principles (forced clarification markers, structured questioning, constitutional constraints)
-- [2025-10-15] fix the bug with commands
+- [2025-09-11] Pre-compaction hook issues on manual compaction (Claude Code bug: https://github.com/anthropics/claude-code/issues/7530)
+- [2025-09-15] Auto-generate file header summaries with @exports list using TypeScript compiler API
+- [2025-09-15] Extract prompts to dedicated config for user customization
+- [2025-09-15] Block bad comments via preToolUse hook
+- [2025-09-15] Interactive multi-turn code reviews with persistent sessions
+- [2025-09-16] Add targeted unit tests for claude-sdk.ts (retry/timeout/fallback paths)
+- [2025-09-18] Add integration tests for critical paths (context management, git ops, hook chains, config propagation)
+- [2025-01-23] Rewrite prompts to align with Spec-Driven Development principles

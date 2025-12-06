@@ -31,38 +31,15 @@
   - Technical evaluation only - push back on suggestions that break functionality or lack context
 - **Reversibility:** Easy - single file change, can revert from git if needed
 
-[2025-09-10 17:20] - Filter Documentation from Stop Review Diffs Instead of Prompt Changes
-- **Context:** Stop review hook was flagging documentation updates as deviations, wasting tokens on large .md files
-- **Decision:** Parse and filter git diff to exclude .md files before sending to Claude for review
-- **Rationale:** Filtering at diff level saves tokens AND prevents false positives more reliably than prompt instructions
-- **Alternatives Considered:**
-  - Just update prompt to tell Claude to ignore .md files: Still wastes tokens, less reliable
-  - Exclude .md files from git diff command: Complex, loses tracking of what changed
-  - Disable review for all documentation: Too broad, might miss actual issues
-- **Implications:** Significant token savings, cleaner review process, auto-approval for doc-only changes
-- **Reversibility:** Easy - could remove filtering logic and revert to sending full diffs
+[2025-09-10 17:20] - Filter Documentation from Stop Review Diffs
+- **DEPRECATED** - Stop-review hook disabled with spec-driven workflow [2025-10-14]
+- **Decision:** Parse and filter git diff to exclude .md files before review
+- **Pattern preserved:** Diff-level filtering is more reliable than prompt instructions
 
 [2025-09-09 19:30] - Pivot from General Context Extraction to Error Pattern Learning
-- **Context:** Initial pre_compact hook using regex parsing extracted nothing useful from transcripts
+- **SUPERSEDED BY [2025-09-14 20:45]** - Error pattern extraction was later removed due to quality issues
 - **Decision:** Focus exclusively on extracting error patterns and their resolutions
-- **Rationale:** Error patterns provide concrete, actionable learning that directly improves future performance
-- **Alternatives Considered:** 
-  - General context summarization: Too vague, loses specifics
-  - Full transcript preservation: Too large, hits token limits
-  - Manual annotation: Requires user intervention
-- **Implications:** Pre-compact hook now builds knowledge base of mistakes to avoid
-- **Reversibility:** Easy - could add additional extraction modules later
-
-[2025-09-09 19:45] - Use SessionStart Hook for Post-Compaction Updates
-- **Context:** Need to update task documentation after compaction but have no access to summary
-- **Decision:** Use SessionStart hook with "compact" matcher to inject instructions to Claude
-- **Rationale:** Instructions become part of Claude's context after reset, ensuring documentation updates
-- **Alternatives Considered:** 
-  - Parse compaction summary: Not available in hook data
-  - Store state externally: Complex state management required
-  - Manual updates: Defeats automation purpose
-- **Implications:** Claude automatically updates task files after each compaction
-- **Reversibility:** Easy - hook can be disabled or modified
+- **Lesson learned:** Automatic extraction produced dangerous advice; replaced with task progress updates
 
 [2025-09-10 02:00] - Run External Commands from Neutral Directory
 - **Context:** Stop hook calling Claude CLI from project directory caused infinite recursion
@@ -352,49 +329,13 @@
   - **Distribution**: New templates and slash commands embedded via build-time packaging system
 - **Reversibility:** Medium - Migration command exists and old hooks can be re-enabled, but reversing would lose benefits of structured workflow. Both structures supported for transition period.
 
-[2025-10-16] - Replace Script Execution with Natural Language Instructions in Slash Commands
-- **Context:** Plugin script execution broken because `${CLAUDE_PLUGIN_ROOT}` not available in slash command bash execution. Attempted SessionStart hook to copy scripts and set env var, but discovered env vars from hooks don't persist to slash command execution.
-- **Decision:** Replace `!` bash script execution with natural language instructions telling Claude what to do via CLI commands
-- **Rationale:**
-  - Works immediately without waiting for Anthropic to fix upstream bug
-  - More flexible - Claude can adapt instructions to different project setups (identify appropriate test/lint/typecheck commands)
-  - Simpler mental model - no hidden automation, Claude explains what went wrong
-  - Actually better UX for some operations - Claude can generate PR descriptions from spec files rather than templating
-  - Complex error handling replaced with "explain and stop" which is more transparent
-- **Alternatives Considered:**
-  - Wait for Anthropic fix: Leaves plugin broken indefinitely, no ETA from Anthropic
-  - SessionStart hook with script copying: Discovered this doesn't work - env vars don't persist across processes
-  - Jesse's pattern (prompt injection): Only works for reading paths, not for bash execution via `!` prefix
-  - Disable commands entirely: Would make plugin unusable for key workflows
-- **Implications:**
-  - 4 commands updated: add-to-backlog (trivial), prepare-completion (validation + review), complete-task (git + PR), migrate (active task only)
-  - Slightly slower than automated scripts but still fast enough
-  - Better error messages and user feedback
-  - May keep this approach even after Anthropic fixes bug - instructions might be better than automation
-  - Historical task migration (migrate command) deferred until bug fix or manual implementation needed
-- **Reversibility:** Easy - can revert to script execution once `${CLAUDE_PLUGIN_ROOT}` works in slash commands, all scripts still exist and functional
-
-[2025-12-06] - Pivot to Skill-Based Script Execution Over Natural Language Instructions
-- **Context:** The natural language instruction approach from [2025-10-16] did not work well in practice - Claude's interpretation was inconsistent and error-prone. Meanwhile, discovered that Skills provide a base directory path when invoked, solving the `${CLAUDE_PLUGIN_ROOT}` unavailability issue.
-- **Decision:** Create a `cc-track-tools` skill containing utility scripts and shared libs. Commands invoke the skill to get the base path, then run TypeScript scripts directly with bun.
-- **Rationale:**
-  - Skills provide base directory via `Base directory for this skill: /path/to/skill` message
-  - No need for `${CLAUDE_PLUGIN_ROOT}` - skill invocation provides the path
-  - Scripts run reliably with consistent behavior vs natural language interpretation
-  - Single "toolbox" skill pattern keeps commands simple - just invoke skill and run script
-  - Scripts use `process.cwd()` for project context, skill path for lib imports
-- **Alternatives Considered:**
-  - Keep natural language instructions: Inconsistent behavior, Claude frequently misinterprets
-  - Wait for Anthropic to fix `${CLAUDE_PLUGIN_ROOT}`: No ETA, bug still open
-  - One skill per command: Unnecessary complexity, toolbox pattern cleaner
-  - Bundle scripts into single file: Unnecessary, bun runs TypeScript directly
-- **Implications:**
-  - New `skills/cc-track-tools/` directory with scripts and duplicated lib files
-  - Commands updated: prepare-completion, complete-task invoke skill first
-  - add-to-backlog simplified to inline bash (`!echo ... >> file`)
-  - Scripts must be run from project root (use cwd for .claude/ paths)
-  - Lib files duplicated in skill to avoid import path issues
-- **Reversibility:** Easy - could revert to natural language or wait for Anthropic fix, but skill approach is more reliable
+[2025-12-06] - Skill-Based Script Execution for Plugin Commands
+- **Context:** Plugin slash commands couldn't execute scripts because `${CLAUDE_PLUGIN_ROOT}` is unavailable in bash execution. Tried natural language instructions (Oct 2025) but Claude's interpretation was inconsistent.
+- **Decision:** Create `cc-track-tools` skill containing utility scripts. Commands invoke skill to get base path, then run TypeScript scripts with bun.
+- **Rationale:** Skills provide base directory on invocation, solving the path problem. Scripts run reliably vs natural language interpretation. Toolbox pattern keeps commands simple.
+- **Alternatives Considered:** Wait for Anthropic fix (no ETA), natural language (unreliable), one skill per command (unnecessary)
+- **Implications:** Commands invoke skill first for path, then run scripts. Scripts use `process.cwd()` for project context.
+- **Reversibility:** Easy - could wait for Anthropic fix, but skill approach works well
 
 [2025-12-06] - Consolidate /clarify Command into /specify
 - **Context:** After using the spec-driven workflow for several weeks, the `/clarify` step was rarely invoked separately. By the time `/specify` completed its Socratic questioning, all ambiguities were typically already resolved.

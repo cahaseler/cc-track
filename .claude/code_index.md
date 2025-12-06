@@ -60,7 +60,6 @@
 | templates/CLAUDE.md | Main context file with @ imports |
 | templates/settings.json | Claude Code hooks configuration |
 | templates/settings_with_stop.json | Settings with Stop hook enabled |
-| src/commands/statusline.ts | Custom status line command |
 
 ### Context Files (.claude/)
 | File | Purpose |
