@@ -20,5 +20,3 @@
 - [2025-12-06] Improve task generate mode to explicitly plan which sets of tasks can be assigned to subagents, which subagents to use, workflow for validating subagent work, etc. Take guidance from anthropic's feature dev skill and obrajesse's superpowers skills.
 - [2025-12-06] Update guidelines-reviewer agent definition to read spec.md/plan.md for task context before flagging 'unauthorized changes' - currently reviews in isolation without awareness of approved scope
 - [2025-12-06] Update prepare completion command to properly emulate the anthropic reviewer agent with the full process including seperate scoring agent, rather than the half-finished version that was implemented and allows the agent to take shortcuts.
-- [2025-12-06] Update complete-task command to warn Claude that it has swapped the current branch back to main, otherwise he might see that files have been "reverted" and misunderstand
-- [2025-12-06] Fix /cc-track:add-to-backlog command - the !echo command silently failed to append to the file

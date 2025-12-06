@@ -56,6 +56,8 @@ The script returns JSON-like output with messages and data. Parse and present th
 - Report PR status: URL if created, or existing PR if updated
 - Confirm branch switch to main
 
+**Important:** The script switches you back to the main branch. Files may appear to have "reverted" to their pre-task state - this is expected. The task changes are preserved on the feature branch and in the PR.
+
 ## Step 4: Enhance PR Description (if PR was created)
 
 If a new PR was created, enhance its description with details from the spec files:
