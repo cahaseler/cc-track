@@ -7,8 +7,15 @@ import {
   writeFileSync as nodeWriteFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import type { CommandResult } from '../commands/scripts/context';
 import { getActiveTaskId } from '../lib/claude-md';
+
+// Simple result type for statusline
+interface CommandResult<T = unknown> {
+  success: boolean;
+  messages?: string[];
+  data?: T;
+}
+
 import { getConfig as getConfigImpl } from '../lib/config';
 import { getCurrentBranch as getCurrentBranchImpl } from '../lib/git-helpers';
 import { getActiveSpecDirectory } from '../lib/spec-helpers';

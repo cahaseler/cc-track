@@ -16,6 +16,14 @@
   ],
   "agents": [
     "./agents/researcher.md",
-    "./agents/test-generation.md"
+    "./agents/test-generation.md",
+    "./agents/spec-compliance-reviewer.md",
+    "./agents/plan-adherence-reviewer.md",
+    "./agents/task-completion-reviewer.md",
+    "./agents/bug-scanner.md",
+    "./agents/guidelines-reviewer.md",
+    "./agents/comment-compliance-reviewer.md",
+    "./agents/duplication-detector.md",
+    "./agents/dead-code-detector.md"
   ]
 }
