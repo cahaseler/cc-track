@@ -1,3 +1,10 @@
+## [3.0.5](https://github.com/cahaseler/cc-track/compare/v3.0.4...v3.0.5) (2025-12-06)
+
+
+### Bug Fixes
+
+* use script-based approach for add-to-backlog command ([#158](https://github.com/cahaseler/cc-track/issues/158)) ([59213d9](https://github.com/cahaseler/cc-track/commit/59213d97fd7de52aa4c5796b14516a541b2b2634))
+
 ## [3.0.4](https://github.com/cahaseler/cc-track/compare/v3.0.3...v3.0.4) (2025-12-06)
 
 
