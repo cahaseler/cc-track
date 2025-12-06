@@ -15,17 +15,21 @@
 ├── .claude/           # Project context and state
 │   ├── commands/      # Slash commands for Claude Code
 │   ├── plans/         # Captured plans from planning mode
-│   ├── tasks/         # Active and completed tasks
+│   ├── specs/         # Feature specifications (new workflow)
 │   └── *.md           # Context files (imported by CLAUDE.md)
 ├── src/               # Source code for CLI
 │   ├── cli/           # CLI entry point
 │   ├── commands/      # Command implementations
 │   ├── hooks/         # Hook implementations
 │   └── lib/           # Shared libraries
+├── skills/            # Claude Code skills (plugin)
+│   └── cc-track-tools/  # Utility scripts accessible via skill invocation
+│       ├── scripts/   # Executable TypeScript scripts
+│       └── lib/       # Shared libraries for scripts
+├── commands/          # Plugin slash commands
 ├── dist/              # Compiled CLI binary
 ├── templates/         # Templates for initialization
-├── docs/              # Research and documentation
-└── old_roopars_documents/  # Legacy documentation
+└── docs/              # Research and documentation
 ```
 
 ## Key Files & Purpose
@@ -89,6 +93,16 @@
 | src/lib/logger.ts | Centralized logging system with rotation |
 | src/lib/log-parser.ts | JSONL log parser with filtering and formatting |
 
+### Skills (skills/)
+| Directory | Purpose |
+|-----------|---------|
+| skills/cc-track-tools/ | Utility scripts for task completion workflow |
+| skills/cc-track-tools/scripts/prepare-completion.ts | Validation suite runner |
+| skills/cc-track-tools/scripts/complete-task.ts | Task completion automation |
+| skills/cc-track-tools/scripts/backlog.ts | Backlog management |
+| skills/cc-track-tools/scripts/git-session.ts | Git session utilities |
+| skills/cc-track-tools/lib/ | Shared libraries (copy of src/lib for standalone execution) |
+
 ---
 
 ## Update Log
@@ -98,3 +112,4 @@
 [2025-09-10 21:00] - Updated paths to reflect actual .claude/ structure, added missing files
 [2025-09-11 19:30] - Migrated all code to src/ directory, removed legacy .claude script locations
 [2025-09-12 21:30] - Added log parser library and parse-logs command
+[2025-12-06] - Added skills/ directory for cc-track-tools skill with utility scripts

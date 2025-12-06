@@ -42,6 +42,13 @@
 - Multiple hooks can respond to same event
 - Exit codes control flow (0=success, 2=block)
 
+### Skill-Based Script Execution
+- Skills provide base directory path when invoked via Skill tool
+- Scripts in `skills/cc-track-tools/scripts/` are TypeScript files run with bun
+- Commands invoke skill first to get path, then run scripts
+- Solves Claude Code bug where `${CLAUDE_PLUGIN_ROOT}` unavailable in slash commands
+- Scripts use `process.cwd()` for project root, skill path for lib imports
+
 ## Coding Standards & Conventions
 
 ### Naming Conventions
@@ -268,3 +275,4 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 
 [2025-01-09] - Initial patterns documented
 [2025-10-15] - Expanded testing patterns with comprehensive DI/mocking guidance
+[2025-12-06] - Added skill-based script execution pattern

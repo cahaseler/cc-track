@@ -177,18 +177,19 @@ Optional files for complex features:
 **Purpose:** Run all quality checks and prepare for task completion
 
 **What happens:**
-1. Runs validation suite:
+1. Invokes the `cc-track:cc-track-tools` skill to get script paths
+2. Runs the `prepare-completion.ts` script which:
    - TypeScript type checking
    - Biome linting
    - Test suite execution
    - Knip dead code detection
-2. Provides dynamic instructions for any failures
-3. Reminds about documentation updates:
+3. Provides dynamic instructions for any failures
+4. Reminds about documentation updates:
    - Update progress.md with final state
    - Add to decision_log.md for architectural choices
    - Update system_patterns.md for new conventions
    - Journal reflections on learnings
-4. Passes entire spec folder to code reviewer for feedback
+5. Passes entire spec folder to code reviewer for feedback
 
 **Result:** Clear pass/fail with specific fix instructions
 
@@ -201,17 +202,19 @@ Optional files for complex features:
 **Purpose:** Mark task complete, squash commits, create PR
 
 **What happens:**
-1. Final validation check
-2. Reads `.metadata.json` for task info
-3. Updates task status to "completed"
-4. Squashes WIP commits into single feat commit
-5. Generates PR description from:
+1. Invokes the `cc-track:cc-track-tools` skill to get script paths
+2. Runs the `complete-task.ts` script which:
+   - Final validation check
+   - Reads `.metadata.json` for task info
+   - Updates task status to "completed"
+   - Squashes WIP commits into single feat commit
+   - Pushes branch and creates PR on GitHub
+   - Switches back to main branch
+3. Claude enhances PR description from:
    - spec.md requirements
    - plan.md implementation approach
    - progress.md actual changes
    - Test results
-6. Creates PR on GitHub
-7. Switches back to main branch
 
 **Result:** Task marked complete, PR ready for review
 
@@ -273,8 +276,8 @@ Optional files for complex features:
 **Purpose:** Add future ideas without disrupting current work
 
 **What happens:**
-1. Appends idea to `.claude/backlog.md` with timestamp
-2. No task creation or context switch
+- Executes inline bash to append timestamped idea to `.claude/backlog.md`
+- Minimal disruption - no file reads or multi-step process
 
 **When to use:** Mid-implementation when inspiration strikes
 

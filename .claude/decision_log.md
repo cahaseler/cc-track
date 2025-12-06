@@ -373,3 +373,25 @@
   - May keep this approach even after Anthropic fixes bug - instructions might be better than automation
   - Historical task migration (migrate command) deferred until bug fix or manual implementation needed
 - **Reversibility:** Easy - can revert to script execution once `${CLAUDE_PLUGIN_ROOT}` works in slash commands, all scripts still exist and functional
+
+[2025-12-06] - Pivot to Skill-Based Script Execution Over Natural Language Instructions
+- **Context:** The natural language instruction approach from [2025-10-16] did not work well in practice - Claude's interpretation was inconsistent and error-prone. Meanwhile, discovered that Skills provide a base directory path when invoked, solving the `${CLAUDE_PLUGIN_ROOT}` unavailability issue.
+- **Decision:** Create a `cc-track-tools` skill containing utility scripts and shared libs. Commands invoke the skill to get the base path, then run TypeScript scripts directly with bun.
+- **Rationale:**
+  - Skills provide base directory via `Base directory for this skill: /path/to/skill` message
+  - No need for `${CLAUDE_PLUGIN_ROOT}` - skill invocation provides the path
+  - Scripts run reliably with consistent behavior vs natural language interpretation
+  - Single "toolbox" skill pattern keeps commands simple - just invoke skill and run script
+  - Scripts use `process.cwd()` for project context, skill path for lib imports
+- **Alternatives Considered:**
+  - Keep natural language instructions: Inconsistent behavior, Claude frequently misinterprets
+  - Wait for Anthropic to fix `${CLAUDE_PLUGIN_ROOT}`: No ETA, bug still open
+  - One skill per command: Unnecessary complexity, toolbox pattern cleaner
+  - Bundle scripts into single file: Unnecessary, bun runs TypeScript directly
+- **Implications:**
+  - New `skills/cc-track-tools/` directory with scripts and duplicated lib files
+  - Commands updated: prepare-completion, complete-task invoke skill first
+  - add-to-backlog simplified to inline bash (`!echo ... >> file`)
+  - Scripts must be run from project root (use cwd for .claude/ paths)
+  - Lib files duplicated in skill to avoid import path issues
+- **Reversibility:** Easy - could revert to natural language or wait for Anthropic fix, but skill approach is more reliable
