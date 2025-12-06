@@ -27,9 +27,11 @@ Two minor fixes:
 
 ## Root Cause Analysis
 
-**Backlog command bug**: The `!` prefix requires backticks around the command for bash execution. Current syntax `!echo "..."` is treated as literal text. Correct syntax is `` !`echo "..."` ``.
+**Backlog command bug (initial)**: The `!` prefix requires backticks around the command for bash execution. Original syntax `!echo "..."` was treated as literal text. Correct syntax is `` !`echo "..."` ``.
 
-Evidence: `commands/specify.md` uses `` !`ls ...` `` and executes correctly.
+**Backlog command bug (second issue)**: After adding backticks, Claude Code's permission system blocks `$()` command substitution in bash commands, regardless of allowed-tools. The date expansion `$(date +%Y-%m-%d)` triggers this security check with error: "Command contains $() command substitution".
+
+**Solution**: Use the existing `backlog.ts` script which uses `deps.time.todayISO()` for reliable system date. This follows the skill + script pattern used by other commands and avoids both the bash execution and permission issues.
 
 ---
 
