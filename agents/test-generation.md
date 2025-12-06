@@ -17,7 +17,7 @@ description: |
   <Task tool invocation to launch test-generation agent>
   </example>
 model: haiku
-color: lime
+color: green
 allowed-tools:
   - Read
   - Grep

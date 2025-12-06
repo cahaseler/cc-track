@@ -19,5 +19,4 @@
 - [2025-12-06] Update the specify command to use the skills + scripts approach rather than giving claude multiple tasks for things like folder creation, metadata creation, git branching. Followup work to effort to move away from natural language instructions
 - [2025-12-06] Update the commands that mention other commands to use their cc-track names like "/cc-track:plan" rather than "/plan" which is now a native claude code command to avoid confusion
 - [2025-12-06] Improve task generate mode to explicitly plan which sets of tasks can be assigned to subagents, which subagents to use, workflow for validating subagent work, etc. Take guidance from anthropic's feature dev skill and obrajesse's superpowers skills.
-- [2025-12-06] Add color to dead-code-detector agent output
 - [2025-12-06] Revisit pre-tool-validation hook to verify it still functions correctly with spec-driven system - may need to change which files it protects (tasks.md vs other spec files)

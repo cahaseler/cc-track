@@ -24,7 +24,7 @@ description: |
   <Task tool invocation to launch dead-code-detector agent>
   </example>
 model: haiku
-color: gray
+color: cyan
 allowed-tools:
   - Read
   - Grep
