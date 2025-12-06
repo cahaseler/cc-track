@@ -1,8 +1,19 @@
 /**
- * Pre-tool validation hook for PreToolUse events
- * Validates edits before they're executed, including:
- * - Task file validation to prevent inappropriate status changes
- * - Branch protection to block edits on protected branches
+ * Pre-Tool Validation Hook (PreToolUse)
+ *
+ * Runs BEFORE Edit, Write, MultiEdit, or WebSearch tools execute.
+ * Returns hookSpecificOutput.permissionDecision: 'deny' to ACTUALLY BLOCK
+ * the tool call - the operation never happens.
+ *
+ * Validations performed:
+ * 1. Startup checks: Bun installed, npm conflicts, plugin dependencies
+ * 2. WebSearch year validation: Blocks queries with outdated year
+ * 3. Branch protection: Blocks edits on main/master branches
+ * 4. Specs directory protection: Blocks spec edits on main branch
+ * 5. Task file validation: Uses Claude SDK to check for weasel words
+ *
+ * Unlike PostToolUse hooks (see edit-validation.ts), this hook provides
+ * true prevention - denied operations never execute.
  */
 
 import { execSync } from 'node:child_process';

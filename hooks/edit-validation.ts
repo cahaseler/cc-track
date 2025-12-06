@@ -1,3 +1,17 @@
+/**
+ * Edit Validation Hook (PostToolUse)
+ *
+ * Runs after Edit, Write, or MultiEdit tools complete on TypeScript files.
+ * Validates the edited file with TypeScript type checking and Biome linting.
+ *
+ * IMPORTANT: This is a PostToolUse hook, so the edit has ALREADY HAPPENED
+ * by the time this runs. Returning { decision: 'block', reason: '...' }
+ * does NOT prevent the edit - it notifies Claude about validation failures
+ * so Claude knows to fix them. This is feedback, not prevention.
+ *
+ * For actual blocking before edits occur, see pre-tool-validation.ts (PreToolUse).
+ */
+
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
