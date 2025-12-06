@@ -424,11 +424,3 @@ export class GitHubHelpers {
     return { title, body };
   }
 }
-
-// Create default instance for backward compatibility with pushCurrentBranch
-const defaultGitHubHelpers = new GitHubHelpers();
-
-// Keep only the standalone function that is actually used (in complete-task.ts)
-export function pushCurrentBranch(cwd: string): boolean {
-  return defaultGitHubHelpers.pushCurrentBranch(cwd);
-}

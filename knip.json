@@ -2,12 +2,10 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
     "hooks/*.ts",
-    "commands/scripts/*.ts",
     "scripts/*.ts"
   ],
   "project": [
     "hooks/**/*.ts",
-    "commands/**/*.ts",
     "scripts/**/*.ts",
     "lib/**/*.ts",
     "test-utils/**/*.ts",
@@ -18,7 +16,8 @@
     ".claude/**",
     "templates/**",
     "docs/**",
-    "dist/**"
+    "dist/**",
+    "skills/**"
   ],
   "ignoreDependencies": [
     "ccusage",

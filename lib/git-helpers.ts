@@ -328,26 +328,19 @@ export class GitHelpers {
   }
 }
 
-// Create a default instance for backward compatibility with the few functions still in use
+// Create a default instance for backward compatibility with standalone functions
 let _defaultGitHelpers: GitHelpers | null = null;
 function getDefaultGitHelpers(): GitHelpers {
   if (!_defaultGitHelpers) _defaultGitHelpers = new GitHelpers();
   return _defaultGitHelpers;
 }
 
-// Keep only the standalone functions that are actually used
-export function getDefaultBranch(cwd: string): string {
-  return getDefaultGitHelpers().getDefaultBranch(cwd);
-}
-
+// Used in scripts/statusline.ts
 export function getCurrentBranch(cwd: string): string {
   return getDefaultGitHelpers().getCurrentBranch(cwd);
 }
 
+// Used in lib/validation.ts
 export function isWipCommit(commitLine: string): boolean {
   return getDefaultGitHelpers().isWipCommit(commitLine);
-}
-
-export function getMergeBase(branch1: string, branch2: string, cwd: string): string {
-  return getDefaultGitHelpers().getMergeBase(branch1, branch2, cwd);
 }

@@ -42,33 +42,3 @@ export interface GitHubIssue {
   assignees?: Array<{ login: string }>;
   milestone?: { title: string };
 }
-
-export interface ConfigFeatures {
-  capture_plan?: boolean;
-  pre_compact?: boolean;
-  post_compact?: boolean;
-  stop_review?: boolean;
-  edit_validation?: boolean;
-  git_integration?: boolean;
-  github_integration?: {
-    enabled?: boolean;
-    description?: string;
-    auto_create_issues?: boolean;
-    use_issue_branches?: boolean;
-    auto_create_prs?: boolean;
-    repository_url?: string;
-  };
-  api_timer?: {
-    enabled?: boolean;
-    display?: 'hide' | 'show' | 'sonnet-only';
-  };
-  logging?: {
-    enabled?: boolean;
-    level?: 'debug' | 'info' | 'warn' | 'error';
-    retention_days?: number;
-  };
-  websearch_validation?: {
-    enabled?: boolean;
-    description?: string;
-  };
-}

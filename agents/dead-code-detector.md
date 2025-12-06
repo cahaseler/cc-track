@@ -225,13 +225,36 @@ The following areas were checked and are clean:
 - package.json scripts using deleted files
 - Build configs with stale entries
 
-## Search Commands to Use
+## Tools to Use
 
+### Knip - Primary Dead Code Detection Tool
+
+**Always start with Knip** - it's the fastest way to find unused exports, dependencies, and files:
+
+```bash
+# Run knip to find all dead code
+bunx knip
+
+# Knip will report:
+# - Unresolved imports (broken references)
+# - Unused exports (functions/types never imported)
+# - Unused dependencies (npm packages not used)
+# - Unused files (files not imported anywhere)
+# - Configuration hints (stale patterns in config files)
+```
+
+**Interpreting Knip Output:**
+- `Unresolved imports`: Critical - these are broken imports that will cause runtime errors
+- `Unused exports`: High priority - exported but never imported elsewhere
+- `Unused exported types`: Types defined but never used
+- `Configuration hints`: Patterns in knip.json or tsconfig that don't match real files
+
+**After Knip, use manual searches for:**
 ```bash
 # Find files with zero imports (potential orphans)
 # Check if old file still exists after move
 # Search for imports of deleted modules
-# Find exports with no importers
+# Find exports with no importers (verify Knip findings)
 ```
 
 ## Important Guidelines
