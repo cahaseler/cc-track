@@ -1,3 +1,10 @@
+## [2.19.1](https://github.com/cahaseler/cc-track/compare/v2.19.0...v2.19.1) (2025-12-06)
+
+
+### Bug Fixes
+
+* clean up knip warnings and add knip guidance to dead-code-detector ([8f08518](https://github.com/cahaseler/cc-track/commit/8f08518406c179fcc3f21c840da353c94571986b))
+
 # [2.19.0](https://github.com/cahaseler/cc-track/compare/v2.18.1...v2.19.0) (2025-12-06)
 
 
