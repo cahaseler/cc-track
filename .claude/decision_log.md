@@ -395,3 +395,22 @@
   - Scripts must be run from project root (use cwd for .claude/ paths)
   - Lib files duplicated in skill to avoid import path issues
 - **Reversibility:** Easy - could revert to natural language or wait for Anthropic fix, but skill approach is more reliable
+
+[2025-12-06] - Consolidate /clarify Command into /specify
+- **Context:** After using the spec-driven workflow for several weeks, the `/clarify` step was rarely invoked separately. By the time `/specify` completed its Socratic questioning, all ambiguities were typically already resolved.
+- **Decision:** Merge `/clarify`'s ambiguity taxonomy and systematic questioning into `/specify`, eliminating the separate command.
+- **Rationale:**
+  - `/clarify` was an extra step that wasn't being used in practice
+  - The questioning during `/specify` naturally covered the same ground
+  - Simpler workflow with fewer commands to remember
+  - Specs should be complete before creating artifacts, not marked with `[NEEDS CLARIFICATION]` for later
+- **Alternatives Considered:**
+  - Keep both commands: Adds unnecessary complexity for little benefit
+  - Make `/clarify` optional: Already was optional, but the workflow suggested it as next step
+  - Auto-invoke `/clarify` from `/specify`: Same result, more complexity
+- **Implications:**
+  - Workflow simplified: `/specify` → `/plan` → `/tasks` → Implementation
+  - `/specify` now continues questioning until spec is complete (no `[NEEDS CLARIFICATION]` markers)
+  - New metadata status "specified" indicates spec is complete and ready for `/plan`
+  - All workflow documentation and references updated
+- **Reversibility:** Easy - could re-add `/clarify` as separate command if use cases emerge
