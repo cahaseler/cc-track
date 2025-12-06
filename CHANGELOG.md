@@ -1,3 +1,10 @@
+## [3.0.2](https://github.com/cahaseler/cc-track/compare/v3.0.1...v3.0.2) (2025-12-06)
+
+
+### Bug Fixes
+
+* add allowed-tools to review agents and fix command permission issues ([6f42bbd](https://github.com/cahaseler/cc-track/commit/6f42bbdeec4c94434588746cfa7ea57bcd300375))
+
 ## [3.0.1](https://github.com/cahaseler/cc-track/compare/v3.0.0...v3.0.1) (2025-12-06)
 
 
