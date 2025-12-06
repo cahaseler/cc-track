@@ -1,3 +1,12 @@
+# [2.18.0](https://github.com/cahaseler/cc-track/compare/v2.17.2...v2.18.0) (2025-12-06)
+
+
+### Features
+
+* add cc-track-tools skill for script execution ([7a46fc4](https://github.com/cahaseler/cc-track/commit/7a46fc467d178aafff341d14f2e218d44089e6fd))
+* add complexity-aware exploration to /specify and /plan commands ([6498aa6](https://github.com/cahaseler/cc-track/commit/6498aa6fe4702520a8aa13b23a4f67d2d41374c5))
+* replace SDK code review with 8-agent multi-agent review system ([30c0582](https://github.com/cahaseler/cc-track/commit/30c0582734534f5d51c699d04829240a6ce58504))
+
 ## [2.17.2](https://github.com/cahaseler/cc-track/compare/v2.17.1...v2.17.2) (2025-10-17)
 
 
