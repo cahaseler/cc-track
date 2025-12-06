@@ -1,8 +1,30 @@
 ---
-description: Generates comprehensive test suites following TDD principles with proper mocking and behavior verification
-capabilities: ["testing", "test-generation", "tdd", "quality-assurance", "code-coverage"]
+name: test-generation
+description: |
+  Use this agent when you need to generate comprehensive test suites for code that lacks tests or needs better coverage. This agent follows TDD principles with proper mocking and behavior verification.
+
+  <example>
+  Context: New code has been written without tests.
+  user: "We need tests for the authentication module"
+  assistant: "I'll use the test-generation agent to create comprehensive tests for the authentication module."
+  <Task tool invocation to launch test-generation agent>
+  </example>
+
+  <example>
+  Context: Expanding test coverage for undertested code.
+  user: "The validation utils have poor test coverage"
+  assistant: "I'll use the test-generation agent to expand test coverage for the validation utilities."
+  <Task tool invocation to launch test-generation agent>
+  </example>
 model: haiku
-tools: Read, Grep, Glob, Write, Edit, Bash(bun test:*)
+color: lime
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Write
+  - Edit
+  - Bash(bun test:*)
 ---
 
 # Test Generation Subagent

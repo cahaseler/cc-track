@@ -1,8 +1,33 @@
 ---
-description: Researches topics and synthesizes findings from documentation, web sources, and codebases
-capabilities: ["research", "web-search", "synthesis", "documentation", "analysis"]
+name: researcher
+description: |
+  Use this agent when you need to research technical topics, library documentation, best practices, or implementation approaches. This agent synthesizes findings from documentation, web sources, and codebases into actionable recommendations.
+
+  <example>
+  Context: Need to understand how to implement a feature using a library.
+  user: "How should we handle authentication in Next.js App Router?"
+  assistant: "I'll use the researcher agent to investigate authentication patterns for Next.js App Router."
+  <Task tool invocation to launch researcher agent>
+  </example>
+
+  <example>
+  Context: Comparing different approaches to solve a problem.
+  user: "What's the best way to implement rate limiting in Bun?"
+  assistant: "I'll use the researcher agent to compare rate limiting options for Bun."
+  <Task tool invocation to launch researcher agent>
+  </example>
 model: haiku
-tools: Read, Grep, Glob, WebSearch, WebFetch, Write, Edit, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+color: purple
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - WebSearch
+  - WebFetch
+  - Write
+  - Edit
+  - mcp__context7__resolve-library-id
+  - mcp__context7__get-library-docs
 ---
 
 # Research Subagent
