@@ -1,3 +1,10 @@
+## [2.18.1](https://github.com/cahaseler/cc-track/compare/v2.18.0...v2.18.1) (2025-12-06)
+
+
+### Bug Fixes
+
+* update researcher and test-generation agents to use allowed-tools format ([02951e2](https://github.com/cahaseler/cc-track/commit/02951e2005723dd1df3a05399969ab849d7b02f5))
+
 # [2.18.0](https://github.com/cahaseler/cc-track/compare/v2.17.2...v2.18.0) (2025-12-06)
 
 
