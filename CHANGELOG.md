@@ -1,3 +1,10 @@
+## [2.20.1](https://github.com/cahaseler/cc-track/compare/v2.20.0...v2.20.1) (2025-12-06)
+
+
+### Bug Fixes
+
+* sync plugin version with semantic-release ([3aaafa8](https://github.com/cahaseler/cc-track/commit/3aaafa8b5fb4afc3d7707e6b838149fbdf4d7325))
+
 # [2.20.0](https://github.com/cahaseler/cc-track/compare/v2.19.1...v2.20.0) (2025-12-06)
 
 
