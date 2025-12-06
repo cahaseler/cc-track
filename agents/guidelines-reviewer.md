@@ -25,6 +25,16 @@ description: |
   </example>
 model: haiku
 color: yellow
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - LS
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git status:*)
+  - Bash(git show:*)
+  - Bash(bunx knip:*)
 ---
 
 You are an expert code reviewer specializing in project-specific guidelines and standards. Your mission is to ensure AI-generated code adheres to the established patterns, conventions, and guardrails documented in CLAUDE.md, constitution.md, and system_patterns.md.

@@ -2,7 +2,6 @@
 shortname: migrate
 description: Migrate from old task structure to spec-driven workflow format
 usage: /migrate
-allowed-tools: Bash, Edit, Read
 ---
 
 # Migrate to Spec-Driven Structure

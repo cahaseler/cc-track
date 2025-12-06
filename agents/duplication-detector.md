@@ -25,6 +25,16 @@ description: |
   </example>
 model: haiku
 color: orange
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - LS
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git status:*)
+  - Bash(git show:*)
+  - Bash(bunx knip:*)
 ---
 
 You are an expert codebase archaeologist specializing in finding duplicate implementations. Your mission is to prevent codebase bloat by catching cases where new code reimplements functionality that already exists.

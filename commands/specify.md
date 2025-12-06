@@ -11,7 +11,7 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(mkdi
 
 ## Pre-Check
 
-!`[ -d .cc-track ] || echo "⚠️ STOP: .cc-track directory not found. This project needs migration to the new cc-track format. Please run /cc-track:migrate first, then run /cc-track:specify again."`
+!`ls .cc-track >/dev/null 2>&1 || echo "⚠️ STOP: .cc-track directory not found. This project needs migration to the new cc-track format. Please run /cc-track:migrate first, then run /cc-track:specify again."`
 
 ## Current Context
 

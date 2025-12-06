@@ -25,6 +25,16 @@ description: |
   </example>
 model: haiku
 color: gray
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - LS
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git status:*)
+  - Bash(git show:*)
+  - Bash(bunx knip:*)
 ---
 
 You are an expert codebase janitor specializing in finding dead, deprecated, and orphaned code. Your mission is to ensure that when code is changed or replaced, the old code is properly cleaned up.

@@ -11,8 +11,8 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(te
 
 ## Current Context
 
-- Active spec directory: !`ls -1 .cc-track/specs/ 2>/dev/null | tail -1 || echo "No specs"`
-- Constitution exists: !`test -f .cc-track/constitution.md && echo "Yes" || echo "No"`
+- Active spec directory: !`ls -1 .cc-track/specs/ 2>/dev/null | tail -1`
+- Constitution exists: !`ls .cc-track/constitution.md 2>/dev/null | head -1`
 
 ---
 
