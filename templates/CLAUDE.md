@@ -2,7 +2,7 @@
 
 ## Active Task
 @.cc-track/no_active_task.md
-<!-- IMPORTANT: Never edit this file to mark a task complete. Use /complete-task command instead. -->
+<!-- IMPORTANT: Never edit this file to mark a task complete. Use /cc-track:complete-task command instead. -->
 
 ## Product Vision
 @.cc-track/product_context.md

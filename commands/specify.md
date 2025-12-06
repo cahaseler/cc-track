@@ -332,7 +332,7 @@ Show the user:
 2. **Spec location**: `.cc-track/specs/${taskId}-${featureName}/spec.md`
 3. **Content preview**: Show first 30-40 lines of spec
 4. **Coverage summary**: Confirm all taxonomy areas addressed
-5. **Next step suggestion**: "Ready to run `/plan` for technical design?"
+5. **Next step suggestion**: "Ready to run `/cc-track:plan` for technical design?"
 
 ---
 
@@ -387,7 +387,7 @@ Claude: "I have complete understanding. Creating the spec..."
 - Spec with 8 functional requirements, 3 NFRs, 4 edge cases
 - All areas covered, no ambiguities remaining
 
-Ready to run `/plan` for technical design?"
+Ready to run `/cc-track:plan` for technical design?"
 ```
 
 ---
@@ -404,4 +404,4 @@ Ready to run `/plan` for technical design?"
 
 ## Next Command
 
-After `/specify` completes successfully, suggest: `/plan`
+After `/cc-track:specify` completes successfully, suggest: `/cc-track:plan`

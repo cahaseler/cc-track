@@ -147,7 +147,7 @@ This constitution establishes the governing principles and guardrails for [PROJE
 6. Update version and amendment date
 
 ### Enforcement
-- `/plan` command validates designs against constitution
+- `/cc-track:plan` command validates designs against constitution
 - Code reviews verify compliance
 - Complexity violations logged in decision_log.md
 - Regular audits of adherence
@@ -178,4 +178,4 @@ This constitution establishes the governing principles and guardrails for [PROJE
 
 ---
 
-**Note**: When creating a plan with `/plan`, the system will automatically check this constitution and require justification for any violations.
+**Note**: When creating a plan with `/cc-track:plan`, the system will automatically check this constitution and require justification for any violations.

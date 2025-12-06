@@ -23,7 +23,7 @@ Read `CLAUDE.md` and check for active task references:
 - Stop here
 
 **Case D: No active task**
-- Inform user: "⚠️ No active task to migrate. You can start using the new workflow with `/specify` for new tasks."
+- Inform user: "⚠️ No active task to migrate. You can start using the new workflow with `/cc-track:specify` for new tasks."
 - Stop here
 
 ## Step 2A: Migrate from Old Task Format
@@ -68,7 +68,7 @@ This specification was automatically generated from an old task file. Review and
 - Non-functional requirements
 - Success criteria
 
-Review and refine this specification before proceeding to `/plan`.
+Review and refine this specification before proceeding to `/cc-track:plan`.
 ```
 
 6. Create `plan.md` - copy the entire old task file content here
@@ -82,7 +82,7 @@ Review and refine this specification before proceeding to `/plan`.
 
 ## Migration Note
 
-Task breakdown should be regenerated using `/plan` and `/tasks` commands based on the current plan and spec.
+Task breakdown should be regenerated using `/cc-track:plan` and `/cc-track:tasks` commands based on the current plan and spec.
 
 Alternatively, you can manually populate this file with the task breakdown from the plan.md file.
 ```
@@ -112,8 +112,8 @@ This progress file was created during migration from old cc-track structure.
 ## Next Steps
 
 1. Review and enhance spec.md with clear requirements
-2. Run `/plan` to create technical design
-3. Run `/tasks` to generate task breakdown
+2. Run `/cc-track:plan` to create technical design
+3. Run `/cc-track:tasks` to generate task breakdown
 ```
 
 9. Create `.metadata.json`:

@@ -23,7 +23,7 @@ No active spec found. This review requires a cc-track spec folder with:
 - plan.md (technical design)
 - tasks.md (task breakdown)
 
-Run /specify to create a spec first, or ensure CLAUDE.md points to an active spec.
+Run /cc-track:specify to create a spec first, or ensure CLAUDE.md points to an active spec.
 ```
 
 ### 2. Load Spec Files
@@ -183,4 +183,4 @@ Ready to run /cc-track:complete-task to finalize.
 - Each agent uses confidence scoring (threshold: 80)
 - Agents read spec files directly - no need to pass content
 - Results are actionable with specific file:line references
-- Use this during /prepare-completion or standalone
+- Use this during /cc-track:prepare-completion or standalone

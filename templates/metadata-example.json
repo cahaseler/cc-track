@@ -1,6 +1,6 @@
 {
   "_comment": "Example .metadata.json structure for cc-track spec directories",
-  "_usage": "This file is automatically created in .cc-track/specs/NNN-feature-name/ when using /specify or /migrate commands",
+  "_usage": "This file is automatically created in .cc-track/specs/NNN-feature-name/ when using /cc-track:specify or /cc-track:migrate commands",
 
   "task_id": "001",
   "_task_id_description": "REQUIRED - Numeric ID matching the spec directory prefix (e.g., '001' for '001-feature-name/')",
@@ -14,17 +14,17 @@
   "status": "in_progress",
   "_status_description": "REQUIRED - Current status of the feature. Valid values: 'draft', 'in_progress', 'completed'",
   "_status_values": {
-    "draft": "Specification phase - requirements being defined via /specify",
-    "specified": "Specification complete - ready for /plan",
+    "draft": "Specification phase - requirements being defined via /cc-track:specify",
+    "specified": "Specification complete - ready for /cc-track:plan",
     "in_progress": "Implementation phase - tasks being executed",
     "completed": "Feature complete - all validation passed, ready for merge"
   },
 
   "started": "2025-01-15T10:30:00.000Z",
-  "_started_description": "REQUIRED - ISO 8601 timestamp when feature work began (set by /specify or /migrate)",
+  "_started_description": "REQUIRED - ISO 8601 timestamp when feature work began (set by /cc-track:specify or /cc-track:migrate)",
 
   "completed": "2025-01-20T14:45:00.000Z",
-  "_completed_description": "OPTIONAL - ISO 8601 timestamp when feature was completed (set by /complete-task). Omit if not completed.",
+  "_completed_description": "OPTIONAL - ISO 8601 timestamp when feature was completed (set by /cc-track:complete-task). Omit if not completed.",
 
   "github": {
     "issue": 123,

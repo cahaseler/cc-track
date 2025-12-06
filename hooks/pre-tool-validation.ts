@@ -10,7 +10,7 @@
  * 2. WebSearch year validation: Blocks queries with outdated year
  * 3. Branch protection: Blocks edits on main/master branches
  * 4. Specs directory protection: Blocks spec edits on main branch
- * 5. Task file validation: Uses Claude SDK to check for weasel words
+ * 5. Metadata file protection: Blocks direct edits to .metadata.json files
  *
  * Unlike PostToolUse hooks (see edit-validation.ts), this hook provides
  * true prevention - denied operations never execute.
@@ -18,7 +18,6 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { ClaudeSDK } from '../skills/cc-track-tools/lib/claude-sdk';
 import { getConfig, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 import { detectNpmPackage, verifyBunInstalled, verifyPluginDependencies } from '../skills/cc-track-tools/lib/detection';
 import {
@@ -33,7 +32,6 @@ import type { HookInput, HookOutput } from '../types';
 const logger = createLogger('pre-tool-validation');
 
 export interface PreToolValidationDependencies {
-  claudeSDK?: typeof ClaudeSDK;
   logger?: ReturnType<typeof createLogger>;
   isHookEnabled?: typeof isHookEnabled;
   getConfig?: typeof getConfig;
@@ -173,13 +171,6 @@ export function extractFilePath(toolName: string, toolInput: unknown): string | 
 }
 
 /**
- * Check if a file path is a task file (tasks.md inside a spec directory)
- */
-export function isTaskFile(filePath: string): boolean {
-  return /\.cc-track\/specs\/\d{3}-[^/]+\/tasks\.md$/.test(filePath);
-}
-
-/**
  * Check if a file path is in the specs directory
  */
 export function isSpecFile(filePath: string): boolean {
@@ -187,89 +178,10 @@ export function isSpecFile(filePath: string): boolean {
 }
 
 /**
- * Extract the diff information from Edit/MultiEdit tool input
+ * Check if a file path is a metadata file (.metadata.json inside a spec directory)
  */
-export function extractDiffInfo(
-  toolName: string,
-  toolInput: unknown,
-): { filePath: string; oldContent: string; newContent: string } | null {
-  const input = toolInput as {
-    file_path?: string;
-    old_string?: string;
-    new_string?: string;
-    edits?: Array<{ old_string: string; new_string: string }>;
-  };
-
-  if (!input.file_path) return null;
-
-  if (toolName === 'Edit' && input.old_string !== undefined && input.new_string !== undefined) {
-    return {
-      filePath: input.file_path,
-      oldContent: input.old_string,
-      newContent: input.new_string,
-    };
-  }
-
-  if (toolName === 'MultiEdit' && input.edits && input.edits.length > 0) {
-    // For MultiEdit, combine all edits to show the cumulative change
-    const oldParts: string[] = [];
-    const newParts: string[] = [];
-
-    for (const edit of input.edits) {
-      oldParts.push(edit.old_string);
-      newParts.push(edit.new_string);
-    }
-
-    return {
-      filePath: input.file_path,
-      oldContent: oldParts.join('\n---\n'),
-      newContent: newParts.join('\n---\n'),
-    };
-  }
-
-  return null;
-}
-
-/**
- * Build the validation prompt for Claude
- */
-export function buildValidationPrompt(filePath: string, oldContent: string, newContent: string): string {
-  return `You are a strict task file validator for the cc-track system. Review this edit to a task file and determine if it should be blocked.
-
-TASK FILE: ${filePath}
-
-OLD CONTENT:
-${oldContent}
-
-NEW CONTENT:
-${newContent}
-
-VALIDATION RULES:
-1. BLOCK if the edit changes the task status field to "completed" - only the /complete-task command should do this
-2. BLOCK if the edit uses weasel words that claim completion WHILE ADMITTING to incomplete work, such as:
-   - Marking as complete while saying "Most tests pass" or "majority of tests pass"
-   - Marking as complete while saying "Lint/type checks mostly pass" or "acceptable lint issues"
-   - Marking as complete while blaming "Environment issues" or "test framework problems" for failures
-   - Marking as complete with "Good enough" or "functional enough" or "not critical" language
-   - Any language that claims completion while simultaneously admitting work is incomplete
-
-IMPORTANT: Do NOT block legitimate documentation of completed work. If requirements are being marked as complete without any admission of failure or incompleteness, that's normal task documentation and should be ALLOWED.
-
-IMPORTANT: The cc-track library has STRICT requirements:
-- 100% of tests must pass when run together
-- 100% of lint checks must pass
-- 100% of type checks must pass
-- No exceptions or excuses are acceptable
-
-CRITICAL: You MUST respond with ONLY valid JSON. Do not include any explanatory text before or after the JSON. Do not wrap the JSON in markdown code blocks. Output ONLY the raw JSON object.
-
-If the edit violates these rules, output EXACTLY this structure:
-{"shouldBlock":true,"reason":"Complete explanation of why this edit is blocked, what should be done instead, and remind that the next step is to fix the issues described or discuss with the user. Emphasize that 100% of tests, lints, and type checks must pass."}
-
-If the edit is acceptable, output EXACTLY this structure:
-{"shouldBlock":false,"reason":"Edit is acceptable"}
-
-REMEMBER: Output ONLY the JSON object. No other text. No markdown. Just JSON.`;
+export function isMetadataFile(filePath: string): boolean {
+  return /\.cc-track\/specs\/\d{3}-[^/]+\/\.metadata\.json$/.test(filePath);
 }
 
 /**
@@ -279,7 +191,6 @@ export async function preToolValidationHook(
   input: HookInput,
   deps: PreToolValidationDependencies = {},
 ): Promise<HookOutput> {
-  const sdk = deps.claudeSDK || ClaudeSDK;
   const log = deps.logger || logger;
   const checkEnabled = deps.isHookEnabled || isHookEnabled;
   const configGetter = deps.getConfig || getConfig;
@@ -460,96 +371,29 @@ Note: If you genuinely need historical ${yearCheck.detectedYear} information, tr
       log.debug('Allowing spec file edit on feature branch', { filePath, branch: currentBranch });
     }
 
-    // Task Validation Check (only for Edit and MultiEdit, not Write)
-    if (input.tool_name !== 'Write') {
-      log.debug('Task validation triggered', {
-        tool_name: input.tool_name,
-        has_tool_input: !!input.tool_input,
+    // Metadata File Protection Check
+    const metadataFilePath = extractFilePath(input.tool_name, input.tool_input);
+    if (metadataFilePath && isMetadataFile(metadataFilePath)) {
+      log.warn('Blocking metadata file edit', {
+        filePath: metadataFilePath,
+        tool: input.tool_name,
       });
 
-      // Extract diff information
-      const diffInfo = extractDiffInfo(input.tool_name, input.tool_input);
-      if (!diffInfo) {
-        log.debug('No diff information found');
-        return { continue: true };
-      }
+      return {
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny' as const,
+          permissionDecisionReason: `🚫 Metadata Protection: Cannot directly modify .metadata.json files
 
-      // Check if this is a task file
-      if (!isTaskFile(diffInfo.filePath)) {
-        log.debug('Not a task file, skipping validation', { filePath: diffInfo.filePath });
-        return { continue: true };
-      }
+Metadata files track task status and should only be modified by cc-track commands:
+- /cc-track:complete-task - marks task as completed
+- /cc-track:prepare-completion - validates before completion
 
-      log.info('Validating task file edit', { filePath: diffInfo.filePath });
-
-      // Build validation prompt
-      const prompt = buildValidationPrompt(diffInfo.filePath, diffInfo.oldContent, diffInfo.newContent);
-
-      // Call Claude SDK for validation
-      const response = await sdk.prompt(prompt, 'sonnet', {
-        maxTurns: 1,
-        timeoutMs: 15000,
-      });
-
-      if (!response.success) {
-        log.error('Claude SDK validation failed', { error: response.error });
-        // On error, allow the edit to proceed
-        return { continue: true };
-      }
-
-      // Parse the response (handle various formats)
-      let validationResult: { shouldBlock: boolean; reason: string };
-      try {
-        let jsonText = response.text.trim();
-
-        // Try to extract JSON from the response
-        // First, check if it's already valid JSON
-        try {
-          validationResult = JSON.parse(jsonText);
-        } catch {
-          // If not, try to extract JSON from various formats
-
-          // Remove markdown code blocks
-          if (jsonText.includes('```')) {
-            jsonText = jsonText.replace(/```json\s*\n?/g, '').replace(/```\s*\n?/g, '');
-          }
-
-          // Find JSON object in the text (looking for {...})
-          const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            jsonText = jsonMatch[0];
-          }
-
-          validationResult = JSON.parse(jsonText);
-        }
-      } catch (parseError) {
-        log.error('Failed to parse validation response', {
-          response: response.text,
-          error: parseError,
-        });
-        // On parse error, allow the edit to proceed
-        return { continue: true };
-      }
-
-      // If validation says to block, return the appropriate PreToolUse response
-      if (validationResult.shouldBlock) {
-        log.warn('Blocking task file edit', {
-          filePath: diffInfo.filePath,
-          reason: validationResult.reason,
-        });
-
-        // PreToolUse hooks use hookSpecificOutput with permissionDecision
-        return {
-          hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'deny' as const,
-            permissionDecisionReason: validationResult.reason,
-          },
-        };
-      }
-
-      log.debug('Task file edit validated successfully');
+These commands run scripts that properly update metadata with validation.`,
+        },
+      };
     }
+
     return { continue: true };
   } catch (error) {
     log.exception('Fatal error in task validation hook', error as Error);
