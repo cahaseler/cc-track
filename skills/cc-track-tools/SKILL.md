@@ -17,19 +17,11 @@ This skill provides access to cc-track's utility scripts. When invoked, you rece
 
 ### prepare-completion.ts
 
-Runs validation suite (TypeScript, lint, tests, knip) and code review for the active task.
+Runs validation suite (TypeScript, lint, tests, knip) for the active task.
 
 ```bash
 bun {base_directory}/scripts/prepare-completion.ts
 ```
-
-**Returns JSON with:**
-- `success`: boolean
-- `messages`: array of status messages
-- `warnings`: array of warnings
-- `data.validation`: detailed validation results
-- `data.readyForCompletion`: boolean
-- `data.codeReview`: review file path if generated
 
 ### complete-task.ts
 
@@ -39,11 +31,13 @@ Completes the active task: updates metadata, squashes WIP commits, creates PR.
 bun {base_directory}/scripts/complete-task.ts
 ```
 
-**Returns JSON with:**
-- `success`: boolean
-- `messages`: array of status messages
-- `data.prUrl`: PR URL if created
-- `data.commitsSquashed`: number of commits squashed
+### specify.ts
+
+Creates spec infrastructure: git branch, spec folder, metadata, CLAUDE.md update, GitHub issue.
+
+```bash
+bun {base_directory}/scripts/specify.ts "Feature title"
+```
 
 ### backlog.ts
 

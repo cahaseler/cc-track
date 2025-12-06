@@ -20,3 +20,4 @@
 - [2025-12-06] Improve task generate mode to explicitly plan which sets of tasks can be assigned to subagents, which subagents to use, workflow for validating subagent work, etc. Take guidance from anthropic's feature dev skill and obrajesse's superpowers skills.
 - [2025-12-06] Update guidelines-reviewer agent definition to read spec.md/plan.md for task context before flagging 'unauthorized changes' - currently reviews in isolation without awareness of approved scope
 - [2025-12-06] Update prepare completion command to properly emulate the anthropic reviewer agent with the full process including seperate scoring agent, rather than the half-finished version that was implemented and allows the agent to take shortcuts.
+- [2025-12-06] at least one of the review agents (not clear which) needs to be granted LS permissions and also denied the ability to write random crap to /tmp/

@@ -271,6 +271,24 @@ export class GitHelpers {
   }
 
   /**
+   * Check if a branch already exists (local or remote)
+   */
+  branchExists(branchName: string, cwd: string): boolean {
+    try {
+      // Check local branches
+      const localResult = this.exec(`git branch --list ${branchName}`, { cwd });
+      if (localResult.trim()) {
+        return true;
+      }
+      // Check remote branches
+      const remoteResult = this.exec(`git branch -r --list "origin/${branchName}"`, { cwd });
+      return remoteResult.trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Create and switch to a new branch
    */
   createTaskBranch(branchName: string, cwd: string): void {

@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.cc-track/no_active_task.md
+@.cc-track/specs/107-migrate-specify-command-to-script/spec.md
 
 ## Product Vision
 @.cc-track/product_context.md
