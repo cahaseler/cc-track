@@ -1,6 +1,6 @@
 {
   "name": "cc-track",
-  "version": "2.10.0",
+  "version": "3.1.0",
   "description": "Task Review And Context Keeper: Keep your vibe coding on track",
   "type": "module",
   "repository": {
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
     "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.6",
     "@types/bun": "^1.2.21",
