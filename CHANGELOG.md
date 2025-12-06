@@ -1,3 +1,10 @@
+## [3.0.1](https://github.com/cahaseler/cc-track/compare/v3.0.0...v3.0.1) (2025-12-06)
+
+
+### Bug Fixes
+
+* align version files with v3.0.0 tag ([7829dc2](https://github.com/cahaseler/cc-track/commit/7829dc27d575f3953df73e284262adda7fb42af4))
+
 ## [2.20.1](https://github.com/cahaseler/cc-track/compare/v2.20.0...v2.20.1) (2025-12-06)
 
 
