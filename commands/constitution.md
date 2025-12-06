@@ -194,7 +194,7 @@ Based on project requirements from Phase 1.
 
 ### Constitutional Authority
 - This constitution supersedes coding preferences
-- All `/plan` commands validate against these principles
+- All `/cc-track:plan` commands validate against these principles
 - Violations require explicit justification and documentation
 
 ### Amendment Process
@@ -206,7 +206,7 @@ Based on project requirements from Phase 1.
 6. Update version and amendment date
 
 ### Enforcement
-- `/plan` command checks constitution automatically
+- `/cc-track:plan` command checks constitution automatically
 - Code reviews verify compliance
 - Complexity violations logged in decision_log.md
 - Quarterly constitution review recommended
@@ -231,7 +231,7 @@ Key Guardrails:
 - TDD required
 - 80% test coverage minimum
 
-This will be enforced during `/plan` phase.
+This will be enforced during `/cc-track:plan` phase.
 
 Does this align with your project needs?
 Anything to adjust?
@@ -266,7 +266,7 @@ Which fits better?"
 - **Decision**: Adopted principles: [list]
 - **Rationale**: [why these principles matter for this project]
 - **Key Guardrails**: [most important limits]
-- **Implications**: All future `/plan` commands will validate against these
+- **Implications**: All future `/cc-track:plan` commands will validate against these
 - **Reversibility**: Easy - can amend through governance process
 ```
 
@@ -278,7 +278,7 @@ Version: 1.0.0
 Ratified: 2025-01-14
 
 The constitution will be automatically checked during:
-- `/plan` - Pre-design and post-design validation
+- `/cc-track:plan` - Pre-design and post-design validation
 - Pull requests (if configured)
 - Architecture reviews
 
@@ -348,7 +348,7 @@ Approve?"
 - Version number in file (semantic versioning)
 - Ratified date and last amended date
 - Reference from CLAUDE.md if desired
-- Used automatically by `/plan` command
+- Used automatically by `/cc-track:plan` command
 - Can be project-specific or team-wide
 
 ---
@@ -356,8 +356,8 @@ Approve?"
 ## Integration with Workflow
 
 Constitution is **optional** but powerful:
-- **Without**: `/plan` focuses on technical feasibility
-- **With**: `/plan` also validates against principles and guardrails
+- **Without**: `/cc-track:plan` focuses on technical feasibility
+- **With**: `/cc-track:plan` also validates against principles and guardrails
 
 Most projects benefit from at least minimal constitution:
 - "Keep it simple"

@@ -30,7 +30,7 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(te
 
 **Verify**:
 - [ ] Active spec exists
-- [ ] No `[NEEDS CLARIFICATION]` markers remain in spec (should be resolved during /specify)
+- [ ] No `[NEEDS CLARIFICATION]` markers remain in spec (should be resolved during /cc-track:specify)
 
 **If NEEDS CLARIFICATION found**:
 ```
@@ -153,7 +153,7 @@ Which approach?
 ## Phase 1: Research
 
 ### Ask Technical Questions
-One at a time (like `/specify` questioning):
+One at a time (like `/cc-track:specify` questioning):
 
 **Required Questions**:
 1. **Language/Runtime**: "What language and version? (e.g., TypeScript 5.3 with Bun)"
@@ -309,7 +309,7 @@ Use `templates/plan-template.md`:
 - Project Structure
 - Phase 0 (Research) - reference research.md
 - Phase 1 (Design) - reference data-model.md, contracts/, quickstart.md
-- Phase 2 (Task Planning Approach) - **describe** what /tasks will do, DON'T create tasks.md yet
+- Phase 2 (Task Planning Approach) - **describe** what /cc-track:tasks will do, DON'T create tasks.md yet
 - Progress Tracking
 - Risk Assessment
 
@@ -371,7 +371,7 @@ Constitution status: ✅ All guardrails met
 Tech stack: TypeScript + Bun + SQLite
 Complexity: Low (single service, 3 dependencies)
 
-Next step: Ready to run `/tasks` to generate implementation breakdown?
+Next step: Ready to run `/cc-track:tasks` to generate implementation breakdown?
 ```
 
 ---
@@ -420,7 +420,7 @@ Thoughts?"
 - Use Read/Write/Bash tools for all file operations
 - Reference constitution by path (`.cc-track/constitution.md`)
 - Create contracts/ subdirectory if needed: `mkdir -p .cc-track/specs/NNN-feature-name/contracts`
-- Don't create tasks.md yet (that's `/tasks` job)
+- Don't create tasks.md yet (that's `/cc-track:tasks` job)
 - Update `.metadata.json` if status changes
 - Use WebSearch for recent tech docs
 - Apply YAGNI ruthlessly
@@ -429,4 +429,4 @@ Thoughts?"
 
 ## Next Command
 
-After `/plan` completes: `/tasks`
+After `/cc-track:plan` completes: `/cc-track:tasks`

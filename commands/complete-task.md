@@ -7,7 +7,7 @@ description: Complete the current active task (Phase 2 of task completion workfl
 
 Finalize the current task by updating metadata, squashing commits, and creating a PR.
 
-**Prerequisites:** Validation must have passed via `/prepare-completion`
+**Prerequisites:** Validation must have passed via `/cc-track:prepare-completion`
 
 ## Current Context
 
@@ -45,7 +45,7 @@ The script returns JSON-like output with messages and data. Parse and present th
 **If completion failed:**
 - Show what failed with error details
 - Common failures:
-  - Validation failed → Run `/prepare-completion` first to fix issues
+  - Validation failed → Run `/cc-track:prepare-completion` first to fix issues
   - Push failed → Check for merge conflicts or authentication issues
   - No active task → Ensure a task is active before running
 - **STOP** - do not proceed

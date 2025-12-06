@@ -17,6 +17,6 @@
 - [2025-09-18] Add integration tests for critical paths (context management, git ops, hook chains, config propagation)
 - [2025-09-23] Rewrite prompts to align with Spec-Driven Development principles
 - [2025-12-06] Update the specify command to use the skills + scripts approach rather than giving claude multiple tasks for things like folder creation, metadata creation, git branching. Followup work to effort to move away from natural language instructions
-- [2025-12-06] Update the commands that mention other commands to use their cc-track names like "/cc-track:plan" rather than "/plan" which is now a native claude code command to avoid confusion
 - [2025-12-06] Improve task generate mode to explicitly plan which sets of tasks can be assigned to subagents, which subagents to use, workflow for validating subagent work, etc. Take guidance from anthropic's feature dev skill and obrajesse's superpowers skills.
-- [2025-12-06] Revisit pre-tool-validation hook to verify it still functions correctly with spec-driven system - may need to change which files it protects (tasks.md vs other spec files)
+- [2025-12-06] Update guidelines-reviewer agent definition to read spec.md/plan.md for task context before flagging 'unauthorized changes' - currently reviews in isolation without awareness of approved scope
+- [2025-12-06] Update prepare completion command to properly emulate the anthropic reviewer agent with the full process including seperate scoring agent, rather than the half-finished version that was implemented and allows the agent to take shortcuts.

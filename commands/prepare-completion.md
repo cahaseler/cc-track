@@ -45,7 +45,7 @@ The script returns JSON output. Parse and present the results:
   - **Lint errors**: Run `bunx biome check --write` or fix manually
   - **Test failures**: Debug and fix failing tests
   - **Dead code (knip)**: Remove unused exports or update knip config
-- Ask user to fix issues and run `/prepare-completion` again
+- Ask user to fix issues and run `/cc-track:prepare-completion` again
 - **STOP** - do not proceed to code review
 
 **If validation passed:**
@@ -151,12 +151,12 @@ After addressing review feedback, update the following:
 ```
 ❌ Critical issues must be addressed before task completion.
 
-Fix these issues, then run /prepare-completion again to verify.
+Fix these issues, then run /cc-track:prepare-completion again to verify.
 ```
 
 **If only minor issues or clean:**
 ```
-✅ Task is ready for completion! Run /complete-task to finalize.
+✅ Task is ready for completion! Run /cc-track:complete-task to finalize.
 ```
 
 ## Notes

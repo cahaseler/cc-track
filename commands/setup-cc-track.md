@@ -93,7 +93,7 @@ If not a git repo:
 Present feature options and let user choose what to enable:
 
 **Always Enabled (Core Functionality):**
-- Task management via `/specify`, `/plan`, `/tasks` workflow
+- Task management via `/cc-track:specify`, `/cc-track:plan`, `/cc-track:tasks` workflow
 - Context preservation (CLAUDE.md with imports)
 - Basic project structure in `.cc-track/`
 
@@ -112,7 +112,7 @@ Present feature options and let user choose what to enable:
 
 - `branch_protection` - Prevent edits on protected branches (main/master)
   - ✅ Pros: Prevents accidental commits to main, enforces feature branch workflow
-  - ⚠️ Cons: Must use `/plan` or `/specify` to create feature branches first
+  - ⚠️ Cons: Must use `/cc-track:plan` or `/cc-track:specify` to create feature branches first
   - Configurable: Which branches to protect, allow edits to gitignored files
   - Ask: "Would you like branch protection? (recommended for teams)"
   - If yes, ask: "Which branches should be protected?" (default: main, master)
@@ -382,7 +382,7 @@ After setup completes:
    - "To use GitHub integration:"
    - "1. Install GitHub CLI: https://cli.github.com"
    - "2. Authenticate: `gh auth login`"
-   - "3. Run `/specify` to create your first task with auto-issue creation"
+   - "3. Run `/cc-track:specify` to create your first task with auto-issue creation"
 
 ---
 

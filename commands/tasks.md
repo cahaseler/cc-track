@@ -33,7 +33,7 @@ description: Generate actionable task breakdown following TDD principles
 ❌ Cannot generate tasks without complete plan.
 
 Missing: [what's missing]
-Run `/plan` first to complete technical design.
+Run `/cc-track:plan` first to complete technical design.
 ```
 
 ---
@@ -318,7 +318,7 @@ Still want to proceed?"
 
 ## Next Step
 
-After `/tasks` approved by user:
+After `/cc-track:tasks` approved by user:
 - **If user says yes**: Begin implementation with T001
 - **If user defers**: Save tasks.md, they can start anytime
 - **If user requests changes**: Revise tasks.md and re-present

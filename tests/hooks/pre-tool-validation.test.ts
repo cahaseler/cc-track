@@ -1,16 +1,14 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import {
-  buildValidationPrompt,
   detectOutdatedYear,
-  extractDiffInfo,
   extractFilePath,
   getCurrentYear,
   isGitIgnored,
   isHistoricalSearch,
-  isTaskFile,
+  isMetadataFile,
   preToolValidationHook,
 } from '../../hooks/pre-tool-validation';
-import { createMockClaudeSDK, createMockGitHelpers, createMockLogger } from '../../test-utils/command-mocks';
+import { createMockGitHelpers, createMockLogger } from '../../test-utils/command-mocks';
 import type { HookInput } from '../../types';
 
 // Helper to create mocks for detection functions (always return "OK" for tests)
@@ -66,75 +64,21 @@ describe('pre-tool-validation', () => {
     });
   });
 
-  describe('isTaskFile', () => {
-    test('identifies task files correctly', () => {
-      expect(isTaskFile('.cc-track/specs/001-feature-name/tasks.md')).toBe(true);
-      expect(isTaskFile('/home/user/.cc-track/specs/999-another-feature/tasks.md')).toBe(true);
-      expect(isTaskFile('.cc-track/specs/123-test-task/tasks.md')).toBe(true);
+  describe('isMetadataFile', () => {
+    test('identifies metadata files correctly', () => {
+      expect(isMetadataFile('.cc-track/specs/001-feature-name/.metadata.json')).toBe(true);
+      expect(isMetadataFile('/home/user/project/.cc-track/specs/999-another-feature/.metadata.json')).toBe(true);
+      expect(isMetadataFile('.cc-track/specs/123-test-task/.metadata.json')).toBe(true);
     });
 
-    test('rejects non-task files', () => {
-      expect(isTaskFile('.cc-track/specs/001-feature-name/spec.md')).toBe(false);
-      expect(isTaskFile('.cc-track/specs/001-feature-name/plan.md')).toBe(false);
-      expect(isTaskFile('.cc-track/tasks.md')).toBe(false);
-      expect(isTaskFile('src/file.ts')).toBe(false);
-      expect(isTaskFile('.cc-track/specs/no-number/tasks.md')).toBe(false);
-    });
-  });
-
-  describe('extractDiffInfo', () => {
-    test('extracts diff from Edit tool', () => {
-      const result = extractDiffInfo('Edit', {
-        file_path: '/path/to/file.md',
-        old_string: 'old content',
-        new_string: 'new content',
-      });
-
-      expect(result).toEqual({
-        filePath: '/path/to/file.md',
-        oldContent: 'old content',
-        newContent: 'new content',
-      });
-    });
-
-    test('extracts diff from MultiEdit tool', () => {
-      const result = extractDiffInfo('MultiEdit', {
-        file_path: '/path/to/file.md',
-        edits: [
-          { old_string: 'old1', new_string: 'new1' },
-          { old_string: 'old2', new_string: 'new2' },
-        ],
-      });
-
-      expect(result).toEqual({
-        filePath: '/path/to/file.md',
-        oldContent: 'old1\n---\nold2',
-        newContent: 'new1\n---\nnew2',
-      });
-    });
-
-    test('returns null for missing file_path', () => {
-      expect(extractDiffInfo('Edit', { old_string: 'old', new_string: 'new' })).toBe(null);
-    });
-
-    test('returns null for Write tool', () => {
-      expect(extractDiffInfo('Write', { file_path: '/path', content: 'content' })).toBe(null);
-    });
-  });
-
-  describe('buildValidationPrompt', () => {
-    test('includes all required elements', () => {
-      const prompt = buildValidationPrompt(
-        '.cc-track/specs/001-test-feature/tasks.md',
-        'Status: in_progress',
-        'Status: completed',
-      );
-
-      expect(prompt).toContain('TASK FILE: .cc-track/specs/001-test-feature/tasks.md');
-      expect(prompt).toContain('OLD CONTENT:\nStatus: in_progress');
-      expect(prompt).toContain('NEW CONTENT:\nStatus: completed');
-      expect(prompt).toContain('100% of tests must pass');
-      expect(prompt).toContain('weasel words');
+    test('rejects non-metadata files', () => {
+      expect(isMetadataFile('.cc-track/specs/001-feature-name/spec.md')).toBe(false);
+      expect(isMetadataFile('.cc-track/specs/001-feature-name/plan.md')).toBe(false);
+      expect(isMetadataFile('.cc-track/specs/001-feature-name/tasks.md')).toBe(false);
+      expect(isMetadataFile('.cc-track/metadata.json')).toBe(false);
+      expect(isMetadataFile('src/file.ts')).toBe(false);
+      expect(isMetadataFile('.cc-track/specs/no-number/.metadata.json')).toBe(false);
+      expect(isMetadataFile('package.json')).toBe(false);
     });
   });
 
@@ -282,248 +226,133 @@ describe('pre-tool-validation', () => {
     });
   });
 
-  describe('preToolValidationHook - task validation', () => {
-    const createMockConfig = (
-      branchProtectionEnabled: boolean,
-      options: {
-        protectedBranches?: string[];
-        allowGitignored?: boolean;
-      } = {},
-    ) => ({
+  describe('preToolValidationHook - metadata protection', () => {
+    const createMockConfig = () => ({
       hooks: {
         pre_tool_validation: { enabled: true, description: 'test' },
       },
       features: {
         branch_protection: {
-          enabled: branchProtectionEnabled,
+          enabled: false,
           description: 'test',
-          protected_branches: options.protectedBranches || ['main', 'master'],
-          allow_gitignored: options.allowGitignored !== false,
+          protected_branches: ['main', 'master'],
+          allow_gitignored: true,
         },
       },
       logging: { enabled: false, level: 'INFO' as const, retentionDays: 7, prettyPrint: false },
     });
 
-    test('allows edits to non-task files', async () => {
+    test('blocks Edit to metadata files', async () => {
       const input: HookInput = {
         hook_event_name: 'PreToolUse',
         tool_name: 'Edit',
         tool_input: {
-          file_path: 'src/file.ts',
-          old_string: 'old',
-          new_string: 'new',
+          file_path: '/project/.cc-track/specs/001-feature/.metadata.json',
+          old_string: '"status": "in_progress"',
+          new_string: '"status": "completed"',
         },
+        cwd: '/project',
       };
 
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
-        logger: createMockLogger(),
-        getConfig: () => createMockConfig(false),
+        getConfig: createMockConfig,
         gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
         ...createMockDetectionFunctions(),
       });
 
-      expect(result).toEqual({ continue: true });
-    });
-
-    test('blocks status change to completed', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: 'Status: in_progress',
-          new_string: 'Status: completed',
-        },
-      };
-
-      const mockSDK = createMockClaudeSDK({
-        promptResponse: {
-          text: JSON.stringify({ shouldBlock: true, reason: 'Cannot change status to completed' }),
-          success: true,
-        },
-      });
-
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => true,
-        claudeSDK: mockSDK,
-        logger: createMockLogger(),
-        getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
-        ...createMockDetectionFunctions(),
-      });
-
+      expect(result.hookSpecificOutput).toBeDefined();
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
-      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('Cannot change status to completed');
-      expect(mockSDK.prompt).toHaveBeenCalledTimes(1);
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('Metadata Protection');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('/cc-track:complete-task');
     });
 
-    test('blocks weasel words about test failures', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: '- [ ] All tests pass',
-          new_string: '- [x] Most tests pass (environment issues with 2 tests)',
-        },
-      };
-
-      const mockSDK = createMockClaudeSDK({
-        promptResponse: {
-          text: JSON.stringify({
-            shouldBlock: true,
-            reason: 'Weasel words detected: claiming partial test completion',
-          }),
-          success: true,
-        },
-      });
-
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => true,
-        claudeSDK: mockSDK,
-        logger: createMockLogger(),
-        getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
-        ...createMockDetectionFunctions(),
-      });
-
-      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
-      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('Weasel words detected');
-    });
-
-    test('allows legitimate progress updates', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: 'Progress: Started implementation',
-          new_string: 'Progress: Implemented core functionality, tests in progress',
-        },
-      };
-
-      const mockSDK = createMockClaudeSDK({
-        promptResponse: {
-          text: JSON.stringify({ shouldBlock: false, reason: 'Edit is acceptable' }),
-          success: true,
-        },
-      });
-
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => true,
-        claudeSDK: mockSDK,
-        logger: createMockLogger(),
-        getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
-        ...createMockDetectionFunctions(),
-      });
-
-      expect(result).toEqual({ continue: true });
-    });
-
-    test('handles Claude SDK errors gracefully', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: 'old',
-          new_string: 'new',
-        },
-      };
-
-      const mockSDK = createMockClaudeSDK({
-        promptResponse: {
-          text: '',
-          success: false,
-          error: 'SDK error',
-        },
-      });
-
-      const logger = createMockLogger();
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => true,
-        claudeSDK: mockSDK,
-        logger,
-        getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
-        ...createMockDetectionFunctions(),
-      });
-
-      // Should allow edit on error
-      expect(result).toEqual({ continue: true });
-      expect(logger.error).toHaveBeenCalledWith('Claude SDK validation failed', { error: 'SDK error' });
-    });
-
-    test('handles invalid JSON response', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: 'old',
-          new_string: 'new',
-        },
-      };
-
-      const mockSDK = createMockClaudeSDK({
-        promptResponse: {
-          text: 'Not valid JSON',
-          success: true,
-        },
-      });
-
-      const logger = createMockLogger();
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => true,
-        claudeSDK: mockSDK,
-        logger,
-        getConfig: () => createMockConfig(false),
-        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
-        ...createMockDetectionFunctions(),
-      });
-
-      // Should allow edit on parse error
-      expect(result).toEqual({ continue: true });
-      expect(logger.error).toHaveBeenCalled();
-    });
-
-    test('skips validation when disabled', async () => {
-      const input: HookInput = {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Edit',
-        tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          old_string: 'Status: in_progress',
-          new_string: 'Status: completed',
-        },
-      };
-
-      const result = await preToolValidationHook(input, {
-        isHookEnabled: () => false,
-        logger: createMockLogger(),
-        ...createMockDetectionFunctions(),
-      });
-
-      expect(result).toEqual({ continue: true });
-    });
-
-    test('ignores non-Edit/MultiEdit tools', async () => {
+    test('blocks Write to metadata files', async () => {
       const input: HookInput = {
         hook_event_name: 'PreToolUse',
         tool_name: 'Write',
         tool_input: {
-          file_path: '.cc-track/specs/001-test-feature/tasks.md',
-          content: 'new content',
+          file_path: '/project/.cc-track/specs/042-another-feature/.metadata.json',
+          content: '{"status": "completed"}',
         },
+        cwd: '/project',
       };
 
       const result = await preToolValidationHook(input, {
         isHookEnabled: () => true,
-        logger: createMockLogger(),
-        getConfig: () => createMockConfig(false),
+        getConfig: createMockConfig,
         gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
+        ...createMockDetectionFunctions(),
+      });
+
+      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('Metadata Protection');
+    });
+
+    test('blocks MultiEdit to metadata files', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'MultiEdit',
+        tool_input: {
+          file_path: '/project/.cc-track/specs/105-cleanup/.metadata.json',
+          edits: [{ old_string: 'old', new_string: 'new' }],
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: createMockConfig,
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
+        ...createMockDetectionFunctions(),
+      });
+
+      expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
+    });
+
+    test('allows edits to non-metadata files in specs directory', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/project/.cc-track/specs/001-feature/tasks.md',
+          old_string: '- [ ] Task 1',
+          new_string: '- [x] Task 1',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: createMockConfig,
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
+        ...createMockDetectionFunctions(),
+      });
+
+      expect(result).toEqual({ continue: true });
+    });
+
+    test('allows edits to regular project files', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/project/src/index.ts',
+          old_string: 'old code',
+          new_string: 'new code',
+        },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isHookEnabled: () => true,
+        getConfig: createMockConfig,
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
         ...createMockDetectionFunctions(),
       });
 

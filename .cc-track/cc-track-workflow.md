@@ -7,7 +7,7 @@
 The cc-track system follows a structured, command-driven workflow that separates requirements from implementation:
 
 ```
-/specify → /plan → /tasks → Implementation → /prepare-completion → /complete-task → PR → Merge
+/cc-track:specify → /cc-track:plan → /cc-track:tasks → Implementation → /cc-track:prepare-completion → /cc-track:complete-task → PR → Merge
 ```
 
 Each command prompts for the next step, creating a natural flow through the development process.
@@ -46,15 +46,15 @@ Optional files for complex features:
 
 ### Complexity-Aware Commands
 
-Both `/specify` and `/plan` now assess complexity before proceeding, mirroring Claude Code's plan mode behavior:
+Both `/cc-track:specify` and `/cc-track:plan` now assess complexity before proceeding, mirroring Claude Code's plan mode behavior:
 
 **Simple tasks** (bounded scope, clear patterns, no architectural decisions):
 - Commands proceed directly
 - "This is straightforward. Proceeding to [next phase]."
 
 **Complex tasks** (integration needed, architectural decisions, unfamiliar domain):
-- `/specify` spawns Explore agents to research codebase patterns before spec creation
-- `/plan` generates 2-3 alternative designs before committing to an approach
+- `/cc-track:specify` spawns Explore agents to research codebase patterns before spec creation
+- `/cc-track:plan` generates 2-3 alternative designs before committing to an approach
 - User approves direction before full artifact creation
 
 This discretionary approach means simple features don't waste time on exploration, while complex features benefit from informed, multi-perspective analysis.
@@ -63,7 +63,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ## Command Flow
 
-### 1. `/specify` - Create Initial Specification
+### 1. `/cc-track:specify` - Create Initial Specification
 
 **Purpose:** Gather requirements through Socratic questioning and create initial spec
 
@@ -85,11 +85,11 @@ This discretionary approach means simple features don't waste time on exploratio
 
 **Result:** Complete specification with all ambiguities resolved
 
-**Next step:** "Spec complete. Ready to run `/plan` for technical design?"
+**Next step:** "Spec complete. Ready to run `/cc-track:plan` for technical design?"
 
 ---
 
-### 2. `/plan` - Create Technical Design
+### 2. `/cc-track:plan` - Create Technical Design
 
 **Purpose:** Generate technical implementation plan based on refined spec
 
@@ -116,11 +116,11 @@ This discretionary approach means simple features don't waste time on exploratio
 
 **Result:** Complete technical design aligned with constitution
 
-**Next step:** "Technical plan complete. Ready to run `/tasks` to generate breakdown?"
+**Next step:** "Technical plan complete. Ready to run `/cc-track:tasks` to generate breakdown?"
 
 ---
 
-### 3. `/tasks` - Generate Task Breakdown
+### 3. `/cc-track:tasks` - Generate Task Breakdown
 
 **Purpose:** Create actionable task list from technical plan
 
@@ -161,7 +161,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ---
 
-### 5. `/prepare-completion` - Validate Before Completion
+### 5. `/cc-track:prepare-completion` - Validate Before Completion
 
 **Purpose:** Run all quality checks and prepare for task completion
 
@@ -182,11 +182,11 @@ This discretionary approach means simple features don't waste time on exploratio
 
 **Result:** Clear pass/fail with specific fix instructions
 
-**Next step:** Fix any issues, update docs, then run `/complete-task`
+**Next step:** Fix any issues, update docs, then run `/cc-track:complete-task`
 
 ---
 
-### 6. `/complete-task` - Finalize and Create PR
+### 6. `/cc-track:complete-task` - Finalize and Create PR
 
 **Purpose:** Mark task complete, squash commits, create PR
 
@@ -225,7 +225,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ## Supporting Commands
 
-### `/migrate` - Convert Old Structure
+### `/cc-track:migrate` - Convert Old Structure
 
 **Purpose:** One-time migration from old cc-track task structure
 
@@ -243,7 +243,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ---
 
-### `/constitution` - Set Project Guardrails
+### `/cc-track:constitution` - Set Project Guardrails
 
 **Purpose:** Create or update project constitution
 
@@ -256,11 +256,11 @@ This discretionary approach means simple features don't waste time on exploratio
    - Complexity budgets
 3. Saves to `.cc-track/constitution.md`
 
-**Effect:** `/plan` command validates designs against constitution
+**Effect:** `/cc-track:plan` command validates designs against constitution
 
 ---
 
-### `/add-to-backlog` - Capture Ideas
+### `/cc-track:add-to-backlog` - Capture Ideas
 
 **Purpose:** Add future ideas without disrupting current work
 
@@ -272,7 +272,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ---
 
-### `/view-logs` - Debug Hooks and Commands
+### `/cc-track:view-logs` - Debug Hooks and Commands
 
 **Purpose:** View centralized logs for debugging
 
@@ -284,7 +284,7 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ---
 
-### `/context-maintenance` - Clean Up Context Files
+### `/cc-track:context-maintenance` - Clean Up Context Files
 
 **Purpose:** Reduce bloat in context files through structured cleanup guidance
 
@@ -313,11 +313,11 @@ This discretionary approach means simple features don't waste time on exploratio
 
 ### Validation Commands (Manual Trigger)
 
-**`/prepare-completion`:**
+**`/cc-track:prepare-completion`:**
 - Comprehensive validation suite
 - TypeScript, Biome, tests, Knip
 - Code review feedback from AI reviewer
-- Must pass before `/complete-task`
+- Must pass before `/cc-track:complete-task`
 
 ---
 
@@ -332,14 +332,14 @@ This discretionary approach means simple features don't waste time on exploratio
 - Single task file combined spec + plan + progress
 
 **New system (command-driven):**
-- `/specify` → `/plan` → `/tasks` explicit flow
+- `/cc-track:specify` → `/cc-track:plan` → `/cc-track:tasks` explicit flow
 - Tasks in `.cc-track/specs/NNN-feature-name/` with separate files
 - No auto-commits - developer controls git workflow
 - Clear separation: spec.md (requirements) vs plan.md (design) vs progress.md (what happened)
 
 ### For Existing Users
 
-1. Run `/migrate` to convert old tasks
+1. Run `/cc-track:migrate` to convert old tasks
 2. Old files backed up to `.claude/tasks.backup/`
 3. Continue with new workflow for next task
 4. Previous work preserved, just restructured in `.cc-track/specs/`

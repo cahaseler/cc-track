@@ -1,6 +1,5 @@
 import { mock } from 'bun:test';
-import type { ClaudeResponse } from '../skills/cc-track-tools/lib/claude-sdk';
-import type { ClaudeSDKInterface, GitHelpers } from '../skills/cc-track-tools/lib/git-helpers';
+import type { GitHelpers } from '../skills/cc-track-tools/lib/git-helpers';
 import type { createLogger } from '../skills/cc-track-tools/lib/logger';
 
 /**
@@ -14,59 +13,6 @@ export function createMockLogger(): ReturnType<typeof createLogger> {
     error: mock(() => {}),
     exception: mock(() => {}),
   } as unknown as ReturnType<typeof createLogger>;
-}
-
-/**
- * Mock ClaudeSDK interface for testing
- */
-export interface MockClaudeSDK extends ClaudeSDKInterface {
-  generateCommitMessage: ReturnType<typeof mock>;
-  generateBranchName: ReturnType<typeof mock>;
-  prompt?: ReturnType<typeof mock>;
-}
-
-export function createMockClaudeSDK(options?: {
-  commitMessage?: string;
-  branchName?: string;
-  promptResponse?: ClaudeResponse;
-}): MockClaudeSDK {
-  return {
-    generateCommitMessage: mock(async (changes: string) => {
-      if (options?.commitMessage) return options.commitMessage;
-      // Default smart responses based on content
-      if (changes.includes('new feature') || changes.includes('feat:')) {
-        return 'feat: add new feature';
-      }
-      if (changes.includes('login bug')) {
-        return 'fix: resolve login bug';
-      }
-      if (changes.includes('bug') || changes.includes('fix')) {
-        return 'fix: resolve issue';
-      }
-      return 'chore: save work in progress';
-    }),
-    generateBranchName: mock(async (taskTitle: string, taskId: string) => {
-      if (options?.branchName) return options.branchName;
-      // Default smart branch naming
-      if (taskTitle.includes('authentication') || taskTitle.includes('auth')) {
-        return `feature/user-auth-${taskId.toLowerCase()}`;
-      }
-      if (taskTitle.includes('login')) {
-        return `bug/fix-login-${taskId.toLowerCase()}`;
-      }
-      if (taskTitle.includes('bug') || taskTitle.includes('fix')) {
-        return `bug/fix-${taskId.toLowerCase()}`;
-      }
-      return `feature/task-${taskId.toLowerCase()}`;
-    }),
-    prompt: mock(
-      async () =>
-        options?.promptResponse ?? {
-          text: '# Enhanced Task\n\nEnriched content with research',
-          success: true,
-        },
-    ),
-  };
 }
 
 /**
