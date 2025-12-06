@@ -1,3 +1,10 @@
+# [2.20.0](https://github.com/cahaseler/cc-track/compare/v2.19.1...v2.20.0) (2025-12-06)
+
+
+### Features
+
+* migrate cc-track context files from .claude/ to .cc-track/ ([#155](https://github.com/cahaseler/cc-track/issues/155)) ([72134fa](https://github.com/cahaseler/cc-track/commit/72134faadc855a2ef12d4b5c319ca8c8102a9af0))
+
 ## [2.19.1](https://github.com/cahaseler/cc-track/compare/v2.19.0...v2.19.1) (2025-12-06)
 
 
