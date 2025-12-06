@@ -36,6 +36,76 @@ The spec should be complete before planning. Ask the user about these ambiguitie
 
 ---
 
+## Phase 0.5: Complexity Assessment
+
+**Before diving into design, assess whether this spec warrants exploring alternative approaches.**
+
+### Quick Assessment (30 seconds)
+
+Ask yourself:
+1. **Is the technology choice open?** (vs already determined by project conventions)
+2. **Could this be built 3 different ways with meaningful tradeoffs?**
+3. **Does this push near any constitution limits?**
+4. **Is this an architectural change vs a feature addition?**
+
+### Decision
+
+- **If answers mostly "no"**: State "This is straightforward. Proceeding directly to design." → Skip to Phase 0.
+- **If 2+ answers "yes"**: State "This has architectural implications. Exploring alternatives first." → Continue to Phase 0.6.
+
+This assessment should take <30 seconds. Don't overthink it.
+
+---
+
+## Phase 0.6: Alternative Design Exploration (Optional)
+
+**Only execute this phase if complexity assessment triggered it.**
+
+### Generate 2-3 Design Alternatives
+
+For each alternative, provide a brief sketch (not a full plan):
+
+**Alternative A: [Name - e.g., "Minimal/Direct"]**
+- Approach: [2-3 sentences describing the technical approach]
+- Key tradeoff: [What you gain/lose with this approach]
+- Constitution fit: [Any concerns with project guardrails?]
+
+**Alternative B: [Name - e.g., "Flexible/Extensible"]**
+- Approach: [2-3 sentences describing the technical approach]
+- Key tradeoff: [What you gain/lose with this approach]
+- Constitution fit: [Any concerns with project guardrails?]
+
+**Alternative C: [Name - e.g., "Performance-First"]** (only if NFRs warrant)
+- Approach: [2-3 sentences describing the technical approach]
+- Key tradeoff: [What you gain/lose with this approach]
+- Constitution fit: [Any concerns with project guardrails?]
+
+### Recommendation
+
+State your recommendation and why:
+```
+"I recommend Alternative [X] because [specific reason related to this project's needs]."
+```
+
+### Get User Approval
+
+Present alternatives to user:
+```
+I've considered [N] approaches for this feature:
+
+A) [Name]: [One-liner summary]
+B) [Name]: [One-liner summary]
+C) [Name]: [One-liner summary] (if applicable)
+
+Recommendation: [X] - [Brief rationale]
+
+Proceed with this approach? Or discuss alternatives?
+```
+
+**Wait for user confirmation before Phase 0.**
+
+---
+
 ## Phase 0: Constitution Check (Initial)
 
 **If `.claude/constitution.md` exists**:
@@ -100,14 +170,24 @@ Researching [chosen tech] best practices...
 - Security considerations
 ```
 
-**Tip**: For comprehensive research on specific technologies or patterns, consider using the **researcher** subagent:
+### Research Delegation (when beneficial)
+
+If any of these apply:
+- Unfamiliar with the specific technology version
+- Integration pattern is non-obvious
+- Performance characteristics matter
+- Best practices aren't clear from experience
+
+Delegate research to a specialized agent:
 ```
-Task: "Research [technology] best practices for [specific requirement]"
+Task: "Research [technology] best practices for [specific use case].
+       Focus: [1-2 specific questions]
+       Format: Concise bullet points, max 300 words"
 Subagent: researcher
 Output: .claude/specs/NNN-feature-name/research-[topic].md
 ```
 
-This delegates deep research to a specialized agent, saving your context for design work.
+This saves your context for design work while getting thorough research.
 
 ### Document Decisions
 Create `research.md`:
@@ -269,6 +349,10 @@ Revising design...
 Show user:
 ```
 Technical plan complete! 🎯
+
+[If alternatives were explored:]
+Design approach: [Chosen alternative name]
+Alternatives considered: [Brief list of rejected approaches]
 
 Created files:
 - plan.md (implementation plan)

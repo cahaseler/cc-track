@@ -10,6 +10,20 @@
 
 ---
 
+## Alternatives Considered
+*Filled only if Phase 0.6 exploration was triggered during /plan*
+
+| Alternative | Approach | Tradeoff | Why Rejected |
+|-------------|----------|----------|--------------|
+| [Name A] | [Brief approach] | [Pro/con] | [Reason] |
+| [Name B] | [Brief approach] | [Pro/con] | [Reason] |
+
+**Selected**: [Chosen alternative] because [rationale]
+
+*If this section is empty, the design was straightforward and no alternatives were explored.*
+
+---
+
 ## Technical Context
 
 **Language/Version**: [e.g., TypeScript 5.3, Python 3.11]

@@ -44,6 +44,21 @@ Optional files for complex features:
 - `research.md` - Research notes
 - `quickstart.md` - Getting started guide
 
+### Complexity-Aware Commands
+
+Both `/specify` and `/plan` now assess complexity before proceeding, mirroring Claude Code's plan mode behavior:
+
+**Simple tasks** (bounded scope, clear patterns, no architectural decisions):
+- Commands proceed directly
+- "This is straightforward. Proceeding to [next phase]."
+
+**Complex tasks** (integration needed, architectural decisions, unfamiliar domain):
+- `/specify` spawns Explore agents to research codebase patterns before spec creation
+- `/plan` generates 2-3 alternative designs before committing to an approach
+- User approves direction before full artifact creation
+
+This discretionary approach means simple features don't waste time on exploration, while complex features benefit from informed, multi-perspective analysis.
+
 ---
 
 ## Command Flow
@@ -53,9 +68,12 @@ Optional files for complex features:
 **Purpose:** Gather requirements through Socratic questioning and create initial spec
 
 **What happens:**
-1. Claude asks clarifying questions about the feature
-2. Builds understanding through conversation (no artifacts yet)
-3. Once enough information is gathered:
+1. Claude asks clarifying questions about the feature (Purpose, Scope, Users)
+2. **Complexity assessment** after initial questions:
+   - If simple: Proceeds directly to more questions
+   - If complex: Spawns Explore agents to research codebase patterns first
+3. Builds understanding through conversation, informed by any exploration results
+4. Once enough information is gathered:
    - Generates feature ID (001, 002, etc.)
    - Creates git branch: `001-feature-name`
    - Creates spec directory: `.claude/specs/001-feature-name/`
@@ -77,18 +95,21 @@ Optional files for complex features:
 
 **What happens:**
 1. Loads spec.md from active task
-2. Constitution check (if `.claude/constitution.md` exists):
+2. **Complexity assessment**:
+   - If simple: Proceeds directly to constitution check
+   - If complex: Generates 2-3 alternative design approaches, presents to user for approval
+3. Constitution check (if `.claude/constitution.md` exists):
    - Validates design against project guardrails
    - Documents any violations with justification
-3. Creates research.md (if needed):
+4. Creates research.md (if needed):
    - Researches tech stack best practices
    - Evaluates integration patterns
    - Documents decisions with rationale
-4. Creates plan.md with:
+5. Creates plan.md with:
    - Technical approach
    - Architecture decisions
    - Implementation strategy
-5. Creates supporting files (as applicable):
+6. Creates supporting files (as applicable):
    - `data-model.md` from spec entities
    - `contracts/` from API requirements
    - `quickstart.md` from user stories

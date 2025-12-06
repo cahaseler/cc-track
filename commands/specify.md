@@ -145,6 +145,92 @@ Output: .claude/specs/research-[topic].md
 
 ---
 
+## Phase 1.5: Complexity Assessment & Exploration
+
+**After initial Purpose/Scope questions (Round 1-2)**, assess whether codebase exploration would improve the specification.
+
+### Assess Exploration Need
+
+**Trigger exploration IF any of these are true:**
+- User mentioned modifying/extending existing functionality
+- Feature must integrate with existing patterns (unclear which ones)
+- You're uncertain about codebase conventions for this type of feature
+- User referenced "like X" or "similar to how we do Y"
+- Domain model or business logic context is needed
+
+**Skip exploration IF all of these are true:**
+- Feature is entirely new (greenfield)
+- No integration with existing code needed
+- Requirements are precise and bounded
+- You already have sufficient codebase context from the conversation
+
+### Decision Communication
+
+**If simple** (skip exploration):
+```
+"This is well-defined. Proceeding to specification."
+```
+
+**If complex** (trigger exploration):
+```
+"This feature involves existing code patterns. Let me quickly explore the codebase
+to inform our specification discussion..."
+```
+
+### If Exploration Needed
+
+Spawn 1-2 Explore agents (parallel via Task tool) based on request type:
+
+**For features modifying existing code:**
+```
+Task: "Explore codebase for features similar to [requested feature].
+       Find 2-3 examples showing file organization, naming patterns, and test structure.
+       Focus on: [relevant directories from initial answers]"
+Subagent: Explore
+```
+
+**For features integrating with existing systems:**
+```
+Task: "Identify integration points for a new [feature type].
+       Where would this feature connect? What files/modules need awareness?
+       Look for: hooks, configuration, dependency injection, event systems"
+Subagent: Explore
+```
+
+**For domain-specific features:**
+```
+Task: "Research how [domain concept] is currently handled in this codebase.
+       Find existing models, validation rules, terminology used.
+       Document any constraints or patterns that must be followed."
+Subagent: Explore
+```
+
+### Use Exploration Results
+
+Do NOT dump raw exploration results into the spec. Instead:
+
+1. **Inform your questions**: Reference discovered patterns when asking about requirements
+2. **Surface constraints**: "I found you require X for all Y features - should this follow that?"
+3. **Suggest options**: "I see two patterns you use: A and B. Which fits better?"
+4. **Note in spec**: Add brief references in spec.md Clarifications section
+
+**Example informed question:**
+```
+I explored your codebase and found similar features in src/features/.
+They all follow a pattern of [pattern description].
+
+Should this feature:
+A) Follow the same pattern
+B) Use a different approach because [reason]
+C) Let me explain the context first
+```
+
+### Continue Questioning
+
+After exploration (or if skipped), continue with Phase 1 questioning until all taxonomy areas are covered.
+
+---
+
 ## Phase 2: Artifact Creation
 
 Once you have **complete** understanding (all taxonomy areas covered, no remaining ambiguities):
