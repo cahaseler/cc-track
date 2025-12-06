@@ -61,18 +61,18 @@ Git provides a complete safety net. If you accidentally delete something importa
 When the same information appears in multiple context files, consolidate to a single canonical location:
 
 **Where to consolidate:**
-- **decision_log.md** → For one-time choices with rationale (why we chose X over Y)
-- **system_patterns.md** → For ongoing practices and conventions (how we always do X)
-- **progress_log.md** → Never store details here - just task IDs and brief descriptions
+- **`.cc-track/decision_log.md`** → For one-time choices with rationale (why we chose X over Y)
+- **`.cc-track/system_patterns.md`** → For ongoing practices and conventions (how we always do X)
+- **`.cc-track/progress_log.md`** → Never store details here - just task IDs and brief descriptions
 
 **Common duplication patterns:**
-1. **Architecture decisions repeated as patterns** - Keep detailed rationale in decision_log.md, brief reference in system_patterns.md if it's an active pattern
-2. **Implementation details in both progress and decision logs** - Remove from progress_log.md (should just reference spec folder), keep decision rationale in decision_log.md only if it's architecturally significant
+1. **Architecture decisions repeated as patterns** - Keep detailed rationale in `.cc-track/decision_log.md`, brief reference in `.cc-track/system_patterns.md` if it's an active pattern
+2. **Implementation details in both progress and decision logs** - Remove from `.cc-track/progress_log.md` (should just reference spec folder), keep decision rationale in `.cc-track/decision_log.md` only if it's architecturally significant
 3. **Same example code in multiple pattern descriptions** - Consolidate to one canonical pattern, reference it from others
 
 **After consolidation:**
 1. Update any cross-references to point to the canonical location
-2. Replace removed content with brief pointer: "See decision_log.md [YYYY-MM-DD] for rationale"
+2. Replace removed content with brief pointer: "See `.cc-track/decision_log.md` [YYYY-MM-DD] for rationale"
 3. Check for broken references after removing/consolidating content
 
 **When duplication is acceptable:**
@@ -140,12 +140,12 @@ When the same information appears in multiple context files, consolidate to a si
 
 **Cleanup Rules:**
 1. **Keep entries to 1-2 lines** - Progress log is an INDEX, not documentation
-2. **Reference spec/task files for details** - "See .claude/specs/NNN-feature-name/ for details"
+2. **Reference spec/task files for details** - "See .cc-track/specs/NNN-feature-name/ for details"
 3. **Remove "Details:", "Files:", "Key Achievement:" subsections** - All bloat
 4. **Remove incomplete "Started" entries** - Only keep Completed, Abandoned, Blocked statuses
 5. Remove template entries
 6. Consolidate multiple status updates for same task into single entry
-7. **Format**: `[YYYY-MM-DD] - Completed: TASK_NNN - Brief description (see .claude/specs/NNN-name/)`
+7. **Format**: `[YYYY-MM-DD] - Completed: TASK_NNN - Brief description (see .cc-track/specs/NNN-name/)`
 
 **Preserve:**
 - Task ID and brief one-line description
@@ -155,8 +155,8 @@ When the same information appears in multiple context files, consolidate to a si
 
 **Example of good entries:**
 ```
-[2025-10-17] - Completed: TASK_103 - Context maintenance command (see .claude/specs/103-context-maintenance-command/)
-[2025-10-15] - Completed: TASK_099 - Migrated to Claude Agent SDK (see .claude/specs/099-sdk-migration/)
+[2025-10-17] - Completed: TASK_103 - Context maintenance command (see .cc-track/specs/103-context-maintenance-command/)
+[2025-10-15] - Completed: TASK_099 - Migrated to Claude Agent SDK (see .cc-track/specs/099-sdk-migration/)
 ```
 
 ### product_context.md

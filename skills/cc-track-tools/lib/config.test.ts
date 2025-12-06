@@ -19,7 +19,7 @@ describe('config', () => {
       // This is testing the actual implementation without mocks
       // since the path construction is deterministic
       const path = getConfigPath('/home/test/project');
-      expect(path).toContain('/.claude/track.config.json');
+      expect(path).toContain('/.cc-track/track.config.json');
     });
   });
 

@@ -138,8 +138,8 @@ User asks: "How do we handle authentication in Next.js App Router?"
 ## Output File Location
 
 You will be told where to save your research findings. Common patterns:
-- `.claude/specs/NNN-feature-name/research.md` (for active feature research)
-- `.claude/research/YYYY-MM-DD-topic-name.md` (for general research)
+- `.cc-track/specs/NNN-feature-name/research.md` (for active feature research)
+- `.cc-track/research/YYYY-MM-DD-topic-name.md` (for general research)
 - `docs/research/topic-name.md` (for project documentation)
 
 Always save to the path specified in the research request.

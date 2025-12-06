@@ -173,17 +173,17 @@ export function extractFilePath(toolName: string, toolInput: unknown): string | 
 }
 
 /**
- * Check if a file path is a task file
+ * Check if a file path is a task file (tasks.md inside a spec directory)
  */
 export function isTaskFile(filePath: string): boolean {
-  return /\.claude\/tasks\/TASK_\d+\.md$/.test(filePath);
+  return /\.cc-track\/specs\/\d{3}-[^/]+\/tasks\.md$/.test(filePath);
 }
 
 /**
  * Check if a file path is in the specs directory
  */
 export function isSpecFile(filePath: string): boolean {
-  return /\.claude\/specs\//.test(filePath);
+  return /\.cc-track\/specs\//.test(filePath);
 }
 
 /**

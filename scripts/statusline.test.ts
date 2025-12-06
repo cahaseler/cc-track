@@ -149,7 +149,7 @@ describe('statusline', () => {
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
         getActiveTaskId: mock(() => 'TASK_026'),
-        getActiveSpecDirectory: mock(() => '/project/.claude/specs/026-refactor-cli-tool'),
+        getActiveSpecDirectory: mock(() => '/project/.cc-track/specs/026-refactor-cli-tool'),
       };
 
       const result = getActiveTask(mockDeps);
@@ -160,7 +160,7 @@ describe('statusline', () => {
       const mockDeps = {
         execSync: mock(() => ''),
         existsSync: mock((path: string) => path.includes('CLAUDE.md')),
-        readFileSync: mock(() => '## Active Task\n@.claude/no_active_task.md\n'),
+        readFileSync: mock(() => '## Active Task\n@.cc-track/no_active_task.md\n'),
         getConfig: mock(() => ({ features: {} })),
         getCurrentBranch: mock((_cwd: string) => ''),
         getActiveTaskId: mock(() => null),
@@ -253,7 +253,7 @@ describe('statusline', () => {
         })),
         getCurrentBranch: mock((_cwd: string) => 'main'),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/project/.claude/specs/001-fix-authentication-bug'),
+        getActiveSpecDirectory: mock(() => '/project/.cc-track/specs/001-fix-authentication-bug'),
       };
 
       const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);

@@ -17,7 +17,7 @@ describe('validation', () => {
   // Helper to create common spec-related mocks
   function createSpecMocks() {
     return {
-      getActiveSpecDirectory: mock(() => '/test/project/.claude/specs/001-test-task'),
+      getActiveSpecDirectory: mock(() => '/test/project/.cc-track/specs/001-test-task'),
       readMetadata: mock(() => ({
         task_id: '001',
         feature_name: 'test-task',
@@ -573,7 +573,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/project/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/project/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test-task',
@@ -651,7 +651,7 @@ describe('validation', () => {
         })),
         getTestConfig: mock(() => ({ enabled: true, command: 'npm test' })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -715,7 +715,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -773,7 +773,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => '001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -820,7 +820,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: true })), // Tests enabled
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -882,7 +882,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -933,7 +933,7 @@ describe('validation', () => {
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -998,7 +998,7 @@ src/types.ts(5,1): error TS1005: ';' expected.`;
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -1061,7 +1061,7 @@ src/types.ts(5,1): error TS1005: ';' expected.`;
         })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',
@@ -1124,7 +1124,7 @@ src/types.ts(5,1): error TS1005: ';' expected.`;
         getLintConfig: mock(() => ({ enabled: false })),
         getTestConfig: mock(() => ({ enabled: false })),
         getActiveTaskId: mock(() => 'TASK_001'),
-        getActiveSpecDirectory: mock(() => '/test/.claude/specs/001-test'),
+        getActiveSpecDirectory: mock(() => '/test/.cc-track/specs/001-test'),
         readMetadata: mock(() => ({
           task_id: '001',
           feature_name: 'test',

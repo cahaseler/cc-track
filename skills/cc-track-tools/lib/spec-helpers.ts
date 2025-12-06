@@ -1,5 +1,5 @@
 // ABOUTME: Helpers for managing spec-driven development workflow - metadata, directory structure, and spec folder operations
-// ABOUTME: Provides functions to create/read/update .metadata.json files and manage .claude/specs/ directory structure
+// ABOUTME: Provides functions to create/read/update .metadata.json files and manage .cc-track/specs/ directory structure
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -37,7 +37,7 @@ export function getNextTaskId(
   fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
   readDirs: typeof _readSpecDirs = _readSpecDirs,
 ): string {
-  const specsDir = join(projectRoot, '.claude', 'specs');
+  const specsDir = join(projectRoot, '.cc-track', 'specs');
 
   if (!fileOps.existsSync(specsDir)) {
     return '001';
@@ -73,10 +73,10 @@ export function createSpecDirectory(
   featureName: string,
   fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
 ): string {
-  const specsDir = join(projectRoot, '.claude', 'specs');
+  const specsDir = join(projectRoot, '.cc-track', 'specs');
   const specDir = join(specsDir, `${taskId}-${featureName}`);
 
-  // Create .claude/specs if it doesn't exist
+  // Create .cc-track/specs if it doesn't exist
   if (!fileOps.existsSync(specsDir)) {
     fileOps.mkdirSync(specsDir, { recursive: true });
   }
@@ -149,7 +149,7 @@ export function getSpecDirectory(
   fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
   readDirs: typeof _readSpecDirs = _readSpecDirs,
 ): string | null {
-  const specsDir = join(projectRoot, '.claude', 'specs');
+  const specsDir = join(projectRoot, '.cc-track', 'specs');
 
   if (!fileOps.existsSync(specsDir)) {
     return null;
@@ -183,14 +183,14 @@ export function getActiveSpecDirectory(
 
   const content = fileOps.readFileSync(claudeMdPath, 'utf-8');
 
-  // Look for active task reference: @.claude/specs/001-feature-name/spec.md
-  const match = content.match(/@\.claude\/specs\/([^/]+)\/spec\.md/);
+  // Look for active task reference: @.cc-track/specs/001-feature-name/spec.md
+  const match = content.match(/@\.cc-track\/specs\/([^/]+)\/spec\.md/);
   if (!match) {
     return null;
   }
 
   const specDirName = match[1];
-  return join(projectRoot, '.claude', 'specs', specDirName);
+  return join(projectRoot, '.cc-track', 'specs', specDirName);
 }
 
 /**
@@ -306,7 +306,7 @@ export function getAllSpecDirectories(
   fileOps: SpecFileOperations = { existsSync, mkdirSync, readFileSync, writeFileSync },
   readDirs: typeof _readSpecDirs = _readSpecDirs,
 ): string[] {
-  const specsDir = join(projectRoot, '.claude', 'specs');
+  const specsDir = join(projectRoot, '.cc-track', 'specs');
 
   if (!fileOps.existsSync(specsDir)) {
     return [];

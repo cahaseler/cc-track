@@ -11,8 +11,8 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(te
 
 ## Current Context
 
-- Active spec directory: !`ls -1 .claude/specs/ 2>/dev/null | tail -1 || echo "No specs"`
-- Constitution exists: !`test -f .claude/constitution.md && echo "Yes" || echo "No"`
+- Active spec directory: !`ls -1 .cc-track/specs/ 2>/dev/null | tail -1 || echo "No specs"`
+- Constitution exists: !`test -f .cc-track/constitution.md && echo "Yes" || echo "No"`
 
 ---
 
@@ -21,12 +21,12 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(te
 **Find active spec directory**:
 - Read `CLAUDE.md`
 - Find line starting with `## Active Task`
-- Extract the `@.claude/specs/NNN-feature-name/spec.md` path
-- Parse out the directory: `.claude/specs/NNN-feature-name`
+- Extract the `@.cc-track/specs/NNN-feature-name/spec.md` path
+- Parse out the directory: `.cc-track/specs/NNN-feature-name`
 
 **Read spec files**:
-- Read `.claude/specs/NNN-feature-name/spec.md`
-- Read `.claude/specs/NNN-feature-name/.metadata.json`
+- Read `.cc-track/specs/NNN-feature-name/spec.md`
+- Read `.cc-track/specs/NNN-feature-name/.metadata.json`
 
 **Verify**:
 - [ ] Active spec exists
@@ -114,10 +114,10 @@ Proceed with this approach? Or discuss alternatives?
 
 ## Phase 0: Constitution Check (Initial)
 
-**If `.claude/constitution.md` exists**:
+**If `.cc-track/constitution.md` exists**:
 
 ### Load and Parse Constitution
-**Read** `.claude/constitution.md`
+**Read** `.cc-track/constitution.md`
 
 ### Extract Guardrails
 - Complexity limits (max services, max dependencies, etc.)
@@ -190,7 +190,7 @@ Task: "Research [technology] best practices for [specific use case].
        Focus: [1-2 specific questions]
        Format: Concise bullet points, max 300 words"
 Subagent: researcher
-Output: .claude/specs/NNN-feature-name/research-[topic].md
+Output: .cc-track/specs/NNN-feature-name/research-[topic].md
 ```
 
 This saves your context for design work while getting thorough research.
@@ -418,8 +418,8 @@ Thoughts?"
 ## Implementation Notes
 
 - Use Read/Write/Bash tools for all file operations
-- Reference constitution by path (`.claude/constitution.md`)
-- Create contracts/ subdirectory if needed: `mkdir -p .claude/specs/NNN-feature-name/contracts`
+- Reference constitution by path (`.cc-track/constitution.md`)
+- Create contracts/ subdirectory if needed: `mkdir -p .cc-track/specs/NNN-feature-name/contracts`
 - Don't create tasks.md yet (that's `/tasks` job)
 - Update `.metadata.json` if status changes
 - Use WebSearch for recent tech docs

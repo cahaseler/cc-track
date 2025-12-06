@@ -27,7 +27,7 @@ export function runBacklog(
 
   try {
     const projectRoot = deps.process.cwd();
-    const backlogPath = options.file || deps.path.join(projectRoot, '.claude', 'backlog.md');
+    const backlogPath = options.file || deps.path.join(projectRoot, '.cc-track', 'backlog.md');
 
     if (options.list) {
       if (!deps.fs.existsSync(backlogPath)) {

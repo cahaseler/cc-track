@@ -70,7 +70,7 @@ Ask about their project:
 - What type of project? (web app, library, CLI tool, etc.)
 - What languages/frameworks? (TypeScript, React, Next.js, etc.)
 - Do they use GitHub? (for GitHub integration)
-- Do they have existing `.claude/` files? (migration vs new setup)
+- Do they have existing `.claude/` or `.cc-track/` files? (migration vs new setup)
 
 ### 2. Git Status Check
 
@@ -95,7 +95,7 @@ Present feature options and let user choose what to enable:
 **Always Enabled (Core Functionality):**
 - Task management via `/specify`, `/plan`, `/tasks` workflow
 - Context preservation (CLAUDE.md with imports)
-- Basic project structure in `.claude/`
+- Basic project structure in `.cc-track/`
 
 **Optional Features:**
 
@@ -176,7 +176,7 @@ Present feature options and let user choose what to enable:
 
 ### 4. Configuration File Creation
 
-Based on user selections, create `.claude/track.config.json`:
+Based on user selections, create `.cc-track/track.config.json`:
 
 Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and customize based on user's feature selections.
 
@@ -243,61 +243,66 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
 
 **CRITICAL: Only create files that don't already exist. Never overwrite existing files without explicit user permission.**
 
-First, create the `.claude/` directory structure:
+First, create the `.cc-track/` directory structure:
 
 ```bash
-mkdir -p .claude/specs
+mkdir -p .cc-track/specs
 ```
 
-Then create customized project files in `.claude/` **ONLY if they don't exist**:
+Then create customized project files in `.cc-track/` **ONLY if they don't exist**:
 
 For each file:
 1. **Check if it exists first** - If it exists, skip it and inform the user
 2. **Read the corresponding template** from `${CLAUDE_PLUGIN_ROOT}/templates/`
 3. **Customize the content** based on user's project information (gathered in step 1)
-4. **Write the customized file** to the project's `.claude/` directory
+4. **Write the customized file** to the project's `.cc-track/` directory
 
 Files to create (read templates, customize, write):
 
 1. **CLAUDE.md** (project root)
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.md`
-   - Customize: Replace "[Project Name]" with actual project name, adjust @ imports for project structure
+   - Customize: Replace "[Project Name]" with actual project name, adjust @ imports for project structure (pointing to `.cc-track/`)
    - Write: `CLAUDE.md`
 
-2. **.claude/no_active_task.md**
+2. **.cc-track/no_active_task.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/no_active_task.md`
    - Customize: Minimal (just use template content)
-   - Write: `.claude/no_active_task.md`
+   - Write: `.cc-track/no_active_task.md`
 
-3. **.claude/product_context.md**
+3. **.cc-track/product_context.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/product_context.md`
    - Customize: Fill in project purpose, audience, features based on user's answers from step 1
-   - Write: `.claude/product_context.md`
+   - Write: `.cc-track/product_context.md`
 
-4. **.claude/system_patterns.md**
+4. **.cc-track/system_patterns.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/system_patterns.md`
    - Customize: Add detected framework/language patterns based on project type
-   - Write: `.claude/system_patterns.md`
+   - Write: `.cc-track/system_patterns.md`
 
-5. **.claude/decision_log.md**
+5. **.cc-track/decision_log.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/decision_log.md`
    - Customize: Add initial setup decisions (features enabled, etc.)
-   - Write: `.claude/decision_log.md`
+   - Write: `.cc-track/decision_log.md`
 
-6. **.claude/code_index.md**
+6. **.cc-track/code_index.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/code_index.md`
    - Customize: Scan project directory structure and populate with actual directories
-   - Write: `.claude/code_index.md`
+   - Write: `.cc-track/code_index.md`
 
-7. **.claude/user_context.md**
+7. **.cc-track/user_context.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/user_context.md`
    - Customize: Minimal (template provides structure for future updates)
-   - Write: `.claude/user_context.md`
+   - Write: `.cc-track/user_context.md`
 
-8. **.claude/backlog.md**
+8. **.cc-track/backlog.md**
    - Read: `${CLAUDE_PLUGIN_ROOT}/templates/backlog.md`
    - Customize: Minimal (empty list, ready for future items)
-   - Write: `.claude/backlog.md`
+   - Write: `.cc-track/backlog.md`
+
+9. **.cc-track/progress_log.md**
+   - Read: `${CLAUDE_PLUGIN_ROOT}/templates/progress_log.md`
+   - Customize: Minimal (template provides structure for future updates)
+   - Write: `.cc-track/progress_log.md`
 
 **After creating files, inform the user:**
 - "Created X new customized files"
@@ -362,13 +367,14 @@ Add or update the `statusLine` configuration:
 After setup completes:
 
 1. **Verify installation**:
-   - Check `.claude/track.config.json` exists
+   - Check `.cc-track/track.config.json` exists
    - Check customized files created
    - Check CLAUDE.md has proper @ imports
 
 2. **Next steps guidance**:
    - "Setup complete! 🚅"
-   - "Try creating your first spec: `/specify \"your feature idea\"`"
+   - "Optional: Run `/cc-track:constitution` to set up project guardrails and architectural constraints"
+   - "Try creating your first spec: `/cc-track:specify \"your feature idea\"`"
    - "Configure anytime with: `/config-track`"
    - If statusline configured: "⚠️ Restart Claude Code to see the custom statusline"
 

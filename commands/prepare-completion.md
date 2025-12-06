@@ -58,7 +58,7 @@ Launch the multi-agent spec-focused code review using the Task tool.
 
 **Identify Active Spec:**
 - Read CLAUDE.md to find the active spec folder path
-- Look for `## Active Task` section with `@.claude/specs/NNN-feature-name/` reference
+- Look for `## Active Task` section with `@.cc-track/specs/NNN-feature-name/` reference
 
 **Launch All 8 Review Agents in Parallel:**
 
@@ -77,7 +77,7 @@ Use the Task tool to launch these agents simultaneously:
    - Prompt: "Scan changed files for bugs, silent failures, and security issues. Run git diff to see changes. Focus on error handling, null checks, and edge cases. Report bugs with confidence >= 80."
 
 5. **guidelines-reviewer** (haiku)
-   - Prompt: "Review code against CLAUDE.md and .claude/constitution.md guidelines. Run git diff to see changes. Check project conventions are followed. Report violations with confidence >= 80."
+   - Prompt: "Review code against CLAUDE.md and .cc-track/constitution.md guidelines. Run git diff to see changes. Check project conventions are followed. Report violations with confidence >= 80."
 
 6. **comment-compliance-reviewer** (haiku)
    - Prompt: "Review comments in changed files for accuracy. Run git diff to see changes. Check for stale comments, misleading docs, and unresolved TODOs. Report issues with confidence >= 80."
@@ -141,8 +141,8 @@ After all agents complete, combine their findings:
 After addressing review feedback, update the following:
 
 1. **Task progress file** - Update with final implementation state
-2. **`decision_log.md`** - Add entry for any architectural decisions made (if applicable)
-3. **`system_patterns.md`** - Document any new patterns or conventions established (if applicable)
+2. **`.cc-track/decision_log.md`** - Add entry for any architectural decisions made (if applicable)
+3. **`.cc-track/system_patterns.md`** - Document any new patterns or conventions established (if applicable)
 4. **Private journal** - Record technical insights and learnings (if private journal MCP available)
 
 ## Next Steps

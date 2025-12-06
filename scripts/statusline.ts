@@ -139,7 +139,7 @@ export function getActiveTask(deps = defaultDeps): string {
     const claudeMdPath = join(cwd, 'CLAUDE.md');
     if (deps.existsSync(claudeMdPath)) {
       const content = deps.readFileSync(claudeMdPath, 'utf-8');
-      if (content.includes('@.claude/no_active_task.md')) {
+      if (content.includes('@.cc-track/no_active_task.md')) {
         return 'No active task';
       }
     }

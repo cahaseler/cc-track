@@ -1,6 +1,6 @@
 {
   "_comment": "Example .metadata.json structure for cc-track spec directories",
-  "_usage": "This file is automatically created in .claude/specs/NNN-feature-name/ when using /specify or /migrate commands",
+  "_usage": "This file is automatically created in .cc-track/specs/NNN-feature-name/ when using /specify or /migrate commands",
 
   "task_id": "001",
   "_task_id_description": "REQUIRED - Numeric ID matching the spec directory prefix (e.g., '001' for '001-feature-name/')",

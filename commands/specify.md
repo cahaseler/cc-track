@@ -9,10 +9,14 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(mkdi
 
 **Core Principle**: Gather complete understanding through questions. Continue until all ambiguities are resolved. Documents come last.
 
+## Pre-Check
+
+!`[ -d .cc-track ] || echo "⚠️ STOP: .cc-track directory not found. This project needs migration to the new cc-track format. Please run /cc-track:migrate first, then run /cc-track:specify again."`
+
 ## Current Context
 
 - Current branch: !`git branch --show-current`
-- Existing specs: !`ls -1 .claude/specs/ 2>/dev/null || echo "No specs yet"`
+- Existing specs: !`ls -1 .cc-track/specs/ 2>/dev/null || echo "No specs yet"`
 
 ---
 
@@ -146,7 +150,7 @@ If you need background research on a domain, technology, or pattern:
 ```
 Task: "Research [domain/pattern] to inform feature specification for [feature]"
 Subagent: researcher
-Output: .claude/specs/research-[topic].md
+Output: .cc-track/specs/research-[topic].md
 ```
 
 ---
@@ -243,7 +247,7 @@ Once you have **complete** understanding (all taxonomy areas covered, no remaini
 
 ### Step 1: Generate Task ID and Feature Name
 **Find next task ID**:
-- List `.claude/specs/` directory
+- List `.cc-track/specs/` directory
 - Find directories matching pattern `NNN-*` (e.g., `001-feature`, `002-another`)
 - Extract highest number, add 1, pad to 3 digits
 - If no directories exist, use `001`
@@ -262,9 +266,9 @@ git checkout -b ${taskId}-${featureName}
 
 ### Step 3: Create Spec Directory
 ```bash
-mkdir -p .claude/specs/${taskId}-${featureName}
+mkdir -p .cc-track/specs/${taskId}-${featureName}
 ```
-Example: `.claude/specs/001-add-user-authentication/`
+Example: `.cc-track/specs/001-add-user-authentication/`
 
 ### Step 4: Generate spec.md from Template
 **Read** `templates/spec-template.md` and fill in:
@@ -276,12 +280,12 @@ Example: `.claude/specs/001-add-user-authentication/`
 - **Key Entities**: Data model from questioning
 - **Edge Cases**: From edge case discussions
 
-**Write** to `.claude/specs/${taskId}-${featureName}/spec.md`
+**Write** to `.cc-track/specs/${taskId}-${featureName}/spec.md`
 
 **Important**: The spec should be complete with NO `[NEEDS CLARIFICATION]` markers. If you realize something is still unclear while writing, go back and ask before continuing.
 
 ### Step 5: Create Metadata
-**Write** `.claude/specs/${taskId}-${featureName}/.metadata.json`:
+**Write** `.cc-track/specs/${taskId}-${featureName}/.metadata.json`:
 ```json
 {
   "task_id": "001",
@@ -293,7 +297,7 @@ Example: `.claude/specs/001-add-user-authentication/`
 ```
 
 ### Step 6: GitHub Integration (if enabled)
-**Check** `.claude/track.config.json` for `github.enabled: true`
+**Check** `.cc-track/track.config.json` for `github.enabled: true`
 
 If enabled:
 ```bash
@@ -316,7 +320,7 @@ Update `.metadata.json` with issue info:
 **Replace** the `@` import line with:
 ```markdown
 ## Active Task
-@.claude/specs/${taskId}-${featureName}/spec.md
+@.cc-track/specs/${taskId}-${featureName}/spec.md
 ```
 
 ---
@@ -325,7 +329,7 @@ Update `.metadata.json` with issue info:
 
 Show the user:
 1. **Branch created**: `${taskId}-${featureName}`
-2. **Spec location**: `.claude/specs/${taskId}-${featureName}/spec.md`
+2. **Spec location**: `.cc-track/specs/${taskId}-${featureName}/spec.md`
 3. **Content preview**: Show first 30-40 lines of spec
 4. **Coverage summary**: Confirm all taxonomy areas addressed
 5. **Next step suggestion**: "Ready to run `/plan` for technical design?"

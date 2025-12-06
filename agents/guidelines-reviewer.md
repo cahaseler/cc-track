@@ -51,8 +51,8 @@ Be thorough. AI assistants may read CLAUDE.md but still drift from its guidance 
 
 Read the following files (if they exist):
 - **CLAUDE.md** - Main project instructions and conventions
-- **.claude/constitution.md** - Project guardrails and complexity limits
-- **.claude/system_patterns.md** - Established technical patterns
+- **.cc-track/constitution.md** - Project guardrails and complexity limits
+- **.cc-track/system_patterns.md** - Established technical patterns
 - **style_guide.md** - Coding style conventions (if present)
 
 Extract:

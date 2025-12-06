@@ -70,7 +70,7 @@ npm uninstall -g cc-track
 
 # Install plugin (follow Quick Start above)
 
-# Your .claude/ project files work unchanged!
+# Your .cc-track/ project files work unchanged!
 ```
 
 ## How It Works
@@ -133,7 +133,7 @@ When blocked, you receive clear feedback with:
 - Current date context
 - Tips for historical searches
 
-Enable in `.claude/track.config.json`:
+Enable in `.cc-track/track.config.json`:
 ```json
 {
   "features": {
@@ -148,7 +148,7 @@ Enable in `.claude/track.config.json`:
 
 After setup, cc-track uses two configuration files:
 
-### `.claude/track.config.json`
+### `.cc-track/track.config.json`
 Controls which features are enabled:
 ```json
 {
@@ -188,16 +188,19 @@ All cc-track functionality is accessed through slash commands in Claude Code:
 After initialization, cc-track creates:
 ```
 your-project/
-├── .claude/
-│   ├── commands/          # Slash commands
-│   ├── tasks/             # Task files (TASK_001.md, etc.) - structured files generated from plans
-│   ├── plans/             # Captured plans - raw outputs from planning mode
+├── .cc-track/
+│   ├── specs/             # Feature specifications
 │   ├── track.config.json  # Feature configuration
 │   ├── product_context.md # Project vision
 │   ├── system_patterns.md # Technical patterns
 │   ├── decision_log.md    # Architectural decisions
 │   ├── code_index.md      # Codebase map
+│   ├── backlog.md         # Future ideas and improvements
 │   └── user_context.md    # User preferences
+├── .claude/
+│   ├── commands/          # Slash commands (Claude Code)
+│   ├── hooks/             # Claude Code hooks
+│   └── settings.json      # Claude Code settings
 └── CLAUDE.md              # Main context file with imports
 ```
 

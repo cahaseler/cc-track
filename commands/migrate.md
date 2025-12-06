@@ -7,20 +7,29 @@ allowed-tools: Bash, Edit, Read
 
 # Migrate to Spec-Driven Structure
 
-Migrate old cc-track task structure to new spec-driven format.
+Migrate old cc-track task structure to new directory layout (`.claude/` → `.cc-track/`).
 
-## Step 1: Check for Active Task
+## Step 1: Detect Current State
 
-Read `CLAUDE.md` and look for a reference like `@.claude/tasks/TASK_XXX.md`
+Read `CLAUDE.md` and check for active task references:
 
-**If NO active task found:**
-- Inform user: "⚠️ No active task to migrate. Historical task migration is temporarily unavailable due to a Claude Code plugin issue. You can start using the new workflow with `/specify` for new tasks."
+**Case A: Old task format** - `@.claude/tasks/TASK_XXX.md`
+- Continue to Step 2A (Old task → new spec structure in `.cc-track/`)
+
+**Case B: Current spec format in old directory** - `@.claude/specs/NNN-feature-name/`
+- Continue to Step 2B (Directory rename `.claude/` → `.cc-track/`)
+
+**Case C: Already using `.cc-track/`** - `@.cc-track/specs/NNN-feature-name/`
+- Inform user: "✅ Already using `.cc-track/` directory structure. No migration needed."
 - Stop here
 
-**If active task found:**
-- Continue to Step 2
+**Case D: No active task**
+- Inform user: "⚠️ No active task to migrate. You can start using the new workflow with `/specify` for new tasks."
+- Stop here
 
-## Step 2: Migrate Active Task
+## Step 2A: Migrate from Old Task Format
+
+**For `@.claude/tasks/TASK_XXX.md` references:**
 
 Extract the task ID (e.g., `001` from `TASK_001.md`)
 
@@ -33,7 +42,7 @@ Extract the task ID (e.g., `001` from `TASK_001.md`)
 
 3. Generate feature name from title (lowercase, replace spaces with hyphens, remove special chars)
 
-4. Create directory: `.claude/specs/{taskId}-{feature-name}/`
+4. Create directory: `.cc-track/specs/{taskId}-{feature-name}/`
 
 5. Create `spec.md`:
 ```markdown
@@ -95,7 +104,7 @@ Alternatively, you can manually populate this file with the task breakdown from 
 This progress file was created during migration from old cc-track structure.
 
 ### {today's date and time} - Migrated from old structure
-- Converted from tasks/TASK_{taskId}.md to specs/{taskId}-{feature-name}/ directory structure
+- Converted from .claude/tasks/TASK_{taskId}.md to .cc-track/specs/{taskId}-{feature-name}/ directory structure
 - Original content preserved in plan.md
 - Spec and tasks files created as placeholders for refinement
 
@@ -123,17 +132,92 @@ This progress file was created during migration from old cc-track structure.
 }
 ```
 
-10. Update `CLAUDE.md`: Replace `@.claude/tasks/TASK_{taskId}.md` with `@.claude/specs/{taskId}-{feature-name}/spec.md`
+10. Update `CLAUDE.md`: Replace `@.claude/tasks/TASK_{taskId}.md` with `@.cc-track/specs/{taskId}-{feature-name}/spec.md`
 
 11. Backup old task: Copy `.claude/tasks/TASK_{taskId}.md` to `.claude/tasks.backup/TASK_{taskId}.md`
 
 12. Delete old task file: `.claude/tasks/TASK_{taskId}.md`
 
+13. Continue to Step 3
+
+## Step 2B: Migrate Directory Structure
+
+**For `@.claude/specs/NNN-feature-name/` references:**
+
+1. Create `.cc-track/` directory if it doesn't exist: `mkdir -p .cc-track`
+
+2. Move **only cc-track owned files** from `.claude/` to `.cc-track/`:
+
+**Directories to move:**
+```bash
+[ -d .claude/specs ] && mv .claude/specs .cc-track/specs
+[ -d .claude/plans-archive ] && mv .claude/plans-archive .cc-track/plans-archive
+[ -d .claude/research ] && mv .claude/research .cc-track/research
+```
+
+**Files to move (explicit list - only these cc-track owned files):**
+```bash
+[ -f .claude/backlog.md ] && mv .claude/backlog.md .cc-track/
+[ -f .claude/cc-track-workflow.md ] && mv .claude/cc-track-workflow.md .cc-track/
+[ -f .claude/code_index.md ] && mv .claude/code_index.md .cc-track/
+[ -f .claude/constitution.md ] && mv .claude/constitution.md .cc-track/
+[ -f .claude/decision_log.md ] && mv .claude/decision_log.md .cc-track/
+[ -f .claude/learned_mistakes.md ] && mv .claude/learned_mistakes.md .cc-track/
+[ -f .claude/no_active_task.md ] && mv .claude/no_active_task.md .cc-track/
+[ -f .claude/product_context.md ] && mv .claude/product_context.md .cc-track/
+[ -f .claude/progress_log.md ] && mv .claude/progress_log.md .cc-track/
+[ -f .claude/system_patterns.md ] && mv .claude/system_patterns.md .cc-track/
+[ -f .claude/track.config.json ] && mv .claude/track.config.json .cc-track/
+[ -f .claude/user_context.md ] && mv .claude/user_context.md .cc-track/
+```
+
+**IMPORTANT**: Do NOT move these files (they belong to Claude Code):
+- `settings.json`
+- `settings.local.json`
+- `commands/` directory
+- `hooks/` directory
+- Any other files not in the explicit list above
+
+3. Update `CLAUDE.md`: Replace all `@.claude/` references with `@.cc-track/`
+   - Replace `@.claude/specs/` → `@.cc-track/specs/`
+   - Replace `@.claude/product_context.md` → `@.cc-track/product_context.md`
+   - Replace `@.claude/system_patterns.md` → `@.cc-track/system_patterns.md`
+   - Replace `@.claude/decision_log.md` → `@.cc-track/decision_log.md`
+   - Replace `@.claude/code_index.md` → `@.cc-track/code_index.md`
+   - Replace `@.claude/user_context.md` → `@.cc-track/user_context.md`
+   - Replace `@.claude/cc-track-workflow.md` → `@.cc-track/cc-track-workflow.md`
+   - Replace `@.claude/backlog.md` → `@.cc-track/backlog.md`
+   - Replace `@.claude/no_active_task.md` → `@.cc-track/no_active_task.md`
+   - Replace any `.claude/specs/` text references → `.cc-track/specs/`
+   - Replace any `.claude/progress_log.md` text references → `.cc-track/progress_log.md`
+
+4. Continue to Step 3
+
 ## Step 3: Report Results
 
-Report to user:
-- ✅ Migrated active task TASK_{taskId} to `.claude/specs/{taskId}-{feature-name}/`
-- 📦 Original task backed up to `.claude/tasks.backup/`
-- 📝 Updated CLAUDE.md reference
-- ℹ️ Historical task migration temporarily unavailable - will be restored when Claude Code plugin issue is resolved
-- 💡 You can continue working with the new structure immediately
+**For Case A (Old task format):**
+```
+✅ Migration complete!
+
+Migrated:
+- TASK_{taskId} → .cc-track/specs/{taskId}-{feature-name}/
+- Original task backed up to .claude/tasks.backup/
+- Updated CLAUDE.md references
+
+You can continue working with the new structure immediately.
+```
+
+**For Case B (Directory structure migration):**
+```
+✅ Migration complete!
+
+Migrated cc-track owned files:
+- specs/ → .cc-track/specs/
+- Context files (backlog.md, constitution.md, etc.) → .cc-track/
+- Updated all CLAUDE.md references
+
+Claude Code files remain in .claude/:
+- settings.json, settings.local.json
+
+You can continue working with the new .cc-track/ structure immediately.
+```

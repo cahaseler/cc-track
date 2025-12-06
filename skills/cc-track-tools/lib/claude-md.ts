@@ -40,8 +40,8 @@ export class ClaudeMdHelpers {
 
     const content = this.fileOps.readFileSync(claudeMdPath, 'utf-8');
 
-    // Check for spec pattern: @.claude/specs/NNN-feature-name/spec.md
-    const specMatch = content.match(/@\.claude\/specs\/(\d+)-[^/]+\/spec\.md/);
+    // Check for spec pattern: @.cc-track/specs/NNN-feature-name/spec.md
+    const specMatch = content.match(/@\.cc-track\/specs\/(\d+)-[^/]+\/spec\.md/);
     if (specMatch) {
       return `TASK_${specMatch[1]}`;
     }

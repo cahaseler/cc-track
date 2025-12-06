@@ -64,7 +64,7 @@
       "*.md",
       "*.json",
       "*.sh",
-      ".claude/**/*.md",
+      ".cc-track/**/*.md",
       "old_roopars_documents/**",
       "docs/**",
       "commands/**"

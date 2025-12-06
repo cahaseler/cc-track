@@ -6,11 +6,11 @@ This repository implements cc-track — a Task Review And Context Keeper that he
 
 You may be asked to operate in one or more of these modes:
 
-- Builder: Implement features, refactors, bug fixes, and tests according to `.claude/specs/[spec-id]/` specifications.
+- Builder: Implement features, refactors, bug fixes, and tests according to `.cc-track/specs/[spec-id]/` specifications.
 - Reviewer: Perform detached code reviews and produce timestamped artifacts under `code-reviews/`.
-- Maintainer: Improve docs, hooks, and test pipelines; align behavior with the workflow defined in `.claude/*`.
+- Maintainer: Improve docs, hooks, and test pipelines; align behavior with the workflow defined in `.cc-track/*`.
 
-Across all modes, treat `.claude/specs/[spec-id]/spec.md` as the source of truth for acceptance criteria and current scope. Keep user‑visible behavior stable unless a spec explicitly requests a change.
+Across all modes, treat `.cc-track/specs/[spec-id]/spec.md` as the source of truth for acceptance criteria and current scope. Keep user‑visible behavior stable unless a spec explicitly requests a change.
 
 ## Project Overview
 
@@ -39,12 +39,13 @@ Across all modes, treat `.claude/specs/[spec-id]/spec.md` as the source of truth
 - `test-utils/*.ts` – Test helpers and mocks.
 
 **Project Context** (our development setup, not distributed):
-- `.claude/*` – This project's own cc-track configuration:
+- `.cc-track/*` – This project's own cc-track configuration:
   - `specs/[id]-feature-name/` – Feature specifications (spec.md, plan.md, tasks.md, progress.md).
   - `track.config.json` – Hook and feature configuration for this project.
   - `cc-track-workflow.md` – End‑to‑end workflow from /specify → PR.
   - `decision_log.md`, `system_patterns.md`, `progress_log.md`, `user_context.md`, `product_context.md` – Context/state docs.
-  - `commands/*.md` – Our own slash commands (dogfooding the plugin).
+- `.claude/*` – Claude Code's own configuration:
+  - `settings.json` – Claude Code hook configuration and settings.
 
 **Documentation**:
 - `code-reviews/` – Storage for review artifacts when operating in Reviewer mode.
@@ -93,11 +94,11 @@ High‑level lifecycle: /specify → /plan → /tasks → Development → /prepa
 
 Key responsibilities for agents:
 
-- Plan and scope work from `.claude/specs/[id]-feature-name/spec.md` and plan.md.
+- Plan and scope work from `.cc-track/specs/[id]-feature-name/spec.md` and plan.md.
 - Implement minimal, surgical changes that satisfy the spec; add or update tests near changed code.
 - Use validation routinely: `bun run check` and `bun test`. For task completion, run `/prepare-completion` and then `/complete-task` (invoked by user via slash command).
 - Keep docs current: `progress.md`, `decision_log.md`, `system_patterns.md`, and `progress_log.md` where applicable.
-- Respect `.claude/track.config.json` (validation commands, GitHub settings, logging).
+- Respect `.cc-track/track.config.json` (validation commands, GitHub settings, logging).
 
 ## Build, Test, Validate
 
@@ -161,7 +162,7 @@ In Claude Code, these are invoked via `.claude/commands/*.md` files that use `${
 
 ## Hooks Overview
 
-Hook enablement comes from `.claude/track.config.json`:
+Hook enablement comes from `.cc-track/track.config.json`:
 
 - `edit_validation` (PostToolUse) – Runs TypeScript/Biome checks on edited files. **Blocks** if errors found.
   - Configurable: `typecheck.enabled`, `lint.enabled`
@@ -175,10 +176,10 @@ These hooks are implemented in `hooks/*.ts` and registered in `hooks/hooks.json`
 
 ## Spec Alignment & Sources of Truth
 
-- Primary spec: `.claude/specs/[id]-feature-name/spec.md` - WHAT and WHY (tech-agnostic requirements).
-- Technical design: `.claude/specs/[id]-feature-name/plan.md` - HOW (implementation approach).
-- Task breakdown: `.claude/specs/[id]-feature-name/tasks.md` - Sequential implementation steps.
-- Progress tracking: `.claude/specs/[id]-feature-name/progress.md` - What actually happened.
+- Primary spec: `.cc-track/specs/[id]-feature-name/spec.md` - WHAT and WHY (tech-agnostic requirements).
+- Technical design: `.cc-track/specs/[id]-feature-name/plan.md` - HOW (implementation approach).
+- Task breakdown: `.cc-track/specs/[id]-feature-name/tasks.md` - Sequential implementation steps.
+- Progress tracking: `.cc-track/specs/[id]-feature-name/progress.md` - What actually happened.
 - Build to the acceptance criteria in spec.md, not incidental existing behavior.
 - `CLAUDE.md` imports establish the active context; do not silently remove required imports.
 
@@ -187,7 +188,7 @@ These hooks are implemented in `hooks/*.ts` and registered in `hooks/hooks.json`
 - TypeScript strict mode; no implicit any; explicit, intention‑revealing names.
 - Keep changes minimal and scoped; avoid unrelated refactors.
 - Prefer composition over deep inheritance; avoid accidental public APIs.
-- Log with `lib/logger.ts` and honor `.claude/track.config.json` logging settings.
+- Log with `lib/logger.ts` and honor `.cc-track/track.config.json` logging settings.
 - Do not add new external dependencies without a task/justification.
 - Tests in `tests/` directory, separate from implementation.
 - Use dependency injection for testability (see test-utils/command-mocks.ts).
@@ -198,7 +199,7 @@ When explicitly asked to review instead of implement:
 
 - Write a timestamped review file per substantial change under `code-reviews/`.
 - Filename: `code-reviews/TASK_XXX_YYYY-MM-DD_HHMM-UTC.md` (e.g., `TASK_101_2025-10-15_1740-UTC.md`).
-- Include: Summary, Spec Alignment (link to `.claude/specs/[id]-feature-name/spec.md`), Behavioral Diffs, Tests & Coverage, Risks, Required Fixes, Optional Improvements, Verified Commands.
+- Include: Summary, Spec Alignment (link to `.cc-track/specs/[id]-feature-name/spec.md`), Behavioral Diffs, Tests & Coverage, Risks, Required Fixes, Optional Improvements, Verified Commands.
 - Default review scope is the diff between main and the current branch.
 - Each new task should be on its own branch; compare that branch to main.
 - **CRITICAL**: Review the ACTUAL codebase structure (hooks/, commands/scripts/, lib/), NOT the old src/ structure.
@@ -216,7 +217,7 @@ Typical endgame for a task:
    - Optionally create PR via GitHub CLI.
 
 Notes:
-- GitHub workflows depend on `.claude/track.config.json.features.github_integration.*`.
+- GitHub workflows depend on `.cc-track/track.config.json.features.github_integration.*`.
 - Default branch is usually `main`.
 
 ## Known Integrations

@@ -29,7 +29,7 @@
     "rootDir": "."
   },
   "include": [
-    ".claude/**/*.ts",
+    ".cc-track/**/*.ts",
     "scripts/**/*.ts",
     "commands/**/*.ts",
     "hooks/**/*.ts",

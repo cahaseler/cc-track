@@ -100,9 +100,9 @@ describe('spec-helpers', () => {
 
       const result = createSpecDirectory('/project', '001', 'test-feature', fileOps);
 
-      expect(result).toBe('/project/.claude/specs/001-test-feature');
-      expect(mkdirSyncCalls).toContain('/project/.claude/specs');
-      expect(mkdirSyncCalls).toContain('/project/.claude/specs/001-test-feature');
+      expect(result).toBe('/project/.cc-track/specs/001-test-feature');
+      expect(mkdirSyncCalls).toContain('/project/.cc-track/specs');
+      expect(mkdirSyncCalls).toContain('/project/.cc-track/specs/001-test-feature');
     });
 
     test('creates only spec directory if specs directory exists', () => {
@@ -122,9 +122,9 @@ describe('spec-helpers', () => {
 
       const result = createSpecDirectory('/project', '002', 'another-feature', fileOps);
 
-      expect(result).toBe('/project/.claude/specs/002-another-feature');
+      expect(result).toBe('/project/.cc-track/specs/002-another-feature');
       expect(mkdirSyncCalls).toHaveLength(1);
-      expect(mkdirSyncCalls[0]).toBe('/project/.claude/specs/002-another-feature');
+      expect(mkdirSyncCalls[0]).toBe('/project/.cc-track/specs/002-another-feature');
     });
 
     test('returns existing directory if already created', () => {
@@ -136,7 +136,7 @@ describe('spec-helpers', () => {
       };
 
       const result = createSpecDirectory('/project', '001', 'test', fileOps);
-      expect(result).toBe('/project/.claude/specs/001-test');
+      expect(result).toBe('/project/.cc-track/specs/001-test');
     });
   });
 
@@ -162,9 +162,9 @@ describe('spec-helpers', () => {
         started: '2025-01-01T00:00:00Z',
       };
 
-      createMetadata('/project/.claude/specs/001-test', metadata, fileOps);
+      createMetadata('/project/.cc-track/specs/001-test', metadata, fileOps);
 
-      expect(writtenPath).toBe('/project/.claude/specs/001-test/.metadata.json');
+      expect(writtenPath).toBe('/project/.cc-track/specs/001-test/.metadata.json');
       const parsed = JSON.parse(writtenContent);
       expect(parsed.task_id).toBe('001');
       expect(parsed.feature_name).toBe('test-feature');
@@ -211,7 +211,7 @@ describe('spec-helpers', () => {
         writeFileSync: mock(() => {}),
       };
 
-      const result = readMetadata('/project/.claude/specs/001-test', fileOps);
+      const result = readMetadata('/project/.cc-track/specs/001-test', fileOps);
       expect(result).toBeNull();
     });
 
@@ -353,7 +353,7 @@ describe('spec-helpers', () => {
       ]);
 
       const result = getSpecDirectory('/project', '001', fileOps, readDirs);
-      expect(result).toBe('/project/.claude/specs/001-test-feature');
+      expect(result).toBe('/project/.cc-track/specs/001-test-feature');
     });
   });
 
@@ -384,7 +384,7 @@ describe('spec-helpers', () => {
 
     test('extracts active spec directory from CLAUDE.md', () => {
       const claudeMdContent = `# Active Task
-@.claude/specs/001-test-feature/spec.md
+@.cc-track/specs/001-test-feature/spec.md
 
 Some other content`;
 
@@ -396,7 +396,7 @@ Some other content`;
       };
 
       const result = getActiveSpecDirectory('/project', fileOps);
-      expect(result).toBe('/project/.claude/specs/001-test-feature');
+      expect(result).toBe('/project/.cc-track/specs/001-test-feature');
     });
   });
 
@@ -429,7 +429,7 @@ Some other content`;
         readFileSync: mock(() => {
           callCount++;
           if (callCount === 1) {
-            return '@.claude/specs/001-active-feature/spec.md';
+            return '@.cc-track/specs/001-active-feature/spec.md';
           }
           return JSON.stringify(metadata);
         }),
@@ -615,8 +615,8 @@ Some other content`;
 
       const result = getAllSpecDirectories('/project', fileOps, readDirs);
       expect(result).toHaveLength(2);
-      expect(result).toContain('/project/.claude/specs/001-feature-one');
-      expect(result).toContain('/project/.claude/specs/002-feature-two');
+      expect(result).toContain('/project/.cc-track/specs/001-feature-one');
+      expect(result).toContain('/project/.cc-track/specs/002-feature-two');
     });
   });
 });
