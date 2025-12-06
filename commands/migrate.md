@@ -60,7 +60,7 @@ This specification was automatically generated from an old task file. Review and
 - Non-functional requirements
 - Success criteria
 
-Use `/clarify` to refine this specification.
+Review and refine this specification before proceeding to `/plan`.
 ```
 
 6. Create `plan.md` - copy the entire old task file content here
@@ -104,9 +104,8 @@ This progress file was created during migration from old cc-track structure.
 ## Next Steps
 
 1. Review and enhance spec.md with clear requirements
-2. Run `/clarify` to refine the specification
-3. Run `/plan` to create technical design
-4. Run `/tasks` to generate task breakdown
+2. Run `/plan` to create technical design
+3. Run `/tasks` to generate task breakdown
 ```
 
 9. Create `.metadata.json`:

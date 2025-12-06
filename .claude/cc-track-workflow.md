@@ -7,7 +7,7 @@
 The cc-track system follows a structured, command-driven workflow that separates requirements from implementation:
 
 ```
-/specify → /clarify → /plan → /tasks → Implementation → /prepare-completion → /complete-task → PR → Merge
+/specify → /plan → /tasks → Implementation → /prepare-completion → /complete-task → PR → Merge
 ```
 
 Each command prompts for the next step, creating a natural flow through the development process.
@@ -65,62 +65,30 @@ Optional files for complex features:
 4. Updates `CLAUDE.md` to point to new spec
 5. Creates GitHub issue (if integration enabled)
 
-**Result:** Initial specification with clearly marked unknowns
+**Result:** Complete specification with all ambiguities resolved
 
-**Next step:** "Spec created. Ready to run `/clarify` to refine requirements?"
-
----
-
-### 2. `/clarify` - Refine Requirements
-
-**Purpose:** Systematically resolve ambiguities using structured questioning
-
-**What happens:**
-1. Loads active spec.md
-2. Scans for `[NEEDS CLARIFICATION]` markers
-3. Identifies underspecified areas using taxonomy:
-   - Functional scope & behavior
-   - Domain & data model
-   - Interaction & UX flow
-   - Non-functional requirements (performance, security)
-   - Integration & dependencies
-   - Edge cases & failure handling
-   - Constraints & tradeoffs
-4. Presents questions sequentially (max 5 per session):
-   - ONE question at a time
-   - Multiple choice format when possible
-   - Short answer format otherwise
-5. After each answer:
-   - Integrates answer into spec immediately
-   - Updates relevant sections
-   - Saves spec.md
-
-**Result:** Refined specification with resolved ambiguities
-
-**Next step:** "Clarifications complete. Ready to run `/plan` for technical design?"
+**Next step:** "Spec complete. Ready to run `/plan` for technical design?"
 
 ---
 
-### 3. `/plan` - Create Technical Design
+### 2. `/plan` - Create Technical Design
 
 **Purpose:** Generate technical implementation plan based on refined spec
 
 **What happens:**
 1. Loads spec.md from active task
-2. Checks for remaining `[NEEDS CLARIFICATION]` markers
-   - If any found: ERROR "Resolve unknowns with `/clarify` first"
-3. Constitution check (if `.claude/constitution.md` exists):
+2. Constitution check (if `.claude/constitution.md` exists):
    - Validates design against project guardrails
    - Documents any violations with justification
-4. Creates research.md (if needed):
+3. Creates research.md (if needed):
    - Researches tech stack best practices
    - Evaluates integration patterns
    - Documents decisions with rationale
-5. Creates plan.md with:
+4. Creates plan.md with:
    - Technical approach
    - Architecture decisions
    - Implementation strategy
-6. Creates supporting files (as applicable):
+5. Creates supporting files (as applicable):
    - `data-model.md` from spec entities
    - `contracts/` from API requirements
    - `quickstart.md` from user stories
@@ -131,7 +99,7 @@ Optional files for complex features:
 
 ---
 
-### 4. `/tasks` - Generate Task Breakdown
+### 3. `/tasks` - Generate Task Breakdown
 
 **Purpose:** Create actionable task list from technical plan
 
@@ -152,7 +120,7 @@ Optional files for complex features:
 
 ---
 
-### 5. Implementation Phase
+### 4. Implementation Phase
 
 **What happens:** Claude works through tasks from tasks.md
 
@@ -172,7 +140,7 @@ Optional files for complex features:
 
 ---
 
-### 6. `/prepare-completion` - Validate Before Completion
+### 5. `/prepare-completion` - Validate Before Completion
 
 **Purpose:** Run all quality checks and prepare for task completion
 
@@ -197,7 +165,7 @@ Optional files for complex features:
 
 ---
 
-### 7. `/complete-task` - Finalize and Create PR
+### 6. `/complete-task` - Finalize and Create PR
 
 **Purpose:** Mark task complete, squash commits, create PR
 
@@ -220,7 +188,7 @@ Optional files for complex features:
 
 ---
 
-### 8. Pull Request Review & Merge
+### 7. Pull Request Review & Merge
 
 **Manual step:** User reviews and merges PR on GitHub
 
@@ -343,7 +311,7 @@ Optional files for complex features:
 - Single task file combined spec + plan + progress
 
 **New system (command-driven):**
-- `/specify` → `/clarify` → `/plan` → `/tasks` explicit flow
+- `/specify` → `/plan` → `/tasks` explicit flow
 - Tasks in `.claude/specs/NNN-feature-name/` with separate files
 - No auto-commits - developer controls git workflow
 - Clear separation: spec.md (requirements) vs plan.md (design) vs progress.md (what happened)
@@ -361,10 +329,10 @@ Optional files for complex features:
 
 When working in a cc-track project:
 
-1. **Recognize the workflow stage** - Are we specifying, clarifying, planning, or implementing?
+1. **Recognize the workflow stage** - Are we specifying, planning, or implementing?
 2. **Follow the command flow** - Each command prompts for the next step
 3. **Respect the separation** - Don't put technical details in spec.md or requirements in plan.md
-4. **Mark unknowns** - Use `[NEEDS CLARIFICATION: question]` in spec.md when uncertain
+4. **Resolve ambiguities first** - Ask questions until spec is complete before creating artifacts
 5. **Update as you learn** - spec/plan/tasks can evolve during implementation
 6. **Trust the validation** - Hooks and commands enforce quality and workflow
 

@@ -93,7 +93,7 @@ If not a git repo:
 Present feature options and let user choose what to enable:
 
 **Always Enabled (Core Functionality):**
-- Task management via `/specify`, `/clarify`, `/plan`, `/tasks` workflow
+- Task management via `/specify`, `/plan`, `/tasks` workflow
 - Context preservation (CLAUDE.md with imports)
 - Basic project structure in `.claude/`
 

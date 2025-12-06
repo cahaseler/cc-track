@@ -174,8 +174,7 @@ Claude Code's hook configuration (managed by cc-track based on your config)
 All cc-track functionality is accessed through slash commands in Claude Code:
 
 - `/setup-cc-track` - Initial setup wizard (verifies dependencies, configures features)
-- `/specify` - Create new feature specification through Socratic questioning
-- `/clarify` - Refine requirements and resolve ambiguities
+- `/specify` - Create new feature specification through Socratic questioning (resolves all ambiguities)
 - `/plan` - Generate technical implementation plan
 - `/tasks` - Create task breakdown from plan
 - `/prepare-completion` - Validate task readiness (tests, lint, code review)

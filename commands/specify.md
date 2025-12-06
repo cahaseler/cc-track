@@ -4,9 +4,9 @@ description: Create a feature specification through Socratic questioning and ite
 
 # Creating Feature Specifications
 
-**Goal**: Transform rough ideas into structured, tech-agnostic specifications through systematic questioning.
+**Goal**: Transform rough ideas into complete, tech-agnostic specifications through systematic questioning.
 
-**Core Principle**: Gather complete understanding BEFORE creating artifacts. Questions first, documents second.
+**Core Principle**: Gather complete understanding through questions. Continue until all ambiguities are resolved. Documents come last.
 
 ---
 
@@ -14,29 +14,63 @@ description: Create a feature specification through Socratic questioning and ite
 
 **DO NOT create any files yet.** First, build complete understanding through questions.
 
+### Initial Questions:
+Start with high-level understanding (2-4 questions):
+- **Purpose**: What problem does this solve? For whom?
+- **Scope**: What's included? What's explicitly out of scope?
+- **Success criteria**: How do we know it's working?
+- **User flows**: Core happy path clear?
+
+### Ambiguity Taxonomy:
+As understanding develops, systematically check these areas for gaps:
+
+**Functional Scope & Behavior**
+- Core user goals clear?
+- Out-of-scope explicitly stated?
+- User roles/personas defined?
+
+**Domain & Data Model**
+- Entities and attributes specified?
+- Identity/uniqueness rules clear?
+- Lifecycle/state transitions defined?
+- Data volume/scale assumptions stated?
+
+**Interaction & UX Flow**
+- Critical user journeys documented?
+- Error/empty/loading states defined?
+- Accessibility considerations noted?
+
+**Non-Functional Quality**
+- Performance targets (latency, throughput)?
+- Scalability expectations (users, data)?
+- Reliability requirements (uptime, recovery)?
+- Security/privacy needs (authN/authZ, data protection)?
+
+**Integration & Dependencies**
+- External services and failure modes?
+- Data import/export formats?
+
+**Edge Cases & Failures**
+- Negative scenarios handled?
+- Rate limiting/throttling defined?
+- Conflict resolution (concurrent edits)?
+
+**Constraints & Tradeoffs**
+- Technical constraints stated?
+- Explicit tradeoffs documented?
+
 ### Questioning Approach:
 1. **Use AskUserQuestion tool** - Provides clean UI for multiple questions at once
 2. **Group questions smartly** - Ask 2-4 questions per batch, but only if early answers won't invalidate later ones
 3. **Always prefer multiple choice** - Tool presents these cleanly (2-4 options per question)
 4. **Include "Other" for flexibility** - Auto-provided by tool for free-form responses
 5. **Be specific** - "What authentication method?" not "How will users log in?"
-6. **Gather just enough to start**:
-   - **Purpose**: What problem does this solve? For whom?
-   - **Scope**: What's included? What's explicitly out of scope?
-   - **Success criteria**: How do we know it's working?
-   - **User flows**: Core happy path clear?
+6. **Continue until complete** - Don't stop at "good enough", resolve all ambiguities
 
-### Critical Rule:
-**Ask just enough questions to create a workable first draft (2-4 questions total).** Mark remaining ambiguities with [NEEDS CLARIFICATION] for the /clarify command to resolve. Better to create the spec sooner with clear markers than delay for complete understanding.
-
-**Tip**: If you need background research on a domain, technology, or pattern during specification:
-```
-Task: "Research [domain/pattern] to inform feature specification for [feature]"
-Subagent: researcher
-Output: .claude/specs/research-[topic].md
-```
-
-This is useful when the user requests a feature in an unfamiliar domain (e.g., "Add OAuth2 authentication" but you're unsure of OAuth2 flows).
+### Question Prioritization:
+- **Impact**: Would answer change architecture/data model/UX significantly?
+- **Uncertainty**: How ambiguous is this area?
+- **Coverage**: Balance across taxonomy categories
 
 ### Examples Using AskUserQuestion Tool:
 
@@ -64,7 +98,7 @@ AskUserQuestion({
     {
       question: "Who are the primary users?",
       header: "Users",
-      multiSelect: true,  // Can select multiple user types
+      multiSelect: true,
       options: [
         { label: "End users", description: "Regular application users" },
         { label: "Admins", description: "System administrators" },
@@ -85,11 +119,35 @@ AskUserQuestion({
 })
 ```
 
+### When User Says "I Don't Know":
+```typescript
+AskUserQuestion({
+  questions: [{
+    question: "We need to define [the unclear aspect]. How should we proceed?",
+    header: "Approach",
+    multiSelect: false,
+    options: [
+      { label: "Research standards", description: "Look up industry best practices" },
+      { label: "Make configurable", description: "Allow runtime configuration" },
+      { label: "Use sensible default", description: "Pick reasonable value, document assumption" }
+    ]
+  }]
+})
+```
+
+### Research Support:
+If you need background research on a domain, technology, or pattern:
+```
+Task: "Research [domain/pattern] to inform feature specification for [feature]"
+Subagent: researcher
+Output: .claude/specs/research-[topic].md
+```
+
 ---
 
 ## Phase 2: Artifact Creation
 
-Once you have complete understanding (not before!):
+Once you have **complete** understanding (all taxonomy areas covered, no remaining ambiguities):
 
 ### Step 1: Generate Task ID and Feature Name
 **Find next task ID**:
@@ -123,11 +181,12 @@ Example: `.claude/specs/001-add-user-authentication/`
 - **User Scenarios**: From gathered information
 - **Functional Requirements**: As specific FR-XXX items
 - **Non-Functional Requirements**: Performance, security, etc.
-- **[NEEDS CLARIFICATION]**: Mark ANY remaining ambiguities
+- **Key Entities**: Data model from questioning
+- **Edge Cases**: From edge case discussions
 
 **Write** to `.claude/specs/${taskId}-${featureName}/spec.md`
 
-**Critical**: If you had to make ANY assumptions, mark them with `[NEEDS CLARIFICATION: specific question]`
+**Important**: The spec should be complete with NO `[NEEDS CLARIFICATION]` markers. If you realize something is still unclear while writing, go back and ask before continuing.
 
 ### Step 5: Create Metadata
 **Write** `.claude/specs/${taskId}-${featureName}/.metadata.json`:
@@ -136,7 +195,7 @@ Example: `.claude/specs/001-add-user-authentication/`
   "task_id": "001",
   "feature_name": "add-user-authentication",
   "branch": "001-add-user-authentication",
-  "status": "draft",
+  "status": "specified",
   "started": "2025-01-14T10:30:00Z"
 }
 ```
@@ -176,24 +235,27 @@ Show the user:
 1. **Branch created**: `${taskId}-${featureName}`
 2. **Spec location**: `.claude/specs/${taskId}-${featureName}/spec.md`
 3. **Content preview**: Show first 30-40 lines of spec
-4. **Clarification count**: "Marked X areas needing clarification"
-5. **Next step suggestion**: "Ready to run `/clarify` to refine requirements?"
+4. **Coverage summary**: Confirm all taxonomy areas addressed
+5. **Next step suggestion**: "Ready to run `/plan` for technical design?"
 
 ---
 
 ## Common Pitfalls to Avoid
 
-❌ **Don't**: Ask too many questions upfront - defeats the purpose of /clarify
-✅ **Do**: Ask 2-4 focused questions to get a workable first draft
+❌ **Don't**: Stop questioning when you have "enough to start"
+✅ **Do**: Continue until all ambiguities resolved
+
+❌ **Don't**: Leave `[NEEDS CLARIFICATION]` markers in the spec
+✅ **Do**: Ask the question before creating the artifact
 
 ❌ **Don't**: Guess at requirements
-✅ **Do**: Mark ambiguities explicitly
+✅ **Do**: Ask when uncertain
 
 ❌ **Don't**: Include implementation details (tech stack, APIs, code)
 ✅ **Do**: Focus only on WHAT and WHY, not HOW
 
 ❌ **Don't**: Write vague requirements like "system should be fast"
-✅ **Do**: Use [NEEDS CLARIFICATION: what's the performance target?]
+✅ **Do**: Ask for specific targets and document them
 
 ---
 
@@ -202,37 +264,34 @@ Show the user:
 ```
 User: "I want to add user authentication"
 
-Claude: [Uses AskUserQuestion tool with 3 questions]
+Claude: [Uses AskUserQuestion tool - Round 1]
+1. Authentication Method → Email/password
+2. Primary Users → End users + Admins
+3. Security Level → Standard
 
-Questions presented in UI:
-1. Authentication Method (header: "Auth Method")
-   - Email/password: Traditional username and password
-   - OAuth only: Google, GitHub, etc.
-   - Both: Email and OAuth options
-   [Other option auto-provided]
+Claude: "Great! Let me check a few more areas..."
 
-2. Primary Users (header: "Users", multiSelect: true)
-   - End users: Regular app users
-   - Admins: System administrators
-   - API clients: External systems
-   [Other option auto-provided]
+[Uses AskUserQuestion tool - Round 2]
+1. Session timeout → 24 hours
+2. Password reset method → Email link
+3. Max failed login attempts → 5 attempts, 15 min lockout
 
-3. Security Level (header: "Security")
-   - Basic: 8+ character passwords
-   - Standard: Length + complexity requirements
-   - High: MFA required
-   [Other option auto-provided]
+Claude: "Almost there. A couple more..."
 
-User: Selects "Email/password", "End users" + "Admins", "Standard"
+[Uses AskUserQuestion tool - Round 3]
+1. Expected user scale → Medium (100-10K users)
+2. Audit logging needed? → Yes, login/logout events
 
-Claude: "Perfect! I have enough to create the spec. Let me create:
+Claude: "I have complete understanding. Creating the spec..."
+
+[Creates all artifacts - branch, spec.md, metadata]
+
+"Specification complete! Here's what I created:
 - Branch: 001-add-user-authentication
-- Spec with functional requirements for email/password auth with standard security
-- Marked 3 areas needing clarification (session timeout, password reset method, max login attempts)
+- Spec with 8 functional requirements, 3 NFRs, 4 edge cases
+- All areas covered, no ambiguities remaining
 
-[Creates all artifacts]
-
-Ready to run `/clarify` to resolve those 3 open questions?"
+Ready to run `/plan` for technical design?"
 ```
 
 ---
@@ -249,4 +308,4 @@ Ready to run `/clarify` to resolve those 3 open questions?"
 
 ## Next Command
 
-After `/specify` completes successfully, suggest: `/clarify`
+After `/specify` completes successfully, suggest: `/plan`

@@ -24,15 +24,14 @@ description: Generate technical implementation plan with constitution checks and
 
 **Verify**:
 - [ ] Active spec exists
-- [ ] No `[NEEDS CLARIFICATION]` markers remain in spec
-- [ ] Spec has been through `/clarify` (or user explicitly skipped)
+- [ ] No `[NEEDS CLARIFICATION]` markers remain in spec (should be resolved during /specify)
 
 **If NEEDS CLARIFICATION found**:
 ```
 ❌ Cannot proceed with technical planning.
 
 Found X unresolved clarifications in spec.md.
-Run `/clarify` first to resolve ambiguities, or explicitly tell me to proceed anyway.
+The spec should be complete before planning. Ask the user about these ambiguities now, or explicitly tell me to proceed anyway.
 ```
 
 ---

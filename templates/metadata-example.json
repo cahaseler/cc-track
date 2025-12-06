@@ -14,7 +14,8 @@
   "status": "in_progress",
   "_status_description": "REQUIRED - Current status of the feature. Valid values: 'draft', 'in_progress', 'completed'",
   "_status_values": {
-    "draft": "Specification phase - requirements being defined via /specify and /clarify",
+    "draft": "Specification phase - requirements being defined via /specify",
+    "specified": "Specification complete - ready for /plan",
     "in_progress": "Implementation phase - tasks being executed",
     "completed": "Feature complete - all validation passed, ready for merge"
   },

@@ -89,7 +89,7 @@ When creating this spec from a user prompt:
 ---
 
 ## Clarifications
-*This section is populated by the /clarify command*
+*Key decisions made during specification*
 
 ### Session [YYYY-MM-DD]
 - Q: [question] → A: [answer]

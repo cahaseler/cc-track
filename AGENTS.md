@@ -89,7 +89,7 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_pat
 
 ## Core Workflows
 
-High‑level lifecycle: /specify → /clarify → /plan → /tasks → Development → /prepare-completion → /complete-task → PR → Merge.
+High‑level lifecycle: /specify → /plan → /tasks → Development → /prepare-completion → /complete-task → PR → Merge.
 
 Key responsibilities for agents:
 
