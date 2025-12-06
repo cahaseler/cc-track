@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Edit, Read
+allowed-tools: Bash, Edit, Read, Task, Skill
 description: Complete the current active task (Phase 2 of task completion workflow)
 ---
 
@@ -9,67 +9,79 @@ Finalize the current task by updating metadata, squashing commits, and creating 
 
 **Prerequisites:** Validation must have passed via `/prepare-completion`
 
-## Step 1: Update Task Metadata
+## Step 1: Get Script Path via Skill
 
-1. Find the active spec directory (referenced in `CLAUDE.md` as `@.claude/specs/NNN-feature-name/spec.md`)
-2. Read `.metadata.json` from that directory
-3. Update the metadata:
-   - Set `status: "completed"`
-   - Set `completed: "YYYY-MM-DD"` (today's date)
-4. Write the updated metadata back to `.metadata.json`
+First, invoke the `cc-track:cc-track-tools` skill to get the base directory for cc-track scripts.
 
-## Step 2: Update Task Lists
+Note the base directory provided (e.g., `/path/to/skills/cc-track-tools`).
 
-1. Read `.claude/no_active_task.md`
-2. Under "## Completed Tasks:" section, append: `- {taskId}: {taskTitle}`
-3. Save the file
+## Step 2: Run Complete Task Script
 
-## Step 3: Git Operations
+Run the complete-task script using the base directory from Step 1:
 
-**Commit any uncommitted changes:**
-- Run `git status --porcelain` to check for changes
-- If changes exist: `git add -A && git commit -m "docs: final task documentation updates"`
+```bash
+bun {base_directory}/scripts/complete-task.ts
+```
 
-**Squash WIP commits:**
-- Get the default branch name (usually `main` or `master`)
-- Get merge base with default branch: `git merge-base {current-branch} {default-branch}`
-- Count commits since merge base: `git rev-list --count {merge-base}..HEAD`
-- If more than 1 commit:
-  - Run: `git reset --soft {merge-base}`
-  - Commit: `git commit -m "feat: complete {taskId} - {taskTitle}"`
+The script will:
+- Run pre-flight validation (TypeScript, lint, tests, knip)
+- Update task metadata (status → completed, completion date)
+- Update task lists in no_active_task.md
+- Squash WIP commits into a single feat commit
+- Push branch and create PR (if GitHub integration enabled)
+- Switch back to main branch
+- Update CLAUDE.md to reference no_active_task.md
 
-**Push and create PR** (if GitHub integration enabled):
-- Push branch: `git push -u origin HEAD`
-- Wait 2-3 seconds for GitHub to recognize the branch
-- Create minimal PR: `gh pr create --base {default-branch} --head {current-branch} --title "feat: complete {taskId} - {taskTitle}" --body "## Summary\nCompletes {taskId}: {taskTitle}\n\n🤖 Generated with [Claude Code](https://claude.ai/code)"`
-- If PR creation succeeds, get the PR URL
+## Step 3: Interpret Results
 
-**Enhance PR description:**
-- Read the active spec folder files (spec.md, plan.md, progress.md)
-- Get git diff: `git diff {merge-base}..HEAD`
-- Get test results from validation output
-- Write comprehensive PR description with:
-  - Summary: What was delivered based on spec.md requirements
-  - Technical Implementation: Key technical details from plan.md and actual changes
-  - Testing: Test results and coverage
-- Update PR: `gh pr edit {pr-url} --body "{enhanced-description}"`
+The script returns JSON-like output with messages and data. Parse and present the results:
 
-**Switch back to main:**
-- Run: `git checkout {default-branch}`
-- Run: `git pull origin {default-branch}`
+**If completion failed:**
+- Show what failed with error details
+- Common failures:
+  - Validation failed → Run `/prepare-completion` first to fix issues
+  - Push failed → Check for merge conflicts or authentication issues
+  - No active task → Ensure a task is active before running
+- **STOP** - do not proceed
 
-**Error handling:** If anything fails (push, PR creation, branch switch), explain the issue to the user and stop. Don't try to auto-revert - just report what happened and what state things are in.
+**If completion succeeded:**
+- Report task completion: Task ID and title from output
+- Report git status: Number of WIP commits squashed
+- Report PR status: URL if created, or existing PR if updated
+- Confirm branch switch to main
 
-## Step 4: Update CLAUDE.md
+## Step 4: Enhance PR Description (if PR was created)
 
-1. Read `CLAUDE.md`
-2. Replace `@.claude/specs/{nnn}-{feature-name}/spec.md` with `@.claude/no_active_task.md`
-3. Save the file
+If a new PR was created, enhance its description with details from the spec files:
 
-## Step 5: Report Completion
+1. Read the spec folder files (spec.md, plan.md, progress.md)
+2. Update the PR with comprehensive details:
 
-Report to user:
-- ✅ Task {taskId} completed: {taskTitle}
-- Git: {N} WIP commits squashed successfully
-- PR created and enhanced: {url} (if applicable)
-- Switched to {default-branch} branch
+```bash
+gh pr edit {pr-url} --body "## Summary
+Completes {taskId}: {taskTitle}
+
+## What Was Delivered
+[Key deliverables from spec.md requirements]
+
+## Technical Implementation
+[Important details from plan.md and actual changes]
+
+## Testing
+[Test results and coverage from validation]
+
+Generated with [Claude Code](https://claude.ai/code)"
+```
+
+## Script Options
+
+The script supports these optional flags:
+
+- `--no-squash` - Skip commit squashing (useful when PR already has review comments)
+- `--no-branch` - Skip branch operations (stay on current branch)
+- `--skip-validation` - Skip pre-flight validation (use with caution)
+
+Example with flags:
+```bash
+bun {base_directory}/scripts/complete-task.ts --no-squash
+```

@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Edit, Read, Task
+allowed-tools: Bash, Edit, Read, Task, Skill
 description: Prepare the current active task for completion (Phase 1 of task completion workflow)
 ---
 
@@ -7,34 +7,42 @@ description: Prepare the current active task for completion (Phase 1 of task com
 
 Run validation checks and code review to ensure the task is ready for completion.
 
-## Step 1: Run Validation Suite
+## Step 1: Get Script Path via Skill
 
-Identify and run the appropriate validation tools for this project:
+First, invoke the `cc-track:cc-track-tools` skill to get the base directory for cc-track scripts.
 
-1. **Type checking** - Run TypeScript or other type checker if present
-2. **Linting** - Run the project's linter (with auto-fix if available), then verify
-3. **Tests** - Run the project's test suite
-4. **Dead code detection** (optional) - Run tools like knip if configured
+Note the base directory provided (e.g., `/path/to/skills/cc-track-tools`).
 
-Track which checks pass/fail.
+## Step 2: Run Validation Script
 
-## Step 2: Report Validation Results
+Run the prepare-completion script using the base directory from Step 1:
 
-If any validation failed:
-- Show what failed with error counts
-- Provide specific fix instructions for each failure
+```bash
+bun {base_directory}/scripts/prepare-completion.ts
+```
+
+The script will:
+- Run TypeScript type checking
+- Run linting with auto-fix
+- Run test suite
+- Run dead code detection (knip)
+- Run code review if validation passes
+
+## Step 3: Interpret Results
+
+The script returns JSON output. Parse and present the results:
+
+**If validation failed:**
+- Show what failed with error counts from `data.validation`
+- Provide specific fix instructions for each failure type
 - Ask user to fix issues and run `/prepare-completion` again
-- **STOP** - do not proceed to code review
+- **STOP** - do not proceed
 
-If all validation passed:
+**If validation passed:**
 - Confirm: "✅ All validation checks passed"
-- Proceed to Step 3
+- If code review was generated, present `data.codeReview` results
 
-## Step 3: Code Review (if validation passed)
-
-Use the code review tool configured for this project (Codex, CodeRabbit, or Claude SDK) to review the changes. Pass the entire active spec folder to the reviewer for context.
-
-After review completes, present the review results to the user with these response guidelines:
+## Step 4: Code Review Response (if review generated)
 
 **Code Review Response Principles:**
 - **Verify first** - Check suggestions against codebase reality before agreeing
