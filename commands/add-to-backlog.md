@@ -2,6 +2,7 @@
 shortname: add-to-backlog
 description: Quickly add an item to the backlog without disrupting current work
 usage: /add-to-backlog "Your idea or bug description"
+allowed-tools: Bash(echo:*)
 ---
 
 !echo "- [$(date +%Y-%m-%d)] $ARGUMENTS" >> .claude/backlog.md

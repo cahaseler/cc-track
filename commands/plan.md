@@ -1,5 +1,6 @@
 ---
 description: Generate technical implementation plan with constitution checks and research
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(test:*), Task, WebSearch, WebFetch, AskUserQuestion
 ---
 
 # Technical Implementation Planning
@@ -7,6 +8,11 @@ description: Generate technical implementation plan with constitution checks and
 **Goal**: Transform tech-agnostic spec into detailed technical design with chosen tech stack.
 
 **Core Principle**: Research before designing. Constitution before committing. Design before tasking.
+
+## Current Context
+
+- Active spec directory: !`ls -1 .claude/specs/ 2>/dev/null | tail -1 || echo "No specs"`
+- Constitution exists: !`test -f .claude/constitution.md && echo "Yes" || echo "No"`
 
 ---
 

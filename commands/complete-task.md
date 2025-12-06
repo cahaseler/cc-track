@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Edit, Read, Task, Skill
+allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(bun:*), Skill
 description: Complete the current active task (Phase 2 of task completion workflow)
 ---
 
@@ -8,6 +8,12 @@ description: Complete the current active task (Phase 2 of task completion workfl
 Finalize the current task by updating metadata, squashing commits, and creating a PR.
 
 **Prerequisites:** Validation must have passed via `/prepare-completion`
+
+## Current Context
+
+- Current branch: !`git branch --show-current`
+- Git status: !`git status --short`
+- Recent commits on this branch: !`git log --oneline -5`
 
 ## Step 1: Get Script Path via Skill
 

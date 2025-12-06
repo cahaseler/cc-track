@@ -1,5 +1,6 @@
 ---
 description: Create a feature specification through Socratic questioning and iterative refinement
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(mkdir:*), Bash(ls:*), Task, AskUserQuestion, WebSearch, WebFetch
 ---
 
 # Creating Feature Specifications
@@ -7,6 +8,11 @@ description: Create a feature specification through Socratic questioning and ite
 **Goal**: Transform rough ideas into complete, tech-agnostic specifications through systematic questioning.
 
 **Core Principle**: Gather complete understanding through questions. Continue until all ambiguities are resolved. Documents come last.
+
+## Current Context
+
+- Current branch: !`git branch --show-current`
+- Existing specs: !`ls -1 .claude/specs/ 2>/dev/null || echo "No specs yet"`
 
 ---
 

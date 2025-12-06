@@ -1,11 +1,16 @@
 ---
-allowed-tools: Bash, Edit, Read, Task, Skill, SlashCommand
+allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(bun:*), Task, Skill
 description: Prepare the current active task for completion (Phase 1 of task completion workflow)
 ---
 
 # Prepare Task for Completion
 
 Run validation checks and multi-agent spec-focused code review to ensure the task is ready for completion.
+
+## Current Context
+
+- Current branch: !`git branch --show-current`
+- Changes to review: !`git diff --stat`
 
 ## Step 1: Get Script Path via Skill
 
