@@ -304,14 +304,16 @@ function buildSuccessMessages(state: CompleteTaskState, warnings: string[]): Com
   let summaryIndex = 1;
 
   if (state.github?.prCreated && state.github.prUrl) {
-    messages.push('Don\'t panic! You might have just seen a system reminder that a bucnh of files were reverted. This is completely normal because we\'ve just switched back to main. All the work is safely pushed on the working branch and waiting to be merged in the pull request.\n');
+    messages.push(
+      "Don't panic! You might have just seen a system reminder that a bucnh of files were reverted. This is completely normal because we've just switched back to main. All the work is safely pushed on the working branch and waiting to be merged in the pull request.\n",
+    );
     messages.push('### 1. Enhance the Pull Request\n');
     messages.push('A PR was created automatically. Enhance its description with comprehensive details:\n');
     messages.push('```bash');
     messages.push(
       `gh pr edit ${state.github.prUrl} --body "## Summary\\nCompletes ${state.taskId}: ${state.taskTitle}\\n\\n## What Was Delivered\\n[List the key deliverables from this task]\\n\\n## Technical Implementation\\n[Describe important technical details, architecture decisions, patterns used]\\n\\n## Testing\\n[Explain how changes were tested and the results]"`,
     );
-        messages.push('A PR was created automatically. Enhance its description with comprehensive details:\n');
+    messages.push('A PR was created automatically. Enhance its description with comprehensive details:\n');
     messages.push('```bash');
     messages.push(
       `gh pr edit ${state.github.prUrl} --body "## Summary\\nCompletes ${state.taskId}: ${state.taskTitle}\\n\\n## What Was Delivered\\n[List the key deliverables from this task]\\n\\n## Technical Implementation\\n[Describe important technical details, architecture decisions, patterns used]\\n\\n## Testing\\n[Explain how changes were tested and the results]"`,
@@ -495,9 +497,9 @@ async function performSquashAndSummary(
     commitUncommittedChanges(
       projectRoot,
       options.message ||
-      (branchContext.existingPr
-        ? `docs: update ${state.taskId} based on PR feedback`
-        : `docs: update ${state.taskId} documentation`),
+        (branchContext.existingPr
+          ? `docs: update ${state.taskId} based on PR feedback`
+          : `docs: update ${state.taskId} documentation`),
       deps,
       state,
       warnings,
@@ -659,7 +661,7 @@ function handleGitHubWorkflow(
         state.git.branchMerged = false;
         try {
           deps.execSync(`git checkout ${branchMatch[1]}`, { cwd: projectRoot });
-        } catch { }
+        } catch {}
       }
     } else {
       state.git.notes = branchMatch
