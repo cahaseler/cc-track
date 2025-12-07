@@ -1,3 +1,10 @@
+## [3.1.2](https://github.com/cahaseler/cc-track/compare/v3.1.1...v3.1.2) (2025-12-07)
+
+
+### Bug Fixes
+
+* update branch protection message to reference /cc-track:specify ([88bf8f4](https://github.com/cahaseler/cc-track/commit/88bf8f4ab26abd2f1a4b8a1133cf66f12bcbae53))
+
 ## [3.1.1](https://github.com/cahaseler/cc-track/compare/v3.1.0...v3.1.1) (2025-12-07)
 
 
