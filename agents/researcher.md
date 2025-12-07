@@ -18,16 +18,7 @@ description: |
   </example>
 model: haiku
 color: purple
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebSearch
-  - WebFetch
-  - Write
-  - Edit
-  - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+tools: Read, Grep, Glob, WebSearch, WebFetch, Write, Edit, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 ---
 
 # Research Subagent

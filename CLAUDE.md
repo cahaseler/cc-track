@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.cc-track/specs/107-migrate-specify-command-to-script/spec.md
+@.cc-track/specs/108-improve-review-agents-and-prepare-completion/spec.md
 
 ## Product Vision
 @.cc-track/product_context.md
