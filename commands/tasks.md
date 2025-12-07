@@ -1,12 +1,12 @@
 ---
-description: Generate actionable task breakdown following TDD principles
+description: Generate phase-based TDD breakdown with subagent orchestration
 ---
 
-# Task Generation
+# Task Generation (Phase-Based TDD Orchestration)
 
-**Goal**: Convert technical plan into numbered, ordered, testable tasks.
+**Goal**: Convert technical plan into phases, where each phase is a testable chunk of functionality executed by specialized subagents in TDD order.
 
-**Core Principle**: Tests before implementation. Parallel where possible. TDD strictly enforced.
+**Core Principle**: Each phase follows the TDD cycle: Stub → Tests (fail) → Implement (pass) → Validate. Phases can run in parallel when independent. Non-testable phases require explicit TDD Waiver approval.
 
 ---
 
@@ -19,306 +19,425 @@ description: Generate actionable task breakdown following TDD principles
 - Parse out the directory: `.cc-track/specs/NNN-feature-name`
 
 **Read design files**:
-- Read `.cc-track/specs/NNN-feature-name/plan.md`
+- Read `.cc-track/specs/NNN-feature-name/spec.md` (requirements)
+- Read `.cc-track/specs/NNN-feature-name/plan.md` (technical design)
 - Read `.cc-track/specs/NNN-feature-name/data-model.md` (if exists)
 - List `.cc-track/specs/NNN-feature-name/contracts/` (if exists)
 
 **Verify**:
+- [ ] spec.md exists with clear requirements
 - [ ] plan.md exists and complete
 - [ ] Tech stack defined
-- [ ] Design documents present
 
-**If plan incomplete**:
+**If prerequisites missing**:
 ```
-❌ Cannot generate tasks without complete plan.
+❌ Cannot generate tasks without complete specification and plan.
 
 Missing: [what's missing]
-Run `/cc-track:plan` first to complete technical design.
+Run `/cc-track:specify` or `/cc-track:plan` first.
 ```
 
 ---
 
-## Phase 1: Task Extraction
+## Phase 1: Identify Testable Functionality Chunks
 
-### From Contracts (if present)
-**Each contract file → Contract test task**
-```
-T00X [P] Contract test POST /api/users in tests/contract/test_users_post.test.ts
-```
-Mark `[P]` - different files, parallel-safe.
+Break the feature into **phases** where each phase:
+- Represents a testable piece of functionality
+- Can have tests written that verify it works
+- Is small enough for focused implementation
+- Is large enough to be meaningful (not single-function granularity)
 
-### From Data Model (if present)
-**Each entity → Model creation task**
-```
-T00X [P] User model in src/models/user.ts
-T00X [P] Session model in src/models/session.ts
-```
-Mark `[P]` - different files, parallel-safe.
+**Good phase granularity**:
+- "Email validation module" (validateEmail, isDisposableEmail)
+- "User authentication service" (login, logout, validateSession)
+- "API endpoint for user creation" (POST /users with validation)
 
-### From User Stories (spec.md)
-**Each story → Integration test**
-```
-T00X [P] Integration test user registration in tests/integration/test_registration.test.ts
-T00X [P] Integration test login flow in tests/integration/test_login.test.ts
-```
-Mark `[P]` - different files, parallel-safe.
+**Too granular** (avoid):
+- "Implement validateEmail function"
+- "Add null check to login"
 
-### From Implementation Plan
-**For each component/service/feature**:
-- Setup tasks
-- Implementation tasks
-- Integration tasks
-- Polish tasks
+**Too broad** (avoid):
+- "Implement entire user system"
+- "Build all API endpoints"
 
----
+### Identify Dependencies
 
-## Phase 2: Task Ordering
+For each phase, determine:
+- Does it depend on other phases completing first?
+- Can it run in parallel with other phases?
 
-### Ordering Rules:
+Mark phases `[P]` when they:
+- ✅ Work on different files/modules
+- ✅ Have no data dependencies on other phases
+- ✅ Can be implemented independently
 
-**1. Setup First**
-```
-T001 Create project structure per plan
-T002 Initialize [language] with dependencies
-T003 [P] Configure linting/formatting
-T004 [P] Set up testing framework
-```
+Do NOT mark `[P]` when:
+- ❌ Phase B imports from Phase A's output
+- ❌ Phases modify the same files
+- ❌ Integration requires sequential completion
 
-**2. Tests Before Implementation (TDD)**
-```
-## Phase 2: Tests First ⚠️ MUST COMPLETE BEFORE PHASE 3
+### Identify Non-Testable Phases (TDD Waivers)
 
-T005 [P] Contract test POST /api/users
-T006 [P] Contract test GET /api/users/{id}
-T007 [P] Integration test registration
-T008 [P] Integration test login
-```
+Some phases are not suitable for TDD because they don't involve testable code:
 
-**Tip**: For generating comprehensive test suites, consider using the **test-generation** subagent:
-```
-Task: "Create comprehensive tests for [module/function] following TDD principles"
-Subagent: test-generation
-```
+**Valid waiver reasons:**
+- Markdown/documentation files only
+- Configuration files (JSON, YAML, etc.)
+- Non-functional refactoring (moving files, renaming, restructuring)
+- Template/prompt files
+- Static assets
 
-The test-generation agent will:
-- Generate tests that fail first (TDD-compliant)
-- Test behavior, not mocks
-- Use proper dependency injection
-- Follow project testing patterns
-- Escalate if code isn't testable (needs refactoring)
+**NOT valid waiver reasons:**
+- "Tests are hard to write" - find a way
+- "It's just a small change" - small changes need tests too
+- "We'll add tests later" - no, TDD means tests first
 
-**3. Implementation After Tests**
-```
-## Phase 3: Core Implementation (ONLY after tests failing)
-
-T009 [P] User model in src/models/user.ts
-T010 [P] UserService in src/services/user_service.ts
-T011 POST /api/users endpoint
-T012 GET /api/users/{id} endpoint
-```
-
-**4. Integration & Polish Last**
-```
-## Phase 4: Integration
-T013 Connect UserService to database
-T014 Add authentication middleware
-
-## Phase 5: Polish
-T015 [P] Performance tests (<200ms target)
-T016 [P] Update documentation
-T017 Remove duplication
-```
-
-### Parallel Marking Rules:
-- ✅ **Mark [P]**: Different files, no dependencies
-- ❌ **NO [P]**: Same file modifications
-- ❌ **NO [P]**: Has dependencies on other tasks
+For phases requiring a waiver, mark them `[TDD WAIVER REQUESTED]` in the initial tasks.md draft.
 
 ---
 
-## Phase 3: Task File Generation
+## Phase 2: Generate tasks.md
 
-Use `templates/tasks-template.md` and fill:
+Use `templates/tasks-template.md` as the base structure.
 
-### Header
+### Structure
+
 ```markdown
 # Tasks: [Feature Name]
 
 **Feature ID**: `[task_id]`
 **Branch**: `[branch]`
-```
+**Prerequisites**: plan.md, spec.md
+**Orchestration**: Phase-based TDD with specialized subagents
 
-### Phases with Tasks
-```markdown
-## Phase 1: Setup
-- [ ] T001 Create project structure...
-- [ ] T002 Initialize TypeScript...
+## Orchestration Model
 
-## Phase 2: Tests First ⚠️ MUST COMPLETE BEFORE PHASE 3
-**CRITICAL: Tests MUST fail before implementation**
-- [ ] T003 [P] Contract test...
-- [ ] T004 [P] Integration test...
+Each phase is executed by four specialized subagents in sequence:
+1. **Stub Writer** → Creates minimal exports so imports resolve
+2. **Test Writer** → Writes failing tests, runs them, reports output
+3. **Implementer** → Makes tests pass, runs them, reports output
+4. **Validator** → Verifies requirements met, runs tests independently
 
-## Phase 3: Core Implementation (ONLY after tests failing)
-- [ ] T005 [P] User model...
-- [ ] T006 [P] UserService...
+The orchestrator (you) coordinates these agents, reviews their output, and handles any escalations.
 
-## Phase 4: Integration
-- [ ] T007 Connect to database...
+---
 
-## Phase 5: Polish
-- [ ] T008 [P] Performance tests...
-- [ ] T009 [P] Documentation...
-```
+## Phase 1: [Phase Name]
 
-### Dependencies Section
-```markdown
+**Requirement**: [What this phase accomplishes - reference spec.md]
+**Files**: [List of files this phase creates/modifies]
+
+### Steps:
+1. [ ] **Stub**: Create exports in [files] so imports resolve
+2. [ ] **Tests**: Write failing tests in [test files]
+3. [ ] **Implement**: Make tests pass in [implementation files]
+4. [ ] **Validate**: Verify requirements met
+
+---
+
+## Phase 2: [Phase Name] [P]
+
+(Mark [P] if can run parallel with Phase 1)
+
+**Requirement**: [What this phase accomplishes]
+**Files**: [List of files]
+
+### Steps:
+1. [ ] **Stub**: ...
+2. [ ] **Tests**: ...
+3. [ ] **Implement**: ...
+4. [ ] **Validate**: ...
+
+---
+
+## Phase 3: [Phase Name] [TDD WAIVER REQUESTED]
+
+**Requirement**: [What this phase accomplishes]
+**Files**: [List of non-code files]
+**Waiver Reason**: [Why TDD doesn't apply - e.g., "Markdown documentation only"]
+
+### Steps:
+1. ~~**Stub**~~: N/A - no code exports
+2. ~~**Tests**~~: N/A - no testable behavior
+3. [ ] **Implement**: Create/modify [files]
+4. [ ] **Validate**: Review implementation meets requirements
+
+---
+
+## Status Checkpoints
+
+Checkpoints pause for user approval before continuing.
+
+- [ ] **Checkpoint A**: After Phases 1-3 complete
+- [ ] **Checkpoint B**: After Phases 4-6 complete
+- [ ] **Final**: All phases complete, ready for /cc-track:prepare-completion
+
+---
+
 ## Dependencies
-- Setup (T001-T002) before Tests (T003-T004)
-- Tests (T003-T004) before Implementation (T005-T006)
-- T005 blocks T006
-- Implementation before Integration (T007)
-- Integration before Polish (T008-T009)
+
+```
+Phase 1 ──┐
+Phase 2 [P]├──→ Phase 5 ──→ Phase 7
+Phase 3 [P]├──→ Phase 6 ──┘
+Phase 4 ──┘
 ```
 
-### Parallel Examples
-```markdown
-## Parallel Example
-```bash
-# Launch T003-T004 together:
-Task: "Contract test POST /api/users in tests/contract/users_post.test.ts"
-Task: "Integration test registration in tests/integration/registration.test.ts"
-```
-```
+- Phases 1-4 must complete before Phase 5-6
+- Phase 2 and 3 can run in parallel
+- Phase 5 and 6 must complete before Phase 7
 
-### Validation Checklist
-```markdown
+---
+
+## Orchestration Instructions
+
+When the user approves this task breakdown and says to begin implementation:
+
+### For Sequential Phases
+
+Dispatch subagents one at a time in TDD order:
+
+1. **Stub Writer**:
+   ```
+   Task tool with subagent_type: stub-writer
+   Prompt: "Phase N: [Phase Name]. Create stubs for [files] with exports: [list exports needed]"
+   ```
+   → On success: Check off "Stub" checkbox in tasks.md
+
+2. **Test Writer** (after stub complete):
+   ```
+   Task tool with subagent_type: test-generation
+   Prompt: "Phase N: [Phase Name]. Write tests for [requirements]. Test files: [paths]. Run tests and report output."
+   ```
+   → On success: Check off "Tests" checkbox in tasks.md
+
+3. **Implementer** (after tests written and failing):
+   ```
+   Task tool with subagent_type: implementer
+   Prompt: "Phase N: [Phase Name]. Make tests pass. Implementation files: [paths]. Run tests and report output."
+   ```
+   → On success: Check off "Implement" checkbox in tasks.md
+
+4. **Validator** (after implementation):
+   ```
+   Task tool with subagent_type: validator
+   Prompt: "Phase N: [Phase Name]. Verify: [requirements from spec]. Run tests independently. Report pass/fail."
+   ```
+   → On success: Check off "Validate" checkbox in tasks.md
+
+**IMPORTANT**: Update tasks.md checkboxes immediately after each subagent returns successfully. This keeps progress visible and ensures state is preserved across context compactions.
+
+### For Parallel Phases
+
+When multiple phases are marked [P]:
+
+1. Dispatch ALL stub writers for parallel phases as background agents:
+   ```
+   Task tool with run_in_background: true for each phase
+   ```
+
+2. Post status update: "Dispatched stub writers for Phases 2, 3, 4. Waiting for completion..."
+
+3. Wait for all with AgentOutputTool (block: true)
+
+4. **Update tasks.md**: Check off all "Stub" checkboxes for completed phases
+
+5. Repeat pattern for test writers, implementers, validators - always updating checkboxes after each batch completes
+
+### For Waived Phases
+
+Phases marked `[TDD WAIVER APPROVED]` skip Stub and Tests steps:
+
+1. **Implementer** (directly):
+   ```
+   Task tool with subagent_type: implementer
+   Prompt: "Phase N: [Phase Name] [TDD WAIVER]. Implement [requirements]. Files: [paths].
+   Note: This phase has a TDD waiver - no stub or tests. If this is a refactor, run existing tests to ensure nothing breaks. Report results."
+   ```
+   → On success: Check off "Implement" checkbox
+
+2. **Validator**:
+   ```
+   Task tool with subagent_type: validator
+   Prompt: "Phase N: [Phase Name] [TDD WAIVER]. Verify: [requirements].
+   For refactors: Run tests to confirm nothing broke.
+   For non-code: Review that implementation meets requirements.
+   Report pass/fail."
+   ```
+   → On success: Check off "Validate" checkbox
+
+### At Checkpoints
+
+When reaching a checkpoint:
+
+1. Summarize progress:
+   ```
+   Checkpoint A reached.
+
+   Completed:
+   - Phase 1: ✅ Email validation (all tests passing)
+   - Phase 2: ✅ Password validation (all tests passing)
+   - Phase 3: ✅ User model (all tests passing)
+
+   Next: Phases 4-6 (Authentication service)
+
+   Continue?
+   ```
+
+2. Wait for user approval before proceeding.
+
+### On Complications
+
+If a subagent reports an issue it cannot resolve:
+
+1. **Stop** delegating new tasks immediately
+2. **Wait** for any in-flight background agents to complete
+3. **Update** this tasks.md with current status
+4. **Raise** the issue with the user:
+   ```
+   Complication in Phase 3 (Implementer):
+
+   Issue: Tests expect database injection but stub has no parameter for it.
+   Subagent recommendation: Add db parameter to UserService constructor.
+
+   Options:
+   A) Have stub writer add the parameter, re-run test writer
+   B) Modify approach - use singleton database connection
+   C) Your guidance needed
+   ```
+
+---
+
 ## Validation Checklist
-- [ ] All contracts have test tasks
-- [ ] All entities have model tasks
-- [ ] All tests come before implementation
-- [ ] Parallel tasks truly independent
-- [ ] Each task specifies exact file path
-- [ ] No [P] task modifies same file as another [P]
+
+Before presenting to user:
+
+- [ ] Each phase represents testable functionality (not too granular, not too broad)
+- [ ] Every phase has all 4 steps (Stub, Tests, Implement, Validate)
+- [ ] Parallel phases [P] are truly independent
+- [ ] Dependencies are clearly documented
+- [ ] Checkpoints placed at reasonable intervals
+- [ ] Orchestration instructions are complete
+- [ ] File paths are specific
 ```
 
-Save to `tasks.md`.
+---
+
+## Phase 3: Checkpoint Placement
+
+Place checkpoints based on feature scope:
+
+**Small feature (3-5 phases)**:
+- One checkpoint after all phases, before final validation
+
+**Medium feature (6-10 phases)**:
+- Checkpoint every 3-4 phases
+- Final checkpoint before completion
+
+**Large feature (10+ phases)**:
+- Checkpoint every 3-4 phases
+- Consider breaking into multiple features
+
+**Checkpoint purposes**:
+- Allow user to review progress
+- Catch issues before too much work proceeds
+- Natural pause points for context management
 
 ---
 
 ## Phase 4: Validation
 
-**Self-check before presenting**:
+Before presenting tasks.md:
 
-### TDD Order Check
-Verify that ALL test tasks have lower numbers than ALL implementation tasks:
-- Find highest test task number (e.g., T008)
-- Find lowest implementation task number (e.g., T009)
-- If any implementation task has a lower number than any test task → **TDD violation**
+### TDD Structure Check
+- Every phase has Stub → Tests → Implement → Validate order
+- No phase skips the test step
+- Implementation never comes before tests
 
 ### Parallel Safety Check
-For all tasks marked `[P]`:
-- List the file path each task modifies
-- Check for duplicate file paths
-- If two `[P]` tasks modify the same file → **Parallel conflict**
+- Phases marked [P] modify different files
+- No data dependencies between parallel phases
+- Parallel phases don't import from each other
 
-### Coverage Check
-- All contracts → tests? ✓
-- All entities → models? ✓
-- All user stories → integration tests? ✓
+### Completeness Check
+- All requirements from spec.md have corresponding phases
+- All entities from data-model.md have implementation phases
+- All endpoints from contracts/ have implementation phases
+
+### Orchestration Check
+- Instructions are clear for sequential execution
+- Instructions are clear for parallel execution
+- Escalation path is documented
 
 ---
 
 ## Phase 5: Presentation & Approval
 
+### If TDD Waivers Requested
+
+Present waiver requests FIRST, before implementation begins:
+
 ```
-Task breakdown complete! 📋
+Phase-based task breakdown complete! 📋
 
-Generated: 28 tasks across 5 phases
-- Phase 1 (Setup): 4 tasks
-- Phase 2 (Tests): 6 tasks [P]
-- Phase 3 (Implementation): 10 tasks (4 [P])
-- Phase 4 (Integration): 5 tasks
-- Phase 5 (Polish): 3 tasks [P]
+Generated: [N] phases
 
-TDD compliance: ✅ All tests before implementation
-Parallel opportunities: 13 tasks marked [P]
-File conflicts: None
+⚠️ TDD WAIVER REQUESTS
+
+The following phases are marked for TDD waiver:
+
+Phase 3: Agent Definition Updates [TDD WAIVER REQUESTED]
+- Files: agents/stub-writer.md, agents/implementer.md
+- Reason: Markdown prompt files only - no testable code
+- Waiver effect: Skip Stub and Tests steps, Implementer creates files, Validator reviews
+
+Phase 7: Template Updates [TDD WAIVER REQUESTED]
+- Files: templates/tasks-template.md
+- Reason: Markdown template - no testable behavior
+- Waiver effect: Skip Stub and Tests steps, Implementer creates files, Validator reviews
+
+Do you approve these waivers? (yes/no/discuss)
+```
+
+**On waiver approval**: Update tasks.md to change `[TDD WAIVER REQUESTED]` → `[TDD WAIVER APPROVED]`
+
+**On waiver rejection**: Discuss with user how to make the phase testable, or remove it from scope.
+
+### After Waivers Resolved
+
+```
+Phase-based task breakdown complete! 📋
+
+Generated: [N] phases
+- Phases 1-3: Core validation modules [P]
+- Phases 4-5: Authentication service
+- Phase 6: API endpoints
+- Phase 7: Template updates [TDD WAIVER APPROVED]
+
+Checkpoints: 2 (after Phase 3, after Phase 6)
+Parallel opportunities: Phases 1-3 can run concurrently
+TDD Waivers: 1 approved (Phase 7)
+
+Orchestration model:
+- Each phase: Stub → Tests → Implement → Validate
+- Waived phases: Implement → Validate only
+- Subagents: stub-writer, test-generation, implementer, validator
+- You coordinate, review output, handle escalations
 
 Created: .cc-track/specs/[ID]-[name]/tasks.md
 
-Ready to begin implementation?
-
-Note: You'll work through these tasks sequentially (or in parallel where marked).
-When ready to start, just say "yes" or "let's implement" and I'll begin with Task 001.
+Ready to begin orchestrated implementation?
 ```
 
 **Wait for user approval before implementing.**
-
-User might want to:
-- Review tasks.md
-- Adjust task breakdown
-- Ask questions
-- Defer implementation
-
----
-
-## Common Patterns
-
-### When Tasks Get Too Granular
-```
-User: "This seems like too many small tasks"
-
-Claude: "I can combine related tasks. For example:
-- Merge T005-T007 (all model creation) into single task?
-- Combine T015-T017 (polish phase) into one cleanup task?
-
-Which would you prefer?"
-```
-
-### When Parallel Marking is Unclear
-```
-Claude: "T008 and T009 both modify src/services/user_service.ts,
-so I can't mark them [P]. T008 must complete before T009.
-
-Should I:
-A) Keep sequential (safer)
-B) Split into different files (T008 → user_service.ts, T009 → user_validation.ts)
-
-Recommend: A"
-```
-
-### When User Wants to Skip TDD
-```
-User: "Can we just implement without tests first?"
-
-Claude: "I can reorder, but this violates TDD principles and project patterns.
-
-Risks:
-- Harder to verify correctness
-- More bugs reach production
-- Refactoring becomes scarier
-
-Still want to proceed?"
-```
-
----
-
-## Implementation Notes
-
-- Read `templates/tasks-template.md` as base structure
-- Number sequentially (T001, T002, etc.)
-- Include exact file paths in descriptions
-- Reference specific line numbers from plan if helpful
-- Mark dependencies clearly
-- Generate realistic task count (20-30 typical)
-- Update `.cc-track/specs/NNN-feature-name/.metadata.json` status to "in_progress" when tasks created
 
 ---
 
 ## Next Step
 
-After `/cc-track:tasks` approved by user:
-- **If user says yes**: Begin implementation with T001
-- **If user defers**: Save tasks.md, they can start anytime
-- **If user requests changes**: Revise tasks.md and re-present
+After `/cc-track:tasks` approved:
+- **User says yes**: Begin orchestrated implementation starting with Phase 1
+- **User defers**: tasks.md saved, they can start anytime
+- **User requests changes**: Revise tasks.md and re-present
+
+When implementation begins, follow the Orchestration Instructions in tasks.md exactly.
