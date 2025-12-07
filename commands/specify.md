@@ -20,7 +20,7 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(bun:
 
 ---
 
-## Phase 0: Create Infrastructure FIRST
+## Step 1: Create Infrastructure FIRST
 
 **CRITICAL**: Infrastructure must be created BEFORE any Socratic questioning or research begins. This prevents getting distracted before the branch/folder exist.
 
@@ -33,7 +33,7 @@ If script fails, report error and stop.
 
 ---
 
-## Phase 1: Understanding (Socratic Questioning)
+## Step 2: Understanding (Socratic Questioning)
 
 **Now** that infrastructure exists, build complete understanding through questions.
 
@@ -89,7 +89,7 @@ As understanding develops, systematically check these areas for gaps:
 
 ---
 
-## Phase 1.5: Complexity Assessment & Exploration
+## Step 3: Complexity Assessment & Exploration
 
 **After initial Purpose/Scope questions**, assess whether codebase exploration would improve the specification.
 
@@ -108,7 +108,7 @@ If needed, spawn 1-2 Explore agents (parallel via Task tool). Results inform you
 
 ---
 
-## Phase 2: Artifact Creation (spec.md)
+## Step 4: Artifact Creation (spec.md)
 
 Once you have **complete** understanding (all taxonomy areas covered, no remaining ambiguities):
 
@@ -120,10 +120,10 @@ Once you have **complete** understanding (all taxonomy areas covered, no remaini
 
 ---
 
-## Phase 3: Presentation
+## Step 5: Presentation
 
 Show the user:
-1. **Branch**: `{taskId}-{featureName}` (created in Phase 0)
+1. **Branch**: `{taskId}-{featureName}` (created in Step 1)
 2. **Spec location**: `.cc-track/specs/{taskId}-{featureName}/spec.md`
 3. **Content preview**: Show first 30-40 lines
 4. **Next step**: "Ready to run `/cc-track:plan` for technical design?"

@@ -39,7 +39,7 @@ Run `/cc-track:specify` or `/cc-track:plan` first.
 
 ---
 
-## Phase 1: Identify Testable Functionality Chunks
+## Step 1: Identify Testable Functionality Chunks
 
 Break the feature into **phases** where each phase:
 - Represents a testable piece of functionality
@@ -96,7 +96,7 @@ For phases requiring a waiver, mark them `[TDD WAIVER REQUESTED]` in the initial
 
 ---
 
-## Phase 2: Generate tasks.md
+## Step 2: Generate tasks.md
 
 Use `templates/tasks-template.md` as the base structure.
 
@@ -323,7 +323,7 @@ Before presenting to user:
 
 ---
 
-## Phase 3: Checkpoint Placement
+## Step 3: Checkpoint Placement
 
 Place checkpoints based on feature scope:
 
@@ -345,7 +345,7 @@ Place checkpoints based on feature scope:
 
 ---
 
-## Phase 4: Validation
+## Step 4: Validation
 
 Before presenting tasks.md:
 
@@ -371,7 +371,7 @@ Before presenting tasks.md:
 
 ---
 
-## Phase 5: Presentation & Approval
+## Step 5: Presentation & Approval
 
 ### If TDD Waivers Requested
 

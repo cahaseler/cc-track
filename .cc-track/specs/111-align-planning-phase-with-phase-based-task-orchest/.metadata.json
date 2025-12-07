@@ -1,0 +1,12 @@
+{
+  "task_id": "111",
+  "feature_name": "align-planning-phase-with-phase-based-task-orchest",
+  "branch": "111-align-planning-phase-with-phase-based-task-orchest",
+  "status": "completed",
+  "started": "2025-12-07T17:14:02.597Z",
+  "github": {
+    "issue": 168,
+    "url": "https://github.com/cahaseler/cc-track/issues/168"
+  },
+  "completed": "2025-12-07"
+}
