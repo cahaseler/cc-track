@@ -335,7 +335,7 @@ Note: If you genuinely need historical ${yearCheck.detectedYear} information, tr
               hookSpecificOutput: {
                 hookEventName: 'PreToolUse',
                 permissionDecision: 'deny' as const,
-                permissionDecisionReason: `🚫 Branch Protection: Cannot edit files on protected branch '${currentBranch}'\n\nYou are currently on a protected branch. To make changes:\n1. Enter planning mode to start a new task (which will create a feature branch)\n2. Or switch to an existing feature branch if you're continuing work\n\n${allowGitignored ? 'Note: Edits to gitignored files are allowed on protected branches.' : ''}`,
+                permissionDecisionReason: `🚫 Branch Protection: Cannot edit files on protected branch '${currentBranch}'\n\nYou are currently on a protected branch. To make changes:\n1. Use /cc-track:specify to start a new task (creates a feature branch automatically)\n2. Or create a feature branch manually: git checkout -b feature/your-feature-name\n\n${allowGitignored ? 'Note: Edits to gitignored files are allowed on protected branches.' : ''}`,
               },
             };
           }
