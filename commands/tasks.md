@@ -227,22 +227,9 @@ Dispatch subagents one at a time in TDD order:
 
 **IMPORTANT**: Update tasks.md checkboxes immediately after each subagent returns successfully. This keeps progress visible and ensures state is preserved across context compactions.
 
-### For Parallel Phases
+### For Parallel Phases and Dependency Enforcement
 
-When multiple phases are marked [P]:
-
-1. Dispatch ALL stub writers for parallel phases as background agents:
-   ```
-   Task tool with run_in_background: true for each phase
-   ```
-
-2. Post status update: "Dispatched stub writers for Phases 2, 3, 4. Waiting for completion..."
-
-3. Wait for all with AgentOutputTool (block: true)
-
-4. **Update tasks.md**: Check off all "Stub" checkboxes for completed phases
-
-5. Repeat pattern for test writers, implementers, validators - always updating checkboxes after each batch completes
+See `templates/tasks-template.md` for the orchestration patterns (pipeline flow, polling fallback, dependency rules). These are included in the generated tasks.md and followed during execution.
 
 ### For Waived Phases
 
