@@ -59,34 +59,42 @@ Launch the multi-agent spec-focused code review using the Task tool.
 **Identify Active Spec:**
 - Read CLAUDE.md to find the active spec folder path
 - Look for `## Active Task` section with `@.cc-track/specs/NNN-feature-name/` reference
+- Note the full spec folder path (e.g., `.cc-track/specs/108-feature-name/`)
+
+**Context to Pass to All Agents:**
+
+Every agent prompt MUST include this context:
+1. **Spec folder path**: The full path to the spec folder
+2. **Validation status**: "TypeScript, linting, and tests have all passed"
+3. **Diff target**: "Compare changes against main branch using `git diff main`"
 
 **Launch All 8 Review Agents in Parallel:**
 
-Use the Task tool to launch these agents simultaneously:
+Use the Task tool to launch these agents simultaneously. Include the context above in each prompt:
 
 1. **spec-compliance-reviewer** (haiku)
-   - Prompt: "Review implementation against spec.md at {spec_folder_path}. Run git diff to see changes. Check all requirements from spec.md are implemented. Report issues with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Review implementation against spec.md. Use `git diff main` to see changes against main branch. Check all requirements from spec.md are implemented. Report issues with confidence >= 80."
 
 2. **plan-adherence-reviewer** (haiku)
-   - Prompt: "Review implementation against plan.md at {spec_folder_path}. Run git diff to see changes. Check technical design was followed. Report deviations with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Review implementation against plan.md. Use `git diff main` to see changes against main branch. Check technical design was followed. Report deviations with confidence >= 80."
 
 3. **task-completion-reviewer** (haiku)
-   - Prompt: "Review task completion against tasks.md at {spec_folder_path}. Run git diff to see changes. Verify all tasks are actually complete. Report incomplete tasks with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Review task completion against tasks.md. Use `git diff main` to see changes against main branch. Verify all tasks are actually complete. Report incomplete tasks with confidence >= 80."
 
 4. **bug-scanner** (sonnet)
-   - Prompt: "Scan changed files for bugs, silent failures, and security issues. Run git diff to see changes. Focus on error handling, null checks, and edge cases. Report bugs with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Scan changed files for bugs, silent failures, and security issues. Use `git diff main` to see changes against main branch. Focus on error handling, null checks, and edge cases. Report bugs with confidence >= 80."
 
 5. **guidelines-reviewer** (haiku)
-   - Prompt: "Review code against CLAUDE.md and .cc-track/constitution.md guidelines. Run git diff to see changes. Check project conventions are followed. Report violations with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Review code against CLAUDE.md and .cc-track/constitution.md guidelines. Use `git diff main` to see changes against main branch. Read spec.md/plan.md/tasks.md to understand approved scope before flagging unauthorized changes. Report violations with confidence >= 80."
 
 6. **comment-compliance-reviewer** (haiku)
-   - Prompt: "Review comments in changed files for accuracy. Run git diff to see changes. Check for stale comments, misleading docs, and unresolved TODOs. Report issues with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Review comments in changed files for accuracy. Use `git diff main` to see changes against main branch. Check for stale comments, misleading docs, and unresolved TODOs. Report issues with confidence >= 80."
 
 7. **duplication-detector** (haiku)
-   - Prompt: "Check if the AI-generated code duplicates existing functionality. Run git diff to see new code. Search codebase for similar implementations. Check dependencies for features that may already exist. Report duplicates with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Check if the AI-generated code duplicates existing functionality. Use `git diff main` to see new code. Search codebase for similar implementations. Check dependencies for features that may already exist. Report duplicates with confidence >= 80."
 
 8. **dead-code-detector** (haiku)
-   - Prompt: "Check for dead, orphaned, or deprecated code after the AI's changes. Run git diff to see what changed. Look for orphaned files, stale imports, unused exports, and incomplete cleanup from refactoring. Report dead code with confidence >= 80."
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Check for dead, orphaned, or deprecated code. Use `git diff main` to see changes against main branch. Read spec.md/tasks.md to understand what may be intentionally deprecated. Report dead code with confidence >= 80."
 
 **IMPORTANT:** Launch all 8 agents in a single message with multiple Task tool calls for parallel execution.
 

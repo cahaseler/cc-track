@@ -18,19 +18,7 @@ description: |
   </example>
 model: haiku
 color: green
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - Edit
-  - Bash(bun test:*)
-  - Bash(npm test:*)
-  - Bash(npm run test:*)
-  - Bash(yarn test:*)
-  - Bash(pnpm test:*)
-  - Bash(npx vitest:*)
-  - Bash(npx jest:*)
+tools: Read, Grep, Glob, Write, Edit, Bash(bun test:*), Bash(npm test:*), Bash(npm run test:*), Bash(yarn test:*), Bash(pnpm test:*), Bash(npx vitest:*), Bash(npx jest:*)
 ---
 
 # Test Generation Subagent
