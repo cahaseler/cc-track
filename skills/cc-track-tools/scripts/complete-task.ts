@@ -793,6 +793,12 @@ export async function runCompleteTask(
     warnings.push('no_active_task.md not found');
   }
 
+  // Clear active spec reference from CLAUDE.md BEFORE commit/push so it's included in the PR
+  let updatedClaudeMd = deps.fs.readFileSync(claudeMdPath, 'utf-8');
+  updatedClaudeMd = updatedClaudeMd.replace(/@\.cc-track\/specs\/\d+-[^/]+\/spec\.md/, '@.cc-track/no_active_task.md');
+  deps.fs.writeFileSync(claudeMdPath, updatedClaudeMd);
+  state.updates.claudeMd = 'cleared active spec';
+
   const branchContext = detectBranchContext(projectRoot, deps, options);
   await performSquashAndSummary(projectRoot, options, deps, state, branchContext, warnings);
 
@@ -811,12 +817,6 @@ export async function runCompleteTask(
     revertTaskChanges(projectRoot, state, deps);
     return buildFailureResult(state, failureResult);
   }
-
-  // Clear active spec reference from CLAUDE.md on successful completion
-  let updatedClaudeMd = deps.fs.readFileSync(claudeMdPath, 'utf-8');
-  updatedClaudeMd = updatedClaudeMd.replace(/@\.cc-track\/specs\/\d+-[^/]+\/spec\.md/, '@.cc-track/no_active_task.md');
-  deps.fs.writeFileSync(claudeMdPath, updatedClaudeMd);
-  state.updates.claudeMd = 'cleared active spec';
 
   const messages = buildSuccessMessages(state, warnings);
   return buildSuccessResult(state, messages);
