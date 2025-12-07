@@ -1,3 +1,11 @@
+## [3.1.1](https://github.com/cahaseler/cc-track/compare/v3.1.0...v3.1.1) (2025-12-07)
+
+
+### Bug Fixes
+
+* lint ([c2fd67f](https://github.com/cahaseler/cc-track/commit/c2fd67f31a39dcc86bfc5cf07500a8972b2161f4))
+* move warning about file change system reminder into script output in case agent skips the command and runs the script directly ([b2cd471](https://github.com/cahaseler/cc-track/commit/b2cd4714f06e56590ed3fc2a6d8ea6b96094bdb8))
+
 # [3.1.0](https://github.com/cahaseler/cc-track/compare/v3.0.6...v3.1.0) (2025-12-07)
 
 
