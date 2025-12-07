@@ -20,3 +20,4 @@
 - [2025-12-06] Improve task generate mode to explicitly plan which sets of tasks can be assigned to subagents, which subagents to use, workflow for validating subagent work, etc. Take guidance from anthropic's feature dev skill and obrajesse's superpowers skills.
 - [2025-12-06] Update guidelines-reviewer agent definition to read spec.md/plan.md for task context before flagging 'unauthorized changes' - currently reviews in isolation without awareness of approved scope
 - [2025-12-06] tweak the specify command to tell claude he can create a task title and begin work, he doesn't need to check for approval of the task title unless he has no idea
+- [2025-12-07] Adjust code review agent guidelines to specify non-background parallel execution.

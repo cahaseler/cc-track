@@ -1,0 +1,12 @@
+{
+  "task_id": "110",
+  "feature_name": "task-orchestration-system-overhaul",
+  "branch": "110-task-orchestration-system-overhaul",
+  "status": "completed",
+  "started": "2025-12-07T13:49:29.704Z",
+  "github": {
+    "issue": 166,
+    "url": "https://github.com/cahaseler/cc-track/issues/166"
+  },
+  "completed": "2025-12-07"
+}
