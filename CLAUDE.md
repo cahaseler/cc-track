@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.cc-track/specs/108-improve-review-agents-and-prepare-completion/spec.md
+@.cc-track/no_active_task.md
 
 ## Product Vision
 @.cc-track/product_context.md
