@@ -1,0 +1,12 @@
+{
+  "task_id": "109",
+  "feature_name": "add-scoring-agent-pattern-to-code-review-process",
+  "branch": "109-add-scoring-agent-pattern-to-code-review-process",
+  "status": "completed",
+  "started": "2025-12-07T01:33:53.713Z",
+  "github": {
+    "issue": 164,
+    "url": "https://github.com/cahaseler/cc-track/issues/164"
+  },
+  "completed": "2025-12-06"
+}

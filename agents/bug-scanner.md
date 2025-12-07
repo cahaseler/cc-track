@@ -25,7 +25,7 @@ description: |
   </example>
 model: sonnet
 color: red
-tools: Read, Grep, Glob, LS, Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git show:*), Bash(bunx knip:*)
+tools: Read, Grep, Glob, LS
 ---
 
 ## Development Context
@@ -34,7 +34,7 @@ tools: Read, Grep, Glob, LS, Bash(git diff:*), Bash(git log:*), Bash(git status:
 
 - **Validation Status**: TypeScript type checking, linting, and tests have ALREADY PASSED before this review was requested
 - **Working Directory**: Unstaged and uncommitted changes are EXPECTED - this is normal development state
-- **Change Scope**: Use `git diff main` to see changes against the main branch
+- **Change Scope**: The orchestrator provides a list of modified files in the prompt
 - **Spec Context**: If a spec folder path is provided, read spec.md, plan.md, and tasks.md to understand what changes were approved
 
 Do not flag:
@@ -114,34 +114,13 @@ For every high-risk location, check:
 - Is memory cleaned up (event listeners, intervals)?
 - Are there potential memory leaks?
 
-### 3. Rate Each Issue
+### 3. Report All Potential Issues
 
-**Confidence Scoring (0-100):**
-
-- **90-100**: Definite bug
-  - Null pointer that will crash
-  - SQL injection vulnerability
-  - Empty catch block
-  - Unhandled promise rejection
-
-- **80-89**: Very likely bug
-  - Missing error handling on network call
-  - No validation on user input
-  - Race condition possible
-  - Resource leak on error path
-
-- **50-79**: Possible issue
-  - Error handling exists but could be better
-  - Edge case might not be handled
-  - Code pattern is risky but may work
-
-- **0-49**: Uncertain
-  - Style preference, not actual bug
-  - Context suggests this is intentional
-
-**Only report issues with confidence >= 80 in detail.**
+Report all potential issues found - a separate scoring agent will validate each one. Do not filter based on your confidence level or attempt to rate importance.
 
 ## Output Format
+
+**IMPORTANT:** Do NOT score issues yourself. Output a structured list of potential issues. A separate scoring agent will validate each one.
 
 ```markdown
 # Bug Scan Report
@@ -149,36 +128,21 @@ For every high-risk location, check:
 **Scanned:** [files/changes reviewed]
 **Reviewed:** [timestamp]
 
-## Summary
-[Brief overview: X high-risk areas examined, Y issues found]
+## Issues Found
 
-## Critical Issues (Confidence 90-100)
+### Issue 1
+- **Description:** [What's wrong - the potential bug]
+- **Location:** [file:line where the issue exists]
+- **Observation:** [What you found - the evidence that led to this finding]
 
-### Issue 1: [Bug title]
-- **Confidence:** [score]
-- **Severity:** CRITICAL
+### Issue 2
+- **Description:** [...]
 - **Location:** [file:line]
-- **Problem:** [What's wrong and why it's dangerous]
-- **Impact:** [What could happen - crash, data loss, security breach]
-- **Fix:** [Specific code change needed]
+- **Observation:** [...]
 
-## Important Issues (Confidence 80-89)
+[Continue for all issues found]
 
-### Issue 2: [Bug title]
-- **Confidence:** [score]
-- **Severity:** HIGH
-- **Location:** [file:line]
-- **Problem:** [Description]
-- **Impact:** [Potential consequences]
-- **Fix:** [How to fix]
-
-## Minor Notes (Confidence 50-79)
-
-| Location | Confidence | Concern |
-|----------|------------|---------|
-| [file:line] | [score] | [Brief concern] |
-
-## Clean Areas
+## Verified Safe Areas
 
 The following high-risk areas were reviewed and appear safe:
 - [List of areas that passed inspection]
@@ -234,14 +198,12 @@ After completing your scan, provide a brief summary:
 ```
 Bug scan complete.
 
-Scanned: [N] high-risk areas
-Critical issues: [N]
-Important issues: [N]
-Minor notes: [N]
+High-risk areas examined: [N]
+Issues found: [N]
 
 [If issues found:]
-Top issue: [One sentence describing most critical bug]
+Primary concern: [One sentence describing the most significant issue]
 
 [If no issues:]
-No significant bugs found in the reviewed code.
+No potential bugs found in the reviewed code.
 ```

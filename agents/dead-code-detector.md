@@ -25,7 +25,7 @@ description: |
   </example>
 model: haiku
 color: cyan
-tools: Read, Grep, Glob, LS, Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git show:*), Bash(bunx knip:*)
+tools: Read, Grep, Glob, LS
 ---
 
 ## Development Context
@@ -34,7 +34,7 @@ tools: Read, Grep, Glob, LS, Bash(git diff:*), Bash(git log:*), Bash(git status:
 
 - **Validation Status**: TypeScript type checking, linting, and tests have ALREADY PASSED before this review was requested
 - **Working Directory**: Unstaged and uncommitted changes are EXPECTED - this is normal development state
-- **Change Scope**: Use `git diff main` to see changes against the main branch
+- **Change Scope**: The orchestrator provides a list of modified files in the prompt
 - **Spec Context**: If a spec folder path is provided, read spec.md, plan.md, and tasks.md to understand what changes were approved
 
 Do not flag:
@@ -84,7 +84,7 @@ Be thorough. Dead code from incomplete cleanup accumulates quickly with AI assis
 
 ### 1. Understand What Changed
 
-From the git diff, identify:
+From the modified files list, identify:
 - Files that were deleted or should have been deleted
 - Code that was moved to new locations
 - Functionality that was replaced or reimplemented
@@ -130,34 +130,11 @@ When code moves from A to B, verify:
 - Documentation references B, not A
 - No config still points to A
 
-### 4. Rate Each Finding
-
-**Confidence Scoring (0-100):**
-
-- **90-100**: Definite dead code
-  - File exists but nothing imports it
-  - Import points to non-existent file
-  - Test file for deleted implementation
-  - Export has zero references
-
-- **80-89**: Very likely dead code
-  - Old implementation exists alongside new one
-  - Partially updated imports (some fixed, some not)
-  - Config references files that were restructured
-  - Deprecated code still present after replacement
-
-- **50-79**: Possible dead code
-  - Code might be used dynamically
-  - Could be intentionally kept for backward compatibility
-  - Might be used in ways not visible in static analysis
-
-- **0-49**: Uncertain
-  - May be used by external tools
-  - Could be intentional dead code (feature flags, etc.)
-
-**Only report issues with confidence >= 80 in detail.**
-
 ## Output Format
+
+**IMPORTANT:** Do NOT score issues yourself. Output a structured list of potential dead code findings. A separate scoring agent will validate each one.
+
+Report all potential issues - a separate scoring agent will validate each one.
 
 ```markdown
 # Dead Code Detection Report
@@ -165,67 +142,27 @@ When code moves from A to B, verify:
 **Scanned:** [files/changes reviewed]
 **Reviewed:** [timestamp]
 
-## Summary
-[Brief overview: Changes analyzed, X dead code issues found]
+## Issues Found
 
-## Critical Dead Code (Confidence 90-100)
+### Issue 1
+- **Description:** [What type of dead code and why it appears orphaned]
+- **Location:** [file path or file:line]
+- **Type:** [Orphaned file / Stale import / Unused export / Config issue / Orphaned test]
+- **Observation:** [What you found - the evidence that led to this finding]
 
-### Issue 1: Orphaned file after refactor
-- **Confidence:** [score]
-- **Dead Code:** [file path]
-- **Reason:** [Why it's dead - e.g., "replaced by X but not deleted"]
-- **Evidence:** [No imports found, or explicit replacement in diff]
-- **Action:** Delete [file path]
-
-### Issue 2: Stale import
-- **Confidence:** [score]
+### Issue 2
+- **Description:** [...]
 - **Location:** [file:line]
-- **Import:** `import { X } from './deleted-module'`
-- **Problem:** [Module was deleted/moved]
-- **Action:** [Update import to new location or remove]
+- **Type:** [...]
+- **Observation:** [...]
 
-### Issue 3: Orphaned test file
-- **Confidence:** [score]
-- **Test File:** [path]
-- **Tests:** [what it tests]
-- **Problem:** [Implementation was deleted]
-- **Action:** Delete test file or update to test new implementation
+[Continue for all issues found]
 
-## Important Dead Code (Confidence 80-89)
+## Areas Verified Clean
 
-### Issue 4: Duplicate implementation not cleaned up
-- **Confidence:** [score]
-- **Old Code:** [file:line]
-- **New Code:** [file:line]
-- **Problem:** Old implementation still exists after creating new one
-- **Action:** Delete old implementation, update remaining imports
-
-### Issue 5: Dead export
-- **Confidence:** [score]
-- **Location:** [file:line]
-- **Export:** `export function unusedHelper()`
-- **Problem:** No imports found in codebase
-- **Action:** Remove export or verify if used externally
-
-## Minor Notes (Confidence 50-79)
-
-| Location | Type | Confidence | Concern |
-|----------|------|------------|---------|
-| [file] | [orphan/import/export] | [score] | [Brief note] |
-
-## Cleanup Checklist
-
-Based on findings, the following cleanup is needed:
-
-- [ ] Delete: [list of files to delete]
-- [ ] Update imports in: [list of files with stale imports]
-- [ ] Remove exports from: [list of files with dead exports]
-- [ ] Update config: [list of config files to update]
-
-## Verified Clean
-
-The following areas were checked and are clean:
-- [List of areas verified as properly cleaned up]
+The following areas were checked and appear properly cleaned:
+- [Area or file type verified as clean]
+- [Additional verified areas]
 ```
 
 ## What to Look For
@@ -261,35 +198,15 @@ The following areas were checked and are clean:
 
 ## Tools to Use
 
-### Knip - Primary Dead Code Detection Tool
+**Note:** Knip (dead code detection) runs as part of the validation step before this review. If knip found issues, they would have been addressed before review agents are launched. Focus on manual analysis that knip might miss.
 
-**Always start with Knip** - it's the fastest way to find unused exports, dependencies, and files:
+### Manual Dead Code Analysis
 
-```bash
-# Run knip to find all dead code
-bunx knip
-
-# Knip will report:
-# - Unresolved imports (broken references)
-# - Unused exports (functions/types never imported)
-# - Unused dependencies (npm packages not used)
-# - Unused files (files not imported anywhere)
-# - Configuration hints (stale patterns in config files)
-```
-
-**Interpreting Knip Output:**
-- `Unresolved imports`: Critical - these are broken imports that will cause runtime errors
-- `Unused exports`: High priority - exported but never imported elsewhere
-- `Unused exported types`: Types defined but never used
-- `Configuration hints`: Patterns in knip.json or tsconfig that don't match real files
-
-**After Knip, use manual searches for:**
-```bash
-# Find files with zero imports (potential orphans)
-# Check if old file still exists after move
-# Search for imports of deleted modules
-# Find exports with no importers (verify Knip findings)
-```
+Use Grep and Read to find:
+- Exports with no importers in the codebase
+- Files with zero imports (potential orphans)
+- Old files that still exist after code was moved
+- Imports of deleted or renamed modules
 
 ## Important Guidelines
 
@@ -307,14 +224,12 @@ After completing your scan, provide a brief summary:
 Dead code detection complete.
 
 Changes analyzed: [brief description of what changed]
-Orphaned files: [N]
-Stale imports: [N]
-Dead exports: [N]
-Config issues: [N]
+Issues found: [N]
+Areas verified clean: [N]
 
 [If issues found:]
-Top issue: [One sentence describing most significant dead code]
+Primary concern: [One sentence describing the most significant dead code finding]
 
-[If clean:]
+[If no issues:]
 No dead code found. Changes appear to be properly cleaned up.
 ```
