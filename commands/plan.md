@@ -42,7 +42,7 @@ The spec should be complete before planning. Ask the user about these ambiguitie
 
 ---
 
-## Phase 0.5: Complexity Assessment
+## Step 1: Complexity Assessment
 
 **Before diving into design, assess whether this spec warrants exploring alternative approaches.**
 
@@ -56,14 +56,14 @@ Ask yourself:
 
 ### Decision
 
-- **If answers mostly "no"**: State "This is straightforward. Proceeding directly to design." → Skip to Phase 0.
-- **If 2+ answers "yes"**: State "This has architectural implications. Exploring alternatives first." → Continue to Phase 0.6.
+- **If answers mostly "no"**: State "This is straightforward. Proceeding directly to design." → Skip to Step 3.
+- **If 2+ answers "yes"**: State "This has architectural implications. Exploring alternatives first." → Continue to Step 2.
 
 This assessment should take <30 seconds. Don't overthink it.
 
 ---
 
-## Phase 0.6: Alternative Design Exploration (Optional)
+## Step 2: Alternative Design Exploration (Optional)
 
 **Only execute this phase if complexity assessment triggered it.**
 
@@ -108,11 +108,11 @@ Recommendation: [X] - [Brief rationale]
 Proceed with this approach? Or discuss alternatives?
 ```
 
-**Wait for user confirmation before Phase 0.**
+**Wait for user confirmation before Step 3.**
 
 ---
 
-## Phase 0: Constitution Check (Initial)
+## Step 3: Constitution Check (Initial)
 
 **If `.cc-track/constitution.md` exists**:
 
@@ -150,7 +150,7 @@ Which approach?
 
 ---
 
-## Phase 1: Research
+## Step 4: Research
 
 ### Ask Technical Questions
 One at a time (like `/cc-track:specify` questioning):
@@ -216,7 +216,7 @@ Create `research.md`:
 
 ---
 
-## Phase 2: Design
+## Step 5: Design
 
 ### Generate Technical Context
 ```markdown
@@ -278,38 +278,14 @@ For each endpoint from spec:
 
 Save to `contracts/` directory.
 
-### Create Quickstart Guide
-Based on spec user stories:
-```markdown
-# Quickstart: [Feature Name]
-
-## Setup
-1. Install dependencies
-2. Initialize database
-3. Configure auth keys
-
-## First Use
-1. Create user: `tool user create user@example.com`
-2. Login: `tool login user@example.com`
-3. Verify: `tool user list`
-
-## Testing Success
-- [ ] User can register
-- [ ] User can login
-- [ ] Session persists
-```
-
-Save to `quickstart.md`.
-
 ### Write Plan Document
 Use `templates/plan-template.md`:
 - Summary
 - Technical Context (from above)
 - Constitution Check results
 - Project Structure
-- Phase 0 (Research) - reference research.md
-- Phase 1 (Design) - reference data-model.md, contracts/, quickstart.md
-- Phase 2 (Task Planning Approach) - **describe** what /cc-track:tasks will do, DON'T create tasks.md yet
+- Step 4 (Research) - reference research.md
+- Step 5 (Design) - reference data-model.md, contracts/
 - Progress Tracking
 - Risk Assessment
 
@@ -317,7 +293,7 @@ Save to `plan.md`.
 
 ---
 
-## Phase 3: Constitution Check (Post-Design)
+## Step 6: Constitution Check (Post-Design)
 
 **If constitution exists, re-validate**:
 
@@ -350,7 +326,7 @@ Revising design...
 
 ---
 
-## Phase 4: Presentation
+## Step 7: Presentation
 
 Show user:
 ```
@@ -365,7 +341,6 @@ Created files:
 - research.md (technology decisions)
 - data-model.md (entity designs)
 - contracts/ (API specifications)
-- quickstart.md (getting started guide)
 
 Constitution status: ✅ All guardrails met
 Tech stack: TypeScript + Bun + SQLite
