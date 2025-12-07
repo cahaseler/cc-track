@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/cahaseler/cc-track/compare/v3.0.6...v3.1.0) (2025-12-07)
+
+
+### Features
+
+* complete 109 - Feature Specification: Add Scoring Agent Pattern to Code Review Process ([#165](https://github.com/cahaseler/cc-track/issues/165)) ([c70d13a](https://github.com/cahaseler/cc-track/commit/c70d13aafe829921616c82c85cea9edfa7eb6a87))
+
 ## [3.0.6](https://github.com/cahaseler/cc-track/compare/v3.0.5...v3.0.6) (2025-12-07)
 
 
