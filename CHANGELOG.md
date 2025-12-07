@@ -1,3 +1,10 @@
+## [3.0.6](https://github.com/cahaseler/cc-track/compare/v3.0.5...v3.0.6) (2025-12-07)
+
+
+### Bug Fixes
+
+* reset CLAUDE.md before commit/push so PR includes the change ([e6f04d7](https://github.com/cahaseler/cc-track/commit/e6f04d7de57c9a5dd56742302fcbe4438a94225f))
+
 ## [3.0.5](https://github.com/cahaseler/cc-track/compare/v3.0.4...v3.0.5) (2025-12-06)
 
 
