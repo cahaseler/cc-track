@@ -24,7 +24,7 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(bun:
 
 **CRITICAL**: Infrastructure must be created BEFORE any Socratic questioning or research begins. This prevents getting distracted before the branch/folder exist.
 
-1. **Get task title**: Use from user's request. If unclear, ask ONE clarifying question.
+1. **Get task title**: Use from user's request and proceed to create infrastructure. Only ask for clarification if the title is genuinely unclear - do not ask for approval of the title itself.
 2. **Invoke skill**: `cc-track:cc-track-tools` to get base directory
 3. **Run script**: `bun {base_directory}/scripts/specify.ts "{title}"`
 4. **Confirm results**: Branch created, spec directory ready, CLAUDE.md updated, GitHub issue created (if enabled)

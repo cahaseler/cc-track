@@ -131,13 +131,28 @@ For each phase, dispatch subagents in order:
 
 ### Parallel Phase Execution
 
-For phases marked `[P]`:
+When multiple phases are marked [P], use **pipeline flow**:
 
-1. Dispatch ALL stub writers with `run_in_background: true`
-2. Post status: "Dispatched stub writers for Phases X, Y, Z. Waiting..."
-3. Wait with `AgentOutputTool` (block: true)
-4. Review all outputs, then dispatch test writers (same pattern)
-5. Continue through implementers, then validators
+1. **Dispatch** ALL stub writers with `run_in_background: true` in a single message
+2. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z."
+3. **Orchestration loop**:
+   - Do any pending work (check off completed steps, dispatch next agents for completed phases)
+   - Process any notifications that arrived while working
+   - If no pending work: poll all active agents with `AgentOutputTool(block: false)`
+   - If all still running: `Bash(sleep 30)` to idle efficiently, then poll again
+
+This creates true pipeline parallelism - Phase 1's test writer starts as soon as Phase 1's stub finishes, even while other stubs run. Notifications usually arrive promptly, but the 30-second polling fallback catches any that don't.
+
+### Dependency Enforcement
+
+Phases marked with dependencies (e.g., "Phase 4 depends on Phase 2") must wait for the **complete** prerequisite cycle:
+
+- ❌ Wrong: Start Phase 4's stub as soon as Phase 2's implementer finishes
+- ✅ Correct: Start Phase 4's stub only after Phase 2's **validator** completes
+
+Dependencies mean the full Stub → Tests → Implement → Validate cycle, not just Implement.
+
+**Best practice**: Analyze actual dependencies (imports, shared state) rather than assuming sequential structure. For independent files (like separate markdown files), maximize parallelism.
 
 ### At Checkpoints
 
@@ -168,8 +183,6 @@ For phases marked `[P]`:
 ---
 
 ## Phase Progress
-
-**Completed Phases**: 0/[N]
 
 | Phase | Status | Notes |
 |-------|--------|-------|

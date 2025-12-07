@@ -104,6 +104,14 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 
 **IMPORTANT:** Launch all 8 agents in a single message with multiple Task tool calls for parallel execution.
 
+**Execution mode:** Use **foreground parallel** (do NOT use `run_in_background: true`):
+- Launch all 8 agents in a single message without the `run_in_background` parameter
+- Orchestrator suspends until ALL agents complete
+- All results return together in the response
+- Deduplication in Step 5 has access to all findings at once
+
+This is different from the pipeline pattern in `/cc-track:tasks` - here we need ALL results before proceeding to deduplication, so foreground parallel is correct.
+
 ## Step 5: Collect and Deduplicate Issues
 
 After all agents complete:
