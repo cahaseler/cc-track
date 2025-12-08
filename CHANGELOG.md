@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/cahaseler/cc-track/compare/v3.1.2...v3.2.0) (2025-12-08)
+
+
+### Features
+
+* add /cc-track:spotless command for scoped dead code cleanup ([9d42aad](https://github.com/cahaseler/cc-track/commit/9d42aad8c5d665f1631299812e611c99047cecda))
+
 ## [3.1.2](https://github.com/cahaseler/cc-track/compare/v3.1.1...v3.1.2) (2025-12-07)
 
 
