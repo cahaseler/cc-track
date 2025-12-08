@@ -196,6 +196,38 @@ The following areas were checked and appear properly cleaned:
 - package.json scripts using deleted files
 - Build configs with stale entries
 
+### AI Code Slop Patterns
+
+AI-generated code often leaves behind artifacts that a human wouldn't. Look for:
+
+**Excessive Defensive Code:**
+- Try-catch blocks around code that can't throw
+- Null checks in trusted internal codepaths
+- Redundant type guards after TypeScript already narrows
+- `|| []` or `?? {}` defaults where undefined is impossible
+
+**Type System Workarounds:**
+- Casts to `any` or `unknown` to bypass type issues
+- `// @ts-ignore` or `// @ts-expect-error` without clear reason
+- Overly broad generic types that defeat type safety
+
+**Over-Documentation:**
+- JSDoc comments restating what the code obviously does
+- Comments on every line of simple logic
+- Documentation style inconsistent with rest of codebase
+
+**Abandoned Patterns:**
+- Functions that wrap other functions without adding value
+- Abstract classes with single implementations
+- Interfaces matching exactly one concrete type
+- Configuration objects with only default values used
+
+**Debug Artifacts:**
+- `console.log` statements left behind
+- Commented-out alternative implementations
+- TODO/FIXME comments for completed work
+- Unused variables capturing intermediate values
+
 ## Tools to Use
 
 **Note:** Knip (dead code detection) runs as part of the validation step before this review. If knip found issues, they would have been addressed before review agents are launched. Focus on manual analysis that knip might miss.
