@@ -187,61 +187,53 @@ After all scorers complete:
 - [N] issues were filtered as unverified or false positives
 ```
 
-## Step 8: STOP - Wait for User Discussion
+## Step 8: Route Based on Issue Count
 
-**CRITICAL:** After presenting the scored issues, STOP and wait for the user.
+After filtering and scoring, route based on how many validated issues were found:
+
+### If 0 validated issues:
 
 ```
-📋 Code review complete. Found [N] validated issues (scores >= 50).
+✅ Clean review! No issues found with score >= 50.
 
-Please review the issues above. You can:
-- Ask me to fix specific issues
-- Ask clarifying questions about any finding
-- Dismiss findings you disagree with
-- Proceed to /cc-track:complete-task if no fixes needed
-
-What would you like to do?
+Task is ready for completion. Run /cc-track:complete-task to finalize.
 ```
 
-**DO NOT:**
-- Automatically implement fixes
-- Assume which issues to address
-- Proceed without user input
+Remind about documentation updates:
+- Update task progress file with final implementation state
+- Add to `.cc-track/decision_log.md` for any architectural decisions
+- Update `.cc-track/system_patterns.md` for new patterns established
 
-**The user decides what gets fixed.** This prevents "eager to please" auto-implementation.
+### If exactly 1 validated issue:
 
-## Step 9: After User Direction
+Present the single issue inline:
 
-Once the user provides direction:
-
-1. **If user requests fixes:** Implement only the specific issues they identified
-2. **If user dismisses all issues:** Note their decision and proceed
-3. **If user asks questions:** Answer and wait for further direction
-4. **After any fixes:** Remind user to re-run `/cc-track:prepare-completion` to verify
-
-## Step 10: Documentation Updates (After Review Complete)
-
-Once review feedback is addressed (or user proceeds without fixes):
-
-1. **Task progress file** - Update with final implementation state
-2. **`.cc-track/decision_log.md`** - Add entry for any architectural decisions made (if applicable)
-3. **`.cc-track/system_patterns.md`** - Document any new patterns or conventions established (if applicable)
-4. **Private journal** - Record technical insights and learnings (if private journal MCP available)
-
-## Next Steps
-
-**If validated issues remain unaddressed:**
 ```
-⚠️ There are still [N] validated issues.
+📋 Found 1 validated issue:
 
-If you want to proceed anyway, run /cc-track:complete-task.
-Otherwise, fix issues and run /cc-track:prepare-completion again.
+### {Issue Title} (Score: {score})
+- **Location:** {file:line}
+- **Reported by:** {reviewer(s)}
+- **Observation:** {evidence}
+- **Scorer justification:** {justification}
+
+Would you like me to fix this issue, or proceed to /cc-track:complete-task?
 ```
 
-**If all issues addressed or clean review:**
+Wait for user direction before proceeding. If they want it fixed, implement the fix and remind them to re-run `/cc-track:prepare-completion` to verify.
+
+### If >1 validated issues:
+
 ```
-✅ Task is ready for completion! Run /cc-track:complete-task to finalize.
+📋 Found {N} validated issues. Invoking /cc-track:fix-issues for structured triage.
 ```
+
+Then invoke the `/cc-track:fix-issues` command using the SlashCommand tool. The fix-issues command will:
+- Create/update `issue-log.md` in the spec folder
+- Walk through each issue one-by-one
+- Ask user to Fix/Defer/Dismiss/Discuss each issue
+- Execute fixes after triage is complete
+- Remind to re-run prepare-completion to verify
 
 ## Notes
 

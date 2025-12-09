@@ -7,8 +7,10 @@
 The cc-track system follows a structured, command-driven workflow that separates requirements from implementation:
 
 ```
-/cc-track:specify → /cc-track:plan → /cc-track:tasks → Implementation → /cc-track:prepare-completion → /cc-track:complete-task → PR → Merge
+/cc-track:specify → /cc-track:plan → /cc-track:tasks → Implementation → /cc-track:prepare-completion → [/cc-track:fix-issues] → /cc-track:complete-task → PR → Merge
 ```
+
+Note: `/cc-track:fix-issues` is automatically invoked by `prepare-completion` when >1 issues are found.
 
 Each command prompts for the next step, creating a natural flow through the development process.
 
@@ -182,7 +184,40 @@ This discretionary approach means simple features don't waste time on exploratio
 
 **Result:** Clear pass/fail with specific fix instructions
 
+**Routing based on issue count:**
+- **0 issues:** "Ready for completion" - proceed to `/cc-track:complete-task`
+- **1 issue:** Presented inline for quick decision
+- **>1 issues:** Automatically invokes `/cc-track:fix-issues` for structured triage
+
 **Next step:** Fix any issues, update docs, then run `/cc-track:complete-task`
+
+---
+
+### 5b. `/cc-track:fix-issues` - Triage Review Issues
+
+**Purpose:** Walk through code review issues one-by-one with structured decision options
+
+**When invoked:**
+- Automatically by `/cc-track:prepare-completion` when >1 validated issues found
+- Can be invoked directly if issues exist in conversation context
+
+**What happens:**
+1. Creates `issue-log.md` in spec folder with all issues (or updates existing)
+2. Checks existing `issue-log.md` and `backlog.md` to filter already-handled issues
+3. Presents each NEW issue (highest score first) with options:
+   - **Fix** - Add to immediate fix list
+   - **Defer** - Add to backlog for future work
+   - **Dismiss** - False positive or acceptable as-is
+   - **Discuss** - Investigate before deciding
+4. After all issues triaged, shows action summary
+5. Executes fixes in order (only after full triage complete)
+6. Reminds to re-run `/cc-track:prepare-completion` to verify
+
+**Issue-log.md location:** `.cc-track/specs/{active-spec}/issue-log.md`
+
+**Iterative safe:** Re-running filters out already-handled issues from previous triage runs
+
+**Result:** Documented triage decisions, fixes implemented, issue-log.md as permanent audit trail
 
 ---
 

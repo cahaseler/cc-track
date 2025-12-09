@@ -99,11 +99,25 @@ Review package.json for libraries that might provide:
 - Similar functionality with better testing/maintenance
 - Industry-standard solutions
 
+## Pre-Report Deduplication
+
+Before finalizing your report, check for already-handled issues to avoid reporting duplicates:
+
+1. **Check for existing files** in the spec folder (if they exist):
+   - `{spec_folder}/issue-log.md` - Contains issues already triaged (Fixed/Dismissed/Deferred)
+   - `.cc-track/backlog.md` - Contains deferred items from previous triage runs
+
+2. **Filter your findings:**
+   - Remove any issue that matches a "Fixed" or "Dismissed" entry in issue-log.md (match by location)
+   - Remove any issue that matches a "Deferred" entry in backlog.md (match by location or description)
+   - Only report NEW issues not yet handled
+
+3. **Note in your report** if issues were filtered:
+   - Add a line like: "Note: X issues filtered (already in issue-log/backlog)"
+
 ## Output Format
 
 **IMPORTANT:** Do NOT score issues yourself. Output a structured list of potential issues. A separate scoring agent will validate each one.
-
-
 
 ```markdown
 # Duplication Detection Report
