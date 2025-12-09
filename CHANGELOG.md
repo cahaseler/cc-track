@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/cahaseler/cc-track/compare/v3.2.0...v3.3.0) (2025-12-09)
+
+
+### Features
+
+* add /cc-track:fix-issues command for structured issue triage ([3d0e2ea](https://github.com/cahaseler/cc-track/commit/3d0e2ea162fccb8808f28f94256d34dc78a75693)), closes [#172](https://github.com/cahaseler/cc-track/issues/172)
+
 # [3.2.0](https://github.com/cahaseler/cc-track/compare/v3.1.2...v3.2.0) (2025-12-08)
 
 
