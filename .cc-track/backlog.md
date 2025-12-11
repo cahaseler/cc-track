@@ -13,5 +13,3 @@
 ## Items
 
 <!-- Items will be added below -->
-- [2025-09-16] Add targeted unit tests for claude-sdk.ts (retry/timeout/fallback paths)
-- [2025-09-18] Add integration tests for critical paths (context management, git ops, hook chains, config propagation)
