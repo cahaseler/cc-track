@@ -26,8 +26,11 @@ interface StatusLineInput {
   };
   cost?: {
     total_cost_usd?: number;
-    context_usage_percent?: number;
-    hourly_rate_usd?: number;
+  };
+  context_window?: {
+    total_input_tokens: number;
+    total_output_tokens: number;
+    context_window_size: number;
   };
 }
 
@@ -75,12 +78,23 @@ export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): strin
 }
 
 /**
- * Get usage info from ccusage statusline, adjusted for Claude Code overhead
+ * Get token info from native context_window data (Claude Code v2.0.65+)
+ * Returns empty string for older versions that don't provide this data
  */
-export function getUsageInfo(
-  input: StatusLineInput,
-  deps = defaultDeps,
-): { hourlyRate: string; tokens: string; apiWindow: string } {
+export function getTokenInfo(input: StatusLineInput): string {
+  if (input.context_window) {
+    const { total_input_tokens, total_output_tokens, context_window_size } = input.context_window;
+    const total = total_input_tokens + total_output_tokens;
+    const percentage = Math.round((total / context_window_size) * 100);
+    return `${total.toLocaleString()} (${percentage}%)`;
+  }
+  return '';
+}
+
+/**
+ * Get cost info from ccusage (hourly rate and API window time)
+ */
+export function getCostInfo(input: StatusLineInput, deps = defaultDeps): { hourlyRate: string; apiWindow: string } {
   try {
     const result = deps.execSync('bunx ccusage statusline', {
       encoding: 'utf-8',
@@ -92,26 +106,13 @@ export function getUsageInfo(
     const rateMatch = result.match(/\$[\d.]+\/hr/);
     const hourlyRate = rateMatch ? rateMatch[0] : '';
 
-    // Extract tokens from ccusage (only counts transcript messages + memory)
-    const tokensMatch = result.match(/🧠 ([\d,]+) \(\d+%\)/);
-    let tokens = '';
-
-    if (tokensMatch) {
-      const ccusageTokens = parseInt(tokensMatch[1].replace(/,/g, ''), 10);
-      // Add static overhead: ~16k (system prompt + tools) + 45k (reserved) = 61k
-      const CLAUDE_CODE_OVERHEAD = 61000;
-      const adjustedTokens = ccusageTokens + CLAUDE_CODE_OVERHEAD;
-      const percentage = Math.round((adjustedTokens / 200000) * 100);
-      tokens = `${adjustedTokens.toLocaleString()} (${percentage}%)`;
-    }
-
     // Extract API window time
     const windowMatch = result.match(/\(([^)]+)left\)/);
     const apiWindow = windowMatch ? windowMatch[1].replace(' left', '').trim() : '';
 
-    return { hourlyRate, tokens, apiWindow };
+    return { hourlyRate, apiWindow };
   } catch {
-    return { hourlyRate: '', tokens: '', apiWindow: '' };
+    return { hourlyRate: '', apiWindow: '' };
   }
 }
 
@@ -186,7 +187,8 @@ export function getCostEmoji(cost: number): string {
 export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): string {
   const modelName = input.model?.display_name || 'Unknown';
   const todaysCost = getTodaysCost(input, deps);
-  const { hourlyRate, tokens, apiWindow } = getUsageInfo(input, deps);
+  const { hourlyRate, apiWindow } = getCostInfo(input, deps);
+  const tokens = getTokenInfo(input);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
 

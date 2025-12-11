@@ -3,9 +3,10 @@ import {
   generateStatusLine,
   getActiveTask,
   getCostEmoji,
+  getCostInfo,
   getCurrentBranch,
   getTodaysCost,
-  getUsageInfo,
+  getTokenInfo,
 } from './statusline';
 
 // No mocking needed - statusline.ts doesn't import from claude-md
@@ -66,8 +67,49 @@ describe('statusline', () => {
     });
   });
 
-  describe('getUsageInfo', () => {
-    test('adjusts ccusage tokens with Claude Code overhead', () => {
+  describe('getTokenInfo', () => {
+    test('calculates tokens from native context_window data', () => {
+      const result = getTokenInfo({
+        context_window: {
+          total_input_tokens: 50000,
+          total_output_tokens: 10000,
+          context_window_size: 200000,
+        },
+      });
+      // 50,000 + 10,000 = 60,000 (30%)
+      expect(result).toBe('60,000 (30%)');
+    });
+
+    test('returns empty string when context_window not present', () => {
+      const result = getTokenInfo({});
+      expect(result).toBe('');
+    });
+
+    test('handles edge case of 100% usage', () => {
+      const result = getTokenInfo({
+        context_window: {
+          total_input_tokens: 150000,
+          total_output_tokens: 50000,
+          context_window_size: 200000,
+        },
+      });
+      expect(result).toBe('200,000 (100%)');
+    });
+
+    test('handles zero tokens', () => {
+      const result = getTokenInfo({
+        context_window: {
+          total_input_tokens: 0,
+          total_output_tokens: 0,
+          context_window_size: 200000,
+        },
+      });
+      expect(result).toBe('0 (0%)');
+    });
+  });
+
+  describe('getCostInfo', () => {
+    test('extracts hourly rate and API window from ccusage', () => {
       const mockDeps = {
         execSync: mock(() => '💰 $15.50/hr | 🧠 77,483 (39%) | (23m left)'),
         existsSync: mock(() => false),
@@ -76,10 +118,8 @@ describe('statusline', () => {
         getCurrentBranch: mock((_cwd: string) => ''),
       };
 
-      const result = getUsageInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const result = getCostInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
       expect(result.hourlyRate).toBe('$15.50/hr');
-      // 77,483 + 61,000 overhead = 138,483 (69%)
-      expect(result.tokens).toBe('138,483 (69%)');
       expect(result.apiWindow).toBe('23m');
     });
 
@@ -94,9 +134,8 @@ describe('statusline', () => {
         getCurrentBranch: mock((_cwd: string) => ''),
       };
 
-      const result = getUsageInfo({}, mockDeps);
+      const result = getCostInfo({}, mockDeps);
       expect(result.hourlyRate).toBe('');
-      expect(result.tokens).toBe('');
       expect(result.apiWindow).toBe('');
     });
   });
@@ -229,7 +268,7 @@ describe('statusline', () => {
             });
           }
           if (cmd.includes('ccusage statusline')) {
-            return '💰 $12.25/hr | 🧠 83,000 (42%) | (45m left)';
+            return '💰 $12.25/hr | (45m left)';
           }
           return '';
         }),
@@ -256,22 +295,57 @@ describe('statusline', () => {
         getActiveSpecDirectory: mock(() => '/project/.cc-track/specs/001-fix-authentication-bug'),
       };
 
-      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      // Input includes native context_window data (Claude Code v2.0.65+)
+      const input = {
+        model: { display_name: 'Claude Sonnet' },
+        context_window: {
+          total_input_tokens: 120000,
+          total_output_tokens: 24000,
+          context_window_size: 200000,
+        },
+      };
+
+      const result = generateStatusLine(input, mockDeps);
 
       const lines = result.split('\n');
       expect(lines).toHaveLength(2);
 
-      // First line should have model, cost, rate, adjusted tokens
+      // First line should have model, cost, rate, native tokens
       expect(lines[0]).toContain('🚅 Claude Sonnet');
       expect(lines[0]).toContain('(reset in 45m)');
       expect(lines[0]).toContain('💵 $75.50 today');
       expect(lines[0]).toContain('$12.25/hr');
-      // 83,000 + 61,000 overhead = 144,000 (72%)
+      // Native: 120,000 + 24,000 = 144,000 (72%)
       expect(lines[0]).toContain('144,000 (72%)');
 
       // Second line should have branch and task
       expect(lines[1]).toContain('main');
       expect(lines[1]).toContain('Fix authentication bug');
+    });
+
+    test('gracefully omits tokens when context_window not present (older Claude Code)', () => {
+      const mockDeps = {
+        execSync: mock((cmd: string) => {
+          if (cmd.includes('ccusage statusline')) {
+            return '💰 $12.25/hr | (45m left)';
+          }
+          return '{}';
+        }),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      // No context_window in input (older Claude Code version)
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+
+      expect(result).toContain('🚅 Claude Sonnet');
+      expect(result).toContain('$12.25/hr');
+      // Should NOT contain any token percentage
+      expect(result).not.toMatch(/\d+%\)/);
     });
 
     test('handles minimal input gracefully', () => {
