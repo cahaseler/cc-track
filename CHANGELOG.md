@@ -1,3 +1,15 @@
+# [3.4.0](https://github.com/cahaseler/cc-track/compare/v3.3.0...v3.4.0) (2025-12-11)
+
+
+### Bug Fixes
+
+* prevent auto-filtering of code review issues by relevance ([323e7c6](https://github.com/cahaseler/cc-track/commit/323e7c619009cd866d376a6aaebef1fcbe713e12))
+
+
+### Features
+
+* use native context_window data for token display ([781c171](https://github.com/cahaseler/cc-track/commit/781c171207ebf5d7e1d5334482622be9abf712e4))
+
 # [3.3.0](https://github.com/cahaseler/cc-track/compare/v3.2.0...v3.3.0) (2025-12-09)
 
 
