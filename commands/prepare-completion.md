@@ -244,3 +244,4 @@ Then invoke the `/cc-track:fix-issues` command using the SlashCommand tool. The 
 - **Human gate:** System stops after presenting - no auto-fix behavior
 - **Bug scanner uses Sonnet** for deeper analysis; all others use Haiku for speed
 - **Scoring agents are isolated** - no conversation history, providing neutral validation
+- **No relevance filtering:** Do NOT filter issues based on whether they seem "related to the current spec" or "pre-existing". All discovered issues with score >= 50 must be presented to the human. Relevance is a factor in the triage decision (Fix/Defer/Dismiss), not a reason to hide issues.

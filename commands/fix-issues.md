@@ -35,7 +35,7 @@ This command expects code review issues in context. Please run /cc-track:prepare
 
 ## Step 3: Check Existing State
 
-Read existing files to filter already-handled issues:
+Read existing files to filter issues that were already triaged in a prior run:
 
 1. **Check issue-log.md** (if exists at `{spec_folder}/issue-log.md`):
    - Parse the Summary table
@@ -50,7 +50,9 @@ Read existing files to filter already-handled issues:
 3. **Filter the issue list:**
    - Remove any issue matching a Fixed/Dismissed entry in issue-log.md (match by location)
    - Remove any issue matching a Deferred entry (match by location or description)
-   - Keep only NEW issues that haven't been triaged
+   - Keep all other issues for triage
+
+**IMPORTANT:** Only filter issues that have a documented prior human decision. Do NOT filter issues based on your assessment that they are "unrelated to the current spec" or "pre-existing". If an issue was discovered by review agents and hasn't been triaged before, it MUST be presented to the human. Whether it's relevant or should be deferred is the human's decision to make during triage.
 
 4. **If all issues already handled:**
    ```
@@ -61,7 +63,7 @@ Read existing files to filter already-handled issues:
 
    Ready to proceed to /cc-track:complete-task or re-run /cc-track:prepare-completion to check for new issues.
    ```
-   Stop here. Inform the user that all reported issues were already addressed and they can proceed to task completion with /cc-track:complete-task
+   Stop here.
 
 ## Step 4: Create/Update Issue Log
 

@@ -27,15 +27,17 @@ You will receive:
 
 ## Scoring Rubric (use exactly these levels)
 
-- **0**: False positive. Doesn't stand up to scrutiny, or is a pre-existing issue unrelated to recent changes.
+- **0**: False positive. The claimed issue doesn't exist in the code - the reviewer misread or misunderstood.
 
 - **25**: Might be real. Could be an issue but you couldn't verify it. If stylistic, not explicitly required by project conventions.
 
-- **50**: Real but minor. Verified this is a real issue, but it's a nitpick or won't happen often in practice. Not important relative to the overall changes.
+- **50**: Real but minor. Verified this is a real issue, but it's a nitpick or won't happen often in practice.
 
 - **75**: Verified important. Double-checked and confirmed this is a real issue that will impact functionality. The current approach is insufficient.
 
 - **100**: Certain and critical. Definitely a real issue, confirmed with direct evidence. Will happen frequently or has serious consequences.
+
+**IMPORTANT:** Do NOT score issues lower because they are "pre-existing" or "unrelated to current changes". If the issue is real, score it based on severity. Whether to fix it now or defer it is a human decision made during triage - not something you filter out.
 
 ## Output Format
 
