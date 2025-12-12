@@ -333,14 +333,20 @@ cat ~/.config/claude-code/config.json
 
 **Update the settings to add statusline command:**
 
-Add or update the `statusLine` configuration:
+Add or update the `statusLine` configuration with dynamic version resolution:
 ```json
 {
   "statusLine": {
-    "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts"
+    "type": "command",
+    "command": "bash -c 'LATEST=$(ls -v ~/.claude/plugins/cache/cc-track-marketplace/cc-track/ | grep -E \"^[0-9]\" | tail -1); exec bun run ~/.claude/plugins/cache/cc-track-marketplace/cc-track/$LATEST/scripts/statusline.ts'"
   }
 }
 ```
+
+**Why this approach?**
+- Automatically uses the latest installed plugin version
+- Survives plugin updates without manual configuration changes
+- No files written outside the plugin cache directory
 
 **Write the updated settings back:**
 ```bash
@@ -348,8 +354,9 @@ Add or update the `statusLine` configuration:
 ```
 
 **Inform the user:**
-- "✓ Configured Claude Code statusline"
+- "✓ Configured Claude Code statusline with auto-version resolution"
 - "⚠️ You'll need to restart Claude Code for the statusline to appear"
+- "✅ The statusline will automatically use the latest installed cc-track version"
 
 **If you can't modify the settings automatically** (permissions issue or file not found):
 - Tell user: "I couldn't automatically configure the statusline. Please add this to your Claude Code settings manually:"
@@ -357,10 +364,12 @@ Add or update the `statusLine` configuration:
   ```json
   {
     "statusLine": {
-      "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts"
+      "type": "command",
+      "command": "bash -c 'LATEST=$(ls -v ~/.claude/plugins/cache/cc-track-marketplace/cc-track/ | grep -E \"^[0-9]\" | tail -1); exec bun run ~/.claude/plugins/cache/cc-track-marketplace/cc-track/$LATEST/scripts/statusline.ts'"
     }
   }
   ```
+- Explain: "This command automatically finds the latest installed cc-track version, so you won't need to update it when the plugin updates."
 
 ### 9. Final Steps
 
