@@ -1,3 +1,10 @@
+# [3.5.0](https://github.com/cahaseler/cc-track/compare/v3.4.3...v3.5.0) (2025-12-18)
+
+
+### Features
+
+* add Windows path normalization hook (bug [#7918](https://github.com/cahaseler/cc-track/issues/7918) workaround) ([#176](https://github.com/cahaseler/cc-track/issues/176)) ([cb57efb](https://github.com/cahaseler/cc-track/commit/cb57efb7f9ee747d79e16fd165568dcd1e448a05))
+
 ## [3.4.3](https://github.com/cahaseler/cc-track/compare/v3.4.2...v3.4.3) (2025-12-18)
 
 
