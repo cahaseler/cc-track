@@ -3,6 +3,7 @@
 // ABOUTME: Only active when explicitly enabled in track.config.json
 
 import { existsSync, readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { join } from 'node:path/posix';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
 
@@ -337,7 +338,6 @@ function isHookEnabled(): boolean {
   try {
     // Look for track.config.json in current directory or parents
     let searchPath = process.cwd();
-    const { dirname } = require('node:path');
 
     while (true) {
       const configPath = join(searchPath, '.cc-track', 'track.config.json');
