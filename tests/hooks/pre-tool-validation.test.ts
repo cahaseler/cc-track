@@ -6,6 +6,7 @@ import {
   isGitIgnored,
   isHistoricalSearch,
   isMetadataFile,
+  isSpecFile,
   preToolValidationHook,
 } from '../../hooks/pre-tool-validation';
 import { createMockGitHelpers, createMockLogger } from '../../test-utils/command-mocks';
@@ -64,11 +65,39 @@ describe('pre-tool-validation', () => {
     });
   });
 
+  describe('isSpecFile', () => {
+    test('identifies spec files correctly with forward slashes', () => {
+      expect(isSpecFile('.cc-track/specs/001-feature-name/spec.md')).toBe(true);
+      expect(isSpecFile('/home/user/project/.cc-track/specs/999-another-feature/plan.md')).toBe(true);
+      expect(isSpecFile('.cc-track/specs/123-test-task/tasks.md')).toBe(true);
+    });
+
+    test('identifies spec files correctly with Windows backslashes', () => {
+      expect(isSpecFile('.cc-track\\specs\\001-feature-name\\spec.md')).toBe(true);
+      expect(isSpecFile('C:\\Users\\user\\project\\.cc-track\\specs\\999-another-feature\\plan.md')).toBe(true);
+      expect(isSpecFile('D:\\Development\\project\\.cc-track\\specs\\123-test\\.metadata.json')).toBe(true);
+    });
+
+    test('rejects non-spec files', () => {
+      expect(isSpecFile('src/file.ts')).toBe(false);
+      expect(isSpecFile('.cc-track/backlog.md')).toBe(false);
+      expect(isSpecFile('package.json')).toBe(false);
+    });
+  });
+
   describe('isMetadataFile', () => {
-    test('identifies metadata files correctly', () => {
+    test('identifies metadata files correctly with forward slashes', () => {
       expect(isMetadataFile('.cc-track/specs/001-feature-name/.metadata.json')).toBe(true);
       expect(isMetadataFile('/home/user/project/.cc-track/specs/999-another-feature/.metadata.json')).toBe(true);
       expect(isMetadataFile('.cc-track/specs/123-test-task/.metadata.json')).toBe(true);
+    });
+
+    test('identifies metadata files correctly with Windows backslashes', () => {
+      expect(isMetadataFile('.cc-track\\specs\\001-feature-name\\.metadata.json')).toBe(true);
+      expect(isMetadataFile('C:\\Users\\user\\project\\.cc-track\\specs\\999-another-feature\\.metadata.json')).toBe(
+        true,
+      );
+      expect(isMetadataFile('D:\\Development\\project\\.cc-track\\specs\\123-test\\.metadata.json')).toBe(true);
     });
 
     test('rejects non-metadata files', () => {

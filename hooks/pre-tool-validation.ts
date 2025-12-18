@@ -174,14 +174,18 @@ export function extractFilePath(toolName: string, toolInput: unknown): string | 
  * Check if a file path is in the specs directory
  */
 export function isSpecFile(filePath: string): boolean {
-  return /\.cc-track\/specs\//.test(filePath);
+  // Normalize to forward slashes for cross-platform regex matching
+  const normalized = filePath.replace(/\\/g, '/');
+  return /\.cc-track\/specs\//.test(normalized);
 }
 
 /**
  * Check if a file path is a metadata file (.metadata.json inside a spec directory)
  */
 export function isMetadataFile(filePath: string): boolean {
-  return /\.cc-track\/specs\/\d{3}-[^/]+\/\.metadata\.json$/.test(filePath);
+  // Normalize to forward slashes for cross-platform regex matching
+  const normalized = filePath.replace(/\\/g, '/');
+  return /\.cc-track\/specs\/\d{3}-[^/]+\/\.metadata\.json$/.test(normalized);
 }
 
 /**
