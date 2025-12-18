@@ -1,3 +1,10 @@
+## [3.4.2](https://github.com/cahaseler/cc-track/compare/v3.4.1...v3.4.2) (2025-12-18)
+
+
+### Bug Fixes
+
+* add cross-platform Windows support ([#175](https://github.com/cahaseler/cc-track/issues/175)) ([ac4a8cb](https://github.com/cahaseler/cc-track/commit/ac4a8cb54bc202af82a54702dbd8c3f9a4fa9bc6))
+
 ## [3.4.1](https://github.com/cahaseler/cc-track/compare/v3.4.0...v3.4.1) (2025-12-18)
 
 
