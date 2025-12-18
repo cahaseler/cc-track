@@ -467,9 +467,9 @@ Your review should be thorough, actionable, and constructive. Include specific f
           if (toolName === 'Write') {
             const requestedPath = (input as { file_path: string }).file_path;
             // Resolve the path relative to the project root to handle both absolute and relative paths
-            // Normalize to forward slashes for cross-platform comparison (resolve uses backslashes on Windows)
+            // Normalize both paths to forward slashes for cross-platform comparison
             const filePath = resolve(projectRoot, requestedPath).replace(/\\/g, '/');
-            const allowedDir = join(projectRoot, 'code-reviews');
+            const allowedDir = join(projectRoot, 'code-reviews').replace(/\\/g, '/');
 
             if (!filePath.startsWith(allowedDir)) {
               logger.warn('Blocked Write attempt outside code-reviews directory', {
