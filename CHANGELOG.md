@@ -1,3 +1,10 @@
+## [3.4.1](https://github.com/cahaseler/cc-track/compare/v3.4.0...v3.4.1) (2025-12-18)
+
+
+### Bug Fixes
+
+* add missing hooks reference to plugin.json ([88905db](https://github.com/cahaseler/cc-track/commit/88905db8ecdaf4cd41a80d00800f8522abfb94e5))
+
 # [3.4.0](https://github.com/cahaseler/cc-track/compare/v3.3.0...v3.4.0) (2025-12-11)
 
 
