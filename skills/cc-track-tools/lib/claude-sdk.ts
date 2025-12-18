@@ -467,7 +467,8 @@ Your review should be thorough, actionable, and constructive. Include specific f
           if (toolName === 'Write') {
             const requestedPath = (input as { file_path: string }).file_path;
             // Resolve the path relative to the project root to handle both absolute and relative paths
-            const filePath = resolve(projectRoot, requestedPath);
+            // Normalize to forward slashes for cross-platform comparison (resolve uses backslashes on Windows)
+            const filePath = resolve(projectRoot, requestedPath).replace(/\\/g, '/');
             const allowedDir = join(projectRoot, 'code-reviews');
 
             if (!filePath.startsWith(allowedDir)) {
