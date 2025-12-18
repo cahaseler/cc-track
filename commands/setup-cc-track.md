@@ -176,13 +176,16 @@ Present feature options and let user choose what to enable:
   - Ask: "Enable web search validation? (helps prevent unnecessary searches)"
 
 **Windows Only:**
-- `powershell_guidance` - Intercept Linux/bash commands and convert to PowerShell
-  - ✅ Pros: Auto-converts simple Linux commands (cat, rm, cp, mv, head, tail, etc.) to PowerShell equivalents
+- `powershell_guidance` - Windows compatibility hook with two functions:
+  1. **Command conversion:** Auto-converts simple Linux commands (cat, rm, cp, mv, head, tail, etc.) to PowerShell
+  2. **Path normalization:** Converts forward slashes to backslashes in file operations (workaround for Claude Code #7918)
+  - ✅ Pros: Auto-converts simple Linux commands to PowerShell equivalents
   - ✅ Pros: Rejects complex commands with clear PowerShell alternatives and syntax examples
   - ✅ Pros: Prevents trial-and-error when Claude tries Linux commands that fail on Windows
+  - ✅ Pros: Fixes "File has been unexpectedly modified" errors on Windows (Claude Code bug #7918)
   - ⚠️ Only useful on Windows - do NOT enable on macOS/Linux
-  - Ask: (only if on Windows) "Enable PowerShell guidance? (auto-converts Linux commands to PowerShell)"
-  - Note: This is a PreToolUse hook that intercepts Bash commands before execution
+  - Ask: (only if on Windows) "Enable Windows compatibility hook? (fixes path issues, auto-converts Linux commands)"
+  - Note: This is a PreToolUse hook that intercepts Bash, Edit, Write, Read, and MultiEdit tools
 
 ### 4. Configuration File Creation
 
@@ -334,7 +337,9 @@ Show user what hooks will be enabled:
 Explain:
 - Hooks execute TypeScript files from `${CLAUDE_PLUGIN_ROOT}/hooks/`
 - User can disable individual hooks via `/config-track` later
-- The `powershell_guidance` hook intercepts Bash commands to convert Linux→PowerShell or provide guidance
+- The `powershell_guidance` hook intercepts Bash/Edit/Write/Read tools to:
+  - Convert Linux commands to PowerShell or provide guidance
+  - Normalize file paths to Windows backslash format (fixes Claude Code bug #7918)
 
 ### 8. Configure Claude Code Settings (if statusline enabled)
 

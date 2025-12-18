@@ -1,5 +1,6 @@
-// ABOUTME: PreToolUse hook that intercepts Linux/bash commands on Windows
-// ABOUTME: Converts simple commands to PowerShell equivalents or rejects with clear guidance
+// ABOUTME: PreToolUse hook for Windows that provides two main functions:
+// ABOUTME: 1. Converts Linux/bash commands to PowerShell equivalents or rejects with guidance
+// ABOUTME: 2. Normalizes file paths to Windows backslash format (workaround for Claude Code #7918)
 // ABOUTME: Only active when explicitly enabled in track.config.json
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -13,6 +14,7 @@ interface HookInput {
   tool_name: string;
   tool_input: {
     command?: string;
+    file_path?: string;
     [key: string]: unknown;
   };
 }
@@ -21,10 +23,14 @@ interface HookResult {
   decision: 'block' | 'approve' | 'modify';
   reason?: string;
   modified_tool_input?: {
-    command: string;
+    command?: string;
+    file_path?: string;
     [key: string]: unknown;
   };
 }
+
+// File tools that use file_path parameter
+const FILE_TOOLS = ['Edit', 'Write', 'Read', 'MultiEdit'];
 
 // Simple command conversions - these are safe to auto-convert
 // Format: [regex pattern, replacement function or string]
@@ -378,7 +384,30 @@ export async function powershellGuidanceHook(
     return { decision: 'approve' };
   }
 
-  // Only intercept Bash tool
+  // Handle file tools - normalize paths to backslashes on Windows
+  // This works around Claude Code bug #7918 where Edit fails with forward slashes
+  if (FILE_TOOLS.includes(input.tool_name)) {
+    const filePath = input.tool_input.file_path;
+    if (filePath && typeof filePath === 'string' && filePath.includes('/')) {
+      const normalizedPath = filePath.replace(/\//g, '\\');
+      logger.info('Normalizing file path to Windows format', {
+        original: filePath,
+        normalized: normalizedPath,
+        tool: input.tool_name,
+      });
+      return {
+        decision: 'modify',
+        reason: `Normalized path separators to Windows format (workaround for Claude Code #7918)`,
+        modified_tool_input: {
+          ...input.tool_input,
+          file_path: normalizedPath,
+        },
+      };
+    }
+    return { decision: 'approve' };
+  }
+
+  // Only intercept Bash tool for command conversion
   if (input.tool_name !== 'Bash') {
     return { decision: 'approve' };
   }
