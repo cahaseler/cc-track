@@ -37,6 +37,10 @@
     "pre_tool_validation": {
       "enabled": true,
       "description": "Pre-tool validation for task files and branch protection"
+    },
+    "windows_path_normalization": {
+      "enabled": true,
+      "description": "Windows only: normalizes file paths to backslashes (workaround for Claude Code bug #7918). Must be explicitly enabled."
     }
   },
   "git": {

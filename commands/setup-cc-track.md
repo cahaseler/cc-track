@@ -175,6 +175,18 @@ Present feature options and let user choose what to enable:
   - ⚠️ Cons: Adds validation overhead to every web search operation
   - Ask: "Enable web search validation? (helps prevent unnecessary searches)"
 
+**Windows Only:**
+- `powershell_guidance` - Windows compatibility hook with two functions:
+  1. **Command conversion:** Auto-converts simple Linux commands (cat, rm, cp, mv, head, tail, etc.) to PowerShell
+  2. **Path normalization:** Converts forward slashes to backslashes in file operations (workaround for Claude Code #7918)
+  - ✅ Pros: Auto-converts simple Linux commands to PowerShell equivalents
+  - ✅ Pros: Rejects complex commands with clear PowerShell alternatives and syntax examples
+  - ✅ Pros: Prevents trial-and-error when Claude tries Linux commands that fail on Windows
+  - ✅ Pros: Fixes "File has been unexpectedly modified" errors on Windows (Claude Code bug #7918)
+  - ⚠️ Only useful on Windows - do NOT enable on macOS/Linux
+  - Ask: (only if on Windows) "Enable Windows compatibility hook? (fixes path issues, auto-converts Linux commands)"
+  - Note: This is a PreToolUse hook that intercepts Bash, Edit, Write, Read, and MultiEdit tools
+
 ### 4. Configuration File Creation
 
 Based on user selections, create `.cc-track/track.config.json`:
@@ -195,6 +207,9 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
       }
     },
     "pre_tool_validation": {
+      "enabled": true/false
+    },
+    "powershell_guidance": {
       "enabled": true/false
     }
   },
@@ -317,10 +332,14 @@ Based on enabled features, configure hooks in Claude Code settings.
 Show user what hooks will be enabled:
 - `edit_validation` → PostToolUse hook
 - `pre_tool_validation` → PreToolUse hook
+- `powershell_guidance` → PreToolUse hook (Windows only)
 
 Explain:
 - Hooks execute TypeScript files from `${CLAUDE_PLUGIN_ROOT}/hooks/`
 - User can disable individual hooks via `/config-track` later
+- The `powershell_guidance` hook intercepts Bash/Edit/Write/Read tools to:
+  - Convert Linux commands to PowerShell or provide guidance
+  - Normalize file paths to Windows backslash format (fixes Claude Code bug #7918)
 
 ### 8. Configure Claude Code Settings (if statusline enabled)
 

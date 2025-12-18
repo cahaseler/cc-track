@@ -11,6 +11,11 @@
       "name": "pre-tool-validation",
       "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-validation.ts",
       "description": "Validates branch protection and task file integrity before tool use"
+    },
+    {
+      "name": "powershell-guidance",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/powershell-guidance.ts",
+      "description": "Windows only: Converts Linux commands to PowerShell or provides guidance"
     }
   ]
 }
