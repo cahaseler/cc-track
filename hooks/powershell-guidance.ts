@@ -494,19 +494,26 @@ async function main() {
     const result = await powershellGuidanceHook(hookInput);
 
     if (result.decision === 'block') {
-      // Output the blocking message
+      // Output in Claude Code's expected format for blocking
       console.log(
         JSON.stringify({
-          error: result.reason,
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'deny',
+            permissionDecisionReason: result.reason,
+          },
         }),
       );
       process.exit(2); // Exit code 2 = block
     } else if (result.decision === 'modify') {
-      // Output the modified input
+      // Output in Claude Code's expected format for modifying tool input
       console.log(
         JSON.stringify({
-          tool_input: result.modified_tool_input,
-          message: result.reason,
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'allow',
+            updatedInput: result.modified_tool_input,
+          },
         }),
       );
       process.exit(0);
