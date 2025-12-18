@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { join } from 'node:path/posix';
 
 export interface ValidationConfig {
   enabled: boolean;
@@ -149,14 +150,21 @@ const DEFAULT_CONFIG: InternalConfig = {
 let configCache: InternalConfig | null = null;
 
 export function getConfigPath(startPath?: string): string {
-  let currentPath = startPath || process.cwd();
+  let currentPath = resolve(startPath || process.cwd());
 
-  while (currentPath !== '/') {
+  // Walk up the directory tree until we find config or hit root
+  // Cross-platform: root is reached when dirname(path) === path
+  while (true) {
     const configPath = join(currentPath, '.cc-track', 'track.config.json');
     if (existsSync(configPath)) {
       return configPath;
     }
-    currentPath = join(currentPath, '..');
+    const parentPath = dirname(currentPath);
+    if (parentPath === currentPath) {
+      // Reached filesystem root
+      break;
+    }
+    currentPath = parentPath;
   }
 
   return join(startPath || process.cwd(), '.cc-track', 'track.config.json');

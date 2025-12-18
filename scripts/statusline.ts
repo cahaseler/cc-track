@@ -6,7 +6,7 @@ import {
   readFileSync as nodeReadFileSync,
   writeFileSync as nodeWriteFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 import { getActiveTaskId } from '../skills/cc-track-tools/lib/claude-md';
 
 // Simple result type for statusline

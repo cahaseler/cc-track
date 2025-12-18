@@ -33,7 +33,9 @@ cc-track is distributed as a Claude Code plugin. Installation is a one-time setu
 /plugin install cc-track@cc-track-marketplace
 
 # 3. Install plugin dependencies
-cd $(dirname $(which claude-code))/../plugins/cc-track
+# Navigate to your Claude Code plugins directory and install:
+#   macOS/Linux: cd ~/.claude/plugins/cc-track && bun install
+#   Windows: cd %USERPROFILE%\.claude\plugins\cc-track && bun install
 bun install
 
 # 4. Navigate to your project and run setup
@@ -50,7 +52,9 @@ The `/setup-cc-track` command guides you through configuration:
 ### Prerequisites
 
 - **Claude Code** with plugin support (October 2025+)
-- **Bun runtime** - Install via `curl -fsSL https://bun.sh/install | bash`
+- **Bun runtime** - Install from https://bun.sh:
+  - **Windows (PowerShell):** `powershell -c "irm bun.sh/install.ps1 | iex"`
+  - **macOS/Linux:** `curl -fsSL https://bun.sh/install | bash`
 - **Git** (for task management features)
 - **GitHub CLI** (optional, for GitHub integration)
 

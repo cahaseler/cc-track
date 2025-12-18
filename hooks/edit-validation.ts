@@ -14,7 +14,7 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join } from 'node:path/posix';
 import { getLintConfig, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 import { getLintParser } from '../skills/cc-track-tools/lib/lint-parsers';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
