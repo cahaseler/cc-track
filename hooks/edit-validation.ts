@@ -162,13 +162,21 @@ export function runTypeScriptCheck(
       // Format: filepath(line,col): error TSxxxx: message
       const lines = output.split('\n');
 
+      // Normalize paths to forward slashes for cross-platform comparison
+      const normalizedCwd = cwd.replace(/\\/g, '/');
+      const normalizedFilePath = filePath.replace(/\\/g, '/');
+
       // Convert absolute path to relative path for matching
       // TypeScript outputs paths relative to the project root
-      const relativePath = filePath.startsWith(`${cwd}/`) ? filePath.slice(cwd.length + 1) : filePath;
+      const relativePath = normalizedFilePath.startsWith(`${normalizedCwd}/`)
+        ? normalizedFilePath.slice(normalizedCwd.length + 1)
+        : normalizedFilePath;
 
       for (const line of lines) {
+        // Normalize the line for comparison (TypeScript may output backslashes on Windows)
+        const normalizedLine = line.replace(/\\/g, '/');
         // Check if this error is for our target file (using relative path)
-        if (line.startsWith(relativePath) || line.startsWith(filePath)) {
+        if (normalizedLine.startsWith(relativePath) || normalizedLine.startsWith(normalizedFilePath)) {
           const match = line.match(/\((\d+),\d+\): error TS\d+: (.+)/);
           if (match) {
             errors.push(`Line ${match[1]}: ${match[2]}`);

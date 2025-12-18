@@ -50,7 +50,7 @@ export class GitHubHelpers {
    */
   isGitHubCLIAvailable(): boolean {
     try {
-      this.exec('gh --version 2>/dev/null');
+      this.exec('gh --version');
       return true;
     } catch {
       return false;
@@ -172,7 +172,7 @@ export class GitHubHelpers {
       // Resolve explicit repo to avoid ambiguity with remotes
       const repoInfo = this.getGitHubRepoInfo(cwd);
       const repoFlag = repoInfo ? `-R ${repoInfo.owner}/${repoInfo.repo}` : '';
-      const command = `gh issue develop ${issueNumber} --checkout ${repoFlag} 2>&1`;
+      const command = `gh issue develop ${issueNumber} --checkout ${repoFlag}`;
 
       // Use gh issue develop to create and checkout a branch linked to the issue
       this.exec(command, { cwd });
@@ -245,7 +245,7 @@ export class GitHubHelpers {
 
       // Fetch latest from remote
       logger.debug('Fetching latest from remote');
-      this.exec('git fetch origin 2>&1', { cwd });
+      this.exec('git fetch origin', { cwd });
 
       // Check if branches have diverged
       const statusOutput = this.exec('git status -sb', { cwd });
@@ -259,7 +259,7 @@ export class GitHubHelpers {
 
         try {
           // Attempt to rebase on remote branch
-          this.exec(`git pull --rebase origin ${currentBranch} 2>&1`, { cwd });
+          this.exec(`git pull --rebase origin ${currentBranch}`, { cwd });
           logger.info('Rebase successful, continuing with push');
         } catch (rebaseError) {
           // Check if rebase failed due to conflicts
@@ -284,7 +284,7 @@ export class GitHubHelpers {
       }
 
       // Now push the branch
-      this.exec('git push -u origin HEAD 2>&1', { cwd });
+      this.exec('git push -u origin HEAD', { cwd });
 
       logger.info('Branch pushed successfully');
       return true;
@@ -301,7 +301,7 @@ export class GitHubHelpers {
     try {
       logger.info('Switching to branch', { branchName });
 
-      this.exec(`git checkout ${branchName} 2>&1`, {
+      this.exec(`git checkout ${branchName}`, {
         cwd,
       });
 
@@ -323,7 +323,7 @@ export class GitHubHelpers {
       let command = `gh repo create ${name} --description "${description}"`;
       command += isPublic ? ' --public' : ' --private';
 
-      this.exec(`${command} 2>&1`, {
+      this.exec(command, {
         cwd,
       });
 
@@ -345,7 +345,7 @@ export class GitHubHelpers {
       logger.info('Connecting to GitHub repository', { repoUrl });
 
       // Add remote origin
-      this.exec(`git remote add origin ${repoUrl} 2>&1`, {
+      this.exec(`git remote add origin ${repoUrl}`, {
         cwd,
       });
 
@@ -389,7 +389,7 @@ export class GitHubHelpers {
 
     // Check if authenticated
     try {
-      this.exec('gh auth status 2>/dev/null');
+      this.exec('gh auth status');
     } catch {
       errors.push('GitHub CLI is not authenticated. Run: gh auth login');
     }
