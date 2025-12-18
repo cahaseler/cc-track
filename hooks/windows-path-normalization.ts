@@ -7,7 +7,7 @@ import { dirname } from 'node:path';
 import { join } from 'node:path/posix';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
 
-const logger = createLogger('powershell-guidance');
+const logger = createLogger('windows-path-normalization');
 
 interface HookInput {
   tool_name: string;
@@ -39,7 +39,7 @@ function isHookEnabled(): boolean {
       const configPath = join(searchPath, '.cc-track', 'track.config.json');
       if (existsSync(configPath)) {
         const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-        return config?.hooks?.powershell_guidance?.enabled === true;
+        return config?.hooks?.windows_path_normalization?.enabled === true;
       }
 
       const parentPath = dirname(searchPath);
@@ -54,7 +54,7 @@ function isHookEnabled(): boolean {
 }
 
 // Main hook function
-export async function powershellGuidanceHook(
+export async function windowsPathNormalizationHook(
   input: HookInput,
   deps: {
     isEnabled?: () => boolean;
@@ -114,7 +114,7 @@ async function main() {
     });
 
     const hookInput: HookInput = JSON.parse(input);
-    const result = await powershellGuidanceHook(hookInput);
+    const result = await windowsPathNormalizationHook(hookInput);
 
     if (result.decision === 'block') {
       // Output in Claude Code's expected format for blocking
