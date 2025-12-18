@@ -492,4 +492,7 @@ async function main() {
   }
 }
 
-main();
+// CLI entrypoint - only run when executed directly, not when imported
+if (import.meta.main) {
+  main();
+}
