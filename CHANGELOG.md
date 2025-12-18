@@ -1,3 +1,10 @@
+## [3.4.3](https://github.com/cahaseler/cc-track/compare/v3.4.2...v3.4.3) (2025-12-18)
+
+
+### Bug Fixes
+
+* comprehensive Windows path compatibility fixes ([#178](https://github.com/cahaseler/cc-track/issues/178)) ([e9951ed](https://github.com/cahaseler/cc-track/commit/e9951ed016e5c1a6b0d7159a180bdf6853d53818))
+
 ## [3.4.2](https://github.com/cahaseler/cc-track/compare/v3.4.1...v3.4.2) (2025-12-18)
 
 
