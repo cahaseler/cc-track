@@ -425,6 +425,147 @@ export interface ValidationDeps {
   logger?: ReturnType<typeof createLogger>;
 }
 
+interface CoreValidationResult {
+  validation: ValidationResult;
+  allPassed: boolean;
+  knipWarnings: string[];
+}
+
+/**
+ * Run core validation checks (shared between task-aware and standalone validation)
+ */
+function runCoreValidationChecks(projectRoot: string, deps: ValidationDeps = {}): CoreValidationResult {
+  const validation: ValidationResult = {};
+
+  // TypeScript check
+  validation.typescript = runTypeScriptCheck(projectRoot, deps);
+
+  // Lint check
+  validation.lint = runLintCheck(projectRoot, deps);
+
+  // Test check
+  validation.tests = runTests(projectRoot, deps);
+
+  // Knip check
+  validation.knip = runKnipCheck(projectRoot, deps);
+
+  // Determine if all validation passed
+  const allPassed =
+    validation.typescript?.passed !== false && validation.lint?.passed !== false && validation.tests?.passed !== false;
+
+  // Build Knip warnings (non-blocking)
+  const knipWarnings: string[] = [];
+  if (validation.knip?.passed === false) {
+    const knipIssues = [];
+    if (validation.knip.unusedFiles) {
+      knipIssues.push(`${validation.knip.unusedFiles} unused files`);
+    }
+    if (validation.knip.unusedExports) {
+      knipIssues.push(`${validation.knip.unusedExports} unused exports`);
+    }
+    if (validation.knip.unusedDeps) {
+      knipIssues.push(`${validation.knip.unusedDeps} unused dependencies`);
+    }
+    if (knipIssues.length > 0) {
+      knipWarnings.push(`Knip found: ${knipIssues.join(', ')}`);
+    }
+  }
+
+  return { validation, allPassed, knipWarnings };
+}
+
+export interface ValidationFormatOptions {
+  getLintConfig?: typeof getLintConfig;
+}
+
+/**
+ * Format validation results into user-friendly messages
+ * Shared between prepare-completion and code-review scripts
+ */
+export function formatValidationResults(validation: ValidationResult, options: ValidationFormatOptions = {}): string[] {
+  const messages: string[] = [];
+  const getLintConfigFn = options.getLintConfig || getLintConfig;
+
+  // TypeScript errors
+  if (validation.typescript?.passed === false) {
+    messages.push('#### TypeScript Errors');
+    messages.push(`Found ${validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
+    if (validation.typescript.errors) {
+      messages.push('```');
+      messages.push(validation.typescript.errors.substring(0, 1000));
+      if (validation.typescript.errors.length > 1000) {
+        messages.push('... (truncated)');
+      }
+      messages.push('```\n');
+    }
+    messages.push(
+      '**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n',
+    );
+  }
+
+  // Linting issues
+  if (validation.lint?.passed === false) {
+    messages.push('#### Linting Issues');
+    messages.push(`Found ${validation.lint.issueCount || 'multiple'} linting issues.\n`);
+    if (validation.lint.errors) {
+      messages.push('```');
+      messages.push(validation.lint.errors.substring(0, 1000));
+      if (validation.lint.errors.length > 1000) {
+        messages.push('... (truncated)');
+      }
+      messages.push('```\n');
+    }
+
+    const lintConfig = getLintConfigFn();
+    const tool = lintConfig?.tool || 'biome';
+    let fixAdvice = 'Fix linting issues';
+
+    if (lintConfig?.autoFixCommand) {
+      fixAdvice = `Fix linting issues. Many can be auto-fixed with \`${lintConfig.autoFixCommand}\``;
+    } else if (tool === 'biome') {
+      fixAdvice = 'Fix linting issues. Many can be auto-fixed with `bunx biome check --write`';
+    } else if (tool === 'eslint') {
+      fixAdvice = 'Fix linting issues. Many can be auto-fixed with `npx eslint --fix`';
+    }
+
+    messages.push(`**Action:** ${fixAdvice}.\n`);
+  }
+
+  // Test failures
+  if (validation.tests?.passed === false) {
+    messages.push('#### Test Failures');
+    messages.push(`Found ${validation.tests.failCount || 'multiple'} failing tests.\n`);
+    if (validation.tests.errors) {
+      messages.push('```');
+      messages.push(validation.tests.errors.substring(0, 1000));
+      if (validation.tests.errors.length > 1000) {
+        messages.push('... (truncated)');
+      }
+      messages.push('```\n');
+    }
+    messages.push('**Action:** Fix failing tests or update test expectations as needed.\n');
+  }
+
+  // Knip unused code warnings (non-blocking)
+  if (validation.knip?.passed === false) {
+    messages.push('#### Unused Code (Optional)');
+    const issues = [];
+    if (validation.knip.unusedFiles) {
+      issues.push(`${validation.knip.unusedFiles} unused files`);
+    }
+    if (validation.knip.unusedExports) {
+      issues.push(`${validation.knip.unusedExports} unused exports`);
+    }
+    if (validation.knip.unusedDeps) {
+      issues.push(`${validation.knip.unusedDeps} unused dependencies`);
+    }
+    messages.push(`Knip found: ${issues.join(', ')}\n`);
+    messages.push("**Note:** These are warnings and won't block, but consider cleaning them up.\n");
+  }
+
+  return messages;
+}
+
 /**
  * Run validation checks and return the result
  * This function can be called by other commands or used directly
@@ -469,43 +610,10 @@ export async function runValidationChecks(
 
     // Run validation checks
     log.info('Starting validation checks');
-
-    // TypeScript check
-    result.validation.typescript = runTypeScriptCheck(projectRoot, deps);
-
-    // Lint check
-    result.validation.lint = runLintCheck(projectRoot, deps);
-
-    // Test check
-    result.validation.tests = runTests(projectRoot, deps);
-
-    // Knip check
-    result.validation.knip = runKnipCheck(projectRoot, deps);
-
-    // Determine if ready for completion
-    const allValidationPassed =
-      result.validation.typescript?.passed !== false &&
-      result.validation.lint?.passed !== false &&
-      result.validation.tests?.passed !== false;
-
-    // Knip issues are warnings, not blockers
-    if (result.validation.knip?.passed === false) {
-      const knipIssues = [];
-      if (result.validation.knip.unusedFiles) {
-        knipIssues.push(`${result.validation.knip.unusedFiles} unused files`);
-      }
-      if (result.validation.knip.unusedExports) {
-        knipIssues.push(`${result.validation.knip.unusedExports} unused exports`);
-      }
-      if (result.validation.knip.unusedDeps) {
-        knipIssues.push(`${result.validation.knip.unusedDeps} unused dependencies`);
-      }
-      if (knipIssues.length > 0) {
-        result.warnings.push(`Knip found: ${knipIssues.join(', ')}`);
-      }
-    }
-
-    result.readyForCompletion = allValidationPassed;
+    const coreResult = runCoreValidationChecks(projectRoot, deps);
+    result.validation = coreResult.validation;
+    result.warnings.push(...coreResult.knipWarnings);
+    result.readyForCompletion = coreResult.allPassed;
     result.success = true;
 
     log.info('Preparation check complete', {
@@ -514,6 +622,67 @@ export async function runValidationChecks(
     });
   } catch (error) {
     log.error('Preparation failed', { error });
+    result.error = error instanceof Error ? error.message : 'Unknown error';
+    result.success = false;
+  }
+
+  return result;
+}
+
+/**
+ * Standalone validation result - no task info required
+ */
+export interface StandaloneValidationResult {
+  success: boolean;
+  readyForReview: boolean;
+  validation: ValidationResult;
+  git: GitStatus;
+  warnings: string[];
+  error?: string;
+}
+
+/**
+ * Run validation checks without requiring an active task
+ * Use this for standalone code review outside the spec workflow
+ */
+export async function runStandaloneValidation(
+  projectRoot: string = process.cwd(),
+  deps: ValidationDeps = {},
+): Promise<StandaloneValidationResult> {
+  const result: StandaloneValidationResult = {
+    success: false,
+    readyForReview: false,
+    validation: {},
+    git: {
+      hasUncommittedChanges: false,
+      modifiedFiles: [],
+      wipCommitCount: 0,
+      currentBranch: '',
+      isTaskBranch: false,
+    },
+    warnings: [],
+  };
+
+  const log = deps.logger || logger;
+
+  try {
+    // Get git status (no task ID needed)
+    result.git = getGitStatus(projectRoot, undefined, deps);
+
+    // Run validation checks
+    log.info('Starting standalone validation checks');
+    const coreResult = runCoreValidationChecks(projectRoot, deps);
+    result.validation = coreResult.validation;
+    result.warnings.push(...coreResult.knipWarnings);
+    result.readyForReview = coreResult.allPassed;
+    result.success = true;
+
+    log.info('Standalone validation complete', {
+      readyForReview: result.readyForReview,
+      warnings: result.warnings,
+    });
+  } catch (error) {
+    log.error('Standalone validation failed', { error });
     result.error = error instanceof Error ? error.message : 'Unknown error';
     result.success = false;
   }

@@ -20,6 +20,13 @@ import { getConfig as getConfigImpl } from '../skills/cc-track-tools/lib/config'
 import { getCurrentBranch as getCurrentBranchImpl } from '../skills/cc-track-tools/lib/git-helpers';
 import { getActiveSpecDirectory } from '../skills/cc-track-tools/lib/spec-helpers';
 
+interface CurrentUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
+
 interface StatusLineInput {
   model?: {
     display_name: string;
@@ -28,9 +35,8 @@ interface StatusLineInput {
     total_cost_usd?: number;
   };
   context_window?: {
-    total_input_tokens: number;
-    total_output_tokens: number;
     context_window_size: number;
+    current_usage?: CurrentUsage;
   };
 }
 
@@ -78,17 +84,21 @@ export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): strin
 }
 
 /**
- * Get token info from native context_window data (Claude Code v2.0.65+)
- * Returns empty string for older versions that don't provide this data
+ * Get token info from current_usage (actual context state, post-compaction)
  */
 export function getTokenInfo(input: StatusLineInput): string {
-  if (input.context_window) {
-    const { total_input_tokens, total_output_tokens, context_window_size } = input.context_window;
-    const total = total_input_tokens + total_output_tokens;
-    const percentage = Math.round((total / context_window_size) * 100);
-    return `${total.toLocaleString()} (${percentage}%)`;
+  const { context_window } = input;
+  if (!context_window?.current_usage) {
+    return '';
   }
-  return '';
+
+  const { current_usage, context_window_size } = context_window;
+  const current =
+    current_usage.input_tokens +
+    (current_usage.cache_creation_input_tokens || 0) +
+    (current_usage.cache_read_input_tokens || 0);
+  const percentage = Math.round((current / context_window_size) * 100);
+  return `${current.toLocaleString()} (${percentage}%)`;
 }
 
 /**

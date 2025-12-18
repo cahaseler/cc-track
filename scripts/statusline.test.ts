@@ -68,15 +68,19 @@ describe('statusline', () => {
   });
 
   describe('getTokenInfo', () => {
-    test('calculates tokens from native context_window data', () => {
+    test('calculates tokens from current_usage', () => {
       const result = getTokenInfo({
         context_window: {
-          total_input_tokens: 50000,
-          total_output_tokens: 10000,
           context_window_size: 200000,
+          current_usage: {
+            input_tokens: 50000,
+            output_tokens: 5000,
+            cache_creation_input_tokens: 5000,
+            cache_read_input_tokens: 5000,
+          },
         },
       });
-      // 50,000 + 10,000 = 60,000 (30%)
+      // 50,000 + 5,000 + 5,000 = 60,000 (30%)
       expect(result).toBe('60,000 (30%)');
     });
 
@@ -85,26 +89,41 @@ describe('statusline', () => {
       expect(result).toBe('');
     });
 
+    test('returns empty string when current_usage not present', () => {
+      const result = getTokenInfo({
+        context_window: {
+          context_window_size: 200000,
+        },
+      });
+      expect(result).toBe('');
+    });
+
     test('handles edge case of 100% usage', () => {
       const result = getTokenInfo({
         context_window: {
-          total_input_tokens: 150000,
-          total_output_tokens: 50000,
           context_window_size: 200000,
+          current_usage: {
+            input_tokens: 180000,
+            output_tokens: 10000,
+            cache_creation_input_tokens: 10000,
+            cache_read_input_tokens: 10000,
+          },
         },
       });
       expect(result).toBe('200,000 (100%)');
     });
 
-    test('handles zero tokens', () => {
+    test('handles missing cache tokens', () => {
       const result = getTokenInfo({
         context_window: {
-          total_input_tokens: 0,
-          total_output_tokens: 0,
           context_window_size: 200000,
+          current_usage: {
+            input_tokens: 60000,
+            output_tokens: 5000,
+          },
         },
       });
-      expect(result).toBe('0 (0%)');
+      expect(result).toBe('60,000 (30%)');
     });
   });
 
@@ -295,13 +314,17 @@ describe('statusline', () => {
         getActiveSpecDirectory: mock(() => '/project/.cc-track/specs/001-fix-authentication-bug'),
       };
 
-      // Input includes native context_window data (Claude Code v2.0.65+)
+      // Input includes current_usage for accurate context percentage
       const input = {
         model: { display_name: 'Claude Sonnet' },
         context_window: {
-          total_input_tokens: 120000,
-          total_output_tokens: 24000,
           context_window_size: 200000,
+          current_usage: {
+            input_tokens: 120000,
+            output_tokens: 10000,
+            cache_creation_input_tokens: 12000,
+            cache_read_input_tokens: 12000,
+          },
         },
       };
 
@@ -310,12 +333,12 @@ describe('statusline', () => {
       const lines = result.split('\n');
       expect(lines).toHaveLength(2);
 
-      // First line should have model, cost, rate, native tokens
+      // First line should have model, cost, rate, tokens from current_usage
       expect(lines[0]).toContain('🚅 Claude Sonnet');
       expect(lines[0]).toContain('(reset in 45m)');
       expect(lines[0]).toContain('💵 $75.50 today');
       expect(lines[0]).toContain('$12.25/hr');
-      // Native: 120,000 + 24,000 = 144,000 (72%)
+      // current_usage: 120,000 + 12,000 + 12,000 = 144,000 (72%)
       expect(lines[0]).toContain('144,000 (72%)');
 
       // Second line should have branch and task

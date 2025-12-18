@@ -1,5 +1,5 @@
-import { getConfig, getLintConfig } from '../lib/config';
-import { type PreparationResult, runValidationChecks } from '../lib/validation';
+import { getConfig } from '../lib/config';
+import { formatValidationResults, type PreparationResult, runValidationChecks } from '../lib/validation';
 import type { CommandResult } from './context';
 
 export interface PrepareCompletionDeps {
@@ -55,84 +55,7 @@ export async function prepareCompletionAction(
     } else {
       messages.push('### ⚠️ Validation Issues Found\n');
       messages.push('The following issues need to be resolved before task completion:\n');
-
-      // TypeScript errors
-      if (result.validation?.typescript?.passed === false) {
-        messages.push('#### TypeScript Errors');
-        messages.push(`Found ${result.validation.typescript.errorCount || 'multiple'} TypeScript errors.\n`);
-        if (result.validation.typescript.errors) {
-          messages.push('```');
-          messages.push(result.validation.typescript.errors.substring(0, 1000));
-          if (result.validation.typescript.errors.length > 1000) {
-            messages.push('... (truncated)');
-          }
-          messages.push('```\n');
-        }
-        messages.push(
-          '**Action:** Fix all TypeScript errors by updating type definitions and resolving type mismatches.\n',
-        );
-      }
-
-      // Linting issues
-      if (result.validation?.lint?.passed === false) {
-        messages.push('#### Linting Issues');
-        messages.push(`Found ${result.validation.lint.issueCount || 'multiple'} linting issues.\n`);
-        if (result.validation.lint.errors) {
-          messages.push('```');
-          messages.push(result.validation.lint.errors.substring(0, 1000));
-          if (result.validation.lint.errors.length > 1000) {
-            messages.push('... (truncated)');
-          }
-          messages.push('```\n');
-        }
-
-        // Generate tool-specific fix advice
-        const lintConfig = getLintConfig();
-        const tool = lintConfig?.tool || 'biome';
-        let fixAdvice = 'Fix linting issues';
-
-        if (lintConfig?.autoFixCommand) {
-          fixAdvice = `Fix linting issues. Many can be auto-fixed with \`${lintConfig.autoFixCommand}\``;
-        } else if (tool === 'biome') {
-          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `bunx biome check --write`';
-        } else if (tool === 'eslint') {
-          fixAdvice = 'Fix linting issues. Many can be auto-fixed with `npx eslint --fix`';
-        }
-
-        messages.push(`**Action:** ${fixAdvice}.\n`);
-      }
-
-      // Test failures
-      if (result.validation?.tests?.passed === false) {
-        messages.push('#### Test Failures');
-        messages.push(`Found ${result.validation.tests.failCount || 'multiple'} failing tests.\n`);
-        if (result.validation.tests.errors) {
-          messages.push('```');
-          messages.push(result.validation.tests.errors.substring(0, 1000));
-          if (result.validation.tests.errors.length > 1000) {
-            messages.push('... (truncated)');
-          }
-          messages.push('```\n');
-        }
-        messages.push('**Action:** Fix failing tests or update test expectations as needed.\n');
-      }
-
-      // Knip unused code warnings (non-blocking)
-      if (result.validation?.knip?.passed === false) {
-        messages.push('#### Unused Code (Optional)');
-        const issues = [];
-        if (result.validation.knip.unusedFiles) {
-          issues.push(`${result.validation.knip.unusedFiles} unused files`);
-        }
-        if (result.validation.knip.unusedExports) {
-          issues.push(`${result.validation.knip.unusedExports} unused exports`);
-        }
-        if (result.validation.knip.unusedDeps) {
-          issues.push(`${result.validation.knip.unusedDeps} unused dependencies`);
-        }
-        messages.push(`Knip found: ${issues.join(', ')}\n`);
-        messages.push("**Note:** These are warnings and won't block completion, but consider cleaning them up.\n");
-      }
+      messages.push(...formatValidationResults(result.validation));
     }
 
     // Git status information

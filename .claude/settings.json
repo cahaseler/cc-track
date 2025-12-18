@@ -5,7 +5,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts",
+    "command": "bun run /home/ubuntu/projects/cc-pars/scripts/statusline.ts",
     "padding": 0
   }
 }
