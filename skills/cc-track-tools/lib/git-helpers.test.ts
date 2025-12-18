@@ -44,7 +44,8 @@ describe('GitHelpers', () => {
       const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
       mockExec = mock((command: string) => {
         if (command.includes('gh repo view')) {
-          return 'test\n';
+          // Return JSON format as expected by the new implementation
+          return JSON.stringify({ defaultBranchRef: { name: 'test' } });
         }
         throw new Error('Not found');
       });
@@ -61,8 +62,8 @@ describe('GitHelpers', () => {
           throw new Error('Not a GitHub repo');
         }
         if (command.includes('git ls-remote')) {
-          // Return what the command would return after sed/cut processing
-          return 'develop\n';
+          // Return raw git ls-remote format - code parses with regex
+          return 'ref: refs/heads/develop\tHEAD\n';
         }
         throw new Error('Not found');
       });
@@ -180,11 +181,12 @@ describe('GitHelpers', () => {
         const mockGetGitConfig: GetGitConfigFunction = mock(() => null);
         mockExec = mock((command: string) => {
           if (source === 'gh repo view' && command.includes('gh repo view')) {
-            return `${expectedBranch}\n`;
+            // Return JSON format as expected by the new implementation
+            return JSON.stringify({ defaultBranchRef: { name: expectedBranch } });
           }
           if (source === 'git ls-remote' && command.includes('git ls-remote')) {
-            // Return what the command would return after sed/cut processing
-            return `${expectedBranch}\n`;
+            // Return raw git ls-remote format - code parses with regex
+            return `ref: refs/heads/${expectedBranch}\tHEAD\n`;
           }
           if (source === 'git config init.defaultBranch' && command === 'git config init.defaultBranch') {
             return `${expectedBranch}\n`;

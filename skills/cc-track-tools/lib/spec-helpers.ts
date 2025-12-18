@@ -2,7 +2,7 @@
 // ABOUTME: Provides functions to create/read/update .metadata.json files and manage .cc-track/specs/ directory structure
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 
 export interface SpecMetadata {
   task_id: string;

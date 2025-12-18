@@ -7,7 +7,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
+import { join } from 'node:path/posix';
 import type {
   CanUseTool,
   PermissionResult,

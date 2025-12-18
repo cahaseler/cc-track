@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 import { getActiveTaskId } from './claude-md';
 import { type EditValidationConfig, getConfig, getLintConfig, getTestConfig } from './config';
 import { isWipCommit } from './git-helpers';
@@ -82,7 +82,7 @@ function runTypeScriptCheck(projectRoot: string, deps: ValidationDeps = {}): Val
     const command = tsConfig?.command || 'bunx tsc --noEmit';
 
     log.info('Running TypeScript check', { command });
-    exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
+    exec(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     return { passed: true };
   } catch (error) {
@@ -119,7 +119,7 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     if (lintConfig.autoFixCommand) {
       try {
         log.info('Running lint auto-formatter', { command: lintConfig.autoFixCommand });
-        exec(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
+        exec(lintConfig.autoFixCommand, { cwd: projectRoot, encoding: 'utf-8' });
       } catch {
         // Auto-formatter might fail if there are syntax errors, continue to check
       }
@@ -128,7 +128,7 @@ function runLintCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     // Now run the lint check
     const command = lintConfig.command;
     log.info('Running lint check', { command, tool: lintConfig.tool || 'biome' });
-    exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
+    exec(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     return { passed: true };
   } catch (error) {
@@ -179,23 +179,28 @@ function runTests(projectRoot: string, deps: ValidationDeps = {}): ValidationRes
 
     log.info('Running tests', { command });
     // Run tests silently and just check exit code
-    // We redirect output to /dev/null to avoid polluting the JSON output
+    // Use stdio options to suppress output cross-platform
     try {
-      exec(`${command} >/dev/null 2>&1`, {
+      exec(command, {
         cwd: projectRoot,
         encoding: 'utf-8',
-        shell: '/bin/bash',
+        stdio: ['pipe', 'ignore', 'ignore'], // Suppress stdout/stderr cross-platform
       });
       // If exec doesn't throw, tests passed
       log.info('All tests passed');
       return { passed: true };
     } catch (_testError) {
       // Tests failed - run again to get details for the error report
-      const output = exec(`${command} 2>&1 || true`, {
-        cwd: projectRoot,
-        encoding: 'utf-8',
-        shell: '/bin/bash',
-      });
+      let output: string;
+      try {
+        output = exec(command, {
+          cwd: projectRoot,
+          encoding: 'utf-8',
+        });
+      } catch (err) {
+        const execErr = err as { stdout?: string; stderr?: string };
+        output = execErr.stdout || execErr.stderr || '';
+      }
 
       // Extract fail count and failed test details
       const failMatch = output.match(/(\d+)\s+fail/);
@@ -251,7 +256,7 @@ function runKnipCheck(projectRoot: string, deps: ValidationDeps = {}): Validatio
     const command = knipConfig.command || 'bunx knip';
     log.info('Running Knip check', { command });
 
-    const output = exec(command, { cwd: projectRoot, encoding: 'utf-8', shell: '/bin/bash' });
+    const output = exec(command, { cwd: projectRoot, encoding: 'utf-8' });
 
     // Parse Knip output
     const filesMatch = output.match(/Unused files\s+(\d+)/);

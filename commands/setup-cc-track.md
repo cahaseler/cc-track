@@ -19,16 +19,18 @@ bun --version
 
 If this fails:
 - **Stop immediately** and show the Bun installation error message
-- Guide user to install Bun: `curl -fsSL https://bun.sh/install | bash`
+- Guide user to install Bun based on their platform:
+  - **Windows:** `powershell -c "irm bun.sh/install.ps1 | iex"` or download from https://bun.sh
+  - **macOS/Linux:** `curl -fsSL https://bun.sh/install | bash`
 - Ask them to restart their terminal and try `/setup-cc-track` again
 
 ### 2. Plugin Dependencies Verification
 
-Check if plugin dependencies are installed:
-```bash
-ls -la ${CLAUDE_PLUGIN_ROOT}/node_modules/@anthropic-ai/claude-agent-sdk
-ls -la ${CLAUDE_PLUGIN_ROOT}/node_modules/ccusage
-```
+Check if plugin dependencies are installed by verifying these directories exist:
+- `${CLAUDE_PLUGIN_ROOT}/node_modules/@anthropic-ai/claude-agent-sdk`
+- `${CLAUDE_PLUGIN_ROOT}/node_modules/ccusage`
+
+Use the file system to check existence (platform-independent).
 
 If either directory doesn't exist:
 - **Stop immediately** and show the missing dependencies error message
@@ -42,9 +44,8 @@ If either directory doesn't exist:
 ### 3. npm/Plugin Conflict Detection
 
 Check if the old npm version of cc-track is still installed:
-```bash
-which cc-track
-```
+- **macOS/Linux:** `which cc-track`
+- **Windows:** `where cc-track` or `Get-Command cc-track`
 
 If this returns a path (meaning npm version is installed):
 - **Stop immediately** and show the npm/plugin conflict error message
@@ -53,7 +54,7 @@ If this returns a path (meaning npm version is installed):
   ```bash
   npm uninstall -g cc-track
   ```
-- Verify removal: `which cc-track` should show "not found"
+- Verify removal: the command above should show "not found" or error
 - Ask them to try `/setup-cc-track` again
 
 **All three checks must pass before proceeding with setup.**
@@ -245,9 +246,9 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
 
 First, create the `.cc-track/` directory structure:
 
-```bash
-mkdir -p .cc-track/specs
-```
+Use Claude Code's file system tools to create directories (platform-independent), or:
+- **macOS/Linux:** `mkdir -p .cc-track/specs`
+- **Windows:** `mkdir .cc-track\specs` (creates parent directories automatically)
 
 Then create customized project files in `.cc-track/` **ONLY if they don't exist**:
 
@@ -323,44 +324,27 @@ Explain:
 
 ### 8. Configure Claude Code Settings (if statusline enabled)
 
-If the user enabled the statusline feature, configure it automatically:
+If the user enabled the statusline feature, configure it in the **project-local** `.claude/settings.json` file.
 
-**Read the Claude Code settings file:**
-```bash
-# Typical location (may vary by platform):
-cat ~/.config/claude-code/config.json
-```
+**Create or update `.claude/settings.json` in the project root:**
 
-**Update the settings to add statusline command:**
-
-Add or update the `statusLine` configuration:
 ```json
 {
   "statusLine": {
-    "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts"
+    "type": "command",
+    "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts",
+    "padding": 0
   }
 }
 ```
 
-**Write the updated settings back:**
-```bash
-# Write to Claude Code config file
-```
+Use Claude Code's Write tool to create/update this file (platform-independent).
 
 **Inform the user:**
-- "✓ Configured Claude Code statusline"
-- "⚠️ You'll need to restart Claude Code for the statusline to appear"
+- "✓ Configured Claude Code statusline in .claude/settings.json"
+- "⚠️ You may need to restart Claude Code for the statusline to appear"
 
-**If you can't modify the settings automatically** (permissions issue or file not found):
-- Tell user: "I couldn't automatically configure the statusline. Please add this to your Claude Code settings manually:"
-- Show them:
-  ```json
-  {
-    "statusLine": {
-      "command": "bun run ${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ts"
-    }
-  }
-  ```
+**Note:** The statusline uses `${CLAUDE_PLUGIN_ROOT}` which Claude Code expands automatically. This works cross-platform.
 
 ### 9. Final Steps
 
@@ -398,9 +382,12 @@ Use these pre-formatted messages for common issues:
 cc-track plugin requires Bun runtime to execute TypeScript directly.
 
 To install Bun:
-```bash
+
+**Windows (PowerShell):**
+powershell -c "irm bun.sh/install.ps1 | iex"
+
+**macOS/Linux:**
 curl -fsSL https://bun.sh/install | bash
-```
 
 Or visit https://bun.sh for installation instructions.
 
@@ -432,14 +419,11 @@ You have both the npm package and plugin versions of cc-track installed.
 This will cause conflicts. Please uninstall the npm version first.
 
 To uninstall the npm version:
-```bash
 npm uninstall -g cc-track
-```
 
 Verify removal:
-```bash
-which cc-track  # Should show: not found
-```
+- macOS/Linux: which cc-track (should show: not found)
+- Windows: where cc-track (should show: not found or error)
 
 After uninstalling, try `/setup-cc-track` again.
 ```

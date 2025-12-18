@@ -3,7 +3,7 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 
 export interface DetectionResult {
   detected: boolean;
@@ -17,8 +17,10 @@ export interface DetectionResult {
  */
 export function detectNpmPackage(exec: typeof execSync = execSync): DetectionResult {
   try {
-    // Check using 'which' command (works on Unix-like systems)
-    const whichResult = exec('which cc-track', {
+    // Use platform-appropriate command to find binary
+    const isWindows = process.platform === 'win32';
+    const findCommand = isWindows ? 'where cc-track' : 'which cc-track';
+    const whichResult = exec(findCommand, {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -29,7 +31,7 @@ export function detectNpmPackage(exec: typeof execSync = execSync): DetectionRes
       };
     }
   } catch {
-    // which failed, try npm list
+    // Command failed, try npm list
   }
 
   try {

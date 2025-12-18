@@ -312,7 +312,10 @@ This discretionary approach means simple features don't waste time on exploratio
 **Purpose:** View centralized logs for debugging
 
 **What happens:**
-1. Displays logs from `~/.local/share/cc-track/logs/`
+1. Displays logs from platform-specific location:
+   - Linux/WSL: `~/.local/share/cc-track/logs/`
+   - macOS: `~/Library/Logs/cc-track/`
+   - Windows: `%LOCALAPPDATA%\cc-track\logs\`
 2. Filters by component, level, time range
 
 **When to use:** Debugging hook failures or command issues

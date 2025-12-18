@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 import { getLoggingConfig } from './config';
 
 export enum LogLevel {

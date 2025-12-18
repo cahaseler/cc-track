@@ -57,17 +57,18 @@ export class GitHelpers {
 
     // Try GitHub API if available (most reliable for GitHub repos)
     try {
-      const githubDefault = this.exec(
-        "gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null",
-        {
-          cwd,
-          shell: '/bin/bash',
-        },
-      ).trim();
+      const ghOutput = this.exec('gh repo view --json defaultBranchRef', {
+        cwd,
+        stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr cross-platform
+      }).trim();
 
-      if (githubDefault && githubDefault !== 'null') {
-        this.logger.debug(`Default branch from GitHub API: ${githubDefault}`);
-        return githubDefault;
+      if (ghOutput) {
+        const parsed = JSON.parse(ghOutput);
+        const githubDefault = parsed?.defaultBranchRef?.name;
+        if (githubDefault && githubDefault !== 'null') {
+          this.logger.debug(`Default branch from GitHub API: ${githubDefault}`);
+          return githubDefault;
+        }
       }
     } catch {
       // GitHub CLI not available or not a GitHub repo
@@ -75,15 +76,16 @@ export class GitHelpers {
 
     // Try git ls-remote to get the remote HEAD (more reliable than symbolic-ref)
     try {
-      const remoteHead = this.exec(
-        "git ls-remote --symref origin HEAD 2>/dev/null | head -1 | sed 's/^ref: refs\\/heads\\///' | cut -f1",
-        {
-          cwd,
-          shell: '/bin/bash',
-        },
-      ).trim();
+      const lsRemoteOutput = this.exec('git ls-remote --symref origin HEAD', {
+        cwd,
+        stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr cross-platform
+      }).trim();
 
-      if (remoteHead && remoteHead !== 'HEAD') {
+      // Parse output: "ref: refs/heads/main\tHEAD" - extract branch name
+      const firstLine = lsRemoteOutput.split('\n')[0] || '';
+      const match = firstLine.match(/^ref: refs\/heads\/([^\t]+)/);
+      if (match) {
+        const remoteHead = match[1];
         this.logger.debug(`Default branch from git remote HEAD: ${remoteHead}`);
         return remoteHead;
       }
@@ -93,15 +95,15 @@ export class GitHelpers {
 
     // Fallback to the old symbolic-ref method (kept for compatibility)
     try {
-      const defaultBranch = this.exec(
-        'git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed "s@^refs/remotes/origin/@@"',
-        {
-          cwd,
-          shell: '/bin/bash',
-        },
-      ).trim();
+      const symbolicRef = this.exec('git symbolic-ref refs/remotes/origin/HEAD', {
+        cwd,
+        stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr cross-platform
+      }).trim();
 
-      if (defaultBranch) {
+      // Parse output: "refs/remotes/origin/main" - extract branch name
+      const prefix = 'refs/remotes/origin/';
+      if (symbolicRef.startsWith(prefix)) {
+        const defaultBranch = symbolicRef.slice(prefix.length);
         this.logger.debug(`Default branch from symbolic-ref: ${defaultBranch}`);
         return defaultBranch;
       }

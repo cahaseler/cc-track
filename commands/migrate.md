@@ -143,32 +143,30 @@ This progress file was created during migration from old cc-track structure.
 
 **For `@.claude/specs/NNN-feature-name/` references:**
 
-1. Create `.cc-track/` directory if it doesn't exist: `mkdir -p .cc-track`
+1. Create `.cc-track/` directory if it doesn't exist (use file tools, not shell commands)
 
 2. Move **only cc-track owned files** from `.claude/` to `.cc-track/`:
 
-**Directories to move:**
-```bash
-[ -d .claude/specs ] && mv .claude/specs .cc-track/specs
-[ -d .claude/plans-archive ] && mv .claude/plans-archive .cc-track/plans-archive
-[ -d .claude/research ] && mv .claude/research .cc-track/research
-```
+**Directories to move (if they exist):**
+- `.claude/specs` → `.cc-track/specs`
+- `.claude/plans-archive` → `.cc-track/plans-archive`
+- `.claude/research` → `.cc-track/research`
 
-**Files to move (explicit list - only these cc-track owned files):**
-```bash
-[ -f .claude/backlog.md ] && mv .claude/backlog.md .cc-track/
-[ -f .claude/cc-track-workflow.md ] && mv .claude/cc-track-workflow.md .cc-track/
-[ -f .claude/code_index.md ] && mv .claude/code_index.md .cc-track/
-[ -f .claude/constitution.md ] && mv .claude/constitution.md .cc-track/
-[ -f .claude/decision_log.md ] && mv .claude/decision_log.md .cc-track/
-[ -f .claude/learned_mistakes.md ] && mv .claude/learned_mistakes.md .cc-track/
-[ -f .claude/no_active_task.md ] && mv .claude/no_active_task.md .cc-track/
-[ -f .claude/product_context.md ] && mv .claude/product_context.md .cc-track/
-[ -f .claude/progress_log.md ] && mv .claude/progress_log.md .cc-track/
-[ -f .claude/system_patterns.md ] && mv .claude/system_patterns.md .cc-track/
-[ -f .claude/track.config.json ] && mv .claude/track.config.json .cc-track/
-[ -f .claude/user_context.md ] && mv .claude/user_context.md .cc-track/
-```
+**Files to move (only these cc-track owned files, if they exist):**
+- `.claude/backlog.md` → `.cc-track/backlog.md`
+- `.claude/cc-track-workflow.md` → `.cc-track/cc-track-workflow.md`
+- `.claude/code_index.md` → `.cc-track/code_index.md`
+- `.claude/constitution.md` → `.cc-track/constitution.md`
+- `.claude/decision_log.md` → `.cc-track/decision_log.md`
+- `.claude/learned_mistakes.md` → `.cc-track/learned_mistakes.md`
+- `.claude/no_active_task.md` → `.cc-track/no_active_task.md`
+- `.claude/product_context.md` → `.cc-track/product_context.md`
+- `.claude/progress_log.md` → `.cc-track/progress_log.md`
+- `.claude/system_patterns.md` → `.cc-track/system_patterns.md`
+- `.claude/track.config.json` → `.cc-track/track.config.json`
+- `.claude/user_context.md` → `.cc-track/user_context.md`
+
+Use Read/Write tools or `git mv` to move files. Cross-platform compatible.
 
 **IMPORTANT**: Do NOT move these files (they belong to Claude Code):
 - `settings.json`

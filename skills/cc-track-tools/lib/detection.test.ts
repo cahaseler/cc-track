@@ -5,9 +5,12 @@ import { describe, expect, mock, test } from 'bun:test';
 import { detectNpmPackage, verifyBunInstalled, verifyPluginDependencies } from './detection';
 
 describe('detectNpmPackage', () => {
-  test('detects npm package via which command', () => {
+  // Helper to check for platform-appropriate find command
+  const isFindCommand = (cmd: string) => cmd === 'which cc-track' || cmd === 'where cc-track';
+
+  test('detects npm package via which/where command', () => {
     const mockExec = mock((cmd: string) => {
-      if (cmd === 'which cc-track') {
+      if (isFindCommand(cmd)) {
         return '/usr/local/bin/cc-track\n';
       }
       return '';
@@ -17,12 +20,11 @@ describe('detectNpmPackage', () => {
 
     expect(result.detected).toBe(true);
     expect(result.message).toContain('/usr/local/bin/cc-track');
-    expect(mockExec).toHaveBeenCalledWith('which cc-track', expect.any(Object));
   });
 
   test('detects npm package via npm list', () => {
     const mockExec = mock((cmd: string) => {
-      if (cmd === 'which cc-track') {
+      if (isFindCommand(cmd)) {
         throw new Error('not found');
       }
       if (cmd === 'npm list -g cc-track --depth=0') {
@@ -37,7 +39,7 @@ describe('detectNpmPackage', () => {
     expect(result.message).toContain('global npm packages');
   });
 
-  test('returns not detected when neither which nor npm list find package', () => {
+  test('returns not detected when neither which/where nor npm list find package', () => {
     const mockExec = mock(() => {
       throw new Error('not found');
     });
@@ -48,9 +50,9 @@ describe('detectNpmPackage', () => {
     expect(result.message).toBeUndefined();
   });
 
-  test('handles which command returning empty string', () => {
+  test('handles which/where command returning empty string', () => {
     const mockExec = mock((cmd: string) => {
-      if (cmd === 'which cc-track') {
+      if (isFindCommand(cmd)) {
         return '';
       }
       if (cmd === 'npm list -g cc-track --depth=0') {
@@ -66,7 +68,7 @@ describe('detectNpmPackage', () => {
 
   test('handles npm list not containing cc-track', () => {
     const mockExec = mock((cmd: string) => {
-      if (cmd === 'which cc-track') {
+      if (isFindCommand(cmd)) {
         throw new Error('not found');
       }
       if (cmd === 'npm list -g cc-track --depth=0') {

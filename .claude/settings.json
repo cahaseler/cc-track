@@ -5,7 +5,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bun run /home/ubuntu/projects/cc-pars/scripts/statusline.ts",
+    "command": "bun run D:/Development/pars/cc-track/scripts/statusline.ts",
     "padding": 0
   }
 }

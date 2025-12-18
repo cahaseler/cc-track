@@ -1,6 +1,6 @@
 import type { execSync } from 'node:child_process';
 import type { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'node:path/posix';
 import type { isWipCommit } from '../lib/git-helpers';
 import type { createLogger } from '../lib/logger';
 import type { CommandResult } from './context';

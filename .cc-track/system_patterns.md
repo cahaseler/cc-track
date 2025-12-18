@@ -263,7 +263,10 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 - Handle both successful responses and error states
 
 ### Hook Debugging
-- Check execution logs at `~/.local/share/cc-track/logs/` for hook traces
+- Check execution logs for hook traces (platform-specific locations):
+  - **Linux/WSL**: `~/.local/share/cc-track/logs/`
+  - **macOS**: `~/Library/Logs/cc-track/`
+  - **Windows**: `%LOCALAPPDATA%\cc-track\logs\`
 - Each hook invocation logs input, processing steps, and output
 - Use `LOG_LEVEL=DEBUG` environment variable for verbose output
 

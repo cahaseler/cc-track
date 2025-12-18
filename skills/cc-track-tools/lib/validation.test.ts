@@ -384,23 +384,28 @@ describe('validation', () => {
 
       // Should use the custom test command
       expect(mockExecSync).toHaveBeenCalledWith(
-        `${customTestCommand} >/dev/null 2>&1`,
+        customTestCommand,
         expect.objectContaining({
           cwd: '/test/project',
-          shell: '/bin/bash',
+          stdio: ['pipe', 'ignore', 'ignore'],
         }),
       );
     });
 
     test('detects test failures when tests are enabled', async () => {
-      const mockExecSync = mock((command: string) => {
-        if (command.includes('npm test >/dev/null 2>&1')) {
-          const error = new Error('Tests failed') as any;
-          error.status = 1;
+      const mockExecSync = mock((command: string, options?: Record<string, unknown>) => {
+        if (command === 'npm test') {
+          // First call (silent check) throws to indicate failure
+          if (options?.stdio) {
+            const error = new Error('Tests failed') as NodeJS.ErrnoException;
+            (error as NodeJS.ErrnoException & { status: number }).status = 1;
+            throw error;
+          }
+          // Second call (to get details) throws with output
+          const error = new Error('Tests failed') as Error & { stdout: string };
+          error.stdout =
+            '✗ test/example.test.js › should work (fail)\n    AssertionError: expected 1 to equal 2\n\n1 fail\n0 pass';
           throw error;
-        }
-        if (command.includes('npm test 2>&1 || true')) {
-          return '✗ test/example.test.js › should work (fail)\n    AssertionError: expected 1 to equal 2\n\n1 fail\n0 pass';
         }
         if (command.includes('git status')) {
           return '';
@@ -498,10 +503,10 @@ describe('validation', () => {
 
       // Should use the default 'bun test' command
       expect(mockExecSync).toHaveBeenCalledWith(
-        'bun test >/dev/null 2>&1',
+        'bun test',
         expect.objectContaining({
           cwd: '/test/project',
-          shell: '/bin/bash',
+          stdio: ['pipe', 'ignore', 'ignore'],
         }),
       );
     });
@@ -592,23 +597,26 @@ describe('validation', () => {
     });
 
     test('reports all validation failures comprehensively', async () => {
-      const mockExecSync = mock((command: string) => {
+      const mockExecSync = mock((command: string, options?: Record<string, unknown>) => {
         if (command.includes('tsc')) {
-          const error = new Error('TypeScript failed') as any;
+          const error = new Error('TypeScript failed') as Error & { stderr: string };
           error.stderr = 'error TS2304: Cannot find name "foo".\nerror TS2304: Cannot find name "bar".';
           throw error;
         }
         if (command.includes('biome lint')) {
-          const error = new Error('Lint failed') as any;
+          const error = new Error('Lint failed') as Error & { stderr: string };
           error.stderr = 'file.ts:1:1 lint error';
           throw error;
         }
-        if (command.includes('npm test') && command.includes('/dev/null')) {
-          const error = new Error('Tests failed') as any;
+        if (command === 'npm test') {
+          // First call (with stdio) for silent check - throws to indicate failure
+          if (options?.stdio) {
+            throw new Error('Tests failed');
+          }
+          // Second call (without stdio) for details - throws with output
+          const error = new Error('Tests failed') as Error & { stdout: string };
+          error.stdout = '✗ test 1 (fail)\n✗ test 2 (fail)\n2 fail';
           throw error;
-        }
-        if (command.includes('npm test') && command.includes('2>&1')) {
-          return '✗ test 1 (fail)\n✗ test 2 (fail)\n2 fail';
         }
         if (command.includes('git status')) {
           return '';
