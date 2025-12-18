@@ -175,6 +175,15 @@ Present feature options and let user choose what to enable:
   - ⚠️ Cons: Adds validation overhead to every web search operation
   - Ask: "Enable web search validation? (helps prevent unnecessary searches)"
 
+**Windows Only:**
+- `powershell_guidance` - Intercept Linux/bash commands and convert to PowerShell
+  - ✅ Pros: Auto-converts simple Linux commands (cat, rm, cp, mv, head, tail, etc.) to PowerShell equivalents
+  - ✅ Pros: Rejects complex commands with clear PowerShell alternatives and syntax examples
+  - ✅ Pros: Prevents trial-and-error when Claude tries Linux commands that fail on Windows
+  - ⚠️ Only useful on Windows - do NOT enable on macOS/Linux
+  - Ask: (only if on Windows) "Enable PowerShell guidance? (auto-converts Linux commands to PowerShell)"
+  - Note: This is a PreToolUse hook that intercepts Bash commands before execution
+
 ### 4. Configuration File Creation
 
 Based on user selections, create `.cc-track/track.config.json`:
@@ -195,6 +204,9 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
       }
     },
     "pre_tool_validation": {
+      "enabled": true/false
+    },
+    "powershell_guidance": {
       "enabled": true/false
     }
   },
@@ -317,10 +329,12 @@ Based on enabled features, configure hooks in Claude Code settings.
 Show user what hooks will be enabled:
 - `edit_validation` → PostToolUse hook
 - `pre_tool_validation` → PreToolUse hook
+- `powershell_guidance` → PreToolUse hook (Windows only)
 
 Explain:
 - Hooks execute TypeScript files from `${CLAUDE_PLUGIN_ROOT}/hooks/`
 - User can disable individual hooks via `/config-track` later
+- The `powershell_guidance` hook intercepts Bash commands to convert Linux→PowerShell or provide guidance
 
 ### 8. Configure Claude Code Settings (if statusline enabled)
 

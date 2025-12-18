@@ -37,6 +37,10 @@
     "pre_tool_validation": {
       "enabled": true,
       "description": "Pre-tool validation for task files and branch protection"
+    },
+    "powershell_guidance": {
+      "enabled": true,
+      "description": "Windows only: intercepts Linux/bash commands and converts to PowerShell or provides guidance. Must be explicitly enabled."
     }
   },
   "git": {

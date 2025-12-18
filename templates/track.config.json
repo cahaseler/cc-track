@@ -20,6 +20,9 @@
     },
     "pre_tool_validation": {
       "enabled": false
+    },
+    "powershell_guidance": {
+      "enabled": false
     }
   },
   "features": {
