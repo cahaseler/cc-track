@@ -3,33 +3,81 @@
  * PermissionRequest Hook - Denies permissions in autoflow mode with helpful message
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface HookInput {
+export interface HookInput {
   cwd?: string;
   tool_name?: string;
   tool_input?: unknown;
   [key: string]: unknown;
 }
 
-interface AutoflowState {
+export interface AutoflowState {
   active: boolean;
-  [key: string]: unknown;
+  sessionId: string;
+  activatedAt: string;
+  continueCount: number;
+  windowStart?: string;
+}
+
+export interface HookOutput {
+  continue?: boolean;
+  hookSpecificOutput?: {
+    hookEventName: string;
+    decision: {
+      behavior: 'deny' | 'allow';
+      message: string;
+    };
+  };
+}
+
+export interface PermissionRequestDeps {
+  readState: () => AutoflowState | null;
 }
 
 function getStateFile(cwd: string): string {
   return join(cwd, '.cc-track', '.autoflow-state.json');
 }
 
-function readState(cwd: string): AutoflowState | null {
-  const file = getStateFile(cwd);
-  if (!existsSync(file)) return null;
-  try {
-    return JSON.parse(readFileSync(file, 'utf-8'));
-  } catch {
-    return null;
+function createDefaultDeps(cwd: string): PermissionRequestDeps {
+  const stateFile = getStateFile(cwd);
+  return {
+    readState: () => {
+      if (!existsSync(stateFile)) return null;
+      try {
+        return JSON.parse(readFileSync(stateFile, 'utf-8'));
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+
+export async function permissionRequestHook(input: HookInput, deps?: PermissionRequestDeps): Promise<HookOutput> {
+  const cwd = input.cwd || process.cwd();
+  const { readState } = deps || createDefaultDeps(cwd);
+  const state = readState();
+
+  // If autoflow not active, allow normal permission flow
+  if (!state || !state.active) {
+    return { continue: true };
   }
+
+  // Autoflow is active - deny permission with helpful message
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PermissionRequest',
+      decision: {
+        behavior: 'deny',
+        message: `🤖 Autoflow Mode: Permission denied - user is not currently available.
+
+Find a safe alternative approach to accomplish this goal without requiring this permission.
+
+If there is NO safe alternative: clearly state the problem, explain why you need user input or escalated permissions, and STOP working. Do not proceed with dangerous workarounds or bypass the plan.`,
+      },
+    },
+  };
 }
 
 async function main() {
@@ -40,27 +88,12 @@ async function main() {
   }
 
   const input: HookInput = JSON.parse(Buffer.concat(chunks).toString());
-  const cwd = input.cwd || process.cwd();
-  const state = readState(cwd);
+  const result = await permissionRequestHook(input);
 
-  // If autoflow not active, allow normal permission flow
-  if (!state || !state.active) {
-    console.log(JSON.stringify({ continue: true }));
-    process.exit(0);
-  }
-
-  // Autoflow is active - deny permission with helpful message
-  console.log(JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: 'PermissionRequest',
-      decision: {
-        behavior: 'deny',
-        message: `🤖 Autoflow Mode: User is not currently available.\n\nPlease find a safe alternative approach to accomplish this goal without requiring this permission.\n\nIf there is no safe alternative, the work will pause here until the user returns.`,
-      },
-    },
-  }));
-
+  console.log(JSON.stringify(result));
   process.exit(0);
 }
 
-main();
+if (import.meta.main) {
+  main();
+}

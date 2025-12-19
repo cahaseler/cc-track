@@ -23,6 +23,11 @@
     },
     "powershell_guidance": {
       "enabled": false
+    },
+    "autoflow": {
+      "enabled": false,
+      "throttle_limit": 3,
+      "window_duration_minutes": 5
     }
   },
   "features": {

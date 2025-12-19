@@ -1,43 +1,130 @@
 #!/usr/bin/env bun
 /**
- * UserMessage Hook - Detects autoflow activation/deactivation
+ * UserMessage Hook - Per-message autoflow activation
+ *
+ * Autoflow is NOT a persistent mode - it must be opted into with each user message.
+ * This prevents runaway sessions and gives the user natural control.
+ *
+ * Activation: Include "autoflow" in message (not negated)
+ * Deactivation: Any message without "autoflow" (or with negation)
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface HookInput {
-  user_message?: string;
+export interface HookInput {
+  prompt?: string;
   cwd?: string;
   session_id?: string;
+  hook_event_name?: string;
+  transcript_path?: string;
+  permission_mode?: string;
   [key: string]: unknown;
 }
 
-interface AutoflowState {
+export interface AutoflowState {
   active: boolean;
   sessionId: string;
   activatedAt: string;
-  stopCount: number;
-  lastStop?: string;
+  continueCount: number;
+  windowStart?: string;
 }
+
+export interface HookOutput {
+  continue: boolean;
+  hookSpecificOutput?: {
+    hookEventName: string;
+    additionalContext?: string;
+  };
+}
+
+export interface UserMessageDeps {
+  readState: () => AutoflowState | null;
+  writeState: (state: AutoflowState) => void;
+}
+
+// Patterns that should NOT trigger activation (negations)
+const NEGATION_PATTERNS = [
+  /\bdon'?t\s+(?:use\s+)?autoflow\b/i,
+  /\bno\s+autoflow\b/i,
+  /\bnot\s+autoflow\b/i,
+  /\bwithout\s+autoflow\b/i,
+];
+
+// Pattern for activation (word boundary to avoid matching "autoflowing" etc.)
+const ACTIVATION_PATTERN = /\bautoflow\b/i;
 
 function getStateFile(cwd: string): string {
   return join(cwd, '.cc-track', '.autoflow-state.json');
 }
 
-function readState(cwd: string): AutoflowState | null {
-  const file = getStateFile(cwd);
-  if (!existsSync(file)) return null;
-  try {
-    return JSON.parse(readFileSync(file, 'utf-8'));
-  } catch {
-    return null;
-  }
+function createDefaultDeps(cwd: string): UserMessageDeps {
+  const stateFile = getStateFile(cwd);
+  return {
+    readState: () => {
+      if (!existsSync(stateFile)) return null;
+      try {
+        return JSON.parse(readFileSync(stateFile, 'utf-8'));
+      } catch {
+        return null;
+      }
+    },
+    writeState: (state: AutoflowState) => {
+      writeFileSync(stateFile, JSON.stringify(state, null, 2));
+    },
+  };
 }
 
-function writeState(cwd: string, state: AutoflowState): void {
-  const file = getStateFile(cwd);
-  writeFileSync(file, JSON.stringify(state, null, 2));
+export function shouldActivate(message: string): boolean {
+  // First check if any negation pattern matches
+  if (NEGATION_PATTERNS.some((pattern) => pattern.test(message))) {
+    return false;
+  }
+  // Then check if activation pattern matches
+  return ACTIVATION_PATTERN.test(message);
+}
+
+export async function userMessageHook(input: HookInput, deps?: UserMessageDeps): Promise<HookOutput> {
+  const message = input.prompt || '';
+  const cwd = input.cwd || process.cwd();
+  const { readState, writeState } = deps || createDefaultDeps(cwd);
+
+  const currentState = readState();
+  const wasActive = currentState?.active ?? false;
+
+  // Per-message opt-in: activate only if "autoflow" is in THIS message
+  if (shouldActivate(message)) {
+    writeState({
+      active: true,
+      sessionId: input.session_id || 'unknown',
+      activatedAt: new Date().toISOString(),
+      continueCount: 0,
+    });
+
+    return {
+      continue: true,
+      hookSpecificOutput: {
+        hookEventName: 'UserPromptSubmit',
+        additionalContext: `🤖 Autoflow mode active for this task.
+
+Work autonomously until complete according to the plan. If a permission is denied, find a safe workaround that still accomplishes the goal.
+
+IMPORTANT: This does NOT mean take shortcuts, bypass the plan, or do dangerous workarounds. If you genuinely need user input or permissions escalation to continue properly, clearly state the problem and stop working - do not proceed with an unsafe alternative.`,
+      },
+    };
+  }
+
+  // No "autoflow" in message - deactivate if it was active
+  if (wasActive && currentState) {
+    writeState({
+      ...currentState,
+      active: false,
+    });
+    // No message needed - silent deactivation on new user message
+  }
+
+  // Normal flow
+  return { continue: true };
 }
 
 async function main() {
@@ -48,42 +135,12 @@ async function main() {
   }
 
   const input: HookInput = JSON.parse(Buffer.concat(chunks).toString());
-  const message = (input.user_message || '').toLowerCase().trim();
-  const cwd = input.cwd || process.cwd();
+  const result = await userMessageHook(input);
 
-  // Detect activation
-  if (message.includes('autoflow')) {
-    writeState(cwd, {
-      active: true,
-      sessionId: input.session_id || 'unknown',
-      activatedAt: new Date().toISOString(),
-      stopCount: 0,
-    });
-
-    console.log(JSON.stringify({
-      continue: true,
-      systemMessage: '🤖 Autoflow mode activated. Working autonomously until complete.',
-    }));
-    process.exit(0);
-  }
-
-  // Detect deactivation
-  if (message.includes('stop autoflow') || message.includes('exit autoflow')) {
-    const state = readState(cwd);
-    if (state) {
-      writeState(cwd, { ...state, active: false });
-    }
-
-    console.log(JSON.stringify({
-      continue: true,
-      systemMessage: '🛑 Autoflow mode deactivated.',
-    }));
-    process.exit(0);
-  }
-
-  // Normal flow
-  console.log(JSON.stringify({ continue: true }));
+  console.log(JSON.stringify(result));
   process.exit(0);
 }
 
-main();
+if (import.meta.main) {
+  main();
+}

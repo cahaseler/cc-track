@@ -59,11 +59,15 @@ export function findClaudeCodeExecutable(): string | undefined {
     const claudePath = execSync(findCommand, { encoding: 'utf8' }).trim();
 
     if (claudePath) {
-      // On Windows, 'where' might return multiple lines, take the first
-      const firstPath = claudePath.split('\n')[0].trim();
+      // On Windows, 'where' might return multiple lines
+      const paths = claudePath
+        .split('\n')
+        .map((p) => p.trim())
+        .filter(Boolean);
 
-      // On Unix, try to resolve symlinks (skip on Windows)
+      // On Unix, try to resolve symlinks for the first path
       if (!isWindows) {
+        const firstPath = paths[0];
         try {
           const realPath = execSync(`readlink -f "${firstPath}"`, { encoding: 'utf8' }).trim();
           return realPath || firstPath;
@@ -71,7 +75,20 @@ export function findClaudeCodeExecutable(): string | undefined {
           return firstPath;
         }
       }
-      return firstPath;
+
+      // On Windows, try each path until we find one that works
+      // Skip fnm multishell paths - they exist on disk but are stale shims that fail to spawn
+      // when the terminal session that created them is no longer active
+      for (const path of paths) {
+        // Skip fnm multishell paths - they're session-specific shims that become stale
+        if (path.includes('fnm_multishells')) {
+          continue;
+        }
+        if (existsSync(path)) {
+          return path;
+        }
+      }
+      // All non-fnm paths failed - fall through to other methods
     }
   } catch {
     // Command failed, claude is not in PATH

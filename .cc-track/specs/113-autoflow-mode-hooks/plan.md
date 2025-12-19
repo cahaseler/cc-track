@@ -23,16 +23,16 @@ Autoflow mode is implemented using **three simple hook scripts** with minimal st
   "active": boolean,
   "sessionId": string,
   "activatedAt": "ISO timestamp",
-  "stopCount": number,
-  "lastStop": "ISO timestamp"
+  "continueCount": number,
+  "windowStart": "ISO timestamp"
 }
 ```
 
 That's it. No complex interfaces, no arrays of events, just the essentials:
 - Is autoflow active?
 - When did it start?
-- How many stops happened recently? (for loop detection)
-- When was the last stop? (for 30-second window)
+- How many auto-continues in current window? (for throttle detection)
+- When did the 5-minute window start? (for window expiration)
 
 ## Hook Implementations
 
@@ -91,72 +91,66 @@ return {
 const state = readState();
 
 if (!state?.active) {
-  return { continue: true }; // Normal stop flow
+  return { action: 'allow' }; // Normal stop flow
 }
 
-// Check loop detection
-const timeSinceLastStop = now() - lastStop();
-const newStopCount = timeSinceLastStop < 30 ? state.stopCount + 1 : 1;
+// Check throttle limit (3 continuations per 5-minute window)
+const windowExpired = isWindowExpired(state.windowStart, WINDOW_DURATION_MS);
+const continueCount = windowExpired ? 0 : state.continueCount;
 
-if (newStopCount > 2) {
+if (continueCount >= MAX_CONTINUES_PER_WINDOW) {
   writeState({ ...state, active: false }); // Deactivate
-  process.stderr.write('⚠️  Autoflow loop detected - stopping autonomous mode');
-  process.exit(2); // Block stop with error message
+  return { action: 'throttle', message: '⚠️ Autoflow throttle limit reached' };
 }
-
-// Update stop tracking
-writeState({ ...state, stopCount: newStopCount, lastStop: now() });
 
 // Use Claude SDK to evaluate
 const transcript = readTranscript(input.transcript_path);
-const lastMessages = getLastMessages(transcript, 5);
+const lastMessages = getLastMessages(transcript, 10);
+const prompt = buildEvaluationPrompt(lastMessages);
 
-const evaluation = await ClaudeSDK.prompt(`
-  Is this assistant genuinely finished with all work, or asking for confirmation to continue?
+const evaluation = await claudeSDK.sendMessage(prompt);
 
-  Last messages:
-  ${lastMessages}
-
-  Respond: DONE: [reason] or CONTINUE: [reason]
-`, 'haiku', { timeoutMs: 10000 });
-
-if (evaluation.text.startsWith('CONTINUE')) {
+if (evaluation.shouldContinue) {
   // Block stop and tell Claude to continue
-  process.stderr.write(`🤖 Continue working\n\n${evaluation.text}`);
-  process.exit(2); // Block stop
+  writeState({
+    ...state,
+    continueCount: continueCount + 1,
+    windowStart: windowExpired ? now() : state.windowStart
+  });
+  return { action: 'block', message: '🤖 Continue working...' };
 }
 
 // Allow stop - work complete
-return { continue: true };
+return { action: 'allow' };
 ```
 
 **Why Claude SDK?** Because detecting "should I continue?" vs "work is done" requires understanding context. Pattern matching ("should i continue?") is too brittle. Claude SDK gives intelligent evaluation.
 
 **Why block (exit 2)?** Because when Claude stops to ask "should I continue?", we want to tell Claude "no, keep working". The Stop hook can only block stops (prevent them), not inject responses. When we block with exit code 2, stderr becomes feedback shown to Claude.
 
-## Loop Detection Algorithm
+## Throttle Algorithm
 
-**Simple time-window approach:**
+**5-minute window approach (from double-shot-latte testing):**
 
 ```
-if (stops > 2 within 30 seconds) {
+if (continuations >= 3 within 5 minutes) {
   deactivate autoflow
   show warning
 }
 ```
 
 Tracks:
-- `stopCount`: How many stops in current window
-- `lastStop`: When last stop happened
-- If `now - lastStop > 30 seconds`: Reset count to 1
-- If `stopCount > 2`: Loop detected
+- `continueCount`: How many auto-continues in current window
+- `windowStart`: When the 5-minute window started
+- If window expired (>5 minutes): Reset count to 0
+- If `continueCount >= 3`: Throttle limit reached
 
-**Why this is enough:** If Claude stops 3+ times in 30 seconds, something is wrong. Either:
-1. Claude is stuck in a loop (can't make progress)
-2. There's a blocker (missing file, unclear requirement)
-3. Work is actually done (but evaluation is wrong)
+**Why 3 per 5 minutes?** Tested by double-shot-latte project across 60+ scenarios:
+1. Allows legitimate multi-step work (not too aggressive)
+2. Catches loops before burning excessive tokens
+3. Gives enough time for real progress between stops
 
-In all cases, stopping autoflow and getting user input is the right move.
+The key insight: counting *continuations* (when we tell Claude to keep going) rather than *stops* is more meaningful for detecting stuck states.
 
 ## Implementation Phases
 
@@ -207,16 +201,40 @@ hooks/
 └── +1 line                   Ignore .autoflow-state.json
 ```
 
-**Note:** The `skills/cc-track-tools/lib/autoflow-state.ts` file (344 lines) was created during initial development but is **not used**. The simple hooks don't need a complex state manager class. Can be deleted or kept as reference.
+**Note:** State management is intentionally inline in each hook. No separate state manager class - the simple JSON read/write functions are sufficient.
 
 ## Testing Strategy
 
-**Manual Testing Required (Desktop Claude Code):**
+### Unit Tests (Implemented)
+
+Comprehensive unit tests covering all hooks with dependency injection for testability:
+
+**user-message.test.ts (21 tests)**
+- Activation pattern detection
+- Negation pattern handling
+- Per-message opt-in/out behavior
+- State management and session handling
+- Edge cases
+
+**permission-request.test.ts (8 tests)**
+- Permission denial when active
+- Normal flow when inactive
+- Message content verification
+
+**stop.test.ts (26 tests)**
+- `getLastMessages()` utility (with SDK format and filtering)
+- `buildEvaluationPrompt()` construction
+- Throttle limit enforcement
+- Window expiration logic
+- Evaluation flow
+- State updates
+
+### Manual Testing (Desktop Claude Code)
 
 1. **Activation:**
    - Type "autoflow" in message
    - Verify state file created at `.cc-track/.autoflow-state.json`
-   - Verify message shown: "🤖 Autoflow mode activated"
+   - Verify message shown: "🤖 Autoflow mode active for this task."
 
 2. **Permission Denial:**
    - Trigger a permission request (e.g., edit a critical file)
@@ -229,15 +247,15 @@ hooks/
    - Verify Claude SDK is called
    - Verify correct decision (continue vs allow stop)
 
-4. **Loop Detection:**
-   - Force >2 stops in <30 seconds (e.g., by creating a blocker)
+4. **Throttle Detection:**
+   - Force 3+ auto-continues within 5-minute window
    - Verify autoflow deactivates
    - Verify warning message shown
 
-5. **Deactivation:**
-   - Type "stop autoflow"
+5. **Per-Message Deactivation:**
+   - Send any message without "autoflow"
    - Verify state file updated (active: false)
-   - Verify message shown: "🛑 Autoflow mode deactivated"
+   - Verify silent deactivation (no message)
 
 **Log Inspection:**
 - Check `~/.local/share/cc-track/logs/` for hook execution logs
@@ -271,10 +289,13 @@ hooks/
 **Issue:** State file corruption
 **Solution:** Hooks handle parse errors and default to inactive state
 
-## Future Enhancements (Out of Scope)
+## Implemented Beyond MVP
+
+- ✅ Statusline indicator for active autoflow mode (`🤖 Autoflow (N/3)`)
+
+## Future Enhancements (Out of Scope for Now)
 
 - ❌ Configurable thresholds in `track.config.json`
-- ❌ Statusline indicator for active autoflow mode
 - ❌ Detailed analytics (approval history, stop patterns)
 - ❌ Smart learning from user overrides
 - ❌ Session persistence across compaction

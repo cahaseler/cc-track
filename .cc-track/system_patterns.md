@@ -49,6 +49,16 @@
 - Solves Claude Code bug where `${CLAUDE_PLUGIN_ROOT}` unavailable in slash commands
 - Scripts use `process.cwd()` for project root, skill path for lib imports
 
+### Autoflow Hook Coordination
+- Three hooks coordinate for autonomous operation:
+  - `UserPromptSubmit`: Activation/deactivation via keyword detection
+  - `PermissionRequest`: Deny permissions with "find safe alternative" guidance
+  - `Stop`: Evaluate if Claude should continue using Claude SDK
+- State shared via `.cc-track/.autoflow-state.json`
+- Per-message opt-in: autoflow only active when "autoflow" keyword in message
+- Throttle detection: 3 continuations per 5-minute window prevents runaway sessions
+- Battle-tested evaluation prompt from double-shot-latte project (60+ scenarios)
+
 ## Coding Standards & Conventions
 
 ### Naming Conventions
@@ -298,3 +308,4 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 [2025-12-06] - Added skill-based script execution pattern
 [2025-12-06] - Added Claude Code integration patterns (CLI parsing, hook debugging, timeouts)
 [2025-12-06] - Updated paths from .claude/ to .cc-track/
+[2025-12-19] - Added Autoflow Hook Coordination pattern (three-hook system for autonomous operation)

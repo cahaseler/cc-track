@@ -9,6 +9,14 @@ import {
 import { join } from 'node:path/posix';
 import { getActiveTaskId } from '../skills/cc-track-tools/lib/claude-md';
 
+interface AutoflowState {
+  active: boolean;
+  sessionId: string;
+  activatedAt: string;
+  continueCount: number;
+  windowStart?: string;
+}
+
 // Simple result type for statusline
 interface CommandResult<T = unknown> {
   success: boolean;
@@ -181,6 +189,30 @@ export function getActiveTask(deps = defaultDeps): string {
 }
 
 /**
+ * Check if autoflow mode is active
+ */
+export function getAutoflowState(deps = defaultDeps): { active: boolean; continueCount: number } {
+  const cwd = process.cwd();
+  const stateFile = join(cwd, '.cc-track', '.autoflow-state.json');
+
+  if (!deps.existsSync(stateFile)) {
+    return { active: false, continueCount: 0 };
+  }
+
+  try {
+    const content = deps.readFileSync(stateFile, 'utf-8');
+    const state: AutoflowState = JSON.parse(content);
+    // Only return continueCount when active - it's not meaningful when inactive
+    if (state.active === true) {
+      return { active: true, continueCount: state.continueCount || 0 };
+    }
+    return { active: false, continueCount: 0 };
+  } catch {
+    return { active: false, continueCount: 0 };
+  }
+}
+
+/**
  * Get cost emoji based on amount
  */
 export function getCostEmoji(cost: number): string {
@@ -239,8 +271,15 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
 
   // Build second line
   let secondLine = '';
+
+  // Check autoflow state
+  const autoflow = getAutoflowState(deps);
+  if (autoflow.active) {
+    secondLine = `🤖 Autoflow (${autoflow.continueCount}/3)`;
+  }
+
   if (branch) {
-    secondLine = branch;
+    secondLine += secondLine ? ` | ${branch}` : branch;
   }
   if (task) {
     secondLine += secondLine ? ` | ${task}` : task;
