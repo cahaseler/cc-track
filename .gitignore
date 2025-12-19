@@ -37,6 +37,9 @@ yarn-error.log*
 .claude/sessions/
 *.jsonl
 
+# Autoflow mode state
+.cc-track/.autoflow-state.json
+
 # Temp files
 *.tmp
 *.swp
