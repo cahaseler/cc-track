@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/cahaseler/cc-track/compare/v3.5.0...v3.6.0) (2025-12-19)
+
+
+### Features
+
+* implement autoflow mode hooks for autonomous operation ([#179](https://github.com/cahaseler/cc-track/issues/179)) ([65d8ab0](https://github.com/cahaseler/cc-track/commit/65d8ab014f432e9625d930906fddb79281b9a1b8))
+
 # [3.5.0](https://github.com/cahaseler/cc-track/compare/v3.4.3...v3.5.0) (2025-12-18)
 
 
