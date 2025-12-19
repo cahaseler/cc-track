@@ -52,16 +52,16 @@ This feature is designed for scenarios where the user wants Claude to "run to co
 - Only declares completion after validation passes
 - Provides summary of what was accomplished
 
-### Story 4: Infinite Loop Prevention
+### Story 4: Throttle Detection
 **As a** developer
-**I want** autoflow mode to detect when Claude is stuck
+**I want** autoflow mode to detect when Claude might be stuck
 **So that** I don't waste tokens on repeated failed attempts
 
 **Acceptance Criteria:**
-- Detects when Claude stops/continues more than 2 times in 30 seconds
-- Automatically exits autoflow mode when loop detected
-- Provides diagnostic info about why it got stuck
-- User can manually trigger escape hatch
+- Detects when Claude auto-continues more than 3 times in 5 minutes
+- Automatically exits autoflow mode when throttle limit reached
+- Provides warning message about potential stuck state
+- User can regain control by sending any message without "autoflow"
 
 ## Requirements
 
@@ -73,24 +73,20 @@ This feature is designed for scenarios where the user wants Claude to "run to co
 - **FR1.3**: Notify user that autoflow mode is active
 - **FR1.4**: Provide deactivation command/trigger
 
-#### FR2: Permission Auto-Approval
-- **FR2.1**: Intercept PreToolUse permission requests
-- **FR2.2**: Apply safety rules to determine if operation is safe
-- **FR2.3**: Auto-approve safe operations with logging
-- **FR2.4**: Block unsafe operations and pause work with explanation
-- **FR2.5**: Track auto-approval history for diagnostics
+#### FR2: Permission Denial (Simplified Approach)
+- **FR2.1**: Intercept PermissionRequest hook events
+- **FR2.2**: Deny all permission requests when autoflow is active
+- **FR2.3**: Provide helpful message: "User unavailable, find safe alternative"
+- **FR2.4**: Claude must work around denied permissions or stop
 
-**Safety Rules (Safe Operations):**
-- Read, Grep, Glob (always safe)
-- Edit, Write within project directory
-- Bash commands: git add, git commit, git push, npm/bun commands
-- Test execution commands
+**Design Rationale:**
+The user pre-configures Claude's allowed operations in `.claude/settings.json`. Any permission request that reaches this hook is something the user hasn't pre-approved. Rather than implementing complex safety rules that duplicate Claude Code's own permission system, we simply deny all requests and tell Claude to find alternatives.
 
-**Unsafe Operations (Require User Approval):**
-- Bash commands: rm, force push, dd, chmod, sudo
-- Write to system directories
-- Network requests (curl, wget)
-- Edit to critical files (package.json, tsconfig.json) - configurable
+**Why deny, not auto-approve?**
+- User has already approved safe operations in settings.json
+- Permissions that reach hook are things user wanted to be asked about
+- Auto-approving would bypass user's configured permission boundaries
+- Denying with "find alternative" guidance keeps Claude productive
 
 #### FR3: Auto-Continue on Stop Events
 - **FR3.1**: Detect Stop events during autoflow mode
@@ -105,12 +101,17 @@ This feature is designed for scenarios where the user wants Claude to "run to co
 - "All tasks complete" → Run validation suite
 - "Validation passed" → Exit autoflow, notify user
 
-#### FR4: Infinite Loop Prevention
-- **FR4.1**: Track stop events with timestamps
-- **FR4.2**: Detect >2 stops within 30 seconds (configurable)
-- **FR4.3**: Detect >5 stops with same message pattern
-- **FR4.4**: Exit autoflow mode when loop detected
-- **FR4.5**: Provide diagnostic report of loop behavior
+#### FR4: Throttle Detection
+- **FR4.1**: Track auto-continuation count within 5-minute window
+- **FR4.2**: Detect when 3 auto-continues occur within window
+- **FR4.3**: Exit autoflow mode when throttle limit reached
+- **FR4.4**: Provide warning message about potential stuck state
+
+**Design Rationale (from double-shot-latte testing):**
+- 3 continuations per 5-minute window is optimal threshold
+- Allows legitimate multi-step work without being too aggressive
+- Catches loops before burning excessive tokens
+- Counting *continuations* (when we tell Claude to keep going) is more meaningful than counting *stops*
 
 #### FR5: Work Completion Detection
 - **FR5.1**: Parse active spec's tasks.md to track progress
@@ -168,17 +169,16 @@ This feature is designed for scenarios where the user wants Claude to "run to co
 ## Success Criteria
 
 ### Minimum Viable Product (MVP)
-- [ ] User can activate autoflow mode with "autoflow" in message
-- [ ] Safe file operations are auto-approved
-- [ ] Unsafe operations pause and wait for user
-- [ ] Claude auto-continues on "should I continue?" stops
-- [ ] Infinite loop detection (>3 stops in 30 seconds)
-- [ ] User can deactivate with "stop autoflow"
-- [ ] All decisions logged to `.cc-track/logs/autoflow.log`
+- [x] User can activate autoflow mode with "autoflow" in message
+- [x] Permission requests are denied with "find safe alternative" message
+- [x] Claude auto-continues when stop evaluation detects more work
+- [x] Throttle detection (3 auto-continues in 5 minutes)
+- [x] User can deactivate by sending any message without "autoflow"
+- [x] All decisions logged to cc-track logs
 
 ### Complete Success
-- [ ] All MVP criteria met
-- [ ] Statusline shows autoflow status (🤖 active, 🔍 waiting for user)
+- [x] All MVP criteria met
+- [x] Statusline shows autoflow status (`🤖 Autoflow (N/3)`)
 - [ ] Work completion detection from tasks.md
 - [ ] Auto-triggers validation when work complete
 - [ ] Generates summary report at end of session
@@ -210,10 +210,9 @@ The following are explicitly NOT part of this feature:
    - Con: User might forget it's active after long session
    - Recommendation: TBD based on user feedback
 
-2. **What's the right threshold for infinite loop detection?**
-   - Current proposal: >2 stops in 30 seconds
-   - Alternative: >5 stops regardless of timing
-   - Recommendation: Make configurable, default to 3 stops / 30 seconds
+2. **What's the right threshold for throttle detection?**
+   - **Decision**: 3 auto-continues per 5-minute window (from double-shot-latte testing)
+   - Rationale: Tested across 60+ scenarios, optimal balance of allowing work vs catching loops
 
 3. **How to handle validation failures during auto-completion?**
    - Option A: Exit autoflow and wait for user
@@ -239,8 +238,8 @@ The following are explicitly NOT part of this feature:
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
-| Infinite loop drains tokens | High | Medium | Strict loop detection, token budget awareness |
-| Auto-approval causes data loss | Critical | Low | Conservative safety rules, audit logging |
+| Runaway session drains tokens | High | Medium | Throttle detection (3/5min), per-message opt-in |
+| Permission denial blocks critical work | Medium | Low | Claude finds alternatives or stops with clear message |
 | UserMessage hook doesn't exist in Claude Code | High | Medium | Research hook types, fallback to manual activation |
 | Stop hook can't inject responses | High | Medium | Use Claude SDK to continue conversation programmatically |
 | User can't interrupt stuck autoflow | High | Low | Multiple escape hatches (message, timeout, signal) |
