@@ -1,4 +1,7 @@
 {
+  "enabledPlugins": {
+    "plugin-dev@claude-plugins-official": true
+  },
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "1800000",
     "BASH_MAX_TIMEOUT_MS": "1800000"
@@ -7,5 +10,40 @@
     "type": "command",
     "command": "bun run D:/Development/pars/cc-track/scripts/statusline.ts",
     "padding": 0
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run D:/Development/pars/cc-track/hooks/user-message.ts"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run D:/Development/pars/cc-track/hooks/permission-request.ts"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run D:/Development/pars/cc-track/hooks/stop.ts"
+          }
+        ]
+      }
+    ]
   }
 }

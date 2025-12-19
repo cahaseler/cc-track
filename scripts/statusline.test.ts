@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import {
   generateStatusLine,
   getActiveTask,
+  getAutoflowState,
   getCostEmoji,
   getCostInfo,
   getCurrentBranch,
@@ -245,6 +246,86 @@ describe('statusline', () => {
     });
   });
 
+  describe('getAutoflowState', () => {
+    test('returns inactive when state file does not exist', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock(() => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getAutoflowState(mockDeps);
+      expect(result.active).toBe(false);
+      expect(result.continueCount).toBe(0);
+    });
+
+    test('returns active state with continue count when file exists', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
+        readFileSync: mock(() =>
+          JSON.stringify({
+            active: true,
+            sessionId: 'test-123',
+            activatedAt: '2025-01-01T00:00:00Z',
+            continueCount: 2,
+          }),
+        ),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock(() => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getAutoflowState(mockDeps);
+      expect(result.active).toBe(true);
+      expect(result.continueCount).toBe(2);
+    });
+
+    test('returns inactive when active is false in state file', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
+        readFileSync: mock(() =>
+          JSON.stringify({
+            active: false,
+            sessionId: 'test-123',
+            activatedAt: '2025-01-01T00:00:00Z',
+            continueCount: 1,
+          }),
+        ),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock(() => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getAutoflowState(mockDeps);
+      expect(result.active).toBe(false);
+      expect(result.continueCount).toBe(0);
+    });
+
+    test('returns inactive on parse error', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
+        readFileSync: mock(() => 'invalid json'),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock(() => ''),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getAutoflowState(mockDeps);
+      expect(result.active).toBe(false);
+      expect(result.continueCount).toBe(0);
+    });
+  });
+
   describe('getCostEmoji', () => {
     test('returns correct emoji for different cost tiers', () => {
       expect(getCostEmoji(0.5)).toBe('🪙');
@@ -406,6 +487,51 @@ describe('statusline', () => {
 
       const result = generateStatusLine({}, mockDeps);
       expect(result).toContain('🔥 $25.00/hr');
+    });
+
+    test('shows autoflow indicator when active', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
+        readFileSync: mock(() =>
+          JSON.stringify({
+            active: true,
+            sessionId: 'test-123',
+            activatedAt: '2025-01-01T00:00:00Z',
+            continueCount: 1,
+          }),
+        ),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => 'feature/autoflow'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Second line should show autoflow indicator with continue count
+      expect(lines[1]).toContain('🤖 Autoflow (1/3)');
+      expect(lines[1]).toContain('feature/autoflow');
+    });
+
+    test('does not show autoflow indicator when inactive', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Second line should not contain autoflow indicator
+      expect(lines[1]).not.toContain('Autoflow');
+      expect(lines[1]).toBe('main');
     });
   });
 

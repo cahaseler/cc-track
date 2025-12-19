@@ -65,6 +65,13 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 - One-command initialization (`/init-track`)
 - Safe file handling with backups and validation
 
+### Autoflow Mode
+- Per-message opt-in autonomous operation ("autoflow" keyword)
+- Permission denial with "find safe workaround" guidance
+- Intelligent stop evaluation using Claude SDK
+- Throttle detection (3 continuations per 5-minute window)
+- Automatic deactivation on task completion or throttle limit
+
 ## Non-Goals / Out of Scope
 
 - Strict TDD enforcement (offers guidance, not enforcement)
@@ -89,3 +96,4 @@ Solve the fundamental problem of context loss in Claude Code sessions through in
 [2025-01-09 16:30] - Initial product context documented based on project analysis
 [2025-01-10] - Renamed project from cc-pars to cc-track with new branding
 [2025-09-10] - Updated features to reflect actual implementation: real-time validation, two-line statusline, train theming, configurable API timer
+[2025-12-19] - Added Autoflow Mode feature: per-message autonomous operation with intelligent stop evaluation

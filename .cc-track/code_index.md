@@ -39,6 +39,9 @@
 | hooks/edit-validation.ts | Real-time TypeScript and Biome validation on edits |
 | hooks/pre-tool-validation.ts | Branch protection and task file validation |
 | hooks/session-start.ts | Session initialization |
+| hooks/user-message.ts | Autoflow activation/deactivation via keyword detection |
+| hooks/permission-request.ts | Autoflow permission denial with safe alternative guidance |
+| hooks/stop.ts | Autoflow stop evaluation using Claude SDK |
 
 ### Scripts (scripts/)
 | File | Purpose |
@@ -113,3 +116,4 @@ All shared code lives in the skill's lib directory. Hooks and scripts import fro
 [2025-09-12 21:30] - Added log parser library and parse-logs command
 [2025-12-06] - Added skills/ directory for cc-track-tools skill with utility scripts
 [2025-12-06] - Consolidated lib/ into skills/cc-track-tools/lib/ as single source of truth
+[2025-12-19] - Added autoflow hooks (user-message.ts, permission-request.ts, stop.ts)

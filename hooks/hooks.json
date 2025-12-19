@@ -17,5 +17,26 @@
       "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/powershell-guidance.ts",
       "description": "Windows only: Converts Linux commands to PowerShell or provides guidance"
     }
+  ],
+  "UserPromptSubmit": [
+    {
+      "name": "autoflow-control",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/user-message.ts",
+      "description": "Detects autoflow mode activation and deactivation"
+    }
+  ],
+  "PermissionRequest": [
+    {
+      "name": "autoflow-permissions",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/permission-request.ts",
+      "description": "Denies permissions in autoflow mode with helpful message"
+    }
+  ],
+  "Stop": [
+    {
+      "name": "autoflow-evaluator",
+      "script": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/stop.ts",
+      "description": "Evaluates if Claude should continue working in autoflow mode"
+    }
   ]
 }
