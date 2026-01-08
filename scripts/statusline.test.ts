@@ -6,6 +6,7 @@ import {
   getCostEmoji,
   getCostInfo,
   getCurrentBranch,
+  getRepoName,
   getTodaysCost,
   getTokenInfo,
 } from './statusline';
@@ -186,6 +187,42 @@ describe('statusline', () => {
       };
 
       const result = getCurrentBranch(mockDeps);
+      expect(result).toBe('');
+    });
+  });
+
+  describe('getRepoName', () => {
+    test('returns repository name from mock', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+        getRepoName: mock((_cwd: string) => 'my-awesome-project'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getRepoName(mockDeps);
+      expect(result).toBe('my-awesome-project');
+    });
+
+    test('handles errors gracefully', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+        getRepoName: mock((_cwd: string) => {
+          throw new Error('Not a git repository');
+        }),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = getRepoName(mockDeps);
       expect(result).toBe('');
     });
   });
@@ -532,6 +569,108 @@ describe('statusline', () => {
       // Second line should not contain autoflow indicator
       expect(lines[1]).not.toContain('Autoflow');
       expect(lines[1]).toBe('main');
+    });
+
+    test('shows repo name at start of second line when show_repo is true (default)', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({
+          features: {
+            statusline: { enabled: true, show_repo: true },
+          },
+        })),
+        getCurrentBranch: mock((_cwd: string) => 'feature/test'),
+        getRepoName: mock((_cwd: string) => 'my-project'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Second line should start with repo name
+      expect(lines[1]).toMatch(/^my-project/);
+      expect(lines[1]).toBe('my-project | feature/test');
+    });
+
+    test('shows repo name by default when statusline config has no show_repo setting', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({
+          features: {
+            statusline: { enabled: true },
+          },
+        })),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
+        getRepoName: mock((_cwd: string) => 'cc-track'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Default should show repo name
+      expect(lines[1]).toContain('cc-track');
+      expect(lines[1]).toBe('cc-track | main');
+    });
+
+    test('hides repo name when show_repo is false', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({
+          features: {
+            statusline: { enabled: true, show_repo: false },
+          },
+        })),
+        getCurrentBranch: mock((_cwd: string) => 'main'),
+        getRepoName: mock((_cwd: string) => 'my-project'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Repo name should not be shown
+      expect(lines[1]).not.toContain('my-project');
+      expect(lines[1]).toBe('main');
+    });
+
+    test('repo name appears before autoflow indicator', () => {
+      const mockDeps = {
+        execSync: mock(() => '{}'),
+        existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
+        readFileSync: mock(() =>
+          JSON.stringify({
+            active: true,
+            sessionId: 'test-123',
+            activatedAt: '2025-01-01T00:00:00Z',
+            continueCount: 2,
+          }),
+        ),
+        getConfig: mock(() => ({
+          features: {
+            statusline: { enabled: true, show_repo: true },
+          },
+        })),
+        getCurrentBranch: mock((_cwd: string) => 'feature/autoflow'),
+        getRepoName: mock((_cwd: string) => 'my-project'),
+        getActiveTaskId: mock(() => null),
+        getActiveSpecDirectory: mock(() => null),
+      };
+
+      const result = generateStatusLine({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+      const lines = result.split('\n');
+
+      // Second line should have repo first, then autoflow, then branch
+      expect(lines[1]).toBe('my-project | 🤖 Autoflow (2/3) | feature/autoflow');
     });
   });
 

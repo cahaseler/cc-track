@@ -412,41 +412,44 @@ describe('pre-tool-validation', () => {
   });
 
   describe('detectOutdatedYear', () => {
+    const currentYear = getCurrentYear();
+    const lastYear = currentYear - 1;
+
     test('detects year at end of query', () => {
-      const result = detectOutdatedYear('TypeScript best practices 2024');
+      const result = detectOutdatedYear(`TypeScript best practices ${lastYear}`);
       expect(result.isOutdated).toBe(true);
-      expect(result.detectedYear).toBe(2024);
-      expect(result.suggestedQuery).toBe('TypeScript best practices 2025');
+      expect(result.detectedYear).toBe(lastYear);
+      expect(result.suggestedQuery).toBe(`TypeScript best practices ${currentYear}`);
     });
 
     test('detects year at start of query', () => {
-      const result = detectOutdatedYear('2024 web development trends');
+      const result = detectOutdatedYear(`${lastYear} web development trends`);
       expect(result.isOutdated).toBe(true);
-      expect(result.detectedYear).toBe(2024);
-      expect(result.suggestedQuery).toBe('2025 web development trends');
+      expect(result.detectedYear).toBe(lastYear);
+      expect(result.suggestedQuery).toBe(`${currentYear} web development trends`);
     });
 
     test('detects "latest YYYY" pattern', () => {
-      const result = detectOutdatedYear('latest 2024 React features');
+      const result = detectOutdatedYear(`latest ${lastYear} React features`);
       expect(result.isOutdated).toBe(true);
-      expect(result.detectedYear).toBe(2024);
-      expect(result.suggestedQuery).toBe('latest 2025 React features');
+      expect(result.detectedYear).toBe(lastYear);
+      expect(result.suggestedQuery).toBe(`latest ${currentYear} React features`);
     });
 
     test('detects "current YYYY" pattern', () => {
-      const result = detectOutdatedYear('current 2024 JavaScript trends');
+      const result = detectOutdatedYear(`current ${lastYear} JavaScript trends`);
       expect(result.isOutdated).toBe(true);
-      expect(result.suggestedQuery).toBe('current 2025 JavaScript trends');
+      expect(result.suggestedQuery).toBe(`current ${currentYear} JavaScript trends`);
     });
 
     test('detects "YYYY documentation" pattern', () => {
-      const result = detectOutdatedYear('2024 TypeScript documentation');
+      const result = detectOutdatedYear(`${lastYear} TypeScript documentation`);
       expect(result.isOutdated).toBe(true);
-      expect(result.suggestedQuery).toBe('2025 TypeScript documentation');
+      expect(result.suggestedQuery).toBe(`${currentYear} TypeScript documentation`);
     });
 
     test('does not flag current year', () => {
-      const result = detectOutdatedYear('TypeScript 2025 features');
+      const result = detectOutdatedYear(`TypeScript ${currentYear} features`);
       expect(result.isOutdated).toBe(false);
     });
 
@@ -457,39 +460,45 @@ describe('pre-tool-validation', () => {
   });
 
   describe('isHistoricalSearch', () => {
+    const currentYear = getCurrentYear();
+    const lastYear = currentYear - 1;
+
     test('allows comparison searches', () => {
-      expect(isHistoricalSearch('compare 2024 vs 2025 features')).toBe(true);
-      expect(isHistoricalSearch('differences between 2024 and 2025')).toBe(true);
+      expect(isHistoricalSearch(`compare ${lastYear} vs ${currentYear} features`)).toBe(true);
+      expect(isHistoricalSearch(`differences between ${lastYear} and ${currentYear}`)).toBe(true);
     });
 
     test('allows election/political searches', () => {
-      expect(isHistoricalSearch('2024 election results')).toBe(true);
-      expect(isHistoricalSearch('2024 presidential campaign')).toBe(true);
+      expect(isHistoricalSearch(`${lastYear} election results`)).toBe(true);
+      expect(isHistoricalSearch(`${lastYear} presidential campaign`)).toBe(true);
     });
 
     test('allows explicit historical context', () => {
-      expect(isHistoricalSearch('historical trends in 2024')).toBe(true);
-      expect(isHistoricalSearch('archive of 2024 data')).toBe(true);
+      expect(isHistoricalSearch(`historical trends in ${lastYear}`)).toBe(true);
+      expect(isHistoricalSearch(`archive of ${lastYear} data`)).toBe(true);
     });
 
     test('allows temporal references', () => {
-      expect(isHistoricalSearch('bugs fixed in 2024')).toBe(true);
-      expect(isHistoricalSearch('released during 2024')).toBe(true);
+      expect(isHistoricalSearch(`bugs fixed in ${lastYear}`)).toBe(true);
+      expect(isHistoricalSearch(`released during ${lastYear}`)).toBe(true);
     });
 
     test('rejects non-historical searches', () => {
-      expect(isHistoricalSearch('TypeScript 2024')).toBe(false);
-      expect(isHistoricalSearch('best practices 2024')).toBe(false);
+      expect(isHistoricalSearch(`TypeScript ${lastYear}`)).toBe(false);
+      expect(isHistoricalSearch(`best practices ${lastYear}`)).toBe(false);
     });
   });
 
   describe('WebSearch validation integration', () => {
+    const currentYear = getCurrentYear();
+    const lastYear = currentYear - 1;
+
     test('blocks outdated year in WebSearch query', async () => {
       const input: HookInput = {
         hook_event_name: 'PreToolUse',
         tool_name: 'WebSearch',
         tool_input: {
-          query: 'TypeScript best practices 2024',
+          query: `TypeScript best practices ${lastYear}`,
         },
       };
 
@@ -505,9 +514,9 @@ describe('pre-tool-validation', () => {
       });
 
       expect(result.hookSpecificOutput?.permissionDecision).toBe('deny');
-      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('2024');
-      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('2025');
-      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain('TypeScript best practices 2025');
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain(`${lastYear}`);
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain(`${currentYear}`);
+      expect(result.hookSpecificOutput?.permissionDecisionReason).toContain(`TypeScript best practices ${currentYear}`);
     });
 
     test('allows historical WebSearch queries', async () => {
@@ -515,7 +524,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'WebSearch',
         tool_input: {
-          query: 'compare 2024 vs 2025 TypeScript features',
+          query: `compare ${lastYear} vs ${currentYear} TypeScript features`,
         },
       };
 
@@ -538,7 +547,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'WebSearch',
         tool_input: {
-          query: 'TypeScript 2024',
+          query: `TypeScript ${lastYear}`,
         },
       };
 
@@ -561,7 +570,7 @@ describe('pre-tool-validation', () => {
         hook_event_name: 'PreToolUse',
         tool_name: 'WebSearch',
         tool_input: {
-          query: 'TypeScript 2025 features',
+          query: `TypeScript ${currentYear} features`,
         },
       };
 

@@ -24,8 +24,11 @@ interface CommandResult<T = unknown> {
   data?: T;
 }
 
-import { getConfig as getConfigImpl } from '../skills/cc-track-tools/lib/config';
-import { getCurrentBranch as getCurrentBranchImpl } from '../skills/cc-track-tools/lib/git-helpers';
+import { getConfig as getConfigImpl, type StatuslineConfig } from '../skills/cc-track-tools/lib/config';
+import {
+  getCurrentBranch as getCurrentBranchImpl,
+  getRepoName as getRepoNameImpl,
+} from '../skills/cc-track-tools/lib/git-helpers';
 import { getActiveSpecDirectory } from '../skills/cc-track-tools/lib/spec-helpers';
 
 interface CurrentUsage {
@@ -55,6 +58,7 @@ interface StatusLineDeps {
   readFileSync: typeof nodeReadFileSync;
   getConfig: typeof getConfigImpl;
   getCurrentBranch: typeof getCurrentBranchImpl;
+  getRepoName: typeof getRepoNameImpl;
   getActiveTaskId: typeof getActiveTaskId;
   getActiveSpecDirectory: typeof getActiveSpecDirectory;
 }
@@ -65,6 +69,7 @@ const defaultDeps: StatusLineDeps = {
   readFileSync: nodeReadFileSync,
   getConfig: getConfigImpl,
   getCurrentBranch: getCurrentBranchImpl,
+  getRepoName: getRepoNameImpl,
   getActiveTaskId,
   getActiveSpecDirectory,
 };
@@ -140,6 +145,17 @@ export function getCostInfo(input: StatusLineInput, deps = defaultDeps): { hourl
 export function getCurrentBranch(deps = defaultDeps): string {
   try {
     return deps.getCurrentBranch(process.cwd());
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get current repository name
+ */
+export function getRepoName(deps = defaultDeps): string {
+  try {
+    return deps.getRepoName(process.cwd());
   } catch {
     return '';
   }
@@ -234,9 +250,11 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);
 
-  // Get API timer config
+  // Get config
   const config = deps.getConfig();
   const apiTimerDisplay = config.features?.api_timer?.display || 'sonnet-only';
+  const statuslineConfig = config.features?.statusline as StatuslineConfig | undefined;
+  const showRepo = statuslineConfig?.show_repo !== false; // Default to true
 
   // Build first line
   let firstLine = `🚅 ${modelName}`;
@@ -272,10 +290,20 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   // Build second line
   let secondLine = '';
 
+  // Add repo name if enabled
+  if (showRepo) {
+    const repo = getRepoName(deps);
+    if (repo) {
+      secondLine = repo;
+    }
+  }
+
   // Check autoflow state
   const autoflow = getAutoflowState(deps);
   if (autoflow.active) {
-    secondLine = `🤖 Autoflow (${autoflow.continueCount}/3)`;
+    secondLine += secondLine
+      ? ` | 🤖 Autoflow (${autoflow.continueCount}/3)`
+      : `🤖 Autoflow (${autoflow.continueCount}/3)`;
   }
 
   if (branch) {
