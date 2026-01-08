@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/cahaseler/cc-track/compare/v3.6.0...v3.7.0) (2026-01-08)
+
+
+### Features
+
+* add repo name display to statusline with show_repo config option ([#181](https://github.com/cahaseler/cc-track/issues/181)) ([025b873](https://github.com/cahaseler/cc-track/commit/025b873ca1cfaa70cc5ccbcae4dfabba9ca7e6bd))
+
 # [3.6.0](https://github.com/cahaseler/cc-track/compare/v3.5.0...v3.6.0) (2025-12-19)
 
 
