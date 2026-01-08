@@ -37,6 +37,10 @@ export interface CodeReviewConfig extends HookConfig {
   max_diff_size?: number;
 }
 
+export interface StatuslineConfig extends HookConfig {
+  show_repo?: boolean;
+}
+
 interface GitConfig {
   defaultBranch?: string;
   description?: string;
@@ -56,7 +60,7 @@ interface InternalConfig {
     [key: string]: HookConfig | EditValidationConfig;
   };
   features: {
-    [key: string]: HookConfig | CodeReviewConfig;
+    [key: string]: HookConfig | CodeReviewConfig | StatuslineConfig;
   };
   git?: GitConfig;
   logging?: LoggingConfig;
@@ -111,6 +115,7 @@ const DEFAULT_CONFIG: InternalConfig = {
     statusline: {
       enabled: true,
       description: 'Custom status line showing costs and task info',
+      show_repo: true,
     },
     git_branching: {
       enabled: false,
