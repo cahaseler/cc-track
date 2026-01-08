@@ -247,6 +247,73 @@ describe('GitHelpers', () => {
     });
   });
 
+  describe('getRepoName', () => {
+    test('extracts repo name from HTTPS URL', () => {
+      mockExec = mock(() => 'https://github.com/owner/my-repo.git\n');
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('my-repo');
+    });
+
+    test('extracts repo name from HTTPS URL without .git suffix', () => {
+      mockExec = mock(() => 'https://github.com/owner/my-repo\n');
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('my-repo');
+    });
+
+    test('extracts repo name from SSH URL', () => {
+      mockExec = mock((cmd: string) => {
+        if (cmd.includes('remote.origin.url')) {
+          return 'git@github.com:owner/my-repo.git\n';
+        }
+        return '';
+      });
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('my-repo');
+    });
+
+    test('falls back to directory name when no remote', () => {
+      mockExec = mock((cmd: string) => {
+        if (cmd.includes('remote.origin.url')) {
+          throw new Error('No remote');
+        }
+        if (cmd.includes('rev-parse --show-toplevel')) {
+          return '/home/user/projects/my-project\n';
+        }
+        return '';
+      });
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('my-project');
+    });
+
+    test('handles Windows paths in fallback', () => {
+      mockExec = mock((cmd: string) => {
+        if (cmd.includes('remote.origin.url')) {
+          throw new Error('No remote');
+        }
+        if (cmd.includes('rev-parse --show-toplevel')) {
+          return 'C:\\Users\\dev\\projects\\my-project\n';
+        }
+        return '';
+      });
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('my-project');
+    });
+
+    test('returns empty string when not a git repo', () => {
+      mockExec = mock(() => {
+        throw new Error('Not a git repo');
+      });
+      gitHelpers = new GitHelpers(mockExec, undefined, mockClaudeSDK, mockLogger);
+
+      expect(gitHelpers.getRepoName('/test')).toBe('');
+    });
+  });
+
   describe('createTaskBranch', () => {
     test('creates and switches to new branch', () => {
       mockExec = mock(

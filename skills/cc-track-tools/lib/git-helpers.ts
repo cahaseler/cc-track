@@ -335,6 +335,49 @@ export class GitHelpers {
   }
 
   /**
+   * Get the repository name from git remote URL or directory name
+   */
+  getRepoName(cwd: string): string {
+    try {
+      // Try to get repo name from git remote origin URL
+      const remoteUrl = this.exec('git config --get remote.origin.url', {
+        cwd,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      }).trim();
+
+      if (remoteUrl) {
+        // Handle various URL formats:
+        // https://github.com/owner/repo.git -> repo
+        // git@github.com:owner/repo.git -> repo
+        // https://github.com/owner/repo -> repo
+        const match = remoteUrl.match(/\/([^/]+?)(?:\.git)?$/);
+        if (match) {
+          return match[1];
+        }
+      }
+    } catch {
+      // Fall through to directory name fallback
+    }
+
+    // Fallback: use the directory name
+    try {
+      const topLevel = this.exec('git rev-parse --show-toplevel', {
+        cwd,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      }).trim();
+      if (topLevel) {
+        // Extract directory name from path (works on both Windows and Unix)
+        const parts = topLevel.split(/[/\\]/);
+        return parts[parts.length - 1] || '';
+      }
+    } catch {
+      // Not a git repo or other error
+    }
+
+    return '';
+  }
+
+  /**
    * Switch to a branch
    */
   switchToBranch(branchName: string, cwd: string): void {
@@ -362,6 +405,10 @@ export function getDefaultBranch(cwd: string): string {
 
 export function getCurrentBranch(cwd: string): string {
   return getDefaultGitHelpers().getCurrentBranch(cwd);
+}
+
+export function getRepoName(cwd: string): string {
+  return getDefaultGitHelpers().getRepoName(cwd);
 }
 
 export function isWipCommit(commitLine: string): boolean {
