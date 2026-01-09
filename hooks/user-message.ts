@@ -13,7 +13,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
+import { isAutoflowEnabled } from '../skills/cc-track-tools/lib/config';
 
 export interface HookInput {
   prompt?: string;
@@ -92,7 +92,7 @@ export async function userMessageHook(input: HookInput, deps?: UserMessageDeps):
   const cwd = input.cwd || process.cwd();
 
   // Exit early if cc-track not configured or autoflow not enabled
-  if (!isCcTrackConfigured(cwd) || !isHookEnabled('autoflow', undefined)) {
+  if (!isAutoflowEnabled()) {
     return { continue: true };
   }
 

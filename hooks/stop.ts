@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getConfig, isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
+import { getAutoflowConfig, isAutoflowEnabled } from '../skills/cc-track-tools/lib/config';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
 
 export interface HookInput {
@@ -202,7 +202,7 @@ export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<S
   const cwd = input.cwd || process.cwd();
 
   // Exit early if cc-track not configured or autoflow not enabled
-  if (!isCcTrackConfigured(cwd) || !isHookEnabled('autoflow', undefined)) {
+  if (!isAutoflowEnabled()) {
     return { action: 'allow' };
   }
 
@@ -216,11 +216,10 @@ export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<S
   }
 
   // Get throttle config (with defaults)
-  const config = getConfig();
-  const autoflowConfig = config.features?.autoflow || {};
-  const throttleLimit = (autoflowConfig as { throttle_limit?: number }).throttle_limit || MAX_CONTINUES_PER_WINDOW;
-  const windowDurationMs =
-    ((autoflowConfig as { window_duration_minutes?: number }).window_duration_minutes || 5) * 60 * 1000;
+  const autoflowConfig = getAutoflowConfig();
+  const throttleLimit = autoflowConfig?.throttle_limit ?? MAX_CONTINUES_PER_WINDOW;
+  const windowDurationMinutes = autoflowConfig?.window_duration_minutes ?? 5;
+  const windowDurationMs = windowDurationMinutes * 60 * 1000;
 
   // Autoflow is active - check throttling
   const currentTime = now();
@@ -242,7 +241,7 @@ export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<S
 
     return {
       action: 'throttle',
-      message: `⚠️  Autoflow throttle limit reached\n\nClaude has continued ${throttleLimit} times in the last ${(autoflowConfig as { window_duration_minutes?: number }).window_duration_minutes || 5} minutes.\nThis suggests it may be stuck in a loop.\n\nAutoflow mode has been deactivated. Please review the situation.`,
+      message: `⚠️  Autoflow throttle limit reached\n\nClaude has continued ${throttleLimit} times in the last ${windowDurationMinutes} minutes.\nThis suggests it may be stuck in a loop.\n\nAutoflow mode has been deactivated. Please review the situation.`,
       updatedState,
     };
   }

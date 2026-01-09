@@ -368,3 +368,12 @@ export function getTestConfig(configPath?: string): ValidationConfig | null {
 
   return testConfig;
 }
+
+export function getAutoflowConfig(configPath?: string): AutoflowConfig | null {
+  const config = getConfig(configPath);
+  return (config.features?.autoflow as AutoflowConfig) || null;
+}
+
+export function isAutoflowEnabled(configPath?: string): boolean {
+  return isCcTrackConfigured() && isHookEnabled('autoflow', configPath);
+}
