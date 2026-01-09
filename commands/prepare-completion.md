@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(bun:*), Task, Skill
+allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(bun:*), Task
 description: Prepare the current active task for completion (Phase 1 of task completion workflow)
 ---
 
@@ -12,18 +12,12 @@ Run validation checks and multi-agent spec-focused code review to ensure the tas
 - Current branch: !`git branch --show-current`
 - Changes to review: !`git diff --stat`
 
-## Step 1: Get Script Path via Skill
+## Step 1: Run Validation Script
 
-First, invoke the `cc-track:cc-track-tools` skill to get the base directory for cc-track scripts.
-
-Note the base directory provided (e.g., `/path/to/skills/cc-track-tools`).
-
-## Step 2: Run Validation Script
-
-Run the prepare-completion script using the base directory from Step 1:
+Run the prepare-completion script:
 
 ```bash
-bun {base_directory}/scripts/prepare-completion.ts
+bun "${CLAUDE_PLUGIN_ROOT}/skills/cc-track-tools/scripts/prepare-completion.ts"
 ```
 
 The script will:
@@ -32,9 +26,9 @@ The script will:
 - Run test suite
 - Run dead code detection (knip)
 
-**Note:** The script no longer runs code review - that's handled by the multi-agent review in Step 3.
+**Note:** The script no longer runs code review - that's handled by the multi-agent review in Step 2.
 
-## Step 3: Interpret Validation Results
+## Step 2: Interpret Validation Results
 
 The script returns JSON output. Parse and present the results:
 
@@ -50,9 +44,9 @@ The script returns JSON output. Parse and present the results:
 
 **If validation passed:**
 - Confirm: "✅ All validation checks passed"
-- Proceed to Step 4 for multi-agent code review
+- Proceed to Step 3 for multi-agent code review
 
-## Step 4: Launch Review Agents (Phase 1 - Find Issues)
+## Step 3: Launch Review Agents (Phase 1 - Find Issues)
 
 Launch the multi-agent spec-focused code review using the Task tool.
 
@@ -108,11 +102,11 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 - Launch all 8 agents in a single message without the `run_in_background` parameter
 - Orchestrator suspends until ALL agents complete
 - All results return together in the response
-- Deduplication in Step 5 has access to all findings at once
+- Deduplication in Step 4 has access to all findings at once
 
 This is different from the pipeline pattern in `/cc-track:tasks` - here we need ALL results before proceeding to deduplication, so foreground parallel is correct.
 
-## Step 5: Collect and Deduplicate Issues
+## Step 4: Collect and Deduplicate Issues
 
 After all agents complete:
 
@@ -129,9 +123,9 @@ After all agents complete:
    - Observation: [evidence from reviewer]
    ```
 
-**If no issues found by any reviewer:** Skip to Step 8 with "No issues found - clean review!"
+**If no issues found by any reviewer:** Skip to Step 7 with "No issues found - clean review!"
 
-## Step 6: Score Each Issue (Phase 2 - Validate Issues)
+## Step 5: Score Each Issue (Phase 2 - Validate Issues)
 
 For each unique issue, launch a parallel **issue-scorer** agent (Haiku) to validate it.
 
@@ -148,7 +142,7 @@ Reported by: {reviewer(s)}
 Observation: {what the reviewer observed}
 ```
 
-## Step 7: Filter and Present Results
+## Step 6: Filter and Present Results
 
 After all scorers complete:
 
@@ -187,7 +181,7 @@ After all scorers complete:
 - [N] issues were filtered as unverified or false positives
 ```
 
-## Step 8: Route Based on Issue Count
+## Step 7: Route Based on Issue Count
 
 After filtering and scoring, route based on how many validated issues were found:
 
