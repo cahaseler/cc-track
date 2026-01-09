@@ -114,7 +114,7 @@ If needed, spawn 1-2 Explore agents (parallel via Task tool). Results inform you
 
 Once you have **complete** understanding (all taxonomy areas covered, no remaining ambiguities):
 
-1. **Read** `templates/spec-template.md`
+1. **Read** `${CLAUDE_PLUGIN_ROOT}/templates/spec-template.md`
 2. **Fill in** all sections from gathered information
 3. **Write** to `.cc-track/specs/{taskId}-{featureName}/spec.md`
 

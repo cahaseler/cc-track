@@ -84,7 +84,7 @@ Any specific technical constraints?
 
 ## Phase 2: Generate Constitution
 
-Use `templates/constitution-template.md` and customize:
+Read template from `${CLAUDE_PLUGIN_ROOT}/templates/constitution-template.md` and customize:
 
 ### Core Principles Section
 Based on project type and complexity:
