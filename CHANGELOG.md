@@ -1,3 +1,10 @@
+## [3.9.1](https://github.com/cahaseler/cc-track/compare/v3.9.0...v3.9.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* make hooks exit early in non-cc-track projects and startup checks non-blocking ([#183](https://github.com/cahaseler/cc-track/issues/183)) ([07c2748](https://github.com/cahaseler/cc-track/commit/07c274854100fdcc95f9fe7d3c133661ffbd3264))
+
 # [3.9.0](https://github.com/cahaseler/cc-track/compare/v3.8.3...v3.9.0) (2026-01-09)
 
 
