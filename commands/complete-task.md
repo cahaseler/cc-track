@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(bun:*), Skill
+allowed-tools: Read, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(bun:*)
 description: Complete the current active task (Phase 2 of task completion workflow)
 ---
 
@@ -15,18 +15,12 @@ Finalize the current task by updating metadata, squashing commits, and creating 
 - Git status: !`git status --short`
 - Recent commits on this branch: !`git log --oneline -5`
 
-## Step 1: Get Script Path via Skill
+## Step 1: Run Complete Task Script
 
-First, invoke the `cc-track:cc-track-tools` skill to get the base directory for cc-track scripts.
-
-Note the base directory provided (e.g., `/path/to/skills/cc-track-tools`).
-
-## Step 2: Run Complete Task Script
-
-Run the complete-task script using the base directory from Step 1:
+Run the complete-task script:
 
 ```bash
-bun {base_directory}/scripts/complete-task.ts
+bun "${CLAUDE_PLUGIN_ROOT}/skills/cc-track-tools/scripts/complete-task.ts"
 ```
 
 The script will:
@@ -38,7 +32,7 @@ The script will:
 - Switch back to main branch
 - Update CLAUDE.md to reference no_active_task.md
 
-## Step 3: Interpret Results
+## Step 2: Interpret Results
 
 The script returns JSON-like output with messages and data. Parse and present the results:
 
@@ -56,7 +50,7 @@ The script returns JSON-like output with messages and data. Parse and present th
 - Report PR status: URL if created, or existing PR if updated
 - Confirm branch switch to main
 
-## Step 4: Enhance PR Description (if PR was created)
+## Step 3: Enhance PR Description (if PR was created)
 
 If a new PR was created, enhance its description with details from the spec files:
 
@@ -89,5 +83,5 @@ The script supports these optional flags:
 
 Example with flags:
 ```bash
-bun {base_directory}/scripts/complete-task.ts --no-squash
+bun "${CLAUDE_PLUGIN_ROOT}/skills/cc-track-tools/scripts/complete-task.ts" --no-squash
 ```

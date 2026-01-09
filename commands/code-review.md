@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(git:*), Bash(bun:*), Bash(mkdir:*), Task, Skill, AskUserQuestion, TodoWrite
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(git:*), Bash(bun:*), Bash(mkdir:*), Task, AskUserQuestion, TodoWrite
 description: Code review a pull request
 ---
 
@@ -12,18 +12,12 @@ Run validation checks and multi-agent code review without requiring a spec folde
 - Current branch: !`git branch --show-current`
 - Changes to review: !`git diff --stat`
 
-## Step 1: Get Script Path via Skill
+## Step 1: Run Validation Script
 
-First, invoke the `cc-track:cc-track-tools` skill to get the base directory for cc-track scripts.
-
-Note the base directory provided (e.g., `/path/to/skills/cc-track-tools`).
-
-## Step 2: Run Validation Script
-
-Run the code-review script using the base directory from Step 1:
+Run the code-review script:
 
 ```bash
-bun {base_directory}/scripts/code-review.ts
+bun "${CLAUDE_PLUGIN_ROOT}/skills/cc-track-tools/scripts/code-review.ts"
 ```
 
 The script will:
@@ -32,7 +26,7 @@ The script will:
 - Run test suite
 - Run dead code detection (knip)
 
-## Step 3: Interpret Validation Results
+## Step 2: Interpret Validation Results
 
 The script returns JSON output. Parse and present the results:
 
@@ -48,9 +42,9 @@ The script returns JSON output. Parse and present the results:
 
 **If validation passed:**
 - Confirm: "✅ All validation checks passed"
-- Proceed to Step 4 for multi-agent code review
+- Proceed to Step 3 for multi-agent code review
 
-## Step 4: Launch Review Agents
+## Step 3: Launch Review Agents
 
 Launch the multi-agent code review using the Task tool.
 
@@ -92,9 +86,9 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 - Launch all 5 agents in a single message without the `run_in_background` parameter
 - Orchestrator suspends until ALL agents complete
 - All results return together in the response
-- Deduplication in Step 5 has access to all findings at once
+- Deduplication in Step 4 has access to all findings at once
 
-## Step 5: Collect and Deduplicate Issues
+## Step 4: Collect and Deduplicate Issues
 
 After all agents complete:
 
@@ -111,9 +105,9 @@ After all agents complete:
    - Observation: [evidence from reviewer]
    ```
 
-**If no issues found by any reviewer:** Skip to Step 8 with "No issues found - clean review!"
+**If no issues found by any reviewer:** Skip to Step 7 with "No issues found - clean review!"
 
-## Step 6: Score Each Issue
+## Step 5: Score Each Issue
 
 For each unique issue, launch a parallel **issue-scorer** agent (Haiku) to validate it.
 
@@ -130,7 +124,7 @@ Reported by: {reviewer(s)}
 Observation: {what the reviewer observed}
 ```
 
-## Step 7: Filter and Present Results
+## Step 6: Filter and Present Results
 
 After all scorers complete:
 
@@ -169,7 +163,7 @@ After all scorers complete:
 - [N] issues were filtered as unverified or false positives
 ```
 
-## Step 8: Route Based on Issue Count
+## Step 7: Route Based on Issue Count
 
 After filtering and scoring, route based on how many validated issues were found:
 
@@ -205,13 +199,13 @@ Wait for user direction before proceeding. If they want it fixed, implement the 
 📋 Found {N} validated issues. Starting structured triage...
 ```
 
-Proceed to Step 9 for inline fix-issues flow.
+Proceed to Step 8 for inline fix-issues flow.
 
-## Step 9: Inline Fix-Issues Flow
+## Step 8: Inline Fix-Issues Flow
 
 For >1 validated issues, handle triage directly (don't call `/cc-track:fix-issues` which requires a spec folder).
 
-### 9a: Create Review File
+### 8a: Create Review File
 
 1. Ensure `.cc-track/reviews/` directory exists:
    ```bash
@@ -240,7 +234,7 @@ For >1 validated issues, handle triage directly (don't call `/cc-track:fix-issue
 
 4. Add each issue to the file with Status = "pending"
 
-### 9b: Check Existing State
+### 8b: Check Existing State
 
 Read existing files to filter issues that were already triaged:
 
@@ -257,7 +251,7 @@ Read existing files to filter issues that were already triaged:
    - Remove any issue matching a Deferred entry (match by location or description)
    - Keep all other issues for triage
 
-### 9c: "Just Fix It" Protocol
+### 8c: "Just Fix It" Protocol
 
 Before presenting issues to the user, scan for trivial fixes that don't need human decision-making.
 
@@ -279,7 +273,7 @@ Before presenting issues to the user, scan for trivial fixes that don't need hum
 3. Update review file with Decision = "Just Fix It"
 4. Notify user briefly before continuing to triage
 
-### 9d: Triage Loop
+### 8d: Triage Loop
 
 For each remaining issue (sorted by score, highest first):
 
@@ -329,7 +323,7 @@ multiSelect: false
 - **Dismiss:** Update review file with Decision = "Dismiss" and rationale
 - **Discuss:** Investigate using Explore agent, then re-present with Fix/Defer/Dismiss
 
-### 9e: Action Summary
+### 8e: Action Summary
 
 After all issues are triaged:
 
@@ -352,7 +346,7 @@ After all issues are triaged:
 
 Update review file Status to "triaged".
 
-### 9f: Execute Fixes
+### 8f: Execute Fixes
 
 **If no fixes needed:**
 ```
