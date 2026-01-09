@@ -25,6 +25,5 @@
     "./agents/comment-compliance-reviewer.md",
     "./agents/duplication-detector.md",
     "./agents/dead-code-detector.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
