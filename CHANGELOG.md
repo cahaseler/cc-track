@@ -1,3 +1,10 @@
+## [3.8.2](https://github.com/cahaseler/cc-track/compare/v3.8.1...v3.8.2) (2026-01-09)
+
+
+### Bug Fixes
+
+* use correct plugin hooks.json structure with matcher/hooks arrays ([0796ca5](https://github.com/cahaseler/cc-track/commit/0796ca5d76a403fc9b8191d8aa0e188ad7e32fc6))
+
 ## [3.8.1](https://github.com/cahaseler/cc-track/compare/v3.8.0...v3.8.1) (2026-01-09)
 
 
