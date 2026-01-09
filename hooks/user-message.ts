@@ -7,10 +7,13 @@
  *
  * Activation: Include "autoflow" in message (not negated)
  * Deactivation: Any message without "autoflow" (or with negation)
+ *
+ * IMPORTANT: Autoflow must be enabled in track.config.json to function.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 
 export interface HookInput {
   prompt?: string;
@@ -87,6 +90,12 @@ export function shouldActivate(message: string): boolean {
 export async function userMessageHook(input: HookInput, deps?: UserMessageDeps): Promise<HookOutput> {
   const message = input.prompt || '';
   const cwd = input.cwd || process.cwd();
+
+  // Exit early if cc-track not configured or autoflow not enabled
+  if (!isCcTrackConfigured(cwd) || !isHookEnabled('autoflow', undefined)) {
+    return { continue: true };
+  }
+
   const { readState, writeState } = deps || createDefaultDeps(cwd);
 
   const currentState = readState();

@@ -3,11 +3,14 @@
  * Stop Hook - Evaluates if Claude should continue in autoflow mode
  *
  * Uses battle-tested evaluation prompt from double-shot-latte project
- * with 3 continuations per 5-minute window throttling.
+ * with configurable throttling (default: 3 continuations per 5-minute window).
+ *
+ * IMPORTANT: Autoflow must be enabled in track.config.json to function.
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { getConfig, isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
 
 export interface HookInput {
@@ -197,6 +200,12 @@ function createDefaultDeps(cwd: string): StopHookDeps {
 
 export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<StopHookResult> {
   const cwd = input.cwd || process.cwd();
+
+  // Exit early if cc-track not configured or autoflow not enabled
+  if (!isCcTrackConfigured(cwd) || !isHookEnabled('autoflow', undefined)) {
+    return { action: 'allow' };
+  }
+
   const { readState, writeState, readTranscript, evaluate, now } = deps || createDefaultDeps(cwd);
 
   const state = readState();
@@ -206,7 +215,14 @@ export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<S
     return { action: 'allow' };
   }
 
-  // Autoflow is active - check throttling (3 per 5-minute window)
+  // Get throttle config (with defaults)
+  const config = getConfig();
+  const autoflowConfig = config.features?.autoflow || {};
+  const throttleLimit = (autoflowConfig as { throttle_limit?: number }).throttle_limit || MAX_CONTINUES_PER_WINDOW;
+  const windowDurationMs =
+    ((autoflowConfig as { window_duration_minutes?: number }).window_duration_minutes || 5) * 60 * 1000;
+
+  // Autoflow is active - check throttling
   const currentTime = now();
   const windowStart = state.windowStart ? new Date(state.windowStart).getTime() : currentTime;
   const windowElapsed = currentTime - windowStart;
@@ -214,19 +230,19 @@ export async function stopHook(input: HookInput, deps?: StopHookDeps): Promise<S
   let continueCount = state.continueCount || 0;
 
   // Reset window if expired
-  if (windowElapsed >= WINDOW_DURATION_MS) {
+  if (windowElapsed >= windowDurationMs) {
     continueCount = 0;
   }
 
   // Check if we've exceeded the limit
-  if (continueCount >= MAX_CONTINUES_PER_WINDOW) {
+  if (continueCount >= throttleLimit) {
     // Deactivate autoflow due to throttle limit
     const updatedState = { ...state, active: false };
     writeState(updatedState);
 
     return {
       action: 'throttle',
-      message: `⚠️  Autoflow throttle limit reached\n\nClaude has continued ${MAX_CONTINUES_PER_WINDOW} times in the last 5 minutes.\nThis suggests it may be stuck in a loop.\n\nAutoflow mode has been deactivated. Please review the situation.`,
+      message: `⚠️  Autoflow throttle limit reached\n\nClaude has continued ${throttleLimit} times in the last ${(autoflowConfig as { window_duration_minutes?: number }).window_duration_minutes || 5} minutes.\nThis suggests it may be stuck in a loop.\n\nAutoflow mode has been deactivated. Please review the situation.`,
       updatedState,
     };
   }

@@ -1,10 +1,13 @@
 #!/usr/bin/env bun
 /**
  * PermissionRequest Hook - Denies permissions in autoflow mode with helpful message
+ *
+ * IMPORTANT: Autoflow must be enabled in track.config.json to function.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 
 export interface HookInput {
   cwd?: string;
@@ -56,6 +59,12 @@ function createDefaultDeps(cwd: string): PermissionRequestDeps {
 
 export async function permissionRequestHook(input: HookInput, deps?: PermissionRequestDeps): Promise<HookOutput> {
   const cwd = input.cwd || process.cwd();
+
+  // Exit early if cc-track not configured or autoflow not enabled
+  if (!isCcTrackConfigured(cwd) || !isHookEnabled('autoflow', undefined)) {
+    return { continue: true };
+  }
+
   const { readState } = deps || createDefaultDeps(cwd);
   const state = readState();
 

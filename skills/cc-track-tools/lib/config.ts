@@ -41,6 +41,11 @@ export interface StatuslineConfig extends HookConfig {
   show_repo?: boolean;
 }
 
+export interface AutoflowConfig extends HookConfig {
+  throttle_limit?: number;
+  window_duration_minutes?: number;
+}
+
 interface GitConfig {
   defaultBranch?: string;
   description?: string;
@@ -60,7 +65,7 @@ interface InternalConfig {
     [key: string]: HookConfig | EditValidationConfig;
   };
   features: {
-    [key: string]: HookConfig | CodeReviewConfig | StatuslineConfig;
+    [key: string]: HookConfig | CodeReviewConfig | StatuslineConfig | AutoflowConfig;
   };
   git?: GitConfig;
   logging?: LoggingConfig;
@@ -148,6 +153,12 @@ const DEFAULT_CONFIG: InternalConfig = {
       enabled: false,
       description: 'Run comprehensive code review before task completion',
       tool: 'claude' as const,
+    },
+    autoflow: {
+      enabled: false,
+      description: 'Autonomous operation mode - activates per-message when "autoflow" keyword is used',
+      throttle_limit: 3,
+      window_duration_minutes: 5,
     },
   },
 };
