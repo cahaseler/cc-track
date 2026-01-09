@@ -1,7 +1,7 @@
 # Project: cc-track
 
 ## Active Task
-@.cc-track/specs/113-autoflow-mode-hooks/spec.md
+no_active_task
 
 ## Product Vision
 @.cc-track/product_context.md
