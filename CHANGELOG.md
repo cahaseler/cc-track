@@ -1,3 +1,27 @@
+# [4.0.0](https://github.com/cahaseler/cc-track/compare/v3.9.1...v4.0.0) (2026-01-09)
+
+
+### Features
+
+* make autoflow configurable and opt-in ([#184](https://github.com/cahaseler/cc-track/issues/184)) ([cf907ab](https://github.com/cahaseler/cc-track/commit/cf907abe704f9333203d50740c2fa284622e0add))
+
+
+### BREAKING CHANGES
+
+* Autoflow is now disabled by default and must be explicitly
+enabled in track.config.json with `"autoflow": { "enabled": true }`
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+* refactor: simplify autoflow config access with typed helpers
+
+- Add getAutoflowConfig() and isAutoflowEnabled() helper functions
+- Simplify hook config checks to single isAutoflowEnabled() call
+- Use typed accessor for throttle config instead of manual casts
+- Follow established pattern for other feature configs
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
 ## [3.9.1](https://github.com/cahaseler/cc-track/compare/v3.9.0...v3.9.1) (2026-01-09)
 
 
