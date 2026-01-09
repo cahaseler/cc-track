@@ -40,8 +40,13 @@ The config file has three main sections: `hooks`, `features`, and `logging`.
     }
     ```
 
+### Features Section
+
+**Autonomous Operation:**
+
 - `autoflow` - Autonomous operation mode for unattended task completion
-  - Per-message opt-in: include "autoflow" in your message to activate
+  - **Disabled by default** - must be explicitly enabled
+  - Per-message opt-in: include "autoflow" in your message to activate for that task
   - Permission requests denied with "find safe alternative" guidance
   - Throttle detection prevents runaway sessions
   - Sub-options:
@@ -55,8 +60,6 @@ The config file has three main sections: `hooks`, `features`, and `logging`.
       "window_duration_minutes": 5
     }
     ```
-
-### Features Section
 
 **Git & GitHub Integration:**
 
