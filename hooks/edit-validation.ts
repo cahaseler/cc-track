@@ -15,7 +15,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path/posix';
-import { getLintConfig, isHookEnabled } from '../skills/cc-track-tools/lib/config';
+import { getLintConfig, isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 import { getLintParser } from '../skills/cc-track-tools/lib/lint-parsers';
 import { createLogger } from '../skills/cc-track-tools/lib/logger';
 import type { HookInput, HookOutput } from '../types';
@@ -285,6 +285,7 @@ export interface EditValidationDependencies {
   existsSync?: typeof existsSync;
   readFileSync?: typeof readFileSync;
   logger?: ReturnType<typeof createLogger>;
+  isCcTrackConfigured?: typeof isCcTrackConfigured;
   isHookEnabled?: typeof isHookEnabled;
   loadEditValidationConfig?: typeof loadEditValidationConfig;
 }
@@ -295,10 +296,17 @@ export interface EditValidationDependencies {
 export async function editValidationHook(input: HookInput, deps: EditValidationDependencies = {}): Promise<HookOutput> {
   const exec = deps.execSync || execSync;
   const log = deps.logger || logger;
+  const checkConfigured = deps.isCcTrackConfigured || isCcTrackConfigured;
   const checkEnabled = deps.isHookEnabled || isHookEnabled;
   const loadConfig = deps.loadEditValidationConfig || loadEditValidationConfig;
 
   try {
+    // Exit early if cc-track is not configured in this project
+    const cwd = input.cwd || process.cwd();
+    if (!checkConfigured(cwd)) {
+      return { continue: true };
+    }
+
     // Check if hook is enabled
     if (!checkEnabled('edit_validation')) {
       return { continue: true };
@@ -347,7 +355,6 @@ export async function editValidationHook(input: HookInput, deps: EditValidationD
 
     // Validate files using configured commands
     const results: ValidationResult[] = [];
-    const cwd = input.cwd || process.cwd();
 
     for (const filePath of tsFiles) {
       const fileName = basename(filePath);

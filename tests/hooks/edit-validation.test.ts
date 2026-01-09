@@ -404,6 +404,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -441,6 +442,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -470,6 +472,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -500,6 +503,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -540,6 +544,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -573,6 +578,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,
@@ -604,6 +610,7 @@ describe('edit-validation', () => {
       const result = await editValidationHook(input, {
         execSync: mockExec,
         existsSync: () => true,
+        isCcTrackConfigured: () => true,
         isHookEnabled: () => true,
         loadEditValidationConfig: () => ({
           enabled: true,

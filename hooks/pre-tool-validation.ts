@@ -18,7 +18,7 @@
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { getConfig, isHookEnabled } from '../skills/cc-track-tools/lib/config';
+import { getConfig, isCcTrackConfigured, isHookEnabled } from '../skills/cc-track-tools/lib/config';
 import { detectNpmPackage, verifyBunInstalled, verifyPluginDependencies } from '../skills/cc-track-tools/lib/detection';
 import {
   getBunNotInstalledMessage,
@@ -33,6 +33,7 @@ const logger = createLogger('pre-tool-validation');
 
 export interface PreToolValidationDependencies {
   logger?: ReturnType<typeof createLogger>;
+  isCcTrackConfigured?: typeof isCcTrackConfigured;
   isHookEnabled?: typeof isHookEnabled;
   getConfig?: typeof getConfig;
   gitHelpers?: GitHelpers;
@@ -196,6 +197,7 @@ export async function preToolValidationHook(
   deps: PreToolValidationDependencies = {},
 ): Promise<HookOutput> {
   const log = deps.logger || logger;
+  const checkConfigured = deps.isCcTrackConfigured || isCcTrackConfigured;
   const checkEnabled = deps.isHookEnabled || isHookEnabled;
   const configGetter = deps.getConfig || getConfig;
   const gitHelpers = deps.gitHelpers || new GitHelpers();
@@ -206,41 +208,36 @@ export async function preToolValidationHook(
   const depsVerify = deps.verifyPluginDependencies || verifyPluginDependencies;
 
   try {
+    // Exit early if cc-track is not configured in this project
+    // This prevents the plugin from interfering with non-cc-track projects
+    const cwd = input.cwd || process.cwd();
+    if (!checkConfigured(cwd)) {
+      return { continue: true };
+    }
+
     // Check if hook is enabled
     if (!checkEnabled('pre_tool_validation')) {
       return { continue: true };
     }
 
-    const cwd = input.cwd || process.cwd();
     const config = configGetter();
 
-    // STARTUP CHECKS - Run once per session to detect installation issues
-    // These checks ensure the plugin is properly installed and configured
+    // STARTUP CHECKS - Informational only (non-blocking)
+    // These checks help Claude understand installation issues and potentially fix them
+    const startupWarnings: string[] = [];
 
     // Check 1: Detect npm/plugin conflict (T060)
     const npmCheck = npmDetect(exec);
     if (npmCheck.detected) {
-      log.error('npm/plugin conflict detected', { message: npmCheck.message });
-      return {
-        hookSpecificOutput: {
-          hookEventName: 'PreToolUse',
-          permissionDecision: 'deny' as const,
-          permissionDecisionReason: getNpmPluginConflictMessage(),
-        },
-      };
+      log.warn('npm/plugin conflict detected', { message: npmCheck.message });
+      startupWarnings.push(getNpmPluginConflictMessage());
     }
 
     // Check 2: Verify Bun is installed (T061)
     const bunCheck = bunVerify(exec);
     if (!bunCheck.detected) {
-      log.error('Bun runtime not found', { message: bunCheck.message });
-      return {
-        hookSpecificOutput: {
-          hookEventName: 'PreToolUse',
-          permissionDecision: 'deny' as const,
-          permissionDecisionReason: getBunNotInstalledMessage(),
-        },
-      };
+      log.warn('Bun runtime not found', { message: bunCheck.message });
+      startupWarnings.push(getBunNotInstalledMessage());
     }
 
     // Check 3: Verify plugin dependencies are installed (T062)
@@ -248,15 +245,20 @@ export async function preToolValidationHook(
     if (pluginRoot) {
       const depsCheck = depsVerify(pluginRoot, fsExists);
       if (!depsCheck.detected) {
-        log.error('Plugin dependencies not installed', { message: depsCheck.message, pluginRoot });
-        return {
-          hookSpecificOutput: {
-            hookEventName: 'PreToolUse',
-            permissionDecision: 'deny' as const,
-            permissionDecisionReason: getMissingDependenciesMessage(pluginRoot),
-          },
-        };
+        log.warn('Plugin dependencies not installed', { message: depsCheck.message, pluginRoot });
+        startupWarnings.push(getMissingDependenciesMessage(pluginRoot));
       }
+    }
+
+    // If there are startup warnings, inform Claude but don't block
+    if (startupWarnings.length > 0) {
+      return {
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          additionalContext: `⚠️ cc-track startup warnings:\n\n${startupWarnings.join('\n\n')}\n\nThese issues should be resolved for cc-track to function properly, but this tool call will proceed.`,
+        },
+      };
     }
 
     // WebSearch Year Validation (runs first, before file-based checks)
