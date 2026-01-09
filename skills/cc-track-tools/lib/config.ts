@@ -154,6 +154,27 @@ const DEFAULT_CONFIG: InternalConfig = {
 
 let configCache: InternalConfig | null = null;
 
+/**
+ * Check if cc-track is configured in this project (config file exists).
+ * Hooks should call this first and exit early if false to avoid
+ * running validations in projects that haven't opted into cc-track.
+ */
+export function isCcTrackConfigured(startPath?: string): boolean {
+  let currentPath = resolve(startPath || process.cwd());
+
+  while (true) {
+    const configPath = join(currentPath, '.cc-track', 'track.config.json');
+    if (existsSync(configPath)) {
+      return true;
+    }
+    const parentPath = dirname(currentPath);
+    if (parentPath === currentPath) {
+      return false;
+    }
+    currentPath = parentPath;
+  }
+}
+
 export function getConfigPath(startPath?: string): string {
   let currentPath = resolve(startPath || process.cwd());
 

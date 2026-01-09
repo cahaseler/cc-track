@@ -14,6 +14,7 @@ import type { HookInput } from '../../types';
 
 // Helper to create mocks for detection functions (always return "OK" for tests)
 const createMockDetectionFunctions = () => ({
+  isCcTrackConfigured: mock(() => true), // Pretend cc-track is configured
   detectNpmPackage: mock(() => ({ detected: false })), // No npm conflict
   verifyBunInstalled: mock(() => ({ detected: true, message: 'Bun v1.0.0 is installed' })), // Bun OK
   verifyPluginDependencies: mock(() => ({ detected: true, message: 'All dependencies installed' })), // Deps OK
@@ -131,6 +132,53 @@ describe('pre-tool-validation', () => {
         },
       },
       logging: { enabled: false, level: 'INFO' as const, retentionDays: 7, prettyPrint: false },
+    });
+
+    test('provides non-blocking warnings for startup issues', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: { file_path: '/project/src/file.ts' },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isCcTrackConfigured: () => true,
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(false), // branch protection disabled
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'feature/test' }),
+        logger: createMockLogger(),
+        detectNpmPackage: mock(() => ({ detected: true, message: 'npm conflict!' })), // Has problem
+        verifyBunInstalled: mock(() => ({ detected: true, message: 'Bun OK' })),
+        verifyPluginDependencies: mock(() => ({ detected: true, message: 'Deps OK' })),
+      });
+
+      // Should continue but provide warning
+      expect(result.continue).toBe(true);
+      expect(result.hookSpecificOutput?.additionalContext).toContain('startup warnings');
+    });
+
+    test('exits early when cc-track is not configured', async () => {
+      const input: HookInput = {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Edit',
+        tool_input: { file_path: '/project/src/file.ts' },
+        cwd: '/project',
+      };
+
+      const result = await preToolValidationHook(input, {
+        isCcTrackConfigured: () => false, // Not configured
+        isHookEnabled: () => true,
+        getConfig: () => createMockConfig(true),
+        gitHelpers: createMockGitHelpers({ getCurrentBranch: () => 'main' }),
+        logger: createMockLogger(),
+        detectNpmPackage: mock(() => ({ detected: false })),
+        verifyBunInstalled: mock(() => ({ detected: true, message: 'Bun OK' })),
+        verifyPluginDependencies: mock(() => ({ detected: true, message: 'Deps OK' })),
+      });
+
+      // Should exit early without blocking
+      expect(result).toEqual({ continue: true });
     });
 
     test('blocks edits on protected branch', async () => {
