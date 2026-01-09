@@ -1,3 +1,10 @@
+## [3.8.3](https://github.com/cahaseler/cc-track/compare/v3.8.2...v3.8.3) (2026-01-09)
+
+
+### Bug Fixes
+
+* remove redundant hooks reference from plugin.json ([02a8040](https://github.com/cahaseler/cc-track/commit/02a8040c5674bea866a78b710d999f70a30fd073))
+
 ## [3.8.2](https://github.com/cahaseler/cc-track/compare/v3.8.1...v3.8.2) (2026-01-09)
 
 
