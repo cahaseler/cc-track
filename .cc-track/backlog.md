@@ -14,3 +14,4 @@
 
 <!-- Items will be added below -->
 - [2025-12-14] Add new subagent to review agents tasked with identifying 'fallback' approaches, 'graceful degradation', and 'backwards compatibility' that simply masks failures with fake functionality or broken systems. Any backwards compatibility or fallbacks MUST be in the spec. Falling back to something that appears at first glance to be working but isn't makes it substantially harder to test AI generated code.
+- [2025-01-09] BUG: Autoflow stop evaluation reports truncated context ("cuts off mid-sentence at 'For config-tr'"). Investigate whether the conversation context being passed to Claude SDK is being truncated, and if so why. May be a token limit issue or serialization problem in the stop hook.

@@ -40,6 +40,22 @@ The config file has three main sections: `hooks`, `features`, and `logging`.
     }
     ```
 
+- `autoflow` - Autonomous operation mode for unattended task completion
+  - Per-message opt-in: include "autoflow" in your message to activate
+  - Permission requests denied with "find safe alternative" guidance
+  - Throttle detection prevents runaway sessions
+  - Sub-options:
+    - `throttle_limit` - Max auto-continues before exit (default: 3)
+    - `window_duration_minutes` - Throttle detection window (default: 5)
+  - Example:
+    ```json
+    "autoflow": {
+      "enabled": true,
+      "throttle_limit": 3,
+      "window_duration_minutes": 5
+    }
+    ```
+
 ### Features Section
 
 **Git & GitHub Integration:**

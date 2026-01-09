@@ -165,6 +165,21 @@ Present feature options and let user choose what to enable:
   - If enabled, verify tool is installed and explain timeout expectations
 
 **Advanced:**
+- `autoflow` - Autonomous operation mode for unattended task completion
+  - ✅ Pros: Claude works through tasks without constant "should I continue?" prompts
+  - ✅ Pros: Per-message opt-in (include "autoflow" in your message to activate)
+  - ✅ Pros: Throttle detection prevents runaway sessions (default: 3 auto-continues per 5 minutes)
+  - ⚠️ Cons: Permission requests are denied with "find safe alternative" guidance
+  - How it works:
+    - Include "autoflow" in your message to activate for that task
+    - Claude auto-continues when stopped if work remains
+    - Permission requests denied → Claude must find safe workarounds or stop
+    - Deactivates when: task complete, throttle limit hit, or next message without "autoflow"
+  - Configurable:
+    - `throttle_limit` - Max auto-continues before exit (default: 3)
+    - `window_duration_minutes` - Throttle detection window (default: 5)
+  - Ask: "Enable autoflow mode? (autonomous operation for unattended tasks)"
+
 - `private_journal` - Use private journal MCP for context preservation
   - ✅ Pros: Claude can record learnings and reflections privately for future reference
   - ⚠️ Cons: Requires mcp-private-journal MCP server installed
@@ -211,6 +226,11 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
     },
     "powershell_guidance": {
       "enabled": true/false
+    },
+    "autoflow": {
+      "enabled": true/false,
+      "throttle_limit": 3,
+      "window_duration_minutes": 5
     }
   },
   "features": {
