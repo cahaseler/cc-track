@@ -1,3 +1,10 @@
+# [3.8.0](https://github.com/cahaseler/cc-track/compare/v3.7.0...v3.8.0) (2026-01-09)
+
+
+### Features
+
+* add test command for CLAUDE_PLUGIN_ROOT variable substitution ([889f45e](https://github.com/cahaseler/cc-track/commit/889f45e002dcd8c8781bd7de50cd2c5d5b1b81ce))
+
 # [3.7.0](https://github.com/cahaseler/cc-track/compare/v3.6.0...v3.7.0) (2026-01-08)
 
 
