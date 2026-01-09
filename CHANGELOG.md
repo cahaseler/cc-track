@@ -1,3 +1,10 @@
+## [3.8.1](https://github.com/cahaseler/cc-track/compare/v3.8.0...v3.8.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* wrap hooks.json in required plugin format ([9cf8b2b](https://github.com/cahaseler/cc-track/commit/9cf8b2bae1c1582766fa529771b3a8ab7dade08a))
+
 # [3.8.0](https://github.com/cahaseler/cc-track/compare/v3.7.0...v3.8.0) (2026-01-09)
 
 
