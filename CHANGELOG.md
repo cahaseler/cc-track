@@ -1,3 +1,10 @@
+# [3.9.0](https://github.com/cahaseler/cc-track/compare/v3.8.3...v3.9.0) (2026-01-09)
+
+
+### Features
+
+* use direct ${CLAUDE_PLUGIN_ROOT} in commands instead of skill workaround ([#182](https://github.com/cahaseler/cc-track/issues/182)) ([c1f5cc5](https://github.com/cahaseler/cc-track/commit/c1f5cc5760f7364fd0983c036d1e06a781f8cacb))
+
 ## [3.8.3](https://github.com/cahaseler/cc-track/compare/v3.8.2...v3.8.3) (2026-01-09)
 
 
