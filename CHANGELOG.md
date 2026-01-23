@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/cahaseler/cc-track/compare/v4.0.1...v4.1.0) (2026-01-23)
+
+
+### Features
+
+* integrate native task system for real-time orchestration ([#186](https://github.com/cahaseler/cc-track/issues/186)) ([d64eee1](https://github.com/cahaseler/cc-track/commit/d64eee17082697300b197c8f6c88e197d983058d))
+
 ## [4.0.1](https://github.com/cahaseler/cc-track/compare/v4.0.0...v4.0.1) (2026-01-23)
 
 
