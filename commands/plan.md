@@ -279,7 +279,7 @@ For each endpoint from spec:
 Save to `contracts/` directory.
 
 ### Write Plan Document
-Use `templates/plan-template.md`:
+Read template from `${CLAUDE_PLUGIN_ROOT}/templates/plan-template.md`:
 - Summary
 - Technical Context (from above)
 - Constitution Check results

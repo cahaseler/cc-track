@@ -98,7 +98,7 @@ For phases requiring a waiver, mark them `[TDD WAIVER REQUESTED]` in the initial
 
 ## Step 2: Generate tasks.md
 
-Use `templates/tasks-template.md` as the base structure.
+Read template from `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` as the base structure.
 
 ### Structure
 
@@ -229,7 +229,7 @@ Dispatch subagents one at a time in TDD order:
 
 ### For Parallel Phases and Dependency Enforcement
 
-See `templates/tasks-template.md` for the orchestration patterns (pipeline flow, polling fallback, dependency rules). These are included in the generated tasks.md and followed during execution.
+See `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` for the orchestration patterns (pipeline flow, polling fallback, dependency rules). These are included in the generated tasks.md and followed during execution.
 
 ### For Waived Phases
 
