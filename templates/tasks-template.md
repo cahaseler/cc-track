@@ -25,6 +25,19 @@ The orchestrator coordinates these agents, reviews their output, updates checkbo
 - **Checkpoints**: Pause for user approval at designated points
 - **Escalation**: Stop new work, settle in-flight agents, then raise issues
 
+### Real-Time Coordination (Native Task System)
+
+Use Claude Code's native task tools for **real-time coordination** during the session:
+
+- **Native tasks** (`TaskCreate`, `TaskUpdate`, `TaskList`) = Session coordination layer
+- **This markdown file** = Persistent record (survives compactions)
+
+**Workflow:**
+1. At phase set start: Create native tasks with `blockedBy` dependencies
+2. During execution: `TaskUpdate` status as subagents dispatch/complete
+3. Use `TaskList` to see what's unblocked and ready
+4. After each phase: Sync completed tasks back to markdown checkboxes
+
 ---
 
 ## Phase 1: [Phase Name]
@@ -111,37 +124,67 @@ Document which phases can run in parallel and which have dependencies.
 
 ## Orchestration Instructions
 
-### Sequential Phase Execution
+### Setup: Create Native Tasks
 
-For each phase, dispatch subagents in order:
+Before starting implementation, create native tasks for all steps with dependencies:
 
 ```
-1. Task tool: subagent_type=stub-writer
-   Prompt: "Phase N: [Name]. Create stubs for [files] with exports: [list]"
+# Create all tasks for Phase 1
+TaskCreate: subject="P1: Stub", description="Create exports for [files]"
+TaskCreate: subject="P1: Tests", description="Write failing tests"
+TaskCreate: subject="P1: Implement", description="Make tests pass"
+TaskCreate: subject="P1: Validate", description="Verify requirements"
 
-2. Task tool: subagent_type=test-generation
-   Prompt: "Phase N: [Name]. Write tests for [requirements]. Files: [paths]. Run tests, report output."
+# Set up TDD dependency chain
+TaskUpdate: "P1: Tests" addBlockedBy: ["P1: Stub"]
+TaskUpdate: "P1: Implement" addBlockedBy: ["P1: Tests"]
+TaskUpdate: "P1: Validate" addBlockedBy: ["P1: Implement"]
 
-3. Task tool: subagent_type=implementer
-   Prompt: "Phase N: [Name]. Make tests pass. Files: [paths]. Run tests, report output."
+# For parallel phases, add cross-phase dependencies as needed
+TaskUpdate: "P4: Stub" addBlockedBy: ["P2: Validate"]  # P4 depends on P2
+```
 
-4. Task tool: subagent_type=validator
-   Prompt: "Phase N: [Name]. Verify: [requirements]. Run tests independently. Report pass/fail."
+### Sequential Phase Execution
+
+For each phase, use `TaskList` to find unblocked tasks, then dispatch:
+
+```
+1. TaskUpdate: "P1: Stub" status: in_progress
+   Task tool: subagent_type=stub-writer
+   Prompt: "Phase 1: [Name]. Create stubs for [files] with exports: [list]"
+   → On success: TaskUpdate: "P1: Stub" status: completed
+
+2. TaskUpdate: "P1: Tests" status: in_progress
+   Task tool: subagent_type=test-generation
+   Prompt: "Phase 1: [Name]. Write tests for [requirements]. Files: [paths]. Run tests, report output."
+   → On success: TaskUpdate: "P1: Tests" status: completed
+
+3. TaskUpdate: "P1: Implement" status: in_progress
+   Task tool: subagent_type=implementer
+   Prompt: "Phase 1: [Name]. Make tests pass. Files: [paths]. Run tests, report output."
+   → On success: TaskUpdate: "P1: Implement" status: completed
+
+4. TaskUpdate: "P1: Validate" status: in_progress
+   Task tool: subagent_type=validator
+   Prompt: "Phase 1: [Name]. Verify: [requirements]. Run tests independently. Report pass/fail."
+   → On success: TaskUpdate: "P1: Validate" status: completed
 ```
 
 ### Parallel Phase Execution
 
-When multiple phases are marked [P], use **pipeline flow**:
+When multiple phases are marked [P], use **pipeline flow** with native task coordination:
 
-1. **Dispatch** ALL stub writers with `run_in_background: true` in a single message
-2. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z."
-3. **Orchestration loop**:
-   - Do any pending work (check off completed steps, dispatch next agents for completed phases)
-   - Process any notifications that arrived while working
-   - If no pending work: poll all active agents with `AgentOutputTool(block: false)`
-   - If all still running: `Bash(sleep 30)` to idle efficiently, then poll again
+1. **Create all native tasks upfront** with `blockedBy` dependencies (see Setup above)
+2. **Use `TaskList`** to see all unblocked tasks ready to dispatch
+3. **Dispatch** all unblocked stub writers with `run_in_background: true` in a single message
+4. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z."
+5. **Orchestration loop**:
+   - `TaskList` to find newly unblocked tasks (e.g., Tests for completed Stubs)
+   - Dispatch unblocked tasks, `TaskUpdate` status to in_progress
+   - As agents complete, `TaskUpdate` status to completed
+   - Repeat until all tasks complete
 
-This creates true pipeline parallelism - Phase 1's test writer starts as soon as Phase 1's stub finishes, even while other stubs run. Notifications usually arrive promptly, but the 30-second polling fallback catches any that don't.
+The native `blockedBy` system automatically tracks what's ready - no manual dependency checking needed. As each step completes, its dependents become unblocked and appear in `TaskList`.
 
 ### Dependency Enforcement
 
@@ -156,9 +199,12 @@ Dependencies mean the full Stub → Tests → Implement → Validate cycle, not 
 
 ### At Checkpoints
 
-1. Summarize completed phases with pass/fail status
-2. List upcoming phases
-3. Wait for user approval before continuing
+1. **Sync to markdown**: Update all checkboxes in this file to match native task completion
+2. Summarize completed phases with pass/fail status
+3. List upcoming phases
+4. Wait for user approval before continuing
+
+*The markdown sync ensures progress is preserved across context compactions.*
 
 ### On Complications
 

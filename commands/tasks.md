@@ -193,43 +193,109 @@ Phase 4 ──┘
 
 When the user approves this task breakdown and says to begin implementation:
 
+### Real-Time Task Coordination (Native Task System)
+
+Use Claude Code's native task system (`TaskCreate`, `TaskUpdate`, `TaskList`) for **real-time coordination** during the session. The markdown `tasks.md` file remains the **persistent record**.
+
+**Two-layer approach:**
+- **Native tasks** = Session coordination layer (tracks what's happening NOW)
+- **Markdown tasks.md** = Persistent record (survives compactions, documents history)
+
+**At the start of each phase set:**
+1. Create native tasks for each step with proper dependencies:
+   ```
+   TaskCreate: "P1: Stub" (description: files, exports needed)
+   TaskCreate: "P1: Tests" (description: test requirements)
+   TaskCreate: "P1: Implement" (description: make tests pass)
+   TaskCreate: "P1: Validate" (description: verify requirements)
+
+   TaskUpdate: "P1: Tests" addBlockedBy: ["P1: Stub"]
+   TaskUpdate: "P1: Implement" addBlockedBy: ["P1: Tests"]
+   TaskUpdate: "P1: Validate" addBlockedBy: ["P1: Implement"]
+   ```
+
+2. For parallel phases, create all tasks upfront with cross-phase dependencies:
+   ```
+   # Phase 2 and 3 can run in parallel, but each has internal TDD order
+   TaskUpdate: "P2: Tests" addBlockedBy: ["P2: Stub"]
+   TaskUpdate: "P3: Tests" addBlockedBy: ["P3: Stub"]
+   # Phase 4 depends on Phase 2 completing
+   TaskUpdate: "P4: Stub" addBlockedBy: ["P2: Validate"]
+   ```
+
+**During execution:**
+- `TaskUpdate` status to `in_progress` when dispatching a subagent
+- `TaskUpdate` status to `completed` when subagent returns successfully
+- Use `TaskList` to see what's unblocked and ready to dispatch
+
+**After each phase (and at checkpoints):**
+- Sync native task completion back to markdown checkboxes in `tasks.md`
+- This ensures the persistent record is updated for context compaction
+
+**Why this matters:**
+- Native `blockedBy` enforces TDD order automatically (can't start Tests until Stub completes)
+- `TaskList` shows exactly what's ready to dispatch vs. blocked
+- Status visible in Claude Code's UI
+- Markdown update at checkpoints preserves state across sessions
+
 ### For Sequential Phases
 
 Dispatch subagents one at a time in TDD order:
 
 1. **Stub Writer**:
    ```
+   TaskUpdate: "PN: Stub" status: in_progress
    Task tool with subagent_type: stub-writer
    Prompt: "Phase N: [Phase Name]. Create stubs for [files] with exports: [list exports needed]"
    ```
-   → On success: Check off "Stub" checkbox in tasks.md
+   → On success: `TaskUpdate: "PN: Stub" status: completed`
 
 2. **Test Writer** (after stub complete):
    ```
+   TaskUpdate: "PN: Tests" status: in_progress
    Task tool with subagent_type: test-generation
    Prompt: "Phase N: [Phase Name]. Write tests for [requirements]. Test files: [paths]. Run tests and report output."
    ```
-   → On success: Check off "Tests" checkbox in tasks.md
+   → On success: `TaskUpdate: "PN: Tests" status: completed`
 
 3. **Implementer** (after tests written and failing):
    ```
+   TaskUpdate: "PN: Implement" status: in_progress
    Task tool with subagent_type: implementer
    Prompt: "Phase N: [Phase Name]. Make tests pass. Implementation files: [paths]. Run tests and report output."
    ```
-   → On success: Check off "Implement" checkbox in tasks.md
+   → On success: `TaskUpdate: "PN: Implement" status: completed`
 
 4. **Validator** (after implementation):
    ```
+   TaskUpdate: "PN: Validate" status: in_progress
    Task tool with subagent_type: validator
    Prompt: "Phase N: [Phase Name]. Verify: [requirements from spec]. Run tests independently. Report pass/fail."
    ```
-   → On success: Check off "Validate" checkbox in tasks.md
+   → On success: `TaskUpdate: "PN: Validate" status: completed`
 
-**IMPORTANT**: Update tasks.md checkboxes immediately after each subagent returns successfully. This keeps progress visible and ensures state is preserved across context compactions.
+**After each phase completes**: Update tasks.md checkboxes to sync the persistent record. This ensures state is preserved across context compactions.
 
 ### For Parallel Phases and Dependency Enforcement
 
-See `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` for the orchestration patterns (pipeline flow, polling fallback, dependency rules). These are included in the generated tasks.md and followed during execution.
+**Create all native tasks upfront** with `blockedBy` relationships:
+```
+# All stubs can start immediately (no blockers)
+TaskCreate: "P2: Stub", "P3: Stub", "P4: Stub"
+
+# Tests blocked by their phase's stub
+TaskUpdate: "P2: Tests" addBlockedBy: ["P2: Stub"]
+TaskUpdate: "P3: Tests" addBlockedBy: ["P3: Stub"]
+
+# Implement blocked by tests, Validate blocked by implement
+# (repeat pattern for each phase)
+```
+
+**Use `TaskList`** to see what's unblocked and ready to dispatch. The native system enforces dependencies automatically - you can't accidentally start Tests before Stub completes.
+
+**Pipeline flow**: As each step completes, its dependents become unblocked. Dispatch newly-unblocked tasks immediately for maximum parallelism.
+
+See `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` for additional orchestration patterns (polling fallback, dependency diagrams). These are included in the generated tasks.md.
 
 ### For Waived Phases
 
