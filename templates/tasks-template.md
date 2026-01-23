@@ -36,7 +36,7 @@ Use Claude Code's native task tools for **real-time coordination** during the se
 1. At phase set start: Create native tasks with `blockedBy` dependencies
 2. During execution: `TaskUpdate` status as subagents dispatch/complete
 3. Use `TaskList` to see what's unblocked and ready
-4. At checkpoints: Sync completed tasks back to markdown checkboxes
+4. After each phase: Sync completed tasks back to markdown checkboxes
 
 ---
 
