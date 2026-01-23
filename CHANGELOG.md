@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/cahaseler/cc-track/compare/v4.0.0...v4.0.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* use ${CLAUDE_PLUGIN_ROOT} for template paths in workflow commands ([#185](https://github.com/cahaseler/cc-track/issues/185)) ([09b8013](https://github.com/cahaseler/cc-track/commit/09b8013554d5dcf22eebb7afb7b223cbdf8d32eb))
+
 # [4.0.0](https://github.com/cahaseler/cc-track/compare/v3.9.1...v4.0.0) (2026-01-09)
 
 
