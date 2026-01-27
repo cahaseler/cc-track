@@ -1,3 +1,10 @@
+## [4.1.1](https://github.com/cahaseler/cc-track/compare/v4.1.0...v4.1.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* prevent orchestrator context overflow from TaskOutput polling ([#187](https://github.com/cahaseler/cc-track/issues/187)) ([c8e61c6](https://github.com/cahaseler/cc-track/commit/c8e61c63aa0d0ff7c8a64965489020e2e9097ba7))
+
 # [4.1.0](https://github.com/cahaseler/cc-track/compare/v4.0.1...v4.1.0) (2026-01-23)
 
 
