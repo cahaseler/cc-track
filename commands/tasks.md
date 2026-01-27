@@ -293,9 +293,9 @@ TaskUpdate: "P3: Tests" addBlockedBy: ["P3: Stub"]
 
 **Use `TaskList`** to see what's unblocked and ready to dispatch. The native system enforces dependencies automatically - you can't accidentally start Tests before Stub completes.
 
-**Pipeline flow**: As each step completes, its dependents become unblocked. Dispatch newly-unblocked tasks immediately for maximum parallelism.
+**Pipeline flow**: Dispatch all unblocked tasks, post a status message ("Waiting for task completion."), and **STOP**. Do NOT call TaskOutput to watch or poll subagents - this dumps their entire working context into the orchestrator's context window, causing rapid context overflow. When a subagent completes, the system wakes the orchestrator automatically. At that point, update task status, check `TaskList` for newly unblocked tasks, dispatch them, and wait again.
 
-See `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` for additional orchestration patterns (polling fallback, dependency diagrams). These are included in the generated tasks.md.
+See `${CLAUDE_PLUGIN_ROOT}/templates/tasks-template.md` for additional orchestration patterns (dependency diagrams). These are included in the generated tasks.md.
 
 ### For Waived Phases
 
