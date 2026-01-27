@@ -191,6 +191,14 @@ Phase 4 ──┘
 
 ## Orchestration Instructions
 
+**MANDATORY: Use specialized subagent types.** Every Task tool call during orchestration MUST use the correct `subagent_type` parameter:
+- **Stub** steps → `subagent_type: stub-writer`
+- **Tests** steps → `subagent_type: test-generation`
+- **Implement** steps → `subagent_type: implementer`
+- **Validate** steps → `subagent_type: validator`
+
+Do NOT use `subagent_type: general-purpose` or omit `subagent_type`. The specialized agents have tailored system prompts, tool access, and behavioral constraints that general-purpose agents lack.
+
 When the user approves this task breakdown and says to begin implementation:
 
 ### Real-Time Task Coordination (Native Task System)

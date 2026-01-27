@@ -124,6 +124,14 @@ Document which phases can run in parallel and which have dependencies.
 
 ## Orchestration Instructions
 
+**MANDATORY: Use specialized subagent types.** Every Task tool call during orchestration MUST use the correct `subagent_type` parameter:
+- **Stub** steps → `subagent_type=stub-writer`
+- **Tests** steps → `subagent_type=test-generation`
+- **Implement** steps → `subagent_type=implementer`
+- **Validate** steps → `subagent_type=validator`
+
+Do NOT use `subagent_type=general-purpose` or omit `subagent_type`. The specialized agents have tailored system prompts, tool access, and behavioral constraints that general-purpose agents lack.
+
 ### Setup: Create Native Tasks
 
 Before starting implementation, create native tasks for all steps with dependencies:
@@ -176,7 +184,7 @@ When multiple phases are marked [P], use **pipeline flow** with native task coor
 
 1. **Create all native tasks upfront** with `blockedBy` dependencies (see Setup above)
 2. **Use `TaskList`** to see all unblocked tasks ready to dispatch
-3. **Dispatch** all unblocked stub writers in a single message
+3. **Dispatch** all unblocked tasks in a single message using the correct `subagent_type` for each (see table above)
 4. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z. Waiting for task completion."
 5. **STOP and wait** - Do NOT call TaskOutput or poll agents. When a subagent completes, the system will wake you automatically with its results. At that point:
    - `TaskUpdate` the completed step's status to completed
