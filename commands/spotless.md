@@ -209,7 +209,7 @@ You are investigating recent changes in {area_name} for dead code artifacts.
 Save your report to: .cc-track/analysis/spotless/area_reports/{area_name}_report.md
 ```
 
-**Wait** for all investigation subagents to complete.
+Post a status message: "Waiting for investigation subagents to complete." and **STOP**. Do NOT call TaskOutput to poll. The system will wake you when each subagent completes.
 
 ---
 
@@ -251,7 +251,7 @@ You are validating a finding from dead code analysis.
 Save to: .cc-track/analysis/spotless/validations/{finding_id}_validation.md
 ```
 
-**Wait** for all validation subagents to complete.
+Post a status message: "Waiting for validation subagents to complete." and **STOP**. Do NOT call TaskOutput to poll. The system will wake you when each subagent completes.
 
 ---
 

@@ -176,15 +176,15 @@ When multiple phases are marked [P], use **pipeline flow** with native task coor
 
 1. **Create all native tasks upfront** with `blockedBy` dependencies (see Setup above)
 2. **Use `TaskList`** to see all unblocked tasks ready to dispatch
-3. **Dispatch** all unblocked stub writers with `run_in_background: true` in a single message
-4. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z."
-5. **Orchestration loop**:
+3. **Dispatch** all unblocked stub writers in a single message
+4. **Post status** to user: "Dispatched stub writers for Phases X, Y, Z. Waiting for task completion."
+5. **STOP and wait** - Do NOT call TaskOutput or poll agents. When a subagent completes, the system will wake you automatically with its results. At that point:
+   - `TaskUpdate` the completed step's status to completed
    - `TaskList` to find newly unblocked tasks (e.g., Tests for completed Stubs)
-   - Dispatch unblocked tasks, `TaskUpdate` status to in_progress
-   - As agents complete, `TaskUpdate` status to completed
-   - Repeat until all tasks complete
+   - Dispatch any newly unblocked tasks, `TaskUpdate` their status to in_progress
+   - Post another status message and wait again if tasks remain
 
-The native `blockedBy` system automatically tracks what's ready - no manual dependency checking needed. As each step completes, its dependents become unblocked and appear in `TaskList`.
+**CRITICAL**: Never use TaskOutput to watch subagent progress. This dumps the subagent's entire working context into the orchestrator's context window, causing rapid context overflow. The notification system handles completion automatically.
 
 ### Dependency Enforcement
 
