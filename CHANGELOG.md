@@ -1,3 +1,10 @@
+## [4.1.2](https://github.com/cahaseler/cc-track/compare/v4.1.1...v4.1.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* enforce mandatory specialized subagent types in orchestration ([#188](https://github.com/cahaseler/cc-track/issues/188)) ([6e7a1a0](https://github.com/cahaseler/cc-track/commit/6e7a1a08c5deedb9982a3d1e43858ea19918ccd0))
+
 ## [4.1.1](https://github.com/cahaseler/cc-track/compare/v4.1.0...v4.1.1) (2026-01-27)
 
 
