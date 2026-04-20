@@ -1,3 +1,10 @@
+## [4.1.3](https://github.com/cahaseler/cc-track/compare/v4.1.2...v4.1.3) (2026-04-20)
+
+
+### Bug Fixes
+
+* register TDD workflow agents in plugin manifest ([#189](https://github.com/cahaseler/cc-track/issues/189)) ([652c454](https://github.com/cahaseler/cc-track/commit/652c454f1f8bceff8547ed53924e032c621bb4b9))
+
 ## [4.1.2](https://github.com/cahaseler/cc-track/compare/v4.1.1...v4.1.2) (2026-01-28)
 
 
