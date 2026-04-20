@@ -16,7 +16,11 @@
   ],
   "agents": [
     "./agents/researcher.md",
+    "./agents/stub-writer.md",
     "./agents/test-generation.md",
+    "./agents/implementer.md",
+    "./agents/validator.md",
+    "./agents/issue-scorer.md",
     "./agents/spec-compliance-reviewer.md",
     "./agents/plan-adherence-reviewer.md",
     "./agents/task-completion-reviewer.md",
