@@ -13,6 +13,7 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(mkdir:*), Bash(ls:*), Bash(te
 
 - Active spec directory: !`ls -1 .cc-track/specs/ 2>/dev/null | tail -1`
 - Constitution exists: !`ls .cc-track/constitution.md 2>/dev/null | head -1`
+- Design system (DESIGN.md) exists: !`ls DESIGN.md 2>/dev/null | head -1`
 
 ---
 
@@ -197,6 +198,7 @@ This saves your context for design work while getting thorough research.
 
 ### Document Decisions
 Create `research.md`:
+
 ```markdown
 # Research: [Feature Name]
 
@@ -213,6 +215,41 @@ Create `research.md`:
 ### Decision: SQLite for Storage
 ...
 ```
+
+---
+
+## Step 4.5: Design System Check (Optional)
+
+**Skip this step entirely if `DESIGN.md` does not exist at the project root** (see Current Context block).
+
+**Skip this step if the feature has no UI surface** (pure backend, library, CLI, data pipeline, etc.).
+
+**If `DESIGN.md` exists AND the feature touches UI**:
+
+The project uses [Impeccable](https://impeccable.style/) and/or the [DESIGN.md](https://github.com/google-labs-code/design.md) format for its design system. Before drafting the technical plan, surface this to the user:
+
+```
+🎨 This feature touches UI and the project has a DESIGN.md.
+
+Before I design the implementation, you may want to run one of:
+  - /impeccable craft  — for new surfaces, full design-aware composition
+  - /impeccable shape  — to tighten an existing rough shape against the design system
+
+This produces design decisions that should inform plan.md (component choices,
+layout, tokens to reference). Then I'll write plan.md with explicit references
+to DESIGN.md tokens rather than reinventing values.
+
+Options:
+  A) Pause here so you can run /impeccable craft (or /shape)
+  B) Proceed to plan.md now — I'll reference DESIGN.md tokens directly
+  C) Skip — design system not relevant to this feature
+```
+
+**If user picks A**: Stop and wait for them to return with Impeccable's output.
+**If user picks B**: Continue to Step 5, but read `DESIGN.md` first and reference its tokens (colors, typography, spacing, components) explicitly in `plan.md`.
+**If user picks C**: Continue to Step 5 normally.
+
+This step is purely a suggestion — never block on it.
 
 ---
 

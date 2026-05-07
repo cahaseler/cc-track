@@ -11,6 +11,8 @@ Run validation checks and multi-agent spec-focused code review to ensure the tas
 
 - Current branch: !`git branch --show-current`
 - Changes to review: !`git diff --stat`
+- Design system (DESIGN.md) exists: !`ls DESIGN.md 2>/dev/null | head -1`
+- UI files in diff: !`git diff main --name-only 2>/dev/null | grep -E '\.(tsx|jsx|vue|svelte|astro|css|scss|sass|less|html)$' | head -20`
 
 ## Step 1: Run Validation Script
 
@@ -180,6 +182,39 @@ After all scorers complete:
 ## Filtered Out (Score < 50)
 - [N] issues were filtered as unverified or false positives
 ```
+
+## Step 6.5: UI Design Check (Optional)
+
+**Skip this step entirely if `DESIGN.md` does not exist at the project root** (see Current Context block).
+
+**Skip this step if no UI files appear in the diff** (Current Context shows the matched files).
+
+**If `DESIGN.md` exists AND UI files were modified**:
+
+The project uses [Impeccable](https://impeccable.style/) and/or the [DESIGN.md](https://github.com/google-labs-code/design.md) format. Surface this advisory to the user (in addition to whatever Step 7 would say):
+
+```
+🎨 UI changes detected with a DESIGN.md present.
+
+Before running /cc-track:complete-task, consider running:
+  - /impeccable audit    — technical UI quality (a11y, performance, theming,
+                            responsive, anti-patterns) scored P0–P3
+  - /impeccable critique — subjective design quality ("does this feel right")
+
+Findings map onto cc-track's triage:
+  - P0 (blocks release)  → Fix
+  - P1 (this sprint)     → Fix or Defer
+  - P2 (next cycle)      → Defer
+  - P3 (polish)          → Dismiss/Defer
+
+Re-run /cc-track:prepare-completion afterwards if /impeccable audit surfaces
+significant new issues. Skip this if the UI changes are trivial (typo,
+copy edit, etc.).
+```
+
+This is advisory — it does **not** block Step 7 routing. The user decides whether to run the audit before or after the existing review agents' findings.
+
+---
 
 ## Step 7: Route Based on Issue Count
 
