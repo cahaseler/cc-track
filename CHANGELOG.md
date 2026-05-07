@@ -1,3 +1,10 @@
+# [4.2.0](https://github.com/cahaseler/cc-track/compare/v4.1.3...v4.2.0) (2026-05-07)
+
+
+### Features
+
+* integrate Impeccable design-skill pack guidance into workflow ([f90cdfe](https://github.com/cahaseler/cc-track/commit/f90cdfe2bbccaeb975aa42dd83af84643b52aaf4))
+
 ## [4.1.3](https://github.com/cahaseler/cc-track/compare/v4.1.2...v4.1.3) (2026-04-20)
 
 
