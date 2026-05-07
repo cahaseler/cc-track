@@ -397,6 +397,11 @@ After setup completes:
 2. **Next steps guidance**:
    - "Setup complete! 🚅"
    - "Optional: Run `/cc-track:constitution` to set up project guardrails and architectural constraints"
+   - **If the project type from step 1 is a web app, native UI, or otherwise renders a UI**, also suggest:
+     - "Optional: For UI projects, consider installing [Impeccable](https://impeccable.style/) — a design-fluency skill pack that produces a `DESIGN.md` (Google Labs' portable design-system format) and `PRODUCT.md` for AI agents to follow. It pairs cleanly with cc-track."
+     - "  Install: `npx skills add pbakaus/impeccable`"
+     - "  Then run `/impeccable teach` (creates PRODUCT.md) and `/impeccable document` (creates DESIGN.md from existing UI code), or `/impeccable document --seed` if you have no UI code yet."
+     - "  See `${CLAUDE_PLUGIN_ROOT}/docs/integrations/impeccable.md` for how it slots into the cc-track workflow (planning, audit, completion)."
    - "Try creating your first spec: `/cc-track:specify \"your feature idea\"`"
    - "Configure anytime with: `/config-track`"
    - If statusline configured: "⚠️ Restart Claude Code to see the custom statusline"
