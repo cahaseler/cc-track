@@ -154,15 +154,10 @@ Present feature options and let user choose what to enable:
   - Ask: "How should API rate limit timer display?" (default: sonnet-only)
 
 **Code Quality:**
-- `code_review` - Automated code review integration
+- `code_review` - Multi-agent code review before task completion (run via `/cc-track:prepare-completion`)
   - ✅ Pros: Get AI-powered code review feedback before task completion, catch issues early
-  - ⚠️ Cons: Reviews can take several minutes, requires additional tools installed
-  - Options:
-    - `claude` - Uses Claude Code SDK for fast, context-aware reviews (10min timeout)
-    - `codex` - Uses Codex CLI for systematic, thorough reviews (30min timeout)
-    - `coderabbit` - Uses CodeRabbit CLI to analyze code changes (30min timeout)
-  - Ask: "Enable automated code review? Choose: 'claude', 'codex', 'coderabbit', or 'skip' to disable"
-  - If enabled, verify tool is installed and explain timeout expectations
+  - ⚠️ Cons: Reviews can take several minutes
+  - Ask: "Enable multi-agent code review before task completion? (yes/no)"
 
 **Advanced:**
 - `autoflow` - Autonomous operation mode for unattended task completion
@@ -258,8 +253,7 @@ Read the template from `${CLAUDE_PLUGIN_ROOT}/templates/track.config.json` and c
       "auto_create_prs": true/false
     },
     "code_review": {
-      "enabled": true/false,
-      "tool": "claude"|"codex"|"coderabbit"
+      "enabled": true/false
     },
     "websearch_validation": {
       "enabled": true/false

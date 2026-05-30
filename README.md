@@ -156,8 +156,8 @@ Enable in config:
 #### Code Review Integration
 Multi-agent code review with specialized reviewers:
 - `/cc-track:code-review` - Standalone review for any code changes
-- `/cc-track:spec-review` - Spec-focused review during task completion
-- Parallel agent analysis (bug scanner, guidelines, dead code, etc.)
+- `/cc-track:prepare-completion` - Spec-focused review during task completion
+- Parallel agent analysis (spec/plan/task compliance, bug scanner, guidelines, duplication, dead code, altitude, comments)
 - Scoring and deduplication of issues
 - `/cc-track:fix-issues` - Structured triage with Fix/Defer/Dismiss/Discuss options
 
@@ -205,7 +205,6 @@ All cc-track commands use the `/cc-track:` prefix:
 | Command | Description |
 |---------|-------------|
 | `/cc-track:code-review` | Standalone multi-agent code review |
-| `/cc-track:spec-review` | Spec-focused review for task completion |
 | `/cc-track:spotless` | Scoped dead code analysis with parallel investigation |
 
 ### Utility Commands

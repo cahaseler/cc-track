@@ -281,7 +281,6 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 - Use `LOG_LEVEL=DEBUG` environment variable for verbose output
 
 ### External Tool Timeouts
-- Review tools (Codex, CodeRabbit) need generous timeouts (30 minutes)
 - Claude SDK calls use 10-minute default timeout
 - Always configure bash timeout to match or exceed tool timeout
 
@@ -301,6 +300,19 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 - git check-ignore for gitignore status checking
 - Guides users to planning mode for feature branch creation
 
+## Multi-Agent Code Review Pattern
+
+### Two-Phase Find-Then-Score
+- Phase 1: specialized single-track reviewer agents run in parallel (foreground), each hunting one class of problem; agents output unscored findings only
+- Phase 2: one isolated `issue-scorer` (no conversation history) validates each unique finding against the actual code, scoring 0/25/50/75/100
+- Orchestrator deduplicates by exact file:line, filters score < 50, then routes by count (0 / 1 / >1 → `/cc-track:fix-issues`)
+- Single-track agents (one problem class each) are intentional: it keeps each agent digging for the most *critical* issue rather than returning early on the most *obvious* one. Do not consolidate reviewers into multi-angle agents.
+
+### Reviewer Model Assignment
+- **Sonnet** for reviewers that make semantic/architectural judgments: `bug-scanner`, `altitude-reviewer`, `spec-compliance-reviewer`, `guidelines-reviewer`
+- **Haiku** for reviewers that do bounded comparison / search-and-lookup: `plan-adherence`, `task-completion`, `comment-compliance`, `duplication-detector`, `dead-code-detector`
+- Rule of thumb: if the task has a reasoning floor (judging intent, layer, or rule-vs-preference), use Sonnet; if it's pattern-match + reference-trace, Haiku is well-matched even under skeptical single-track framing
+
 ## Update Log
 
 [2025-01-09] - Initial patterns documented
@@ -309,3 +321,4 @@ const taskDeps = createMockCompleteTaskDeps({ /* initial files */ });
 [2025-12-06] - Added Claude Code integration patterns (CLI parsing, hook debugging, timeouts)
 [2025-12-06] - Updated paths from .claude/ to .cc-track/
 [2025-12-19] - Added Autoflow Hook Coordination pattern (three-hook system for autonomous operation)
+[2026-05-30] - Added Multi-Agent Code Review pattern (two-phase find-then-score, reviewer model assignment); removed stale Codex/CodeRabbit external-tool timeout note after legacy cleanup
