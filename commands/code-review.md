@@ -68,7 +68,7 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 1. **bug-scanner** (sonnet)
    - Prompt: "No spec folder for this review - this is standalone code review. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Scan these files for bugs, silent failures, and security issues. Report all potential bugs."
 
-2. **guidelines-reviewer** (haiku)
+2. **guidelines-reviewer** (sonnet)
    - Prompt: "No spec folder for this review - this is standalone code review. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Review code against CLAUDE.md and .cc-track/constitution.md (if they exist). Report all potential guideline violations."
 
 3. **comment-compliance-reviewer** (haiku)
@@ -380,4 +380,4 @@ Please re-run /cc-track:code-review to verify all fixes are correct and no new i
 - **Review files** persist in `.cc-track/reviews/` with date stamps
 - **Deferred items** go to backlog without spec ID tag
 - **No relevance filtering** - all discovered issues >= 50 are presented
-- **Bug scanner and altitude-reviewer use Sonnet** for deeper analysis; others use Haiku for speed
+- **Reasoning-heavy reviewers use Sonnet** (bug-scanner, altitude-reviewer, guidelines-reviewer); the rest use Haiku for speed

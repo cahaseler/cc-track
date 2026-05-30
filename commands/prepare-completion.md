@@ -74,7 +74,7 @@ Every agent prompt MUST include:
 
 Use the Task tool to launch these agents simultaneously. Include the context above in each prompt.
 
-1. **spec-compliance-reviewer** (haiku)
+1. **spec-compliance-reviewer** (sonnet)
    - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Review implementation against spec.md. Report all potential issues."
 
 2. **plan-adherence-reviewer** (haiku)
@@ -86,7 +86,7 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 4. **bug-scanner** (sonnet)
    - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Scan these files for bugs, silent failures, and security issues. Report all potential bugs."
 
-5. **guidelines-reviewer** (haiku)
+5. **guidelines-reviewer** (sonnet)
    - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Review code against CLAUDE.md and .cc-track/constitution.md guidelines. Read spec.md/plan.md/tasks.md for approved scope. Report all potential violations."
 
 6. **comment-compliance-reviewer** (haiku)
@@ -274,6 +274,6 @@ Then invoke the `/cc-track:fix-issues` command using the SlashCommand tool. The 
 - **Phase 2 (Scoring):** Per-issue Haiku scorers validate each finding independently
 - **Threshold 50:** Shows verified issues, filters false positives - user decides importance
 - **Human gate:** System stops after presenting - no auto-fix behavior
-- **Bug scanner and altitude-reviewer use Sonnet** for deeper analysis; all others use Haiku for speed
+- **Reasoning-heavy reviewers use Sonnet** (bug-scanner, altitude-reviewer, spec-compliance-reviewer, guidelines-reviewer); the rest use Haiku for speed
 - **Scoring agents are isolated** - no conversation history, providing neutral validation
 - **No relevance filtering:** Do NOT filter issues based on whether they seem "related to the current spec" or "pre-existing". All discovered issues with score >= 50 must be presented to the human. Relevance is a factor in the triage decision (Fix/Defer/Dismiss), not a reason to hide issues.
