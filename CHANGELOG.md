@@ -1,3 +1,11 @@
+# [4.3.0](https://github.com/cahaseler/cc-track/compare/v4.2.0...v4.3.0) (2026-05-30)
+
+
+### Features
+
+* add altitude-reviewer agent to code review fan-out ([e4b7b32](https://github.com/cahaseler/cc-track/commit/e4b7b328cf1e792f2949fce4b2d427925e8b4ef5))
+* upgrade spec-compliance and guidelines reviewers to sonnet ([62dbe4e](https://github.com/cahaseler/cc-track/commit/62dbe4e470d8436bad62af7eaeb6fc9f9d9174e6))
+
 # [4.2.0](https://github.com/cahaseler/cc-track/compare/v4.1.3...v4.2.0) (2026-05-07)
 
 
