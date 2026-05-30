@@ -81,7 +81,7 @@ export async function prepareCompletionAction(
     if (validationPassed) {
       messages.push('### 🔍 Code Review\n');
       messages.push('Code review will be performed by multi-agent review system.');
-      messages.push('The prepare-completion.md command will launch 6 specialized agents in parallel.\n');
+      messages.push('The prepare-completion.md command will launch the specialized review agents in parallel.\n');
     }
 
     // Documentation update reminder - only if validation passed
@@ -116,10 +116,10 @@ export async function prepareCompletionAction(
       messages.push('1. Complete all documentation updates above');
       if (hasPrivateJournal) {
         messages.push('2. Record any insights in your journal');
-        messages.push('3. Code review will run automatically (6 agents in parallel)');
+        messages.push('3. Code review will run automatically (specialized agents in parallel)');
         messages.push('4. Ask the user to run `/complete-task` to finalize the task\n');
       } else {
-        messages.push('2. Code review will run automatically (6 agents in parallel)');
+        messages.push('2. Code review will run automatically (specialized agents in parallel)');
         messages.push('3. Ask the user to run `/complete-task` to finalize the task\n');
       }
       messages.push('**✅ Validation passed! Ready for code review.**\n');

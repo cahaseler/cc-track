@@ -61,7 +61,7 @@ Every agent prompt MUST include:
 2. **Modified files**: The list of files changed (from git diff --name-only)
 3. **No spec folder**: "No spec folder for this review - this is standalone code review"
 
-**Launch All 5 Review Agents in Parallel:**
+**Launch All 6 Review Agents in Parallel:**
 
 Use the Task tool to launch these agents simultaneously. Include the context above in each prompt.
 
@@ -80,10 +80,13 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 5. **dead-code-detector** (haiku)
    - Prompt: "No spec folder for this review - this is standalone code review. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Check for dead, orphaned, or deprecated code. Report all potential dead code."
 
-**IMPORTANT:** Launch all 5 agents in a single message with multiple Task tool calls for parallel execution.
+6. **altitude-reviewer** (sonnet)
+   - Prompt: "No spec folder for this review - this is standalone code review. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Check whether changes are implemented at the right altitude - flag symptom-fixes, wrong-layer patches, narrow bandaids, and fallbacks that silently mask failures. Report all potential altitude issues."
+
+**IMPORTANT:** Launch all 6 agents in a single message with multiple Task tool calls for parallel execution.
 
 **Execution mode:** Use **foreground parallel** (do NOT use `run_in_background: true`):
-- Launch all 5 agents in a single message without the `run_in_background` parameter
+- Launch all 6 agents in a single message without the `run_in_background` parameter
 - Orchestrator suspends until ALL agents complete
 - All results return together in the response
 - Deduplication in Step 4 has access to all findings at once
@@ -92,7 +95,7 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 
 After all agents complete:
 
-1. **Collect all issues** from all 5 agents into a single list
+1. **Collect all issues** from all 6 agents into a single list
 2. **Deduplicate by location** - Multiple reviewers may flag the same file:line
    - If two issues have the same file:line, keep one and note which reviewers flagged it
    - Use exact file:line matching (conservative deduplication)
@@ -371,10 +374,10 @@ Please re-run /cc-track:code-review to verify all fixes are correct and no new i
 
 ## Notes
 
-- **5 agents** focus on code quality, not spec compliance (no spec folder)
+- **6 agents** focus on code quality, not spec compliance (no spec folder)
 - **Deduplication** by exact file:line matching before scoring
 - **Threshold 50** shows verified issues, filters false positives
 - **Review files** persist in `.cc-track/reviews/` with date stamps
 - **Deferred items** go to backlog without spec ID tag
 - **No relevance filtering** - all discovered issues >= 50 are presented
-- **Bug scanner uses Sonnet** for deeper analysis; others use Haiku for speed
+- **Bug scanner and altitude-reviewer use Sonnet** for deeper analysis; others use Haiku for speed

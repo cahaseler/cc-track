@@ -70,7 +70,7 @@ Every agent prompt MUST include:
 2. **Validation status**: "TypeScript, linting, and tests have all passed"
 3. **Modified files**: The list of files changed (from git diff --name-only)
 
-**Launch All 8 Review Agents in Parallel:**
+**Launch All 9 Review Agents in Parallel:**
 
 Use the Task tool to launch these agents simultaneously. Include the context above in each prompt.
 
@@ -98,10 +98,13 @@ Use the Task tool to launch these agents simultaneously. Include the context abo
 8. **dead-code-detector** (haiku)
    - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Check for dead, orphaned, or deprecated code. Report all potential dead code."
 
-**IMPORTANT:** Launch all 8 agents in a single message with multiple Task tool calls for parallel execution.
+9. **altitude-reviewer** (sonnet)
+   - Prompt: "The spec folder is at {spec_folder_path}. TypeScript, linting, and tests have all passed. Modified files: {file_list}. Check whether changes are implemented at the right altitude - flag symptom-fixes, wrong-layer patches, narrow bandaids, and fallbacks that silently mask failures. Report all potential altitude issues."
+
+**IMPORTANT:** Launch all 9 agents in a single message with multiple Task tool calls for parallel execution.
 
 **Execution mode:** Use **foreground parallel** (do NOT use `run_in_background: true`):
-- Launch all 8 agents in a single message without the `run_in_background` parameter
+- Launch all 9 agents in a single message without the `run_in_background` parameter
 - Orchestrator suspends until ALL agents complete
 - All results return together in the response
 - Deduplication in Step 4 has access to all findings at once
@@ -112,7 +115,7 @@ This is different from the pipeline pattern in `/cc-track:tasks` - here we need 
 
 After all agents complete:
 
-1. **Collect all issues** from all 8 agents into a single list
+1. **Collect all issues** from all 9 agents into a single list
 2. **Deduplicate by location** - Multiple reviewers may flag the same file:line
    - If two issues have the same file:line, keep one and note which reviewers flagged it
    - Use exact file:line matching (conservative deduplication)
@@ -266,11 +269,11 @@ Then invoke the `/cc-track:fix-issues` command using the SlashCommand tool. The 
 
 ## Notes
 
-- **Phase 1 (Review):** 8 specialized agents run in parallel, each focused on their domain
+- **Phase 1 (Review):** 9 specialized agents run in parallel, each focused on their domain
 - **Deduplication:** Same file:line from multiple reviewers is consolidated before scoring
 - **Phase 2 (Scoring):** Per-issue Haiku scorers validate each finding independently
 - **Threshold 50:** Shows verified issues, filters false positives - user decides importance
 - **Human gate:** System stops after presenting - no auto-fix behavior
-- **Bug scanner uses Sonnet** for deeper analysis; all others use Haiku for speed
+- **Bug scanner and altitude-reviewer use Sonnet** for deeper analysis; all others use Haiku for speed
 - **Scoring agents are isolated** - no conversation history, providing neutral validation
 - **No relevance filtering:** Do NOT filter issues based on whether they seem "related to the current spec" or "pre-existing". All discovered issues with score >= 50 must be presented to the human. Relevance is a factor in the triage decision (Fix/Defer/Dismiss), not a reason to hide issues.

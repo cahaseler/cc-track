@@ -89,6 +89,12 @@ Prompt: "Check for dead, orphaned, or deprecated code after the AI's changes.
         Run git diff to see what changed. Look for orphaned files, stale imports,
         unused exports, and incomplete cleanup from refactoring.
         Report dead code with confidence >= 80."
+
+Task: altitude-reviewer
+Prompt: "Check whether the AI's changes are implemented at the right altitude.
+        Run git diff to see what changed. Look for symptom-fixes, wrong-layer
+        patches, narrow bandaids, and fallbacks that silently mask failures.
+        Report altitude issues with confidence >= 80."
 ```
 
 ### 5. Aggregate Results
@@ -113,6 +119,7 @@ After all agents complete, combine their findings:
 | comments | X | Y | Z |
 | duplication | X | Y | Z |
 | dead-code | X | Y | Z |
+| altitude | X | Y | Z |
 | **Total** | **X** | **Y** | **Z** |
 
 ## Critical Issues (Confidence 90-100)
@@ -179,7 +186,7 @@ Ready to run /cc-track:complete-task to finalize.
 
 ## Notes:
 
-- All 8 agents run in parallel for speed
+- All 9 agents run in parallel for speed
 - Each agent uses confidence scoring (threshold: 80)
 - Agents read spec files directly - no need to pass content
 - Results are actionable with specific file:line references
