@@ -355,3 +355,22 @@
   - New metadata status "specified" indicates spec is complete and ready for `/plan`
   - All workflow documentation and references updated
 - **Reversibility:** Easy - could re-add `/clarify` as separate command if use cases emerge
+
+[2026-05-30] - Add Altitude Reviewer and Rebalance Review-Agent Models After Comparing Against Claude Code's Native Review
+- **Context:** Claude Code shipped a native `/code-review` skill (Opus 4.8-era). Compared cc-track's multi-agent review (designed ~a year ago around Opus 4.1 + Haiku 4.5) against it. Confirmed the core find-then-score architecture is sound (Anthropic independently arrived at the same pattern), but identified improvements worth borrowing and confirmed the original Haiku-era model assignments were due for a rebalance.
+- **Decision:**
+  1. Add a 9th reviewer agent, `altitude-reviewer` (sonnet), that checks whether changes are made at the right level of abstraction - flagging symptom-fixes, wrong-layer patches, narrow bandaids, and fallbacks/graceful-degradation that silently mask failures (making broken code look like it works). Borrowed from the native skill's "altitude" angle; also addresses the long-standing backlog concern about fake fallbacks/backwards-compat masking failures.
+  2. Upgrade `spec-compliance-reviewer` and `guidelines-reviewer` from Haiku to Sonnet. These make semantic judgments (is a requirement's intent actually met; is this a real documented-rule violation vs. preference, including the spec-scope carve-out) that exceed Haiku's reasoning floor regardless of how narrowly they're focused.
+- **Rationale:**
+  - Single-track focused agents (one problem class each) remain the right design - it keeps each agent digging for the most *critical* issue rather than returning early on the most *obvious* one. The fix was to add a lens and rebalance models, NOT to consolidate agents.
+  - The altitude failure pattern is the hardest for AI to self-catch because the code often works for the case in front of it; a dedicated skeptical lens at Sonnet depth is warranted.
+  - Effort-tiering (another native idea) was deliberately NOT adopted: cc-track targets larger features where the full fan-out is justified; small tweaks can use the native review instead.
+- **Alternatives Considered:**
+  - Consolidate finder agents into fewer multi-angle agents (native skill's approach): Rejected - merging targets surfaces obvious issues and masks deeper ones; single-track framing is more thorough.
+  - Adopt the native skill's recall-biased 3-bucket verifier and lower threshold: Rejected for now - cc-track's precision bias (filter <50) suits auto-routing into a triage loop where noise is costly.
+  - Upgrade more reviewers to Sonnet: Held off - plan-adherence and duplication are watch-list (anchored by quote-from-source / search-and-lookup work Haiku handles); the rest are mechanical and well-matched to Haiku.
+- **Implications:**
+  - `prepare-completion` fan-out is now 4 Sonnet (bug-scanner, altitude, spec-compliance, guidelines) / 5 Haiku; standalone `code-review` is 3 Sonnet / 3 Haiku. Modest cost increase concentrated where a reasoning miss is most expensive.
+  - New agent registered in `plugin.json`; wired into `prepare-completion.md` and `code-review.md`.
+- **Related cleanup (corrections, not decisions):** Removed orphaned legacy review code that the 2025-10-14 spec-driven rewrite left behind and that knip could not detect (internal cross-references kept it "used"): the SDK single-reviewer (`performCodeReview`/`reviewCode` in claude-sdk.ts) and the codex/coderabbit `tool` plumbing (`CodeReviewConfig.tool`, `getCodeReviewTool`, `getCodeReviewMaxDiffSize`); plus two unrelated dead SDK functions found alongside them (`extractErrorPatterns`, `createValidationAgent`). Deleted the legacy `spec-review` command (superseded by `prepare-completion` + `code-review`). The `code_review.enabled` config flag is retained but currently vestigial (nothing gates on it; only reported by context.ts) - left as a potential future gate rather than removed.
+- **Reversibility:** Easy - agents/models are single-file frontmatter changes; deleted legacy code is recoverable from git history.

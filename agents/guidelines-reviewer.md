@@ -23,7 +23,7 @@ description: |
   assistant: "I'll use the guidelines-reviewer agent to compare AI-generated code against system_patterns.md and CLAUDE.md."
   <Task tool invocation to launch guidelines-reviewer agent>
   </example>
-model: haiku
+model: sonnet
 color: yellow
 tools: Read, Grep, Glob, LS
 ---

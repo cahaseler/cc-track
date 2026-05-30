@@ -32,11 +32,6 @@ interface HookConfig {
   allow_gitignored?: boolean;
 }
 
-export interface CodeReviewConfig extends HookConfig {
-  tool?: 'claude' | 'coderabbit' | 'codex';
-  max_diff_size?: number;
-}
-
 export interface StatuslineConfig extends HookConfig {
   show_repo?: boolean;
 }
@@ -65,7 +60,7 @@ interface InternalConfig {
     [key: string]: HookConfig | EditValidationConfig;
   };
   features: {
-    [key: string]: HookConfig | CodeReviewConfig | StatuslineConfig | AutoflowConfig;
+    [key: string]: HookConfig | StatuslineConfig | AutoflowConfig;
   };
   git?: GitConfig;
   logging?: LoggingConfig;
@@ -151,8 +146,7 @@ const DEFAULT_CONFIG: InternalConfig = {
     },
     code_review: {
       enabled: false,
-      description: 'Run comprehensive code review before task completion',
-      tool: 'claude' as const,
+      description: 'Run multi-agent code review before task completion',
     },
     autoflow: {
       enabled: false,
@@ -310,24 +304,14 @@ export function isGitHubIntegrationEnabled(configPath?: string): boolean {
   return githubConfig?.enabled || false;
 }
 
-export function getCodeReviewConfig(configPath?: string): CodeReviewConfig | null {
+export function getCodeReviewConfig(configPath?: string): HookConfig | null {
   const config = getConfig(configPath);
-  return (config.features?.code_review as CodeReviewConfig) || null;
+  return (config.features?.code_review as HookConfig) || null;
 }
 
 export function isCodeReviewEnabled(configPath?: string): boolean {
   const codeReviewConfig = getCodeReviewConfig(configPath);
   return codeReviewConfig?.enabled || false;
-}
-
-export function getCodeReviewTool(configPath?: string): 'claude' | 'coderabbit' | 'codex' {
-  const codeReviewConfig = getCodeReviewConfig(configPath);
-  return codeReviewConfig?.tool || 'claude';
-}
-
-export function getCodeReviewMaxDiffSize(configPath?: string): number {
-  const codeReviewConfig = getCodeReviewConfig(configPath);
-  return codeReviewConfig?.max_diff_size || 320000; // Default: 80k tokens * 4 chars/token
 }
 
 export function getGitConfig(configPath?: string): GitConfig | null {

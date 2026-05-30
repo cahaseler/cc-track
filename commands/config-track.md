@@ -109,13 +109,11 @@ The config file has three main sections: `hooks`, `features`, and `logging`.
 
 **Code Quality:**
 
-- `code_review` - Automated code review integration
-  - Tools: `"claude"`, `"codex"`, `"coderabbit"`
+- `code_review` - Multi-agent code review before task completion (run via `/cc-track:prepare-completion`)
   - Example:
     ```json
     "code_review": {
-      "enabled": true,
-      "tool": "claude"
+      "enabled": true
     }
     ```
 

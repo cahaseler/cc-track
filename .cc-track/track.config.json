@@ -81,8 +81,7 @@
     },
     "code_review": {
       "enabled": true,
-      "description": "Run comprehensive code review using Claude SDK, CodeRabbit CLI, or Codex CLI before task completion",
-      "tool": "codex"
+      "description": "Run multi-agent code review before task completion"
     },
     "websearch_validation": {
       "enabled": true,

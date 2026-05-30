@@ -55,8 +55,7 @@
       "auto_create_prs": false
     },
     "code_review": {
-      "enabled": false,
-      "tool": "claude"
+      "enabled": false
     },
     "websearch_validation": {
       "enabled": false

@@ -23,7 +23,7 @@ description: |
   assistant: "I'll use the spec-compliance-reviewer agent to audit current AI-generated code against spec.md."
   <Task tool invocation to launch spec-compliance-reviewer agent>
   </example>
-model: haiku
+model: sonnet
 color: blue
 tools: Read, Grep, Glob, LS
 ---
