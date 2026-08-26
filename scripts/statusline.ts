@@ -6,6 +6,7 @@ import {
   readFileSync as nodeReadFileSync,
   writeFileSync as nodeWriteFileSync,
 } from 'node:fs';
+import { homedir as nodeHomedir } from 'node:os';
 import { join } from 'node:path/posix';
 import { getActiveTaskId } from '../skills/cc-track-tools/lib/claude-md';
 
@@ -56,6 +57,8 @@ interface StatusLineDeps {
   execSync: typeof nodeExecSync;
   existsSync: typeof nodeExistsSync;
   readFileSync: typeof nodeReadFileSync;
+  writeFileSync: typeof nodeWriteFileSync;
+  homedir: typeof nodeHomedir;
   getConfig: typeof getConfigImpl;
   getCurrentBranch: typeof getCurrentBranchImpl;
   getRepoName: typeof getRepoNameImpl;
@@ -67,6 +70,8 @@ const defaultDeps: StatusLineDeps = {
   execSync: nodeExecSync,
   existsSync: nodeExistsSync,
   readFileSync: nodeReadFileSync,
+  writeFileSync: nodeWriteFileSync,
+  homedir: nodeHomedir,
   getConfig: getConfigImpl,
   getCurrentBranch: getCurrentBranchImpl,
   getRepoName: getRepoNameImpl,
@@ -137,6 +142,125 @@ export function getCostInfo(input: StatusLineInput, deps = defaultDeps): { hourl
   } catch {
     return { hourlyRate: '', apiWindow: '' };
   }
+}
+
+interface OAuthUsageLimit {
+  kind: string;
+  group: string;
+  percent?: number;
+  resets_at?: string;
+  scope?: { model?: { display_name?: string | null } | null } | null;
+}
+
+interface OAuthUsageResponse {
+  limits?: OAuthUsageLimit[];
+}
+
+interface UsageCacheFile {
+  fetchedAt: number;
+  data: OAuthUsageResponse;
+}
+
+const USAGE_CACHE_MAX_AGE_MS = 60_000;
+
+function getUsageCachePath(deps: StatusLineDeps): string {
+  return join(deps.homedir(), '.claude', '.usage-cache.json');
+}
+
+function getOAuthToken(deps: StatusLineDeps): string | undefined {
+  try {
+    const credentialsPath = join(deps.homedir(), '.claude', '.credentials.json');
+    if (!deps.existsSync(credentialsPath)) {
+      return undefined;
+    }
+    const parsed = JSON.parse(deps.readFileSync(credentialsPath, 'utf-8'));
+    return parsed?.claudeAiOauth?.accessToken || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Get session/weekly plan usage limits via an undocumented Anthropic endpoint
+ * (not in the statusLine stdin schema) discovered by the community; may break
+ * without notice. Cached to avoid hitting it on every render.
+ */
+export function getUsageLimits(deps = defaultDeps): OAuthUsageLimit[] {
+  let cached: UsageCacheFile | undefined;
+
+  try {
+    const cachePath = getUsageCachePath(deps);
+    if (deps.existsSync(cachePath)) {
+      cached = JSON.parse(deps.readFileSync(cachePath, 'utf-8'));
+    }
+  } catch {
+    cached = undefined;
+  }
+
+  const isFresh = cached ? Date.now() - cached.fetchedAt < USAGE_CACHE_MAX_AGE_MS : false;
+
+  if (!isFresh) {
+    try {
+      const token = getOAuthToken(deps);
+      if (token) {
+        const result = deps.execSync(
+          `curl -s --max-time 3 "https://api.anthropic.com/api/oauth/usage" -H "Authorization: Bearer ${token}" -H "anthropic-beta: oauth-2025-04-20"`,
+          { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
+        );
+        const data = JSON.parse(result) as OAuthUsageResponse;
+        if (data?.limits) {
+          cached = { fetchedAt: Date.now(), data };
+          deps.writeFileSync(getUsageCachePath(deps), JSON.stringify(cached));
+        }
+      }
+    } catch {
+      // Network/parse failure - fall back to whatever stale cache we have
+    }
+  }
+
+  return cached?.data.limits ?? [];
+}
+
+function formatSessionReset(resetsAt: string | undefined): string {
+  if (!resetsAt) return '';
+  const date = new Date(resetsAt);
+  if (Number.isNaN(date.getTime())) return '';
+  const hours = date.getHours() % 12 || 12;
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const period = date.getHours() >= 12 ? 'PM' : 'AM';
+  return `${hours}:${minutes}${period}`;
+}
+
+function formatWeeklyReset(resetsAt: string | undefined): string {
+  if (!resetsAt) return '';
+  const date = new Date(resetsAt);
+  if (Number.isNaN(date.getTime())) return '';
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+  const hours = date.getHours() % 12 || 12;
+  const period = date.getHours() >= 12 ? 'PM' : 'AM';
+  return `${weekday} ${hours}${period}`;
+}
+
+/**
+ * Format 5h/weekly (including model-scoped, e.g. Fable) usage limits for display
+ */
+export function formatUsageLimits(limits: OAuthUsageLimit[]): string {
+  const parts: string[] = [];
+
+  const session = limits.find((limit) => limit.kind === 'session');
+  if (session?.percent !== undefined) {
+    const reset = formatSessionReset(session.resets_at);
+    parts.push(`5h:${session.percent}%${reset ? ` (resets ${reset})` : ''}`);
+  }
+
+  for (const weekly of limits.filter((limit) => limit.group === 'weekly')) {
+    if (weekly.percent === undefined) continue;
+    const label = weekly.scope?.model?.display_name || 'all';
+    const reset = formatWeeklyReset(weekly.resets_at);
+    parts.push(`wk-${label}:${weekly.percent}%${reset ? ` (resets ${reset})` : ''}`);
+  }
+
+  return parts.join(' | ');
 }
 
 /**
@@ -285,6 +409,12 @@ export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): 
   // Add tokens
   if (tokens) {
     firstLine += ` | ${tokens}`;
+  }
+
+  // Add 5h/weekly usage limits (including model-scoped, e.g. Fable)
+  const usageLimits = formatUsageLimits(getUsageLimits(deps));
+  if (usageLimits) {
+    firstLine += ` | ${usageLimits}`;
   }
 
   // Build second line

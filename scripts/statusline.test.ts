@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
+  formatUsageLimits,
   generateStatusLine,
   getActiveTask,
   getAutoflowState,
@@ -9,6 +10,7 @@ import {
   getRepoName,
   getTodaysCost,
   getTokenInfo,
+  getUsageLimits,
 } from './statusline';
 
 // No mocking needed - statusline.ts doesn't import from claude-md
@@ -158,6 +160,146 @@ describe('statusline', () => {
       const result = getCostInfo({}, mockDeps);
       expect(result.hourlyRate).toBe('');
       expect(result.apiWindow).toBe('');
+    });
+  });
+
+  describe('getUsageLimits', () => {
+    const usageResponse = {
+      limits: [
+        { kind: 'session', group: 'session', percent: 43, resets_at: '2026-08-26T17:39:59.000Z' },
+        { kind: 'weekly_all', group: 'weekly', percent: 63, resets_at: '2026-08-29T07:59:59.000Z', scope: null },
+        {
+          kind: 'weekly_scoped',
+          group: 'weekly',
+          percent: 69,
+          resets_at: '2026-08-29T07:59:59.000Z',
+          scope: { model: { display_name: 'Fable' } },
+        },
+      ],
+    };
+
+    test('fetches and caches limits when no cache exists', () => {
+      const mockDeps = {
+        execSync: mock(() => JSON.stringify(usageResponse)),
+        existsSync: mock((path: string) => path.includes('.credentials.json')),
+        readFileSync: mock((path: string) =>
+          path.includes('.credentials.json') ? JSON.stringify({ claudeAiOauth: { accessToken: 'tok' } }) : '',
+        ),
+        writeFileSync: mock(() => {}),
+        homedir: mock(() => '/home/test'),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+      };
+
+      const result = getUsageLimits(mockDeps);
+      expect(result).toEqual(usageResponse.limits);
+      expect(mockDeps.writeFileSync).toHaveBeenCalledTimes(1);
+    });
+
+    test('returns fresh cached data without hitting the network', () => {
+      const mockDeps = {
+        execSync: mock(() => {
+          throw new Error('should not be called');
+        }),
+        existsSync: mock((path: string) => path.includes('.usage-cache.json')),
+        readFileSync: mock((path: string) =>
+          path.includes('.usage-cache.json') ? JSON.stringify({ fetchedAt: Date.now(), data: usageResponse }) : '',
+        ),
+        writeFileSync: mock(() => {}),
+        homedir: mock(() => '/home/test'),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+      };
+
+      const result = getUsageLimits(mockDeps);
+      expect(result).toEqual(usageResponse.limits);
+      expect(mockDeps.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    test('falls back to stale cache when the network call fails', () => {
+      const mockDeps = {
+        execSync: mock(() => {
+          throw new Error('network error');
+        }),
+        existsSync: mock(
+          (path: string) => path.includes('.usage-cache.json') || path.includes('.credentials.json'),
+        ),
+        readFileSync: mock((path: string) => {
+          if (path.includes('.usage-cache.json')) {
+            return JSON.stringify({ fetchedAt: 0, data: usageResponse });
+          }
+          if (path.includes('.credentials.json')) {
+            return JSON.stringify({ claudeAiOauth: { accessToken: 'tok' } });
+          }
+          return '';
+        }),
+        writeFileSync: mock(() => {}),
+        homedir: mock(() => '/home/test'),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+      };
+
+      const result = getUsageLimits(mockDeps);
+      expect(result).toEqual(usageResponse.limits);
+    });
+
+    test('returns empty array when no cache and no credentials', () => {
+      const mockDeps = {
+        execSync: mock(() => {
+          throw new Error('should not be called');
+        }),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        writeFileSync: mock(() => {}),
+        homedir: mock(() => '/home/test'),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+      };
+
+      const result = getUsageLimits(mockDeps);
+      expect(result).toEqual([]);
+    });
+
+    test('returns empty array when deps lack homedir/fetch support (older callers)', () => {
+      const mockDeps = {
+        execSync: mock(() => ''),
+        existsSync: mock(() => false),
+        readFileSync: mock(() => ''),
+        getConfig: mock(() => ({ features: {} })),
+        getCurrentBranch: mock((_cwd: string) => ''),
+      };
+
+      const result = getUsageLimits(mockDeps);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('formatUsageLimits', () => {
+    test('formats session and weekly (including model-scoped) limits', () => {
+      const result = formatUsageLimits([
+        { kind: 'session', group: 'session', percent: 43, resets_at: '2026-08-26T17:39:00.000Z' },
+        { kind: 'weekly_all', group: 'weekly', percent: 63, resets_at: '2026-08-29T07:59:00.000Z', scope: null },
+        {
+          kind: 'weekly_scoped',
+          group: 'weekly',
+          percent: 69,
+          resets_at: '2026-08-29T07:59:00.000Z',
+          scope: { model: { display_name: 'Fable' } },
+        },
+      ]);
+
+      expect(result).toContain('5h:43%');
+      expect(result).toContain('wk-all:63%');
+      expect(result).toContain('wk-Fable:69%');
+    });
+
+    test('returns empty string for no limits', () => {
+      expect(formatUsageLimits([])).toBe('');
+    });
+
+    test('omits limits with no percent', () => {
+      const result = formatUsageLimits([{ kind: 'session', group: 'session' }]);
+      expect(result).toBe('');
     });
   });
 
