@@ -221,9 +221,7 @@ describe('statusline', () => {
         execSync: mock(() => {
           throw new Error('network error');
         }),
-        existsSync: mock(
-          (path: string) => path.includes('.usage-cache.json') || path.includes('.credentials.json'),
-        ),
+        existsSync: mock((path: string) => path.includes('.usage-cache.json') || path.includes('.credentials.json')),
         readFileSync: mock((path: string) => {
           if (path.includes('.usage-cache.json')) {
             return JSON.stringify({ fetchedAt: 0, data: usageResponse });
