@@ -1,3 +1,10 @@
+## [4.3.1](https://github.com/cahaseler/cc-track/compare/v4.3.0...v4.3.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **statusline:** share one cached ccusage result across sessions ([#192](https://github.com/cahaseler/cc-track/issues/192)) ([6c6cf0b](https://github.com/cahaseler/cc-track/commit/6c6cf0b6ca8576ea066a24e5e14afa2a047c6059))
+
 # [4.3.0](https://github.com/cahaseler/cc-track/compare/v4.2.0...v4.3.0) (2026-05-30)
 
 
