@@ -36,7 +36,7 @@ function writeLock(cacheDir: string, ageMs: number): void {
 
 const staleCache: CcusageCache = {
   updatedAt: Date.now() - CACHE_TTL_MS - 1000,
-  daily: [{ date: '2026-01-01', totalCost: 3 }],
+  daily: [{ period: '2026-01-01', totalCost: 3 }],
   statusline: '$4.00/hr | (10m left)',
 };
 
@@ -121,7 +121,24 @@ describe('ccusage-cache', () => {
     test('writes both ccusage results to the cache and releases the lock', async () => {
       const deps = createDeps(async (args) =>
         args[0] === 'daily'
-          ? JSON.stringify({ daily: [{ date: '2026-10-26', totalCost: 12.5, inputTokens: 100 }] })
+          ? // Shape of a ccusage 20 `daily --json` entry
+            JSON.stringify({
+              daily: [
+                {
+                  agent: 'all',
+                  period: '2026-10-26',
+                  inputTokens: 100,
+                  outputTokens: 50,
+                  cacheCreationTokens: 10,
+                  cacheReadTokens: 1000,
+                  totalTokens: 1160,
+                  totalCost: 12.5,
+                  modelsUsed: ['claude-opus-5-5'],
+                  modelBreakdowns: [],
+                  metadata: { agents: ['claude'] },
+                },
+              ],
+            })
           : '💰 $15.50/hr | (23m left)',
       );
       tryAcquireLock(deps.cacheDir);
@@ -132,7 +149,7 @@ describe('ccusage-cache', () => {
       expect(deps.runCcusage).toHaveBeenCalledWith(['daily', '--json'], '{"model":"x"}');
       expect(deps.runCcusage).toHaveBeenCalledWith(['statusline'], '{"model":"x"}');
       const cache = readCache(deps.cacheDir);
-      expect(cache?.daily).toEqual([{ date: '2026-10-26', totalCost: 12.5 }]);
+      expect(cache?.daily).toEqual([{ period: '2026-10-26', totalCost: 12.5 }]);
       expect(cache?.statusline).toBe('💰 $15.50/hr | (23m left)');
       expect(Date.now() - (cache?.updatedAt ?? 0)).toBeLessThan(CACHE_TTL_MS);
       expect(existsSync(join(deps.cacheDir, LOCK_FILE))).toBe(false);

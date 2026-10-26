@@ -38,8 +38,9 @@ const CACHE_FILE = 'ccusage-cache.json';
 const LOCK_FILE = 'ccusage-refresh.lock';
 const INPUT_ENV = 'CC_TRACK_STATUSLINE_INPUT';
 
+/** One entry of `ccusage daily --json`; `period` is the local date as YYYY-MM-DD */
 export interface DailyCost {
-  date: string;
+  period: string;
   totalCost?: number;
 }
 
@@ -155,7 +156,7 @@ export function getCcusageData(input: string, deps: CcusageCacheDeps): CcusageCa
 
 function parseDaily(output: string): DailyCost[] | undefined {
   const data = JSON.parse(output) as { daily?: DailyCost[] };
-  return data.daily?.map(({ date, totalCost }) => ({ date, totalCost }));
+  return data.daily?.map(({ period, totalCost }) => ({ period, totalCost }));
 }
 
 /**

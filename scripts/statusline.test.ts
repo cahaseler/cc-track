@@ -40,8 +40,8 @@ describe('statusline', () => {
   describe('getTodaysCost', () => {
     test("returns today's cost from cached daily results", () => {
       const result = getTodaysCost([
-        { date: localToday(), totalCost: 12.45 },
-        { date: '2025-01-01', totalCost: 5.0 },
+        { period: localToday(), totalCost: 12.45 },
+        { period: '2025-01-01', totalCost: 5.0 },
       ]);
       expect(result).toBe('12.45');
     });
@@ -51,7 +51,7 @@ describe('statusline', () => {
     });
 
     test('returns 0.00 when no data for today', () => {
-      expect(getTodaysCost([{ date: '2025-01-01', totalCost: 5.0 }])).toBe('0.00');
+      expect(getTodaysCost([{ period: '2025-01-01', totalCost: 5.0 }])).toBe('0.00');
     });
   });
 
@@ -352,7 +352,7 @@ describe('statusline', () => {
     test('generates complete two-line output with all features', () => {
       const mockDeps = {
         ccusage: ccusageDeps({
-          daily: [{ date: localToday(), totalCost: 75.5 }],
+          daily: [{ period: localToday(), totalCost: 75.5 }],
           statusline: '💰 $12.25/hr | (45m left)',
         }),
         existsSync: mock((path: string) => {

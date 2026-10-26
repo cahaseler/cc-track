@@ -81,7 +81,7 @@ export function getTodaysCost(daily: DailyCost[] | undefined): string {
   // Use local date instead of UTC to match user's timezone
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const todayData = daily?.find((d) => d.date === today);
+  const todayData = daily?.find((d) => d.period === today);
   return todayData?.totalCost?.toFixed(2) || '0.00';
 }
 
