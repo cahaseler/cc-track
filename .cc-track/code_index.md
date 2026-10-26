@@ -47,6 +47,7 @@
 | File | Purpose |
 |------|---------|
 | scripts/statusline.ts | Generate status line for Claude Code |
+| scripts/ccusage-cache.ts | Shared ccusage result cache with single-flight background refresh for the status line |
 
 ### Slash Commands (.claude/commands/)
 | File | Purpose |
