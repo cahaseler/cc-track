@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { execSync as nodeExecSync } from 'node:child_process';
 import {
   existsSync as nodeExistsSync,
   mkdirSync as nodeMkdirSync,
@@ -30,6 +29,7 @@ import {
   getRepoName as getRepoNameImpl,
 } from '../skills/cc-track-tools/lib/git-helpers';
 import { getActiveSpecDirectory } from '../skills/cc-track-tools/lib/spec-helpers';
+import { type CcusageCacheDeps, type DailyCost, defaultCcusageCacheDeps, getCcusageData } from './ccusage-cache';
 
 interface CurrentUsage {
   input_tokens: number;
@@ -53,7 +53,7 @@ interface StatusLineInput {
 
 // Dependency injection for testing
 interface StatusLineDeps {
-  execSync: typeof nodeExecSync;
+  ccusage: CcusageCacheDeps;
   existsSync: typeof nodeExistsSync;
   readFileSync: typeof nodeReadFileSync;
   getConfig: typeof getConfigImpl;
@@ -64,7 +64,7 @@ interface StatusLineDeps {
 }
 
 const defaultDeps: StatusLineDeps = {
-  execSync: nodeExecSync,
+  ccusage: defaultCcusageCacheDeps,
   existsSync: nodeExistsSync,
   readFileSync: nodeReadFileSync,
   getConfig: getConfigImpl,
@@ -75,25 +75,14 @@ const defaultDeps: StatusLineDeps = {
 };
 
 /**
- * Get today's cost from ccusage
+ * Get today's cost from cached `ccusage daily` results
  */
-export function getTodaysCost(input: StatusLineInput, deps = defaultDeps): string {
-  try {
-    // Use local date instead of UTC to match user's timezone
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const result = deps.execSync('bunx ccusage daily --json', {
-      encoding: 'utf-8',
-      input: JSON.stringify(input),
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
-
-    const data = JSON.parse(result);
-    const todayData = data.daily?.find((d: { date: string; totalCost?: number }) => d.date === today);
-    return todayData?.totalCost?.toFixed(2) || '0.00';
-  } catch {
-    return '0.00';
-  }
+export function getTodaysCost(daily: DailyCost[] | undefined): string {
+  // Use local date instead of UTC to match user's timezone
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayData = daily?.find((d) => d.period === today);
+  return todayData?.totalCost?.toFixed(2) || '0.00';
 }
 
 /**
@@ -115,28 +104,22 @@ export function getTokenInfo(input: StatusLineInput): string {
 }
 
 /**
- * Get cost info from ccusage (hourly rate and API window time)
+ * Get cost info from cached `ccusage statusline` output (hourly rate and API window time)
  */
-export function getCostInfo(input: StatusLineInput, deps = defaultDeps): { hourlyRate: string; apiWindow: string } {
-  try {
-    const result = deps.execSync('bunx ccusage statusline', {
-      encoding: 'utf-8',
-      input: JSON.stringify(input),
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
-
-    // Extract hourly rate
-    const rateMatch = result.match(/\$[\d.]+\/hr/);
-    const hourlyRate = rateMatch ? rateMatch[0] : '';
-
-    // Extract API window time
-    const windowMatch = result.match(/\(([^)]+)left\)/);
-    const apiWindow = windowMatch ? windowMatch[1].replace(' left', '').trim() : '';
-
-    return { hourlyRate, apiWindow };
-  } catch {
+export function getCostInfo(statusline: string | undefined): { hourlyRate: string; apiWindow: string } {
+  if (!statusline) {
     return { hourlyRate: '', apiWindow: '' };
   }
+
+  // Extract hourly rate
+  const rateMatch = statusline.match(/\$[\d.]+\/hr/);
+  const hourlyRate = rateMatch ? rateMatch[0] : '';
+
+  // Extract API window time
+  const windowMatch = statusline.match(/\(([^)]+)left\)/);
+  const apiWindow = windowMatch ? windowMatch[1].replace(' left', '').trim() : '';
+
+  return { hourlyRate, apiWindow };
 }
 
 /**
@@ -244,8 +227,9 @@ export function getCostEmoji(cost: number): string {
  */
 export function generateStatusLine(input: StatusLineInput, deps = defaultDeps): string {
   const modelName = input.model?.display_name || 'Unknown';
-  const todaysCost = getTodaysCost(input, deps);
-  const { hourlyRate, apiWindow } = getCostInfo(input, deps);
+  const ccusage = getCcusageData(JSON.stringify(input), deps.ccusage);
+  const todaysCost = getTodaysCost(ccusage?.daily);
+  const { hourlyRate, apiWindow } = getCostInfo(ccusage?.statusline);
   const tokens = getTokenInfo(input);
   const branch = getCurrentBranch(deps);
   const task = getActiveTask(deps);

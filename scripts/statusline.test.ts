@@ -1,4 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { CcusageCacheDeps, DailyCost } from './ccusage-cache';
 import {
   generateStatusLine,
   getActiveTask,
@@ -13,59 +17,41 @@ import {
 
 // No mocking needed - statusline.ts doesn't import from claude-md
 
+function localToday(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** ccusage cache deps backed by a fresh temp dir holding a fresh cache, or no cache when called without data */
+function ccusageDeps(data?: { daily?: DailyCost[]; statusline?: string }): CcusageCacheDeps {
+  const cacheDir = mkdtempSync(join(tmpdir(), 'cc-track-statusline-test-'));
+  if (data) {
+    mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(join(cacheDir, 'ccusage-cache.json'), JSON.stringify({ updatedAt: Date.now(), ...data }));
+  }
+  return {
+    cacheDir,
+    startRefresh: mock(() => {}),
+    runCcusage: mock(async () => ''),
+  };
+}
+
 describe('statusline', () => {
   describe('getTodaysCost', () => {
-    test('returns cost when ccusage returns valid data', () => {
-      const today = new Date().toISOString().split('T')[0];
-      const mockDeps = {
-        execSync: mock(() =>
-          JSON.stringify({
-            daily: [
-              { date: today, totalCost: 12.45 },
-              { date: '2025-01-01', totalCost: 5.0 },
-            ],
-          }),
-        ),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+    test("returns today's cost from cached daily results", () => {
+      const result = getTodaysCost([
+        { period: localToday(), totalCost: 12.45 },
+        { period: '2025-01-01', totalCost: 5.0 },
+      ]);
       expect(result).toBe('12.45');
     });
 
-    test('returns 0.00 when ccusage fails', () => {
-      const mockDeps = {
-        execSync: mock(() => {
-          throw new Error('ccusage not found');
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
-      expect(result).toBe('0.00');
+    test('returns 0.00 when there are no cached daily results', () => {
+      expect(getTodaysCost(undefined)).toBe('0.00');
     });
 
     test('returns 0.00 when no data for today', () => {
-      const mockDeps = {
-        execSync: mock(() =>
-          JSON.stringify({
-            daily: [{ date: '2025-01-01', totalCost: 5.0 }],
-          }),
-        ),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getTodaysCost({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
-      expect(result).toBe('0.00');
+      expect(getTodaysCost([{ period: '2025-01-01', totalCost: 5.0 }])).toBe('0.00');
     });
   });
 
@@ -130,32 +116,14 @@ describe('statusline', () => {
   });
 
   describe('getCostInfo', () => {
-    test('extracts hourly rate and API window from ccusage', () => {
-      const mockDeps = {
-        execSync: mock(() => '💰 $15.50/hr | 🧠 77,483 (39%) | (23m left)'),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getCostInfo({ model: { display_name: 'Claude Sonnet' } }, mockDeps);
+    test('extracts hourly rate and API window from ccusage statusline output', () => {
+      const result = getCostInfo('💰 $15.50/hr | 🧠 77,483 (39%) | (23m left)');
       expect(result.hourlyRate).toBe('$15.50/hr');
       expect(result.apiWindow).toBe('23m');
     });
 
-    test('handles missing ccusage gracefully', () => {
-      const mockDeps = {
-        execSync: mock(() => {
-          throw new Error('ccusage not found');
-        }),
-        existsSync: mock(() => false),
-        readFileSync: mock(() => ''),
-        getConfig: mock(() => ({ features: {} })),
-        getCurrentBranch: mock((_cwd: string) => ''),
-      };
-
-      const result = getCostInfo({}, mockDeps);
+    test('handles missing ccusage output gracefully', () => {
+      const result = getCostInfo(undefined);
       expect(result.hourlyRate).toBe('');
       expect(result.apiWindow).toBe('');
     });
@@ -164,7 +132,6 @@ describe('statusline', () => {
   describe('getCurrentBranch', () => {
     test('returns current git branch', () => {
       const mockDeps = {
-        execSync: mock(() => 'feature/new-feature\n'),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -177,9 +144,6 @@ describe('statusline', () => {
 
     test('handles non-git directories', () => {
       const mockDeps = {
-        execSync: mock(() => {
-          throw new Error('not a git repository');
-        }),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -194,7 +158,6 @@ describe('statusline', () => {
   describe('getRepoName', () => {
     test('returns repository name from mock', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -210,7 +173,6 @@ describe('statusline', () => {
 
     test('handles errors gracefully', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -230,7 +192,6 @@ describe('statusline', () => {
   describe('getActiveTask', () => {
     test('extracts active task from CLAUDE.md', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock((path: string) => {
           if (path.includes('CLAUDE.md')) return true;
           if (path.includes('/spec.md')) return true;
@@ -254,7 +215,6 @@ describe('statusline', () => {
 
     test('shows "No active task" when no_active_task.md is referenced', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock((path: string) => path.includes('CLAUDE.md')),
         readFileSync: mock(() => '## Active Task\n@.cc-track/no_active_task.md\n'),
         getConfig: mock(() => ({ features: {} })),
@@ -269,7 +229,6 @@ describe('statusline', () => {
 
     test('handles missing CLAUDE.md', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -286,7 +245,6 @@ describe('statusline', () => {
   describe('getAutoflowState', () => {
     test('returns inactive when state file does not exist', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -302,7 +260,6 @@ describe('statusline', () => {
 
     test('returns active state with continue count when file exists', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
         readFileSync: mock(() =>
           JSON.stringify({
@@ -325,7 +282,6 @@ describe('statusline', () => {
 
     test('returns inactive when active is false in state file', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
         readFileSync: mock(() =>
           JSON.stringify({
@@ -348,7 +304,6 @@ describe('statusline', () => {
 
     test('returns inactive on parse error', () => {
       const mockDeps = {
-        execSync: mock(() => ''),
         existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
         readFileSync: mock(() => 'invalid json'),
         getConfig: mock(() => ({ features: {} })),
@@ -395,19 +350,10 @@ describe('statusline', () => {
 
   describe('generateStatusLine integration', () => {
     test('generates complete two-line output with all features', () => {
-      const today = new Date().toISOString().split('T')[0];
-
       const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage daily')) {
-            return JSON.stringify({
-              daily: [{ date: today, totalCost: 75.5 }],
-            });
-          }
-          if (cmd.includes('ccusage statusline')) {
-            return '💰 $12.25/hr | (45m left)';
-          }
-          return '';
+        ccusage: ccusageDeps({
+          daily: [{ period: localToday(), totalCost: 75.5 }],
+          statusline: '💰 $12.25/hr | (45m left)',
         }),
         existsSync: mock((path: string) => {
           if (path.includes('CLAUDE.md')) return true;
@@ -466,12 +412,7 @@ describe('statusline', () => {
 
     test('gracefully omits tokens when context_window not present (older Claude Code)', () => {
       const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '💰 $12.25/hr | (45m left)';
-          }
-          return '{}';
-        }),
+        ccusage: ccusageDeps({ statusline: '💰 $12.25/hr | (45m left)' }),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -491,9 +432,7 @@ describe('statusline', () => {
 
     test('handles minimal input gracefully', () => {
       const mockDeps = {
-        execSync: mock(() => {
-          throw new Error('All commands fail');
-        }),
+        ccusage: ccusageDeps(),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -508,12 +447,7 @@ describe('statusline', () => {
 
     test('adds fire emoji for high hourly rate', () => {
       const mockDeps = {
-        execSync: mock((cmd: string) => {
-          if (cmd.includes('ccusage statusline')) {
-            return '$25.00/hr';
-          }
-          return '';
-        }),
+        ccusage: ccusageDeps({ statusline: '$25.00/hr' }),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -528,7 +462,7 @@ describe('statusline', () => {
 
     test('shows autoflow indicator when active', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
         readFileSync: mock(() =>
           JSON.stringify({
@@ -554,7 +488,7 @@ describe('statusline', () => {
 
     test('does not show autoflow indicator when inactive', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
@@ -573,7 +507,7 @@ describe('statusline', () => {
 
     test('shows repo name at start of second line when show_repo is true (default)', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({
@@ -597,7 +531,7 @@ describe('statusline', () => {
 
     test('shows repo name by default when statusline config has no show_repo setting', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({
@@ -621,7 +555,7 @@ describe('statusline', () => {
 
     test('hides repo name when show_repo is false', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({
@@ -645,7 +579,7 @@ describe('statusline', () => {
 
     test('repo name appears before autoflow indicator', () => {
       const mockDeps = {
-        execSync: mock(() => '{}'),
+        ccusage: ccusageDeps(),
         existsSync: mock((path: string) => path.includes('.autoflow-state.json')),
         readFileSync: mock(() =>
           JSON.stringify({
@@ -696,7 +630,7 @@ describe('statusline', () => {
     test('works gracefully outside git repository', () => {
       // Mock deps to avoid calling external commands
       const mockDeps = {
-        execSync: mock(() => '{"daily": []}'), // Mock ccusage response
+        ccusage: ccusageDeps({ daily: [] }),
         existsSync: mock(() => false),
         readFileSync: mock(() => ''),
         getConfig: mock(() => ({ features: {} })),
